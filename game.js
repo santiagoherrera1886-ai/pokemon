@@ -260,11 +260,25 @@ function toggleTeam(){
   if(!started||battle||dialogOpen||!$("starterModal").classList.contains("hidden"))return;
   if($("teamModal").classList.contains("hidden")){renderTeam();show("teamModal");tone(540,.07);}else hide("teamModal");
 }
+function switchPokemon(idx){
+  if(idx===0){notify("¡Este Pokémon ya está al frente!");return;}
+  if(!state.team[idx]||state.team[idx].hp<=0){notify("¡Este Pokémon no está listo para combatir!");return;}
+  if(battleBusy)return;
+  const p=state.team[idx],previous=state.team[0];
+  state.team[0]=p;state.team[idx]=previous;
+  hide("teamModal");updateHud();save();
+  if(battle){battleBusy=true;updateBattle();battleSay("¡Adelante, "+p.name+"!");tone(680,.1);setTimeout(()=>enemyTurn(),700);}
+  else notify("✦ "+p.name+" ahora lidera tu equipo.");
+}
 function renderTeam(){
   $("teamList").innerHTML="";
   if(!state.team.length)$("teamList").textContent="Aún no tienes Pokémon.";
-  for(const p of state.team){
+  for(let idx=0;idx<state.team.length;idx++){const p=state.team[idx];
     const el=document.createElement("div");el.className="team-entry";
+    el.title=idx===0?"Tu Pokémon principal":"Clic para usar a "+p.name;
+    el.tabIndex=0;
+    el.addEventListener("click",()=>switchPokemon(idx));
+    el.addEventListener("keydown",e=>{if(e.key==="Enter")switchPokemon(idx);});
     const img=document.createElement("img");img.src=sprite(p.name);img.alt=p.name;
     const text=document.createElement("div");const name=document.createElement("strong");name.textContent=p.name+"  ·  Nv. "+p.level;
     const hp=document.createElement("small");hp.textContent=p.hp+" / "+p.maxHp+" PS";
@@ -537,6 +551,8 @@ function updateBattle(){
   $("battleTurn").textContent="TURNO "+turn;
   $("catchBtn").disabled=battleBusy||state.balls<=0||!!battle.trainer;
   $("runBtn").disabled=battleBusy||!!battle.trainer;
+  $("switchBtn").disabled=battleBusy||state.team.length<2;
+  $("bagBtn").disabled=battleBusy||state.potions<1;
   for(const btn of ["attackBtn","specialBtn","runBtn"])$(btn).disabled=battleBusy;
 }
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
@@ -552,7 +568,11 @@ async function enemyTurn(){
   const damage=Math.max(2,Math.floor(2+battle.level*.9+Math.random()*4-p.level*.12));
   p.hp=Math.max(0,p.hp-damage);updateBattle();
   await pause(450);
-  if(p.hp<=0){battleSay("¡"+p.name+" se ha debilitado! Te han ayudado a recuperar a tu equipo.");await pause(1300);for(const mon of state.team)mon.hp=mon.maxHp;finishBattle(false);if(activeRoom&&activeRoom.id==="gym")exitRoom();notify("Tus Pokémon han recuperado sus fuerzas.");}
+  if(p.hp<=0){
+    const next=state.team.findIndex((mon,i)=>i>0&&mon.hp>0);
+    if(next>0){battleSay("¡"+p.name+" se ha debilitado! ¡El siguiente Pokémon entra al combate!");await pause(900);const other=state.team[next];state.team[next]=p;state.team[0]=other;updateHud();battleBusy=false;turn++;updateBattle();battleSay("¡Adelante, "+other.name+"!");}
+    else{battleSay("¡"+p.name+" se ha debilitado! Tu equipo necesita descansar.");await pause(1300);for(const mon of state.team)mon.hp=mon.maxHp;finishBattle(false);if(activeRoom&&activeRoom.id==="gym")exitRoom();notify("Tus Pokémon han recuperado sus fuerzas.");}
+  }
   else{battleBusy=false;turn++;battleSay("¿Qué debería hacer "+p.name+"?");updateBattle();}
 }
 function awardXp(){
@@ -628,6 +648,8 @@ $("attackBtn").addEventListener("click",()=>playerAttack(false));
 $("specialBtn").addEventListener("click",()=>playerAttack(true));
 $("catchBtn").addEventListener("click",throwBall);
 $("runBtn").addEventListener("click",attemptRun);
+$("switchBtn").addEventListener("click",()=>{if(!battle||battleBusy)return;renderTeam();show("teamModal");});
+$("bagBtn").addEventListener("click",()=>{if(!battle||battleBusy)return;renderTeam();show("teamModal");});
 $("startBtn").addEventListener("click",()=>startGame(false));
 $("continueBtn").addEventListener("click",()=>startGame(true));
 document.querySelectorAll("[data-starter]").forEach(btn=>btn.addEventListener("click",()=>createStarter(btn.dataset.starter)));
@@ -640,7 +662,7 @@ $("mapToggle").addEventListener("click",toggleMap);
 $("mapButton").addEventListener("click",toggleMap);
 $("mapClose").addEventListener("click",()=>atlas.closeMap());
 $("soundToggle").addEventListener("click",()=>{state.sound=!state.sound;$("soundToggle").textContent=state.sound?"♫":"♪̸";notify(state.sound?"Sonido activado":"Sonido desactivado");save();});
-$("healBtn").addEventListener("click",()=>{const p=currentPokemon();if(!p||state.potions<1||p.hp>=p.maxHp)return;state.potions--;p.hp=Math.min(p.maxHp,p.hp+20);tone(760,.14);renderTeam();updateHud();save();notify(p.name+" recuperó PS.");});
+$("healBtn").addEventListener("click",()=>{const p=currentPokemon();if(!p||state.potions<1||p.hp>=p.maxHp||battleBusy)return;state.potions--;p.hp=Math.min(p.maxHp,p.hp+20);tone(760,.14);renderTeam();updateHud();save();notify(p.name+" recuperó PS.");if(battle){hide("teamModal");battleBusy=true;updateBattle();setTimeout(()=>enemyTurn(),650);}});
 window.addEventListener("keydown",e=>{
   if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," ","Tab"].includes(e.key))e.preventDefault();
   if(e.repeat&&["e","Enter","r","Escape","m"].includes(e.key))return;
