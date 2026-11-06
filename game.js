@@ -197,6 +197,22 @@ function objective(){
     {text:"Entra al laboratorio",x:24,z:-24.1},
     {text:"Explora la Ruta 201",x:10,z:-11}
   ];
+  // Street-aware waypoints stop the guide pointing through solid buildings.
+  const p=world.hero.root.position,q=state.quest;
+  if(q>=2&&q<=4){
+    if(p.x<-8&&p.z>6)return {text:"Ve al camino principal",x:-4,z:20};
+    if(p.z>-16)return {text:"Sigue la Ruta 201",x:-2,z:-18};
+  }
+  if(q===5){
+    if(p.x<-8&&p.z<-10)return {text:"Regresa por la Ruta 201",x:-3,z:-17};
+    if(p.z<17)return {text:"Sigue hacia Hojaverde",x:-2,z:20};
+    if(p.x<8)return {text:"Ve hacia tu casa",x:12,z:19};
+  }
+  if(q===6){
+    if(p.x>6&&p.z>8)return {text:"Toma el camino central",x:-2,z:20};
+    if(p.z>-18)return {text:"Avanza hacia Pueblo Arena",x:-2,z:-19};
+    if(p.x<21)return {text:"Sigue al este",x:24,z:-19};
+  }
   return targets[state.quest]||targets[7];
 }
 function updateNavigation(){
