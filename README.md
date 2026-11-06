@@ -1,32 +1,62 @@
-# SINNOH REBORN — Episodio 01
+# SINNOH REBORN — Expanded 3D fan-game prototype
 
-Prototipo de fan game 3D inspirado en Pokémon Diamante y Perla, jugable en PC directamente desde el navegador.
+An unofficial browser game inspired by the Sinnoh setting from Pokémon Diamond and Pearl. Built for playing on desktop with WASD, real 3D terrain, a story introduction, over-world Pokémon, turn-based battles, gyms, and local saving.
 
-## Jugar
+## Play on your PC
 
-Visita el dominio de Vercel del proyecto, elige **Nueva aventura**, habla con Barry, busca al Profesor Serbal cerca del Lago Veraz, escoge a Turtwig, Chimchar o Piplup y entra en la hierba alta para encontrar Pokémon.
+**https://pokemon-sa-ntiago.vercel.app/**
 
-### Controles
-- **WASD** o **flechas**: movimiento relativo a la cámara.
-- **Shift**: correr.
-- **E** o **Enter**: hablar e interactuar.
-- **R**: abrir/cerrar el equipo.
-- **Ratón arrastrando sobre el mundo**: girar cámara.
-- **Rueda del ratón**: acercar/alejar cámara.
-- **Esc**: cerrar menús.
+The game is deployed automatically from the repository's default \`main\` branch using the existing Vercel project \`sa-ntiago/pokemon\`.
 
-## Funcionalidades
-- Mundo 3D low-poly original con iluminación, sombras, lago, pueblo, rutas, NPC y hierba alta.
-- Historia breve interactiva con diálogos y misiones.
-- Pokémon iniciales Turtwig, Chimchar y Piplup.
-- Combates por turnos, captura de Pokémon salvajes, experiencia y subida de nivel.
-- Curación, bolsa básica y guardado automático local (localStorage).
-- Compatible con navegadores de escritorio con WebGL.
+## Controls
 
-## Tecnología
-HTML, CSS y JavaScript ES modules. Renderizador 3D: Three.js cargado desde jsDelivr. Ilustraciones de Pokémon cargadas en tiempo de ejecución desde los sprites de PokeAPI. Requiere conexión a internet para esos recursos. No hay base de datos ni claves API.
+| Action | Control |
+| --- | --- |
+| Move | WASD or arrow keys |
+| Run | Hold Shift |
+| Speak / enter buildings / interact | E or Enter |
+| Team / heal with potions | R |
+| Regional Sinnoh atlas | M |
+| Rotate the outside camera | Drag mouse |
+| Zoom | Mouse wheel |
+| Close menus | Esc |
 
-## Limitaciones
-Este repositorio incluye **solo un prototipo del primer episodio**, no el juego completo ni la narrativa, mapas o personajes de todos los juegos originales. Las figuras 3D y los escenarios son composiciones procedurales, no modelos oficiales. El guardado se almacena en el navegador del dispositivo.
+### Story start
 
-**Fan game no oficial, sin afiliación con Nintendo, Game Freak, Creatures Inc. ni The Pokémon Company.** Pokémon y sus nombres son marcas de sus respectivos propietarios. Prototipo educativo y sin fines comerciales.
+1. Select **Nueva aventura**. The story begins in the protagonist's bedroom with a news report about a red Gyarados.
+2. Go downstairs, speak to Mom, and visit Barry at his house.
+3. Head to Lake Verity and investigate the briefcase.
+4. Select Turtwig, Chimchar or Piplup, and battle a Starly.
+5. Return home, visit Professor Rowan's Sandgem lab, and receive the Pokédex.
+6. Explore Route 202 and Jubilife, fight the Oreburgh Gym Leader, and continue exploring Sinnoh.
+
+## Features implemented
+
+- Original procedural 3D world with 14 locations and 17 connected routes, inspired by Sinnoh's geography. It is **not** a pixel-for-pixel or geographically exact port.
+- Town districts with unique visual themes: gardens, mining, urban centers, coastline, wetlands, old towns, and snow.
+- Route network and region atlas with visited town tracking, compass, objective marker and minimap.
+- Playable interiors (home, bedroom, Barry's house, laboratory, Pokémon Center, Poké Mart, gyms, and houses).
+- Scripted introduction with dialogues, a starter choice, the lake encounter, the Pokédex, and extended gym progression.
+- 8 gym leaders, trainer challenges, earned badges, prize money and interactive shop.
+- Wild encounters, roaming Pokémon, ball capture, basic type effectiveness, HP, XP, levels, starter evolution and switching the lead party Pokémon.
+- Potions and Pokémon Center healing, team of up to 6, autosave with browser localStorage.
+- Daytime lighting, changing scenic biomes, animated roaming Pokémon, petals, snow, rain, walking motion, and camera transitions.
+- Keyboard-focused desktop gameplay.
+
+## Technology
+
+- Three.js with low-poly procedural geometry, standard materials, shadows and fog.
+- HTML/CSS interface, JavaScript ES modules; no build step, no backend.
+- External artwork for official Pokémon from PokeAPI's sprite repository and selected character graphics hosted by Pokémon Showdown. Requires Internet and WebGL.
+- Game save stored only within the current browser/profile using localStorage. Clearing site data deletes it.
+- Latest content is deployed by pushing to GitHub; no second Vercel project is needed.
+
+## What is not done yet
+
+This is **not the complete Pokémon Diamond/Pearl game**, nor a 1:1 remake of every interior, story beat, move, item, quest, route, evolution, animation or Pokédex entry. The eight gym leaders currently use simplified one-opponent battles. There is no full Team Galactic campaign, Elite Four, Legendary storyline, online play, or a full 3D creature model pipeline. Many characters still use animated 2D artwork rather than fully rigged models.
+
+Runtime smoke tests checked procedural region generation, the beginning-of-game dialogue progression, gym badge rewards, module syntax and Vercel deployment output. These checks are not substitutes for complete in-browser gameplay and visual QA.
+
+## Legal notice
+
+This is an unofficial, non-commercial fan prototype, not affiliated with Nintendo, Game Freak, Creatures Inc. or The Pokémon Company. Pokémon and associated names and artwork belong to their respective owners. Treat external assets according to their owners' terms.
