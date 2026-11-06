@@ -136,7 +136,7 @@ export function expandSinnoh(T,scene,world){
   const angle=i/(type==="city"?13:10)*Math.PI*2,rad=radius*.79;
   const x=cx+Math.cos(angle)*rad,z=cz+Math.sin(angle)*rad;
   if(nearbyRoad(x,z,3))return;
-  const root=new T.Group();root.position.set(x,0,z);root.rotation.y=-angle+Math.PI/2;scene.add(root);
+  const root=new T.Group();root.position.set(x,0,z);root.rotation.y=-angle-Math.PI/2;scene.add(root);
   const large=type==="city"||type==="mining";
   const width=5.5+random()*2.5,depth=5.7+random()*2,height=3.6+(large?random()*5:random()*1.8);
   const walls=type==="snow"?[0xf0f1eb,0xe2e9f0]:type==="city"?[0xc8d3dc,0xdce0d7,0xe3d5c6]:
@@ -177,7 +177,7 @@ export function expandSinnoh(T,scene,world){
   else if(i===3&&["oreburgh","eterna","hearthome","veilstone","pastoria","sunyshore","snowpoint","canalave"].includes(city.id))room="gym";
   else if(i===4)room="cottage";
   // Unique portal id, shared interior type; store exact entrance for returning to city.
-  world.portals.push({kind:"door",name:"Entrar · "+(room==="center"?"Centro Pokémon":room==="mart"?"Tienda Pokémon":room==="gym"?"Gimnasio":"Casa"),id:uid,room,x:worldDoor.x,z:worldDoor.z,exitX:worldDoor.x,exitZ:worldDoor.z+Math.cos(angle)*1.3,city:city.name});
+  world.portals.push({kind:"door",name:"Entrar · "+(room==="center"?"Centro Pokémon":room==="mart"?"Tienda Pokémon":room==="gym"?"Gimnasio":"Casa"),id:uid,room,x:worldDoor.x,z:worldDoor.z,exitX:worldDoor.x-Math.cos(angle)*1.3,exitZ:worldDoor.z-Math.sin(angle)*1.3,city:city.name});
   world.obstacles.push({kind:"building",x,z,w:width/2,d:depth/2});
   if(i===1||i===2||i===3){
    const txt=i===1?"CENTRO POKÉMON":i===2?"POKÉ MART":room==="gym"?"GIMNASIO":"HOTEL";
@@ -228,7 +228,7 @@ export function expandSinnoh(T,scene,world){
   const n=1300,geometry=new T.ConeGeometry(.10,.32,4),materials=[0xffde85,0xf5a3c8,0xa9c4f1,0xffffff].map(c=>material(c));
   const inst=materials.map(m=>new T.InstancedMesh(geometry,m,Math.ceil(n/4)));
   const counts=[0,0,0,0],tmp=new T.Object3D();
-  for(let i=0;i<n;i++){let city=random()>.5?lookup.floaroma:lookup.eternа; // fallback for exact key
+  for(let i=0;i<n;i++){let city=random()>.5?lookup.floaroma:lookup.eterna; // fallback for exact key
     city=city||lookup.eterna;
     const angle=random()*6.283,rad=city.radius+5+random()*35;
     const x=city.x+Math.cos(angle)*rad,z=city.z+Math.sin(angle)*rad;
