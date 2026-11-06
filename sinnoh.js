@@ -47,6 +47,28 @@ export function expandSinnoh(T,scene,world){
  const tex=new T.CanvasTexture(grassCanvas);tex.wrapS=tex.wrapT=T.RepeatWrapping;tex.repeat.set(55,65);tex.colorSpace=T.SRGBColorSpace;
  const ground=new T.Mesh(new T.PlaneGeometry(1050,1050),new T.MeshStandardMaterial({map:tex,roughness:1}));
  ground.rotation.x=-Math.PI/2;ground.position.set(140,-.087,-195);ground.receiveShadow=true;scene.add(ground);
+ // Large soft-edged biome overlays blend transitions instead of abrupt flat squares.
+ const biomeTexture=new Map();
+ function terrainTint(x,z,rx,rz,color,alpha=.85){
+    let texture=biomeTexture.get(color);
+    if(!texture){
+      const cv=document.createElement("canvas");cv.width=cv.height=256;const ctx=cv.getContext("2d");
+      const g=ctx.createRadialGradient(128,128,25,128,128,125);
+      g.addColorStop(0,color);g.addColorStop(.62,color);g.addColorStop(1,"rgba(255,255,255,0)");
+      ctx.fillStyle=g;ctx.fillRect(0,0,256,256);texture=new T.CanvasTexture(cv);biomeTexture.set(color,texture);
+    }
+    const ground=new T.Mesh(new T.PlaneGeometry(rx*2,rz*2),new T.MeshBasicMaterial({map:texture,transparent:true,opacity:alpha,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}));
+    ground.rotation.x=-Math.PI/2;ground.position.set(x,-.015,z);scene.add(ground);return ground;
+ }
+ terrainTint(93,-420,125,100,"rgba(236,247,248,0.98)",.98);
+ terrainTint(75,-310,115,105,"rgba(123,163,123,0.55)",.72);
+ terrainTint(-31,-205,85,75,"rgba(245,194,217,0.68)",.72);
+ terrainTint(156,-110,95,70,"rgba(190,172,140,0.58)",.73);
+ terrainTint(264,-101,95,75,"rgba(115,194,164,0.66)",.76);
+ terrainTint(-163,-110,110,95,"rgba(80,165,200,0.88)",.92);
+ terrainTint(445,-120,120,120,"rgba(85,183,213,0.88)",.92);
+ terrainTint(395,-135,65,70,"rgba(242,210,147,0.64)",.72);
+ terrainTint(152,-231,85,84,"rgba(231,196,216,0.36)",.6);
  // Separate regions are visually identified by gardens, stones, snow and colored squares.
  function markerLabel(txt,x,z,y=4.4,size=5){
    const canvas=document.createElement("canvas");canvas.width=768;canvas.height=116;
