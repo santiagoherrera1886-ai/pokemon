@@ -151,7 +151,11 @@ const questData=[
   ["¡Protege a tu Pokémon!","Un Starly salvaje te ha atacado. Gana tu primer combate."],
   ["Un regalo de mamá","Vuelve a casa y habla con mamá. Te tiene preparado algo para el viaje."],
   ["Hacia Pueblo Arena","Ve hacia el este, entra al laboratorio y habla con el Profesor Serbal."],
-  ["Un mundo por descubrir","¡Tienes tu Pokédex! Explora la Ruta 201, captura Pokémon y forma tu equipo."]
+  ["Camino a Ciudad Jubileo","Atraviesa la Ruta 202 hasta Ciudad Jubileo, la primera gran metrópoli de Sinnoh."],
+  ["¡Tu primera medalla!","Ve al este por la Ruta 203 y desafía al líder Roco en Ciudad Pirita."],
+  ["El bosque de Vetusta","Busca Pueblo Aromaflor y luego Ciudad Vetusta. Gardenia te espera en el gimnasio."],
+  ["El corazón de Sinnoh","Continúa hasta Ciudad Corazón y explora las rutas del centro de la región."],
+  ["El desafío de Sinnoh","Visita gimnasios de toda Sinnoh y reúne las ocho medallas para tu equipo."]
 ];
 function save(){
   if(!started)return;
@@ -242,6 +246,9 @@ function checkPosition(){
   const place=activeRoom?({home:"Casa del protagonista",bedroom:"Tu habitación",barry:"Casa de Barry",lab:"Laboratorio Pokémon",cottage:"Casa del vecino",center:"Centro Pokémon",mart:"Poké Mart",gym:"Gimnasio Pokémon"}[activeRoom.id]||"Interior"):sinnoh.where(p.x,p.z);
   if(!activeRoom){for(const city of PLACES){if(Math.hypot(p.x-city.x,p.z-city.z)<city.radius+4&&!(state.visited||[]).includes(city.id)){
     state.visited=state.visited||[];state.visited.push(city.id);notify("✦ ¡Has descubierto "+city.name+"!");tone(900,.1);save();atlas.update();
+    if(state.quest===7&&city.id==="jubilife")nextQuest(8);
+    if(state.quest===9&&city.id==="eterna")nextQuest(10);
+    if(state.quest===10&&city.id==="hearthome")nextQuest(11);
   }}}
   if($("placeName").textContent!==place){$("placeName").textContent=place;if(started)notify("◇ "+place);}
 }
@@ -321,6 +328,44 @@ function doInteract(){
   if(kind==="exit"){exitRoom();tone(420,.12);return;}
   if(kind==="stairsUp"){enterRoom("bedroom",true);openDialogue([{name:"NARRADOR",text:"Tu dormitorio. Aquí empezó todo, frente a una noticia sobre un misterioso Gyarados rojo."}]);return;}
   if(kind==="stairsDown"){enterRoom("home",true);return;}
+  if(kind==="healCenter"){for(const mon of state.team)mon.hp=mon.maxHp;updateHud();save();chirp();
+    openDialogue([{name:"ENFERMERA JOY",text:"¡Bienvenido al Centro Pokémon! Tus compañeros han descansado y están completamente recuperados."},{name:"ENFERMERA JOY",text:"Cuídalos mucho y vuelve siempre que lo necesites. ¡Te deseamos suerte en tu aventura!"}]);return;}
+  if(kind==="pokemonPc"){openDialogue([{name:"PC DE BILL",text:"Tu equipo puede descansar aquí. ¡Prueba también a capturar especies diferentes en cada ruta!"}]);return;}
+  if(kind==="shopBalls"||kind==="shopPotions"){
+    const isBalls=kind==="shopBalls",price=isBalls?500:300,item=isBalls?"cinco Poké Balls":"una poción";
+    if(state.money<price){openDialogue([{name:"DEPENDIENTE",text:"¡Hola! "+item+" cuestan "+price+" ₽. No te alcanza el dinero; derrota entrenadores para conseguir más."}]);return;}
+    state.money-=price;
+    if(isBalls)state.balls+=5;else state.potions+=1;
+    updateHud();save();
+    openDialogue([{name:"DEPENDIENTE",text:"¡Gracias por tu compra! Te entrego "+item+" por "+price+" ₽. Te quedan "+state.money+" ₽."}]);return;
+  }
+  if(kind==="gymInfo"||kind==="gymRules"){openDialogue([{name:"GIMNASIO",text:"Para conseguir una medalla tendrás que derrotar al líder de este gimnasio. No puedes lanzar Poké Balls a los Pokémon de otros entrenadores."}]);return;}
+  if(kind==="gymBattle"||kind==="gymLeader"){
+    if(!state.starter){openDialogue([{name:"LÍDER",text:"Antes de desafiar un gimnasio, consigue tu primer Pokémon con el Profesor Serbal."}]);return;}
+    if(state.quest<7){openDialogue([{name:"LÍDER",text:"Primero termina tu aventura inicial en el laboratorio de Pueblo Arena."}]);return;}
+    const cityName=activeEntrance?.city||sinnoh.where(n.x,n.z);
+    const leaders=[
+      ["Ciudad Pirita","oreburgh","ROCO","Cranidos",9],
+      ["Ciudad Vetusta","eterna","GARDENIA","Roselia",13],
+      ["Ciudad Corazón","hearthome","FANTINA","Mismagius",17],
+      ["Ciudad Rocavelo","veilstone","MAYLENE","Lucario",21],
+      ["Ciudad Pradera","pastoria","MANANTI","Floatzel",25],
+      ["Ciudad Canal","canalave","BYRON","Bastiodon",29],
+      ["Ciudad Puntaneva","snowpoint","INVERNA","Abomasnow",33],
+      ["Ciudad Marina","sunyshore","ELECTRO","Luxray",37]
+    ];
+    const info=leaders.find(a=>a[0]===cityName)||leaders[0];
+    if((state.badges||[]).includes(info[1])){openDialogue([{name:"LÍDER "+info[2],text:"¡Ya has conseguido mi medalla! Sigue recorriendo Sinnoh para encontrar nuevos retos."}]);return;}
+    openDialogue([{name:"LÍDER "+info[2],text:"¡Así que has venido a desafiarme! El camino de un entrenador se demuestra en combate."},{name:"LÍDER "+info[2],text:"Soy "+info[2]+", líder de "+info[0]+". ¡Prepárate! ¡Te reto a un combate por la medalla!"}],()=>encounter(info[3],false,{name:"LÍDER "+info[2],city:info[1],level:info[4],gym:true}));return;
+  }
+  if(kind==="trainer"){
+    if(!state.starter){openDialogue([{name:n.name,text:"¿Todavía no tienes un Pokémon? ¡Habla con el profesor junto al lago!"}]);return;}
+    const beaten=state.defeated||[];
+    if(beaten.includes(n.name)){openDialogue([{name:n.name,text:"¡Ha sido un gran combate! Entrenaré para poder ganarte la próxima vez."}]);return;}
+    openDialogue([{name:n.name,text:"¿Quieres tener un combate Pokémon? ¡No voy a perder sin luchar!"}],()=>encounter(n.pokemon||"Starly",false,{name:n.name,level:5+Math.floor((Math.abs(n.x)+Math.abs(n.z))/80),gym:false}));return;
+  }
+  if(kind==="talk"){openDialogue([{name:n.name,text:"¡La región de Sinnoh es increíble! Puedes visitar pueblos, explorar edificios y ganar medallas en los gimnasios."}]);return;}
+  if(kind==="shopInfo"){openDialogue([{name:"CATÁLOGO",text:"Poké Balls: 5 por 500 ₽. Pociones: 300 ₽ cada una. ¡Acércate al mostrador para comprar!"}]);return;}
   if(kind==="mom"){
     if(state.quest===0){openDialogue([
       {name:"MAMÁ",text:"¡Buenos días, cariño! ¿Has visto la noticia? Un equipo de investigación busca un Gyarados rojo en un lago lejano."},
@@ -362,7 +407,7 @@ function doInteract(){
         {name:"PROF. SERBAL",text:"El crecimiento de los Pokémon es un misterio fascinante. Por eso necesito la ayuda de entrenadores curiosos y valientes."},
         {name:"PROF. SERBAL",text:"Toma esta Pokédex. Registra los Pokémon que encuentres durante tu viaje. También te daré cinco Poké Balls más."},
         {name:"PROF. SERBAL",text:"Sinnoh es enorme. Este es solo el primer paso: visita nuevas rutas, conoce entrenadores y haz crecer a tu equipo."}
-      ],()=>{state.pokedex=true;state.balls+=5;nextQuest(7);updateHud();});}
+      ],()=>{state.pokedex=true;state.balls+=5;state.money+=1500;nextQuest(7);updateHud();});}
     else if(state.quest<5)openDialogue([{name:"PROF. SERBAL",text:"Soy el Profesor Serbal. Parece que alguien ha movido mi maletín de investigación. Ten mucho cuidado cerca de la hierba alta."}]);
     else openDialogue([{name:"PROF. SERBAL",text:state.quest===5?"Primero ve a casa a tranquilizar a tu madre. Después hablamos en el laboratorio.":"Cuida bien de tus Pokémon y registra cuantas especies puedas en la Pokédex."}]);
   }else if(kind==="aide"||kind==="aideLab"){
