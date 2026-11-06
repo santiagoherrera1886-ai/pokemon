@@ -115,7 +115,20 @@ export function buildWorld(T, scene) {
     for(const a of [-1,1]){const pivot=new T.Group();pivot.position.set(a*.58,1.77,0);rig.add(pivot);const arm=box(pivot,.29,.72,.32,shirt,0,-.38,0);sphere(pivot,.18,skin,0,-.77,0,1);arms.push(pivot);
       const leg=box(rig,.33,.69,.37,0x334b66,a*.22,.55,0);box(rig,.36,.22,.56,0xf0f0f2,a*.22,.13,.11);}
     box(rig,.52,.73,.19,0xdeb658,0,1.35,-.43);
-    return {root,rig,arms,walk(t,moving){rig.position.y=moving?Math.sin(t*11)*.08:Math.sin(t*2.5)*.035;arms[0].rotation.x=moving?Math.sin(t*11)*.55:0;arms[1].rotation.x=moving?-Math.sin(t*11)*.55:0;}};}
+    // Use recognizable Gen IV trainer sprites as 2.5D animated billboards when loaded.
+    // Keep the chibi geometry as a safe fallback if remote art is unavailable.
+    const trainer=shirt===0x355eaf?"lucas":shirt===0xe7ac47?"barry":shirt===0xeeeeea?"rowan":shirt===0x77ae9a?"dawn":shirt===0xcc7895?"lady":null;
+    let sprite=null;
+    if(trainer){
+      const loader=new T.TextureLoader();loader.setCrossOrigin("anonymous");
+      loader.load("https://play.pokemonshowdown.com/sprites/trainers/"+trainer+".png",tex=>{
+        tex.colorSpace=T.SRGBColorSpace;tex.minFilter=T.NearestFilter;tex.magFilter=T.NearestFilter;tex.generateMipmaps=false;
+        sprite=new T.Sprite(new T.SpriteMaterial({map:tex,transparent:true,alphaTest:.06,depthTest:true,depthWrite:false}));
+        sprite.scale.set(3.7,3.7,1);sprite.position.set(0,1.95,0);
+        root.add(sprite);rig.visible=false;
+      },undefined,()=>{rig.visible=true;});
+    }
+    return {root,rig,arms,walk(t,moving){rig.position.y=moving?Math.sin(t*11)*.08:Math.sin(t*2.5)*.035;arms[0].rotation.x=moving?Math.sin(t*11)*.55:0;arms[1].rotation.x=moving?-Math.sin(t*11)*.55:0;if(sprite)sprite.position.y=1.96+(moving?Math.abs(Math.sin(t*11))*.05:Math.sin(t*2.5)*.045);}};}
   const hero=person(-6,21,0x355eaf,0xd64d52,0xf4c69b,1.02);
   function actor(name,x,z,color,hat,kind,face){const p=person(x,z,color,hat,0xebc09c,.97);p.root.rotation.y=face||0;label(name,p.root,4);npcs.push({name,x,z,kind,model:p});return p;}
   actor("BARRY",-3,12.1,0xe7ac47,0xecb64d,"barry",-1);
