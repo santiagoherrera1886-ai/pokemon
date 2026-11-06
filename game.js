@@ -1,5 +1,6 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js";
 import { buildWorld } from "./world.js";
+import { createInteriors } from "./interiors.js";
 
 const $=id=>document.getElementById(id);
 const show=id=>$(id).classList.remove("hidden");
@@ -16,7 +17,7 @@ const DATABASE={
   Budew:{id:406,type:"Planta",move:"Absorber",power:6,max:16}
 };
 const sprite=name=>SPRITE_ROOT+(DATABASE[name]?.id||396)+".png";
-const freshState=()=>({quest:0,starter:null,team:[],balls:5,potions:3,seen:[],caught:[],wins:0,pos:{x:-6,z:21},sound:true});
+const freshState=()=>({quest:0,starter:null,team:[],balls:5,potions:3,seen:[],caught:[],wins:0,pos:{x:12,z:19.5},room:"home",sound:true,shoes:false,pokedex:false,scriptedBattle:false});
 let state=freshState(),saved=null,started=false,battle=null,battleBusy=false,turn=1;
 let dialogQueue=[],dialogIndex=0,dialogAfter=null,dialogOpen=false,toastTimeout;
 const keys=new Set();
@@ -36,23 +37,56 @@ const camera=new THREE.PerspectiveCamera(43,window.innerWidth/window.innerHeight
 const hemi=new THREE.HemisphereLight(0xe3fbff,0x6e8e57,2.25);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xffe5b7,3.7);sun.position.set(-22,45,21);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-51;sun.shadow.camera.right=51;sun.shadow.camera.top=51;sun.shadow.camera.bottom=-51;sun.shadow.camera.near=.5;sun.shadow.camera.far=125;sun.shadow.bias=-.00012;sun.shadow.normalBias=.035;scene.add(sun);
 const world=buildWorld(THREE,scene);
-let cameraYaw=.65,camDistance=23,cameraTarget=new THREE.Vector3(-6,1,21),lastPos={x:-6,z:21},stepDistance=0,locationTimer=0;
+const interiors=createInteriors(THREE);
+let activeRoom=null;
+let outsidePosition={x:12,z:19.5};
+let scriptedBattle=false;
+const trainerPics={"BARRY":"barry","PROF. SERBAL":"rowan","LUCAS":"lucas","MAYA":"dawn","AYUDANTE":"dawn","MAMÁ":"lady","MADRE DE BARRY":"lady","VECINO":"gentleman","VECINA":"lady"};
+function enterRoom(id,fromStairs=false){
+  if(battle)return;
+  const p=world.hero.root;
+  if(!activeRoom){outsidePosition={x:p.position.x,z:p.position.z};}
+  activeRoom=interiors.get(id);
+  activeRoom.scene.add(p);p.position.set(fromStairs?0:0,0,fromStairs?2.7:1.9);p.rotation.y=Math.PI;
+  cameraTarget.set(0,1.1,0);cameraYaw=0;
+  camDistance=16;
+  hide("interactHint");hide("radar");
+  checkPosition();updateNavigation();save();
+}
+function exitRoom(){
+  if(!activeRoom)return;
+  const id=activeRoom.id;
+  if(id==="bedroom"){enterRoom("home",true);notify("Has bajado al salón.");return;}
+  const door=world.portals.find(p=>p.id===id)||world.portals.find(p=>p.id==="home");
+  scene.add(world.hero.root);activeRoom=null;
+  world.hero.root.position.set(door.x,0,door.exitZ+.2);
+  outsidePosition={x:door.x,z:door.exitZ+.2};
+  cameraTarget.set(door.x,1.1,door.exitZ);
+  cameraYaw=.64;camDistance=16;
+  show("radar");checkPosition();updateNavigation();save();
+}
+
+let cameraYaw=.65,camDistance=16,cameraTarget=new THREE.Vector3(12,1,19.5),lastPos={x:12,z:19.5},stepDistance=0,locationTimer=0;
 const clock=new THREE.Clock();
 const questData=[
-  ["Un nuevo comienzo","Encuentra a Barry en Pueblo Hojaverde. Tiene algo importante que contarte."],
-  ["El misterioso lago","Sigue el camino hacia el Lago Veraz. Busca allí al Profesor Serbal."],
-  ["¡Tu primer combate!","Atraviesa la hierba alta de la Ruta 201 y enfréntate a un Pokémon salvaje."],
-  ["Una noticia importante","Vuelve a hablar con el Profesor Serbal cerca del Lago Veraz."],
-  ["Rumbo a Pueblo Arena","Dirígete hacia el este y visita a la ayudante junto al laboratorio Pokémon."],
-  ["Una gran aventura","¡Primer episodio completado! Continúa explorando, combatiendo y capturando Pokémon."]
+  ["El comienzo de todo","Estás en casa, en Pueblo Hojaverde. Habla con mamá para saber qué ocurre."],
+  ["¡Barry te necesita!","Ve a la casa de Barry, la de tejado rojo, y habla con él en el interior."],
+  ["El misterio del lago","Barry quiere investigar el Lago Veraz. Busca un maletín olvidado junto al agua."],
+  ["Tres Pokémon, un destino","Abre el maletín y elige a tu primer compañero Pokémon."],
+  ["¡Protege a tu Pokémon!","Un Starly salvaje te ha atacado. Gana tu primer combate."],
+  ["Un regalo de mamá","Vuelve a casa y habla con mamá. Te tiene preparado algo para el viaje."],
+  ["Hacia Pueblo Arena","Ve hacia el este, entra al laboratorio y habla con el Profesor Serbal."],
+  ["Un mundo por descubrir","¡Tienes tu Pokédex! Explora la Ruta 201, captura Pokémon y forma tu equipo."]
 ];
 function save(){
   if(!started)return;
-  state.pos={x:Number(world.hero.root.position.x.toFixed(2)),z:Number(world.hero.root.position.z.toFixed(2))};
-  try{localStorage.setItem("sinnohRebornSaveV2",JSON.stringify(state));}catch(e){}
+  if(!activeRoom)outsidePosition={x:world.hero.root.position.x,z:world.hero.root.position.z};
+  state.pos={x:Number(outsidePosition.x.toFixed(2)),z:Number(outsidePosition.z.toFixed(2))};
+  state.room=activeRoom?.id||null;
+  try{localStorage.setItem("sinnohRebornSaveV3",JSON.stringify(state));}catch(e){}
 }
 function load(){
-  try{const raw=localStorage.getItem("sinnohRebornSaveV2");if(!raw)return null;const s=JSON.parse(raw);return s&&typeof s.quest==="number"?{...freshState(),...s}:null;}catch(e){return null;}
+  try{const raw=localStorage.getItem("sinnohRebornSaveV3");if(!raw)return null;const s=JSON.parse(raw);return s&&typeof s.quest==="number"?{...freshState(),...s}:null;}catch(e){return null;}
 }
 saved=load();
 if(saved)show("continueBtn");
@@ -72,7 +106,7 @@ function notify(text){$("toastText").textContent=text;show("toast");clearTimeout
 function updateQuest(){
   $("questTitle").textContent=questData[state.quest][0];
   $("questDescription").textContent=questData[state.quest][1];
-  $("questProgress").style.width=(9+state.quest*18)+"%";
+  $("questProgress").style.width=Math.min(100,9+state.quest*13)+"%";
 }
 function nextQuest(index){if(index>state.quest){state.quest=index;updateQuest();notify("✦ "+questData[index][0]);chirp();save();}}
 function currentPokemon(){return state.team[0]||null;}
@@ -95,6 +129,9 @@ function paintDialogue(){
   $("dialogSpeaker").textContent=l.name.toUpperCase();
   $("dialogText").textContent=l.text;
   $("dialogAvatar").textContent=l.name==="BARRY"?"⚡":l.name.includes("SERBAL")?"✦":l.name==="MAMÁ"?"♥":l.name==="AYUDANTE"?"✿":"◈";
+  const pic=trainerPics[l.name.toUpperCase()];const photo=$("dialogCharacter");
+  if(pic){photo.src="https://play.pokemonshowdown.com/sprites/trainers/"+pic+".png";show("dialogCharacter");}
+  else hide("dialogCharacter");
 }
 function advanceDialogue(){
   if(!dialogOpen)return;dialogIndex++;tone(580,.04);
@@ -168,7 +205,7 @@ function createStarter(name){
 }
 function startGame(resume){
   state=resume&&saved?{...freshState(),...saved}:freshState();
-  if(!resume){try{localStorage.removeItem("sinnohRebornSaveV2");}catch(e){}}
+  if(!resume){try{localStorage.removeItem("sinnohRebornSaveV3");}catch(e){}}
   world.hero.root.position.set(state.pos.x,0,state.pos.z);
   cameraTarget.set(state.pos.x,1.1,state.pos.z);
   started=true;hide("intro");show("hud");show("leftHud");show("bottomHud");
