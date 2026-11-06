@@ -75,10 +75,10 @@ function displayCharacterArt(t){
   const cast=[];
   cast.push({key:"hero",trainer:"lucas",root:world.hero.root,rig:world.hero.rig});
   if(activeRoom){
-    const skins={mom:"lady",barryInside:"barry",barryMom:"lady",rowanLab:"rowan",aideLab:"dawn",neighborInside:"gentleman"};
+    const skins={mom:"lady",barryInside:"barry",barryMom:"lady",rowanLab:"rowan",aideLab:"dawn",neighborInside:"gentleman",healCenter:"nursejoy",shopBalls:"clerk",gymBattle:"roark"};
     for(const actor of activeRoom.triggers){if(actor.root&&skins[actor.kind])cast.push({key:"room-"+activeRoom.id+"-"+actor.kind,trainer:skins[actor.kind],root:actor.root,indoor:true});}
   }else{
-    const skins={barry:"barry",rowan:"rowan",aide:"dawn",neighbor:"lady"};
+    const skins={barry:"barry",rowan:"rowan",aide:"dawn",neighbor:"lady",gymLeader:"roark",trainer:"youngster",talk:"lass"};
     for(const actor of world.npcs){
       if(actor.model?.root.visible===false||!skins[actor.kind])continue;
       cast.push({key:"out-"+actor.kind,trainer:skins[actor.kind],root:actor.model.root,rig:actor.model.rig});
@@ -266,6 +266,7 @@ function switchPokemon(idx){
   if(battleBusy)return;
   const p=state.team[idx],previous=state.team[0];
   state.team[0]=p;state.team[idx]=previous;
+  if(battle)$("playerSprite").src=sprite(p.name);
   hide("teamModal");updateHud();save();
   if(battle){battleBusy=true;updateBattle();battleSay("¡Adelante, "+p.name+"!");tone(680,.1);setTimeout(()=>enemyTurn(),700);}
   else notify("✦ "+p.name+" ahora lidera tu equipo.");
@@ -570,7 +571,7 @@ async function enemyTurn(){
   await pause(450);
   if(p.hp<=0){
     const next=state.team.findIndex((mon,i)=>i>0&&mon.hp>0);
-    if(next>0){battleSay("¡"+p.name+" se ha debilitado! ¡El siguiente Pokémon entra al combate!");await pause(900);const other=state.team[next];state.team[next]=p;state.team[0]=other;updateHud();battleBusy=false;turn++;updateBattle();battleSay("¡Adelante, "+other.name+"!");}
+    if(next>0){battleSay("¡"+p.name+" se ha debilitado! ¡El siguiente Pokémon entra al combate!");await pause(900);const other=state.team[next];state.team[next]=p;state.team[0]=other;$("playerSprite").src=sprite(other.name);updateHud();battleBusy=false;turn++;updateBattle();battleSay("¡Adelante, "+other.name+"!");}
     else{battleSay("¡"+p.name+" se ha debilitado! Tu equipo necesita descansar.");await pause(1300);for(const mon of state.team)mon.hp=mon.maxHp;finishBattle(false);if(activeRoom&&activeRoom.id==="gym")exitRoom();notify("Tus Pokémon han recuperado sus fuerzas.");}
   }
   else{battleBusy=false;turn++;battleSay("¿Qué debería hacer "+p.name+"?");updateBattle();}
