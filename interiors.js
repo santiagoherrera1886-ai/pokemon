@@ -117,6 +117,47 @@ export function createInteriors(T) {
       add("Examinar la Pokédex",0,-1.7,"pokedex");
       add("Revisar investigación",-5,-1.6,"research");
       art(room,0,-5.56,0x456c76,0x6db5b8);
+    }else if(id==="center"){
+      // Pokémon Center: real usable healing desk, glowing sign and waiting area.
+      rug(room,0,.2,8.4,3.3,0xf0d2d1);
+      box(room,0,.90,-2.7,9.1,1.35,1.9,0xece5db);
+      box(room,0,1.64,-2.7,9.5,.22,2.2,0xd75b6a);
+      for(const xx of [-3.3,3.3])sphere(room,xx,2.09,-2.7,.38,0xffffff,2);
+      box(room,0,3.5,-5.51,3.9,1.65,.16,0xe8eeef);
+      box(room,0,3.5,-5.36,3.5,1.3,.16,0xe87272);
+      box(room,0,3.5,-5.26,2.45,.15,.19,0xffffff);
+      box(room,0,3.5,-5.26,.15,1.15,.20,0xffffff);
+      for(const x of [-5.45,5.45]){
+       box(room,x,.6,-.2,1.45,1.15,2.2,0x678f9f);
+       box(room,x,1.2,-.2,1.35,.26,2.2,0xacc6cf);
+       box(room,x,1.4,-3.9,1.9,2.4,1.4,0x7aa8b2);
+       sphere(room,x,3,-3.9,.32,0xe4f3f3,2);
+      }
+      const nurse=npc(room,"ENFERMERA JOY",0,-1.25,0xe57890);
+      add("Curar a tu equipo",0,-1.25,"healCenter",{root:nurse.root});
+      add("Consultar PC Pokémon",5,-2.0,"pokemonPc");
+    }else if(id==="mart"){
+      rug(room,0,0,7.5,3.9,0xa8bce1);
+      for(const x of [-5.5,5.5]){
+       for(let j=0;j<4;j++){box(room,x,.6+j*.83,-2.7,1.7,.17,4.8,0x6e92b3);
+         for(let k=0;k<6;k++){const z=-4.6+k*.75;box(room,x,.82+j*.83,z,.53,.5,.35,[0xf9dc7b,0xc4e3c5,0xecaa9f][(k+j)%3]);}}
+      }
+      box(room,0,1.0,-3.2,4.4,1.15,1.4,0x7b9cc0);
+      box(room,0,1.65,-3.2,4.6,.18,1.5,0xe3e7db);
+      const clerk=npc(room,"DEPENDIENTE",0,-2.0,0x4773b6);
+      add("Comprar Poké Balls",-.95,-1.5,"shopBalls",{root:clerk.root});
+      add("Comprar pociones",1.4,-1.5,"shopPotions");
+      add("Ver catálogo",5.5,0,"shopInfo");
+    }else if(id==="gym"){
+      rug(room,0,0,10.1,8.1,0xad9fa3);
+      box(room,0,.16,-1.55,10.7,.25,4.4,0x658093);
+      for(const x of [-5.1,5.1]){for(let z=-4;z<=2;z+=2){cylinder(room,x,1.4,z,.38,.45,2.8,0x657a85);sphere(room,x,3,z,.4,0xf6da99,1);}}
+      box(room,0,1.0,-4.65,4.8,2,.9,0x8b6b60);
+      box(room,0,2.0,-4.3,3.6,.4,.4,0xf1d2a0);
+      const leader=npc(room,"LÍDER DE GIMNASIO",0,-2.5,0x6f84bb);
+      add("Desafiar al líder",0,-2.2,"gymBattle",{root:leader.root});
+      add("Examinar medallas",4.7,-3.1,"gymInfo");
+      add("Consultar reglas",-4.8,-3.2,"gymRules");
     }else{
       rug(room,0,0,5.5,3.5,0x9cb7a0);
       box(room,0,.8,-2.2,3.4,.18,2.4,0x9a7b5d);
