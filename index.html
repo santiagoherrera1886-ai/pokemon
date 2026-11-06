@@ -43,6 +43,8 @@
       </div>
     </aside>
 
+    <div id="navigator" class="navigator hud hidden"><div class="nav-symbol" id="navArrow">↑</div><div><small>SIGUIENTE OBJETIVO</small><strong id="navTitle">Habla con mamá</strong><span id="navDistance">A 3 pasos</span></div></div>
+    <div id="radar" class="radar hud hidden" title="Minimapa de Sinnoh"><div class="radar-label">MAPA</div><div class="radar-field"><div id="radarLake" class="radar-lake"></div><div class="radar-home" style="left:62%;top:28%"></div><div class="radar-barry" style="left:30%;top:28%"></div><div class="radar-lab" style="left:75%;top:78%"></div><div id="radarTarget" class="radar-target"></div><div id="radarPlayer" class="radar-player"></div></div></div>
     <div id="interactHint" class="interact-hint hidden"><span class="keycap">E</span><span id="interactLabel">Hablar</span></div>
 
     <footer id="bottomHud" class="hud hidden">
@@ -58,20 +60,20 @@
         <h1>Un mundo<br><em>por descubrir.</em></h1>
         <p>Vuelve a Pueblo Hojaverde. Recorre rutas, encuentra Pokémon salvajes y comienza tu propia leyenda en un mundo 3D.</p>
         <div class="intro-buttons"><button id="startBtn" class="primary-btn"><span>Nueva aventura</span><span class="arrow">↗</span></button><button id="continueBtn" class="outline-btn hidden">Continuar partida →</button></div>
-        <div class="intro-features"><span>✧ MUNDO 3D</span><span>◉ COMBATES POR TURNOS</span><span>✦ GUARDADO AUTOMÁTICO</span></div>
+        <div class="intro-story-note">EPISODIO 01 · El lago, el maletín y tu primer Pokémon.</div><div class="intro-features"><span>✧ MUNDO 3D</span><span>◉ COMBATES POR TURNOS</span><span>✦ GUARDADO AUTOMÁTICO</span></div>
       </div>
       <div class="intro-bottom"><span>EDICIÓN DE PRUEBA · DESARROLLADO PARA NAVEGADOR</span><span>NO AFILIADO A NINTENDO / THE POKÉMON COMPANY</span></div>
     </section>
 
     <section id="dialog" class="dialog-panel hidden" aria-live="polite">
-      <div class="dialog-avatar" id="dialogAvatar">✦</div>
+      <div class="dialog-avatar" id="dialogAvatar">✦</div><img id="dialogCharacter" class="dialog-character hidden" alt="Retrato del personaje">
       <div class="dialog-body"><span id="dialogSpeaker">PROFESOR SERBAL</span><p id="dialogText"></p><small>Presiona ENTER o E para continuar <span class="dialog-caret">▼</span></small></div>
     </section>
 
     <section id="starterModal" class="modal-backdrop hidden">
       <div class="starter-modal">
         <div class="modal-kicker">PROFESOR SERBAL · LABORATORIO POKÉMON</div>
-        <h2>Elige a tu<br><em>compañero.</em></h2>
+        <h2>Tres Pokémon.<br><em>Un destino.</em></h2>
         <p>Tu primera elección marcará el comienzo de una gran historia.</p>
         <div class="starter-grid">
           <button class="starter-card leaf" data-starter="Turtwig"><span class="type">✿ PLANTA</span><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/387.png" alt="Turtwig"><strong>Turtwig</strong><small>El pequeño hoja</small><span class="select-arrow">ELEGIR ↗</span></button>
