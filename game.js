@@ -47,8 +47,8 @@ function enterRoom(id,fromStairs=false){
   const p=world.hero.root;
   if(!activeRoom){outsidePosition={x:p.position.x,z:p.position.z};}
   activeRoom=interiors.get(id);
-  activeRoom.scene.add(p);p.position.set(fromStairs?0:0,0,fromStairs?2.7:1.9);p.rotation.y=Math.PI;
-  cameraTarget.set(0,1.1,0);lastPos={x:0,z:1.9};stepDistance=0;cameraYaw=0;
+  activeRoom.scene.add(p);p.position.set(0,0,fromStairs?.9:.85);p.rotation.y=Math.PI;
+  cameraTarget.set(0,1.1,0);lastPos={x:0,z:.85};stepDistance=0;cameraYaw=0;
   camDistance=16;
   hide("interactHint");hide("radar");
   checkPosition();updateNavigation();save();
