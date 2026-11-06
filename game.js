@@ -48,7 +48,7 @@ function enterRoom(id,fromStairs=false){
   if(!activeRoom){outsidePosition={x:p.position.x,z:p.position.z};}
   activeRoom=interiors.get(id);
   activeRoom.scene.add(p);p.position.set(fromStairs?0:0,0,fromStairs?2.7:1.9);p.rotation.y=Math.PI;
-  cameraTarget.set(0,1.1,0);cameraYaw=0;
+  cameraTarget.set(0,1.1,0);lastPos={x:0,z:1.9};stepDistance=0;cameraYaw=0;
   camDistance=16;
   hide("interactHint");hide("radar");
   checkPosition();updateNavigation();save();
@@ -60,7 +60,7 @@ function exitRoom(){
   const door=world.portals.find(p=>p.id===id)||world.portals.find(p=>p.id==="home");
   scene.add(world.hero.root);activeRoom=null;
   world.hero.root.position.set(door.x,0,door.exitZ+.2);
-  outsidePosition={x:door.x,z:door.exitZ+.2};
+  outsidePosition={x:door.x,z:door.exitZ+.2};lastPos={x:door.x,z:door.exitZ+.2};stepDistance=0;
   cameraTarget.set(door.x,1.1,door.exitZ);
   cameraYaw=.64;camDistance=16;
   show("radar");checkPosition();updateNavigation();save();
@@ -108,7 +108,7 @@ function updateQuest(){
   $("questDescription").textContent=questData[state.quest][1];
   $("questProgress").style.width=Math.min(100,9+state.quest*13)+"%";
 }
-function nextQuest(index){if(index>state.quest){state.quest=index;updateQuest();notify("✦ "+questData[index][0]);chirp();save();}}
+function nextQuest(index){if(index>state.quest){state.quest=index;updateQuest();updateNavigation();notify("✦ "+questData[index][0]);chirp();save();}}
 function currentPokemon(){return state.team[0]||null;}
 function percent(n,max){return Math.max(0,Math.min(100,(n/(max||1))*100));}
 function paintBar(id,n,max){const el=$(id);el.style.width=percent(n,max)+"%";el.style.background=percent(n,max)>52?"#63ce82":percent(n,max)>23?"#e4b958":"#e97465";}
@@ -130,7 +130,7 @@ function paintDialogue(){
   $("dialogText").textContent=l.text;
   $("dialogAvatar").textContent=l.name==="BARRY"?"⚡":l.name.includes("SERBAL")?"✦":l.name==="MAMÁ"?"♥":l.name==="AYUDANTE"?"✿":"◈";
   const pic=trainerPics[l.name.toUpperCase()];const photo=$("dialogCharacter");
-  if(pic){photo.src="https://play.pokemonshowdown.com/sprites/trainers/"+pic+".png";show("dialogCharacter");}
+  if(pic){photo.onerror=()=>hide("dialogCharacter");photo.src="https://play.pokemonshowdown.com/sprites/trainers/"+pic+".png";show("dialogCharacter");}
   else hide("dialogCharacter");
 }
 function advanceDialogue(){
@@ -321,9 +321,10 @@ function randomEnemy(){
   const candidates=["Starly","Bidoof","Shinx","Kricketot","Budew"];
   return state.quest===2&&state.wins===0?"Starly":candidates[Math.floor(Math.random()*candidates.length)];
 }
-function encounter(){
+function encounter(forcedName=null,isScripted=false){
   if(battle||dialogOpen||!currentPokemon())return;
-  const name=randomEnemy(),lev=2+Math.floor(Math.random()*4),p=DATABASE[name];
+  const name=forcedName||randomEnemy(),lev=isScripted?3:2+Math.floor(Math.random()*4),p=DATABASE[name];
+  scriptedBattle=isScripted;
   const maxHp=p.max+Math.max(0,lev-3)*2;
   battle={name,level:lev,hp:maxHp,maxHp};
   turn=1;battleBusy=false;
@@ -376,7 +377,8 @@ function awardXp(){
 }
 function finishBattle(won,caught=false){
   if(!battle)return;
-  if(won){state.wins++;if(state.quest===2)nextQuest(3);}
+  if(won){state.wins++;if(state.quest===4&&scriptedBattle)nextQuest(5);}
+  scriptedBattle=false;
   battle=null;battleBusy=false;hide("battle");updateHud();save();
   if(won&&!caught)notify("¡Victoria! Tu equipo ha ganado experiencia.");
 }
@@ -448,20 +450,25 @@ document.addEventListener("visibilitychange",()=>{if(document.hidden)save();});
 window.addEventListener("beforeunload",save);
 window.addEventListener("resize",()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
 let pointerDown=false,lastPointerX=0,dragDistance=0;
-renderer.domElement.addEventListener("pointerdown",e=>{pointerDown=true;lastPointerX=e.clientX;dragDistance=0;});
+renderer.domElement.addEventListener("pointerdown",e=>{if(activeRoom)return;pointerDown=true;lastPointerX=e.clientX;dragDistance=0;});
 window.addEventListener("pointerup",()=>pointerDown=false);
 window.addEventListener("pointermove",e=>{if(!pointerDown)return;const dx=e.clientX-lastPointerX;cameraYaw-=dx*.005;lastPointerX=e.clientX;dragDistance+=Math.abs(dx);});
-renderer.domElement.addEventListener("wheel",e=>{e.preventDefault();camDistance=Math.max(15,Math.min(34,camDistance+e.deltaY*.016));},{passive:false});
+renderer.domElement.addEventListener("wheel",e=>{e.preventDefault();if(!activeRoom)camDistance=Math.max(11,Math.min(27,camDistance+e.deltaY*.014));},{passive:false});
 function canMove(){return started&&!battle&&!dialogOpen&&["intro","starterModal","teamModal","helpModal"].every(id=>$(id).classList.contains("hidden"));}
 function collides(x,z){
+  if(activeRoom)return activeRoom.collides(x,z);
   if(x<-41||x>41||z<-41||z>41)return true;
-  for(const o of world.obstacles){if(Math.hypot(x-o.x,z-o.z)<o.r+.25)return true;}return false;
+  for(const o of world.obstacles){
+    if(o.kind==="building"){if(Math.abs(x-o.x)<o.w+.18&&Math.abs(z-o.z)<o.d+.18)return true;}
+    else if(Math.hypot(x-o.x,z-o.z)<o.r+.25)return true;
+  }
+  return false;
 }
 function move(dt,t){
   const f=(keys.has("w")||keys.has("arrowup")?1:0)-(keys.has("s")||keys.has("arrowdown")?1:0);
   const r=(keys.has("d")||keys.has("arrowright")?1:0)-(keys.has("a")||keys.has("arrowleft")?1:0);
   if(!f&&!r){world.hero.walk(t,false);return;}
-  const speed=keys.has("shift")?8.0:5.1,mag=Math.hypot(f,r);
+  const speed=keys.has("shift")?state.shoes?8.8:6.0:5.1,mag=Math.hypot(f,r);
   const forward=new THREE.Vector2(-Math.sin(cameraYaw),-Math.cos(cameraYaw)),right=new THREE.Vector2(Math.cos(cameraYaw),-Math.sin(cameraYaw));
   const dx=(forward.x*f+right.x*r)/mag*speed*dt,dz=(forward.y*f+right.y*r)/mag*speed*dt;
   const p=world.hero.root.position;
@@ -471,7 +478,7 @@ function move(dt,t){
   world.hero.walk(t,true);
   const moved=Math.hypot(p.x-lastPos.x,p.z-lastPos.z);
   if(moved>.08){stepDistance+=moved;lastPos={x:p.x,z:p.z};}
-  if(stepDistance>3){stepDistance=0;if(state.starter&&world.grassAt(p.x,p.z)&&Math.random()<.28)encounter();}
+  if(stepDistance>3){stepDistance=0;if(!activeRoom&&state.starter&&state.quest>=5&&world.grassAt(p.x,p.z)&&Math.random()<.25)encounter();}
 }
 let hintTick=0,autosaveTick=0;
 function frame(){
@@ -481,14 +488,14 @@ function frame(){
   else world.hero.walk(t,false);
   world.animate(t,state.quest);
   const pos=world.hero.root.position;
-  cameraTarget.lerp(new THREE.Vector3(pos.x,1.2,pos.z),Math.min(1,dt*3.2));
+  cameraTarget.lerp(new THREE.Vector3(pos.x,activeRoom?1.0:1.2,pos.z),Math.min(1,dt*(activeRoom?6:3.2)));
   let yaw=cameraYaw;
   if(!started)yaw=.65+Math.sin(t*.18)*.06;
-  const newPos=new THREE.Vector3(cameraTarget.x+Math.sin(yaw)*camDistance,cameraTarget.y+camDistance*.73,cameraTarget.z+Math.cos(yaw)*camDistance);
+  const newPos=new THREE.Vector3(cameraTarget.x+Math.sin(yaw)*(activeRoom?13:camDistance),cameraTarget.y+(activeRoom?13:camDistance*.62),cameraTarget.z+Math.cos(yaw)*(activeRoom?13:camDistance));
   camera.position.lerp(newPos,Math.min(1,dt*2.8));camera.lookAt(cameraTarget);
-  renderer.render(scene,camera);
+  renderer.render(activeRoom?.scene||scene,camera);
   if(started){hintTick+=dt;autosaveTick+=dt;
-    if(hintTick>.24){hintTick=0;checkPosition();if(canMove()){const n=closestInteract();if(n){$("interactLabel").textContent="Hablar · "+n.name;show("interactHint");}else hide("interactHint");}else hide("interactHint");}
+    if(hintTick>.24){hintTick=0;checkPosition();updateNavigation();world.npcs.filter(n=>n.kind==="barry").forEach(n=>n.model.root.visible=state.quest>=2);if(canMove()){const n=closestInteract();if(n){$("interactLabel").textContent="Hablar · "+n.name;show("interactHint");}else hide("interactHint");}else hide("interactHint");}
     if(autosaveTick>12){autosaveTick=0;save();}
   }
 }
