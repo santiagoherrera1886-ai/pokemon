@@ -27,6 +27,7 @@
       <div class="location-pill"><span class="loc-dot"></span><span id="placeName">Pueblo Hojaverde</span><span class="sun-icon">☀</span><span>17:24</span></div>
       <div class="top-actions">
         <button id="soundToggle" class="icon-button" title="Activar / desactivar sonido" aria-label="Sonido">♫</button>
+        <button id="mapToggle" class="icon-button" title="Mapa de Sinnoh (M)" aria-label="Mapa de Sinnoh">⌖</button>
         <button id="helpToggle" class="icon-button" title="Controles" aria-label="Controles">?</button>
       </div>
     </header>
@@ -49,8 +50,8 @@
     <div id="interactHint" class="interact-hint hidden"><span class="keycap">E</span><span id="interactLabel">Hablar</span></div>
 
     <footer id="bottomHud" class="hud hidden">
-      <div class="controls-caption"><div class="control-keys"><span>W</span><div><span>A</span><span>S</span><span>D</span></div></div><div><strong>MOVERSE</strong><small>Shift correr · E hablar · R equipo</small></div></div>
-      <div class="bottom-right"><div class="mini-info"><span class="pokeball-small">◉</span> <span id="ballCount">05</span> <small>Poké Balls</small></div><button id="teamToggle" class="hud-button">☷ <span>Equipo</span> <kbd>R</kbd></button></div>
+      <div class="controls-caption"><div class="control-keys"><span>W</span><div><span>A</span><span>S</span><span>D</span></div></div><div><strong>MOVERSE</strong><small>Shift correr · E hablar · R equipo · M mapa</small></div></div>
+      <div class="bottom-right"><div class="mini-info"><span class="pokeball-small">◉</span> <span id="ballCount">05</span> <small>Poké Balls</small></div><button id="mapButton" class="hud-button">◇ <span>Mapa</span> <kbd>M</kbd></button><button id="teamToggle" class="hud-button">☷ <span>Equipo</span> <kbd>R</kbd></button></div>
     </footer>
 
     <section id="intro" class="intro-cover" aria-label="Menú principal">
@@ -99,8 +100,28 @@
       <div class="team-modal"><button id="teamClose" class="modal-close">✕</button><div class="modal-kicker">ENTRENADOR · SINNOH</div><h2>Mi equipo.</h2><div id="teamList" class="team-list"></div><div class="inventory-row"><span>◉ Poké Balls</span><strong id="inventoryBalls">5</strong></div><button id="healBtn" class="outline-btn">Usar poción (+20 PS) <small id="potionCount">x 3</small></button><p class="team-hint">La partida se guarda automáticamente en este navegador.</p></div>
     </section>
 
+
+    <section id="mapModal" class="modal-backdrop hidden" aria-label="Mapa de Sinnoh">
+      <div class="regional-map">
+        <div class="regional-heading">
+          <div><div class="modal-kicker">POKÉNAV · REGIÓN DE SINNOH</div><h2>Tu aventura<br><em>no tiene límites.</em></h2><p>Explora las rutas y descubre las ciudades. Las localidades visitadas se iluminan a medida que avanzas.</p></div>
+          <button id="mapClose" class="modal-close" title="Cerrar mapa">✕</button>
+        </div>
+        <div class="regional-body">
+          <div id="sinnohMap" class="sinnoh-map" aria-label="Mapa regional interactivo"></div>
+          <aside class="regional-info">
+            <div class="regional-info-top"><span id="mapRegionKind">REGIÓN DE SINNOH</span><h3 id="mapRegionTitle">Pueblo Hojaverde</h3><p id="mapRegionDesc">Tu hogar. Aquí comienza el viaje.</p></div>
+            <div class="regional-progress"><div>RUTAS EXPLORADAS <strong id="visitedCounter">01 / 14</strong></div><div class="regional-progress-track"><div id="visitedBar"></div></div></div>
+            <div class="badge-heading">MEDALLAS DE GIMNASIO <span id="badgeCounter">0 / 8</span></div>
+            <div id="badgeList" class="badge-collection"></div>
+            <p class="map-tip">Utiliza WASD para viajar por los caminos. El mapa sirve para orientarte; no teletransporta a zonas sin descubrir.</p>
+          </aside>
+        </div>
+        <div class="regional-footer"><span><i class="legend-dot current"></i> TU POSICIÓN</span><span><i class="legend-dot discovered"></i> DESCUBIERTO</span><span><i class="legend-dot unknown"></i> SIN EXPLORAR</span><span>ESC para volver al juego</span></div>
+      </div>
+    </section>
     <section id="helpModal" class="modal-backdrop hidden">
-      <div class="help-modal"><button id="helpClose" class="modal-close">✕</button><div class="modal-kicker">MANUAL DE ENTRENADOR</div><h2>Cómo jugar</h2><div class="help-grid"><div><kbd>W A S D</kbd><span>Caminar por el mundo</span></div><div><kbd>↑ ← ↓ →</kbd><span>También mueven</span></div><div><kbd>SHIFT</kbd><span>Correr más rápido</span></div><div><kbd>E / ENTER</kbd><span>Hablar e interactuar</span></div><div><kbd>R</kbd><span>Abrir tu equipo</span></div><div><kbd>RATÓN</kbd><span>Rueda: zoom / arrastra: cámara</span></div><div><kbd>ESC</kbd><span>Cerrar ventanas</span></div></div><p>Explora el pueblo, habla con Barry y busca al Profesor Serbal cerca del lago. En la hierba alta podrás encontrar Pokémon salvajes.</p></div>
+      <div class="help-modal"><button id="helpClose" class="modal-close">✕</button><div class="modal-kicker">MANUAL DE ENTRENADOR</div><h2>Cómo jugar</h2><div class="help-grid"><div><kbd>W A S D</kbd><span>Caminar por el mundo</span></div><div><kbd>↑ ← ↓ →</kbd><span>También mueven</span></div><div><kbd>SHIFT</kbd><span>Correr más rápido</span></div><div><kbd>E / ENTER</kbd><span>Hablar e interactuar</span></div><div><kbd>R</kbd><span>Abrir tu equipo</span></div><div><kbd>M</kbd><span>Abrir el mapa completo de Sinnoh</span></div><div><kbd>RATÓN</kbd><span>Rueda: zoom / arrastra: cámara</span></div><div><kbd>ESC</kbd><span>Cerrar ventanas</span></div></div><p>Explora el pueblo, habla con Barry y busca al Profesor Serbal cerca del lago. En la hierba alta podrás encontrar Pokémon salvajes.</p></div>
     </section>
 
     <div id="toast" class="toast hidden"><span>✦</span><strong id="toastText">¡Misión completada!</strong></div>
