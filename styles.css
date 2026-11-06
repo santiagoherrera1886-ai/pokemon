@@ -22,3 +22,8 @@
 #questDescription{font-size:12px}
 @media(max-width:950px){.radar{width:142px;height:161px}.radar-field{width:122px;height:122px}.navigator{bottom:80px}}
 @media(max-width:650px){.navigator{left:50%;bottom:75px;max-width:240px;min-width:195px;padding:7px 10px;gap:8px}.nav-symbol{width:35px;height:35px;font-size:24px}.navigator strong{font-size:11px}.navigator small{font-size:7px}.radar{top:100px;right:12px;width:107px;height:119px;padding:6px;border-radius:10px}.radar-label{font-size:7px;margin:0 0 4px 3px}.radar-field{width:93px;height:93px}.dialog-character{width:55px;height:75px}.dialog-panel{min-height:110px}.intro-story-note{font-size:10px}}
+
+/* Cross-origin-safe HTML trainer character standees for recognizable Gen IV outfits. */
+.character-sprites{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden}
+.character-sprites img{position:absolute;display:block;object-fit:contain;image-rendering:pixelated;transform:translate(-50%,-88%);filter:drop-shadow(0px 8px 6px rgba(16,54,52,.25));will-change:left,top,width,height;pointer-events:none}
+.character-sprites img.hidden-sprite{display:none}
