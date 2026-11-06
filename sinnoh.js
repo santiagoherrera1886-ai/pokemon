@@ -301,7 +301,10 @@ export function expandSinnoh(T,scene,world){
  const creatures=[
   ["Starly",396],["Bidoof",399],["Shinx",403],["Kricketot",401],
   ["Budew",406],["Geodude",74],["Machop",66],["Roselia",315],
-  ["Magikarp",129],["Psyduck",54],["Buizel",418],["Pachirisu",417]
+  ["Magikarp",129],["Psyduck",54],["Buizel",418],["Pachirisu",417],
+  ["Zubat",41],["Ponyta",77],["Gible",443],["Snover",459],["Buneary",427],
+  ["Drifloon",425],["Shellos",422],["Croagunk",453],["Bronzor",436],["Riolu",447],
+  ["Combee",415],["Cherubi",420],["Sneasel",215]
  ];
  const spriteCache=new Map(),textureLoader=new T.TextureLoader();
  textureLoader.setCrossOrigin("anonymous");
@@ -314,14 +317,17 @@ export function expandSinnoh(T,scene,world){
       }
    },undefined,()=>{});
  }
- for(let i=0;i<84;i++){
+ for(let i=0;i<215;i++){
    const zone=PLACES[2+Math.floor(random()*(PLACES.length-2))];
    const angle=random()*6.283,rad=zone.radius+9+random()*48;
    const x=zone.x+Math.cos(angle)*rad,z=zone.z+Math.sin(angle)*rad;
    if(nearbyRoad(x,z,5)||withinCity(x,z,7))continue;
    let selected=creatures[Math.floor(random()*creatures.length)];
-   if(zone.type==="snow")selected=["Pachirisu",417];
-   if(zone.type==="coastal"&&random()>.5)selected=["Buizel",418];
+   if(zone.type==="snow")selected=random()>.4?["Snover",459]:["Sneasel",215];
+   if(zone.type==="flower")selected=random()>.45?["Cherubi",420]:["Combee",415];
+   if(zone.type==="mining")selected=random()>.45?["Geodude",74]:["Zubat",41];
+   if(zone.type==="coastal")selected=random()>.4?["Buizel",418]:["Shellos",422];
+   if(zone.type==="marsh")selected=random()>.4?["Croagunk",453]:["Psyduck",54];
    const [name,pokedex]=selected;
    const root=new T.Group();root.position.set(x,0,z);scene.add(root);
    const shadow=new T.Mesh(new T.CircleGeometry(.68,20),new T.MeshBasicMaterial({color:0x284d40,transparent:true,opacity:.2,depthWrite:false}));
