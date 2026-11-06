@@ -326,7 +326,7 @@ function move(dt,t){
   const p=world.hero.root.position;
   if(!collides(p.x+dx,p.z))p.x+=dx;
   if(!collides(p.x,p.z+dz))p.z+=dz;
-  const facing=Math.atan2(-dx,-dz);world.hero.root.rotation.y=facing;
+  const facing=Math.atan2(dx,dz);world.hero.root.rotation.y=facing;
   world.hero.walk(t,true);
   const moved=Math.hypot(p.x-lastPos.x,p.z-lastPos.z);
   if(moved>.08){stepDistance+=moved;lastPos={x:p.x,z:p.z};}
