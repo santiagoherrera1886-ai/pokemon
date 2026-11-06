@@ -19,6 +19,14 @@ export function createInteriors(T) {
       const leg=box(root,v*.2,.49,0,.25,.89,.31,0x364966);
       const arm=box(root,v*.53,1.32,0,.23,.83,.30,color);arm.rotation.z=v*.1;}
     box(root,0,.12,.15,.8,.19,.50,0x424d4c);
+    const trainer=name==="BARRY"?"barry":name==="PROF. SERBAL"?"rowan":name==="LUCAS / MAYA"?"dawn":name==="MAMÁ"?"lady":name==="MADRE DE BARRY"?"lady":"gentleman";
+    const loader=new T.TextureLoader();loader.setCrossOrigin("anonymous");
+    loader.load("https://play.pokemonshowdown.com/sprites/trainers/"+trainer+".png",tex=>{
+      tex.colorSpace=T.SRGBColorSpace;tex.minFilter=T.NearestFilter;tex.magFilter=T.NearestFilter;tex.generateMipmaps=false;
+      for(const child of [...root.children])child.visible=false;
+      const sp=new T.Sprite(new T.SpriteMaterial({map:tex,transparent:true,alphaTest:.05,depthTest:true,depthWrite:false}));
+      sp.scale.set(3.7,3.7,1);sp.position.y=1.9;root.add(sp);
+    });
     return {name,x,z,root,kind:"actor"};
   }
   function make(id){
