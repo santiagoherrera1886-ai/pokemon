@@ -37,6 +37,62 @@ const camera=new THREE.PerspectiveCamera(43,window.innerWidth/window.innerHeight
 const hemi=new THREE.HemisphereLight(0xe3fbff,0x6e8e57,2.25);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xffe5b7,3.7);sun.position.set(-22,45,21);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-51;sun.shadow.camera.right=51;sun.shadow.camera.top=51;sun.shadow.camera.bottom=-51;sun.shadow.camera.near=.5;sun.shadow.camera.far=125;sun.shadow.bias=-.00012;sun.shadow.normalBias=.035;scene.add(sun);
 const world=buildWorld(THREE,scene);
+
+const trainerLayer=$("characterSprites");
+const trainerElements=new Map();
+function trainerElement(key,trainer){
+  let el=trainerElements.get(key);
+  if(el)return el;
+  el=document.createElement("img");
+  el.alt="";
+  el.className="hidden-sprite";
+  el.dataset.ready="0";
+  el.onload=()=>{el.dataset.ready="1";};
+  el.onerror=()=>{el.dataset.ready="0";el.classList.add("hidden-sprite");};
+  el.src="https://play.pokemonshowdown.com/sprites/trainers/"+trainer+".png";
+  trainerLayer.appendChild(el);
+  trainerElements.set(key,el);
+  return el;
+}
+function displayCharacterArt(t){
+  const cast=[];
+  cast.push({key:"hero",trainer:"lucas",root:world.hero.root,rig:world.hero.rig});
+  if(activeRoom){
+    const skins={mom:"lady",barryInside:"barry",barryMom:"lady",rowanLab:"rowan",aideLab:"dawn",neighborInside:"gentleman"};
+    for(const actor of activeRoom.triggers){if(actor.root&&skins[actor.kind])cast.push({key:"room-"+activeRoom.id+"-"+actor.kind,trainer:skins[actor.kind],root:actor.root,indoor:true});}
+  }else{
+    const skins={barry:"barry",rowan:"rowan",aide:"dawn",neighbor:"lady"};
+    for(const actor of world.npcs){
+      if(actor.model?.root.visible===false||!skins[actor.kind])continue;
+      cast.push({key:"out-"+actor.kind,trainer:skins[actor.kind],root:actor.model.root,rig:actor.model.rig});
+    }
+  }
+  const visible=new Set();
+  for(const actor of cast){
+    const el=trainerElement(actor.key,actor.trainer);
+    if(el.dataset.ready!=="1")continue;
+    actor.root.updateWorldMatrix(true,false);
+    const pos=new THREE.Vector3(0,.12,0).applyMatrix4(actor.root.matrixWorld);
+    const projected=pos.clone().project(camera);
+    if(projected.z>1||projected.z< -1||Math.abs(projected.x)>1.25||Math.abs(projected.y)>1.25){el.classList.add("hidden-sprite");continue;}
+    // Hide the backup geometry only when the 2D art really loaded.
+    if(actor.rig)actor.rig.visible=false;
+    if(actor.indoor)for(const node of actor.root.children)node.visible=false;
+    else for(const node of actor.root.children)if(node.isSprite&&node.position.y<3.2)node.visible=false;
+    visible.add(actor.key);
+    const dist=Math.max(5,camera.position.distanceTo(pos));
+    const scale=Math.max(.68,Math.min(1.7,16/dist));
+    const width=150*scale,height=184*scale;
+    const bob=actor.key==="hero"&&keys.size>0?Math.abs(Math.sin(t*10))*4:Math.sin(t*2)*1.2;
+    el.style.left=((projected.x*.5+.5)*innerWidth).toFixed(1)+"px";
+    el.style.top=((-projected.y*.5+.5)*innerHeight-bob).toFixed(1)+"px";
+    el.style.width=width.toFixed(1)+"px";
+    el.style.height=height.toFixed(1)+"px";
+    el.classList.remove("hidden-sprite");
+  }
+  for(const [key,el] of trainerElements)if(!visible.has(key))el.classList.add("hidden-sprite");
+}
+
 const interiors=createInteriors(THREE);
 let activeRoom=null;
 let outsidePosition={x:12,z:19.5};
@@ -511,6 +567,7 @@ function frame(){
   const newPos=new THREE.Vector3(cameraTarget.x+Math.sin(yaw)*(activeRoom?13:camDistance),cameraTarget.y+(activeRoom?13:camDistance*.62),cameraTarget.z+Math.cos(yaw)*(activeRoom?13:camDistance));
   camera.position.lerp(newPos,Math.min(1,dt*2.8));camera.lookAt(cameraTarget);
   renderer.render(activeRoom?.scene||scene,camera);
+  displayCharacterArt(t);
   if(started){hintTick+=dt;autosaveTick+=dt;
     if(hintTick>.24){hintTick=0;checkPosition();updateNavigation();world.npcs.filter(n=>n.kind==="barry").forEach(n=>n.model.root.visible=state.quest>=2);if(canMove()){const n=closestInteract();if(n){$("interactLabel").textContent="Hablar · "+n.name;show("interactHint");}else hide("interactHint");}else hide("interactHint");}
     if(autosaveTick>12){autosaveTick=0;save();}
