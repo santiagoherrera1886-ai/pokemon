@@ -72,7 +72,7 @@ export function createInteriors(T) {
       box(room,2.5,1.0,-5.23,2.3,1.65,.58,0x836f63);
       box(room,2.5,1.18,-4.87,1.92,1.18,.13,0x1d3b49);box(room,2.5,1.2,-4.78,1.67,.92,.05,0x75b3cd);
       sphere(room,2.5,1.24,-4.65,.32,0xf3d3a2,1);
-      const mom=npc(room,"MAMÁ",1.7,.8,0xbc6b7e);add("Hablar con mamá",mom.x,mom.z,"mom");
+      const mom=npc(room,"MAMÁ",1.7,.8,0xbc6b7e);add("Hablar con mamá",mom.x,mom.z,"mom",{root:mom.root});
       // staircase to personal bedroom
       for(let i=0;i<6;i++)box(room,-5.8,.19+i*.16,-5+i*.6,2,.25,.6,0x9a7355);
       add("Subir a tu habitación",-5.0,-3.9,"stairsUp");
@@ -100,8 +100,8 @@ export function createInteriors(T) {
       box(room,3,.7,-1.6,2.5,1.2,2.3,0xb78d60);box(room,3,1.35,-1.5,2.45,.16,2.3,0xd6b07a);
       box(room,-4,1.3,-4.92,2.5,2.5,.7,0x8e784d);box(room,-4,2.2,-4.55,2.4,.07,.7,0xf8d6a2);
       for(let i=0;i<8;i++){const x=-4.9+(i%4)*.6,y=1.6+Math.floor(i/4)*1.1;box(room,x,y,-4.5,.35,.72,.35,[0xca6b5f,0x729eaf,0xe5b56b,0xb57c8b][i%4]);}
-      const barry=npc(room,"BARRY",-1.4,-.7,0xe1a63d);add("Hablar con Barry",-1.4,-.7,"barryInside");
-      const older=npc(room,"MADRE DE BARRY",4.7,1.2,0x75b29a);add("Hablar con la madre de Barry",4.7,1.2,"barryMom");
+      const barry=npc(room,"BARRY",-1.4,-.7,0xe1a63d);add("Hablar con Barry",-1.4,-.7,"barryInside",{root:barry.root});
+      const older=npc(room,"MADRE DE BARRY",4.7,1.2,0x75b29a);add("Hablar con la madre de Barry",4.7,1.2,"barryMom",{root:older.root});
       add("Examinar libros",-4,-3.1,"books");
       art(room,.6,-5.56,0x9b6c51,0x92bd93);
     }else if(id==="lab"){
@@ -112,8 +112,8 @@ export function createInteriors(T) {
       for(const x of [-1.1,0,1.1]){sphere(room,x,1.35,-3,.29,0xf1e6d4,2);sphere(room,x,1.35,-2.75,.18,0xdc6665,2);}
       for(const x of [-5.3,5.3]){box(room,x,1.55,-3.1,1.4,3.05,1.5,0x678e98);box(room,x,1.7,-2.30,1.05,1.25,.12,0x244f67);box(room,x,1.75,-2.22,.78,.9,.03,0x80d2c5);}
       for(let i=0;i<8;i++){sphere(room,-6.8+i*1.9,.55,-4.9,.16,0x93bfd5,2);}
-      const rowan=npc(room,"PROF. SERBAL",-2.6,.5,0xe5e5dd);add("Hablar con el Profesor Serbal",-2.6,.5,"rowanLab");
-      const aide=npc(room,"LUCAS / MAYA",3,.6,0x648cac);add("Hablar con el ayudante",3,.6,"aideLab");
+      const rowan=npc(room,"PROF. SERBAL",-2.6,.5,0xe5e5dd);add("Hablar con el Profesor Serbal",-2.6,.5,"rowanLab",{root:rowan.root});
+      const aide=npc(room,"LUCAS / MAYA",3,.6,0x648cac);add("Hablar con el ayudante",3,.6,"aideLab",{root:aide.root});
       add("Examinar la Pokédex",0,-1.7,"pokedex");
       add("Revisar investigación",-5,-1.6,"research");
       art(room,0,-5.56,0x456c76,0x6db5b8);
@@ -122,7 +122,7 @@ export function createInteriors(T) {
       box(room,0,.8,-2.2,3.4,.18,2.4,0x9a7b5d);
       box(room,0,.38,-2.2,2.8,.75,1.8,0xd7bf9d);
       for(const x of [-4.6,4.6]){cylinder(room,x,.8,-3,.35,.35,1.5,0x715c4a);sphere(room,x,1.7,-3,.8,0x5f9c72);}
-      const citizen=npc(room,"VECINO",2,1,0x7ca8b4);add("Hablar con el vecino",2,1,"neighborInside");
+      const citizen=npc(room,"VECINO",2,1,0x7ca8b4);add("Hablar con el vecino",2,1,"neighborInside",{root:citizen.root});
     }
     const data={scene:room,id,triggers,blocks,entry:{x:0,z:1.8},find(x,z){let candidate=null,d=2.65;for(const n of this.triggers){const cur=Math.hypot(x-n.x,z-n.z);if(cur<d){d=cur;candidate=n;}}return candidate;},collides(x,z){return x<-6.55||x>6.55||z<-5.1||z>4.6;}};
     rooms.set(id,data);return data;
