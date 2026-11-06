@@ -17,7 +17,7 @@ const DATABASE={
   Budew:{id:406,type:"Planta",move:"Absorber",power:6,max:16}
 };
 const sprite=name=>SPRITE_ROOT+(DATABASE[name]?.id||396)+".png";
-const freshState=()=>({quest:0,starter:null,team:[],balls:5,potions:3,seen:[],caught:[],wins:0,pos:{x:12,z:19.5},room:"home",sound:true,shoes:false,pokedex:false,scriptedBattle:false});
+const freshState=()=>({quest:0,starter:null,team:[],balls:5,potions:3,seen:[],caught:[],wins:0,pos:{x:12,z:19.5},room:"bedroom",sound:true,shoes:false,pokedex:false,scriptedBattle:false});
 let state=freshState(),saved=null,started=false,battle=null,battleBusy=false,turn=1;
 let dialogQueue=[],dialogIndex=0,dialogAfter=null,dialogOpen=false,toastTimeout;
 const keys=new Set();
@@ -69,7 +69,7 @@ function exitRoom(){
 let cameraYaw=.65,camDistance=16,cameraTarget=new THREE.Vector3(12,1,19.5),lastPos={x:12,z:19.5},stepDistance=0,locationTimer=0;
 const clock=new THREE.Clock();
 const questData=[
-  ["El comienzo de todo","Estás en casa, en Pueblo Hojaverde. Habla con mamá para saber qué ocurre."],
+  ["Noticias del Gyarados rojo","Baja desde tu habitación al salón y habla con mamá sobre la noticia."],
   ["¡Barry te necesita!","Ve a la casa de Barry, la de tejado rojo, y habla con él en el interior."],
   ["El misterio del lago","Barry quiere investigar el Lago Veraz. Busca un maletín olvidado junto al agua."],
   ["Tres Pokémon, un destino","Abre el maletín y elige a tu primer compañero Pokémon."],
@@ -311,9 +311,10 @@ function startGame(resume){
   updateQuest();updateHud();checkPosition();updateNavigation();chirp();save();
   if(!resume){
     openDialogue([
-      {name:"NARRADOR",text:"SINNOH · PUEBLO HOJAVERDE. La mañana comienza frente al televisor, con una noticia que inquieta a toda la región."},
-      {name:"NARRADOR",text:"Un equipo científico investiga rumores sobre un extraño Gyarados rojo. Un mundo lleno de criaturas misteriosas parece estar llamándote."},
-      {name:"NARRADOR",text:"Mamá te espera en el salón. Habla con ella pulsando E cuando estés cerca. ¡El viaje empieza aquí!"}
+      {name:"NARRADOR",text:"SINNOH · PUEBLO HOJAVERDE. Estás en tu habitación, viendo las noticias en la televisión."},
+      {name:"TELEVISOR",text:"«¡El misterio del Gyarados rojo!» Una expedición ha buscado un ejemplar de color distinto en un lago lejano, sin obtener resultados."},
+      {name:"BARRY",text:"¡Eh, por fin estás despierto! ¿Has visto eso? ¡Apuesto a que nuestro lago también esconde un Pokémon increíble! ¡Nos vemos pronto!"},
+      {name:"NARRADOR",text:"Barry sale corriendo. Baja al salón y habla con mamá. Usa WASD y pulsa E junto a las escaleras."}
     ]);
   }else notify("Partida recuperada. Tu aventura continúa.");
 }
@@ -365,7 +366,7 @@ async function enemyTurn(){
   const damage=Math.max(2,Math.floor(2+battle.level*.9+Math.random()*4-p.level*.12));
   p.hp=Math.max(0,p.hp-damage);updateBattle();
   await pause(450);
-  if(p.hp<=0){battleSay("¡"+p.name+" se ha debilitado! Volveréis a casa para descansar.");await pause(1700);p.hp=p.maxHp;world.hero.root.position.set(-6,0,21);finishBattle(false);notify("Tus Pokémon se han recuperado en casa.");}
+  if(p.hp<=0){battleSay("¡"+p.name+" se ha debilitado! Volveréis a casa para descansar.");await pause(1700);p.hp=p.maxHp;world.hero.root.position.set(12,0,19.5);outsidePosition={x:12,z:19.5};finishBattle(false);notify("Tus Pokémon se han recuperado en casa.");}
   else{battleBusy=false;turn++;battleSay("¿Qué debería hacer "+p.name+"?");updateBattle();}
 }
 function awardXp(){
