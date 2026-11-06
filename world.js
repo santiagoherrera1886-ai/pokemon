@@ -17,8 +17,8 @@ export function buildWorld(T, scene) {
   // Faded textured grass across the whole world: no tiled checkerboard.
   const cv=document.createElement("canvas");cv.width=cv.height=512;const cx=cv.getContext("2d");cx.fillStyle="#90bd75";cx.fillRect(0,0,512,512);
   for(let i=0;i<6500;i++){const x=rng()*512,y=rng()*512,r=rng()*3+.5;cx.fillStyle=i%2?"rgba(29,82,39,.06)":"rgba(248,236,158,.06)";cx.fillRect(x,y,r,r*2);}
-  const grassTex=new T.CanvasTexture(cv);grassTex.wrapS=grassTex.wrapT=T.RepeatWrapping;grassTex.repeat.set(10,10);grassTex.colorSpace=T.SRGBColorSpace;
-  mesh(new T.PlaneGeometry(120,120),new T.MeshStandardMaterial({map:grassTex,roughness:1}),scene,0,-.04,0,false,true).rotation.x=-Math.PI/2;
+  const grassTex=new T.CanvasTexture(cv);grassTex.wrapS=grassTex.wrapT=T.RepeatWrapping;grassTex.repeat.set(110,110);grassTex.colorSpace=T.SRGBColorSpace;
+  mesh(new T.PlaneGeometry(1400,1400),new T.MeshStandardMaterial({map:grassTex,roughness:1}),scene,0,-.04,0,false,true).rotation.x=-Math.PI/2;
   // Paved lanes cut through town and toward Lake Verity.
   function lane(x,z,w,d){box(scene,w,.045,d,pathMat,x,.007,z);const strips=Math.max(5,Math.floor(w*d/13));for(let i=0;i<strips;i++){let xx=x+(rng()-.5)*w*.9,zz=z+(rng()-.5)*d*.9;const s=patch(xx,zz,.13+rng()*.38,.08+rng()*.23,i%2?0xd3b995:0xe0cda9);s.position.y=.034;}}
   lane(-.5,2,5.7,81);lane(-2.5,21.5,47,3.8);lane(-15,-19,33,4.4);lane(19,-19,39,4.4);lane(24,-22,3.2,9);
