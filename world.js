@@ -2,7 +2,7 @@
 export function buildWorld(T, scene) {
   let seed = 12873;
   function rng(){ seed=(seed*1664525+1013904223)>>>0; return seed/4294967296; }
-  function mat(c, roughness=1, metalness=0){return new T.MeshStandardMaterial({color:c,roughness,metalness});}
+  const materialCache=new Map();function mat(c, roughness=1, metalness=0){const key=c+'-'+roughness+'-'+metalness;if(!materialCache.has(key))materialCache.set(key,new T.MeshStandardMaterial({color:c,roughness,metalness}));return materialCache.get(key);}
   const grassMat=mat(0x7eaf69), pathMat=mat(0xd8c3a0), wood=mat(0x85543b), paleWood=mat(0xb47a55), rockMat=mat(0xa8b4a0);
   const obstacles=[], npcs=[], spots=[], leaves=[], clouds=[], animated=[], butterflies=[];
   function mesh(geo, material, parent=scene,x=0,y=0,z=0,cast=true,receive=true){
@@ -72,7 +72,7 @@ export function buildWorld(T, scene) {
     sphere(root,1.18,c,.58,2.8,-.25,1);sphere(root,1.04,0x75bd78,0,3.9,.12,1);
     obstacles.push({x,z,r:1.05*scale});leaves.push({root,t:rng()*6});return root;}
   // Ecological border; deliberate gap for paths, lake and village.
-  for(let i=0;i<190;i++){const x=(rng()-.5)*87,z=(rng()-.5)*87;let blocked=false;
+  for(let i=0;i<160;i++){const x=(rng()-.5)*87,z=(rng()-.5)*87;let blocked=false;
     for(const o of obstacles){if(Math.hypot(x-o.x,z-o.z)<o.r+2.7)blocked=true;}
     if(Math.abs(x)<5.7 && z>-39 && z<30)blocked=true;
     if(Math.abs(z-14)<5.3 && x>-26 && x<23)blocked=true;
@@ -90,7 +90,7 @@ export function buildWorld(T, scene) {
   function grassTuft(x,z,wild){const g=new T.Group();g.position.set(x,0,z);scene.add(g);const h=wild?.65:.32;
     for(let i=0;i<3;i++){const a=i*Math.PI*2/3;const leaf=mesh(new T.ConeGeometry(wild?.17:.10,h,3),mat(wild?[0x399954,0x4b9f49,0x2d8d59][i]:0x73a95e),g,Math.cos(a)*.17,h*.5,Math.sin(a)*.17,false,false);leaf.rotation.z=(rng()-.5)*.38;}
     if(wild)animated.push({kind:"grass",obj:g,t:rng()*7});}
-  for(const zone of wildZones){for(let i=0;i<140;i++){const x=zone.x+(rng()-.5)*zone.w,z=zone.z+(rng()-.5)*zone.h;if(obstacles.some(o=>Math.hypot(x-o.x,z-o.z)<o.r+0.4))continue;grassTuft(x,z,true);}}
+  for(const zone of wildZones){for(let i=0;i<95;i++){const x=zone.x+(rng()-.5)*zone.w,z=zone.z+(rng()-.5)*zone.h;if(obstacles.some(o=>Math.hypot(x-o.x,z-o.z)<o.r+0.4))continue;grassTuft(x,z,true);}}
   for(let i=0;i<270;i++){const x=(rng()-.5)*78,z=(rng()-.5)*78;if(grassAt(x,z)||Math.abs(x)<3||Math.abs(z-14)<2.6)continue;if(rng()<.65){grassTuft(x,z,false);}else{const c=[0xf7e2aa,0xf9b3b1,0xfbf6db,0xb9d5ff][Math.floor(rng()*4)];cyl(scene,.024,.025,.24,0x559a59,x,.13,z,4);sphere(scene,.11,c,x,.29,z,1);}}
   // Streetlamps and bench details.
   function lamp(x,z){const root=new T.Group();root.position.set(x,0,z);scene.add(root);cyl(root,.1,.16,3.3,0x4c6871,0,1.65,0,7);box(root,.65,.22,.65,0x304c57,0,3.22,0);box(root,.49,.65,.48,0xffebb5,0,3.66,0);box(root,.72,.15,.72,0x315365,0,4.03,0);glowSprite("rgba(255,233,150,.28)",3,3.7,root);}
