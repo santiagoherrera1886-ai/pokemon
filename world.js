@@ -150,7 +150,7 @@ export function buildWorld(T, scene) {
   // Markers for story characters, slowly spinning.
   const markers=[];
   function marker(x,z){const root=new T.Group();root.position.set(x,3.55,z);scene.add(root);const diamond=mesh(new T.OctahedronGeometry(.27),new T.MeshStandardMaterial({color:0xffd06f,emissive:0xffc557,emissiveIntensity:.55,metalness:.28,roughness:.35}),root,0,.0,0);glowSprite("rgba(255,217,125,.55)",1.4,0,root);markers.push({root,diamond,x,z});return root;}
-  marker(-3,12.1);marker(-21.4,-20.4);marker(27,-23.8);
+  marker(12,17.2);marker(-17,17.2);marker(-16.4,-23.6);marker(12,17.2);marker(24,-24);
   // Floating forest dust and butterfly lights.
   for(let i=0;i<30;i++){const root=new T.Group();root.position.set((rng()-.5)*73,.9+rng()*2.7,(rng()-.5)*75);scene.add(root);const g=glowSprite(i%3===0?"rgba(255,232,138,.8)":"rgba(230,255,208,.45)",.20+rng()*.25,0,root);butterflies.push({obj:root,t:rng()*10,x:root.position.x,z:root.position.z});}
   scene.fog=new T.FogExp2(0xb3d8b5,.0085);scene.background=new T.Color(0xb2d9d2);
@@ -158,7 +158,7 @@ export function buildWorld(T, scene) {
     if(a.kind==="grass")a.obj.rotation.z=Math.sin(t*1.25+a.t)*.045;}
     for(const l of leaves)l.root.rotation.y=Math.sin(t*.37+l.t)*.015;
     for(const b of butterflies){b.obj.position.x=b.x+Math.sin(t*.8+b.t)*.38;b.obj.position.y=1.4+Math.cos(t*1.3+b.t)*.4;b.obj.position.z=b.z+Math.sin(t*.6+b.t)*.3;}
-    for(let i=0;i<markers.length;i++){const m=markers[i],active=(i===0&&quest===0)||(i===1&&(quest===1||quest===3))||(i===2&&quest>=4);m.root.visible=active;m.root.position.y=3.8+Math.sin(t*2+i)*.2;m.diamond.rotation.y=t*1.7;}
+    for(let i=0;i<markers.length;i++){const m=markers[i],active=(quest===0&&i===0)||(quest===1&&i===1)||(quest>=2&&quest<=4&&i===2)||(quest===5&&i===3)||(quest===6&&i===4);m.root.visible=active;m.root.position.y=3.8+Math.sin(t*2+i)*.2;m.diamond.rotation.y=t*1.7;}
     for(const n of npcs)n.model.walk(t,false);
   }
   return {hero,npcs,spots,portals,obstacles,grassAt,animate,markers};
