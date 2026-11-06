@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101a30">
+  <meta name="description" content="Sinnoh Reborn: aventura fan 3D jugable en el navegador para PC.">
+  <title>SINNOH REBORN — Aventura 3D</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="app">
+    <div id="viewport"></div>
+    <div class="world-vignette"></div>
+    <div class="lens-shine"></div>
+    <div id="fade"></div>
+
+    <header id="hud" class="hud hidden">
+      <div class="brand-panel">
+        <div class="brand-emblem">✦</div>
+        <div><span class="eyebrow">A NEW JOURNEY BEGINS</span><strong>SINNOH <em>REBORN</em></strong></div>
+      </div>
+      <div class="location-pill"><span class="loc-dot"></span><span id="placeName">Pueblo Hojaverde</span><span class="sun-icon">☀</span><span>17:24</span></div>
+      <div class="top-actions">
+        <button id="soundToggle" class="icon-button" title="Activar / desactivar sonido" aria-label="Sonido">♫</button>
+        <button id="helpToggle" class="icon-button" title="Controles" aria-label="Controles">?</button>
+      </div>
+    </header>
+
+    <aside id="leftHud" class="hud hidden">
+      <div class="quest-panel">
+        <div class="tiny-label"><span class="quest-diamond">◆</span> MISIÓN PRINCIPAL <span class="chapter-label">CAP. 01</span></div>
+        <h3 id="questTitle">Un nuevo comienzo</h3>
+        <p id="questDescription">Encuentra a tu amigo Barry y comienza la aventura.</p>
+        <div class="quest-line"><div id="questProgress"></div></div>
+      </div>
+      <div id="partyPanel" class="party-panel hidden">
+        <div class="tiny-label">TU EQUIPO <span id="partyCount">01 / 06</span></div>
+        <div class="party-main"><img id="partyImg" alt="Pokémon" src=""><div><strong id="partyName">Pokémon</strong><small id="partyLevel">Nv. 5</small><div class="hp-track"><div id="partyHpBar"></div></div></div></div>
+      </div>
+    </aside>
+
+    <div id="interactHint" class="interact-hint hidden"><span class="keycap">E</span><span id="interactLabel">Hablar</span></div>
+
+    <footer id="bottomHud" class="hud hidden">
+      <div class="controls-caption"><div class="control-keys"><span>W</span><div><span>A</span><span>S</span><span>D</span></div></div><div><strong>MOVERSE</strong><small>Shift correr · E hablar · R equipo</small></div></div>
+      <div class="bottom-right"><div class="mini-info"><span class="pokeball-small">◉</span> <span id="ballCount">05</span> <small>Poké Balls</small></div><button id="teamToggle" class="hud-button">☷ <span>Equipo</span> <kbd>R</kbd></button></div>
+    </footer>
+
+    <section id="intro" class="intro-cover" aria-label="Menú principal">
+      <div class="intro-grain"></div>
+      <div class="intro-top"><div class="intro-logo">✦ SINNOH <b>REBORN</b></div><span class="intro-chip">FAN GAME · EPISODIO 01</span></div>
+      <div class="intro-main">
+        <span class="intro-kicker"><i></i> EL VIAJE COMIENZA EN SINNOH</span>
+        <h1>Un mundo<br><em>por descubrir.</em></h1>
+        <p>Vuelve a Pueblo Hojaverde. Recorre rutas, encuentra Pokémon salvajes y comienza tu propia leyenda en un mundo 3D.</p>
+        <div class="intro-buttons"><button id="startBtn" class="primary-btn"><span>Nueva aventura</span><span class="arrow">↗</span></button><button id="continueBtn" class="outline-btn hidden">Continuar partida →</button></div>
+        <div class="intro-features"><span>✧ MUNDO 3D</span><span>◉ COMBATES POR TURNOS</span><span>✦ GUARDADO AUTOMÁTICO</span></div>
+      </div>
+      <div class="intro-bottom"><span>EDICIÓN DE PRUEBA · DESARROLLADO PARA NAVEGADOR</span><span>NO AFILIADO A NINTENDO / THE POKÉMON COMPANY</span></div>
+    </section>
+
+    <section id="dialog" class="dialog-panel hidden" aria-live="polite">
+      <div class="dialog-avatar" id="dialogAvatar">✦</div>
+      <div class="dialog-body"><span id="dialogSpeaker">PROFESOR SERBAL</span><p id="dialogText"></p><small>Presiona ENTER o E para continuar <span class="dialog-caret">▼</span></small></div>
+    </section>
+
+    <section id="starterModal" class="modal-backdrop hidden">
+      <div class="starter-modal">
+        <div class="modal-kicker">PROFESOR SERBAL · LABORATORIO POKÉMON</div>
+        <h2>Elige a tu<br><em>compañero.</em></h2>
+        <p>Tu primera elección marcará el comienzo de una gran historia.</p>
+        <div class="starter-grid">
+          <button class="starter-card leaf" data-starter="Turtwig"><span class="type">✿ PLANTA</span><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/387.png" alt="Turtwig"><strong>Turtwig</strong><small>El pequeño hoja</small><span class="select-arrow">ELEGIR ↗</span></button>
+          <button class="starter-card fire" data-starter="Chimchar"><span class="type">✦ FUEGO</span><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/390.png" alt="Chimchar"><strong>Chimchar</strong><small>El pequeño mono</small><span class="select-arrow">ELEGIR ↗</span></button>
+          <button class="starter-card water" data-starter="Piplup"><span class="type">◈ AGUA</span><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/393.png" alt="Piplup"><strong>Piplup</strong><small>El pequeño pingüino</small><span class="select-arrow">ELEGIR ↗</span></button>
+        </div>
+        <button id="starterCancel" class="text-btn">← Volver a hablar con el profesor</button>
+      </div>
+    </section>
+
+    <section id="battle" class="battle-scene hidden" aria-label="Combate Pokémon">
+      <div class="battle-bg"><div class="battle-sun"></div><div class="battle-hills"></div><div class="battle-field field-back"></div><div class="battle-field field-front"></div></div>
+      <div class="battle-header"><div class="battle-mark">◈ ENCUENTRO SALVAJE</div><div id="battleTurn" class="battle-count">TURNO 1</div></div>
+      <div class="enemy-status creature-status"><div class="creature-title"><strong id="enemyName">STARLY</strong><span id="enemyLevel">NV. 3</span></div><span class="stat-hp">PS</span><div class="battle-hp-track"><div id="enemyHpBar"></div></div><small id="enemyHpText">18 / 18</small></div>
+      <img id="enemySprite" class="combat-sprite enemy-sprite" alt="Pokémon salvaje">
+      <div class="player-status creature-status"><div class="creature-title"><strong id="battlePlayerName">TURTWIG</strong><span id="battlePlayerLevel">NV. 5</span></div><span class="stat-hp">PS</span><div class="battle-hp-track"><div id="playerHpBar"></div></div><small id="playerHpText">21 / 21</small><div class="xp-track"><div id="xpBar"></div></div></div>
+      <img id="playerSprite" class="combat-sprite player-sprite" alt="Tu Pokémon">
+      <div class="battle-bottom"><div class="battle-log"><span class="battle-label">BATTLE LOG</span><p id="battleMessage">¡Un Pokémon salvaje ha aparecido!</p></div><div id="battleActions" class="battle-actions"><button id="attackBtn" class="action attack">⚔ <span>ATACAR</span></button><button id="specialBtn" class="action special">✦ <span id="specialName">HOJA AFILADA</span></button><button id="catchBtn" class="action ball">◉ <span>POKÉ BALL</span></button><button id="runBtn" class="action run">↗ <span>HUIR</span></button></div></div>
+    </section>
+
+    <section id="teamModal" class="modal-backdrop hidden">
+      <div class="team-modal"><button id="teamClose" class="modal-close">✕</button><div class="modal-kicker">ENTRENADOR · SINNOH</div><h2>Mi equipo.</h2><div id="teamList" class="team-list"></div><div class="inventory-row"><span>◉ Poké Balls</span><strong id="inventoryBalls">5</strong></div><button id="healBtn" class="outline-btn">Usar poción (+20 PS) <small id="potionCount">x 3</small></button><p class="team-hint">La partida se guarda automáticamente en este navegador.</p></div>
+    </section>
+
+    <section id="helpModal" class="modal-backdrop hidden">
+      <div class="help-modal"><button id="helpClose" class="modal-close">✕</button><div class="modal-kicker">MANUAL DE ENTRENADOR</div><h2>Cómo jugar</h2><div class="help-grid"><div><kbd>W A S D</kbd><span>Caminar por el mundo</span></div><div><kbd>↑ ← ↓ →</kbd><span>También mueven</span></div><div><kbd>SHIFT</kbd><span>Correr más rápido</span></div><div><kbd>E / ENTER</kbd><span>Hablar e interactuar</span></div><div><kbd>R</kbd><span>Abrir tu equipo</span></div><div><kbd>RATÓN</kbd><span>Rueda: zoom / arrastra: cámara</span></div><div><kbd>ESC</kbd><span>Cerrar ventanas</span></div></div><p>Explora el pueblo, habla con Barry y busca al Profesor Serbal cerca del lago. En la hierba alta podrás encontrar Pokémon salvajes.</p></div>
+    </section>
+
+    <div id="toast" class="toast hidden"><span>✦</span><strong id="toastText">¡Misión completada!</strong></div>
+    <div id="loading" class="loading"><div class="pokeball-loading"></div><strong>Preparando Sinnoh...</strong><small>Cargando el mundo 3D</small></div>
+    <div id="error" class="error-screen hidden"><h2>El mundo 3D no pudo cargarse</h2><p>Comprueba tu conexión a Internet, activa WebGL en el navegador y recarga la página.</p><button onclick="location.reload()">Reintentar</button></div>
+  </div>
+  <script type="module" src="./game.js"></script>
+</body>
+</html>
