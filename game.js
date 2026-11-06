@@ -462,12 +462,13 @@ function randomEnemy(){
   const candidates=["Starly","Bidoof","Shinx","Kricketot","Budew"];
   return state.quest===2&&state.wins===0?"Starly":candidates[Math.floor(Math.random()*candidates.length)];
 }
-function encounter(forcedName=null,isScripted=false){
+function encounter(forcedName=null,isScripted=false,challenger=null){
   if(battle||dialogOpen||!currentPokemon())return;
-  const name=forcedName||randomEnemy(),lev=isScripted?3:2+Math.floor(Math.random()*4),p=DATABASE[name];
+  const name=forcedName||randomEnemy(),lev=challenger?.level??(isScripted?3:2+Math.floor(Math.random()*4)),p=DATABASE[name];
   scriptedBattle=isScripted;
   const maxHp=p.max+Math.max(0,lev-3)*2;
-  battle={name,level:lev,hp:maxHp,maxHp};
+  battle={name,level:lev,hp:maxHp,maxHp,trainer:challenger};
+  document.querySelector(".battle-mark").textContent=challenger?"⚔ DESAFÍO DE "+challenger.name:"◈ ENCUENTRO SALVAJE";
   turn=1;battleBusy=false;
   $("enemySprite").src=sprite(name);
   $("playerSprite").src=sprite(currentPokemon().name);
@@ -490,7 +491,8 @@ function updateBattle(){
   $("xpBar").style.width=percent(p.xp,p.level*24)+"%";
   $("specialName").textContent=DATABASE[p.name].move.toUpperCase();
   $("battleTurn").textContent="TURNO "+turn;
-  $("catchBtn").disabled=battleBusy||state.balls<=0;
+  $("catchBtn").disabled=battleBusy||state.balls<=0||!!battle.trainer;
+  $("runBtn").disabled=battleBusy||!!battle.trainer;
   for(const btn of ["attackBtn","specialBtn","runBtn"])$(btn).disabled=battleBusy;
 }
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
@@ -501,12 +503,12 @@ function animateHit(id){
 async function enemyTurn(){
   if(!battle)return;
   const p=currentPokemon(),move=DATABASE[battle.name].move;
-  battleSay("¡"+battle.name+" salvaje usó "+move+"!");tone(210,.15,"sawtooth",.018);
+  battleSay("¡"+battle.name+(battle.trainer?" del entrenador":" salvaje")+" usó "+move+"!");tone(210,.15,"sawtooth",.018);
   animateHit("playerSprite");await pause(420);
   const damage=Math.max(2,Math.floor(2+battle.level*.9+Math.random()*4-p.level*.12));
   p.hp=Math.max(0,p.hp-damage);updateBattle();
   await pause(450);
-  if(p.hp<=0){battleSay("¡"+p.name+" se ha debilitado! Volveréis a casa para descansar.");await pause(1700);p.hp=p.maxHp;world.hero.root.position.set(12,0,19.5);outsidePosition={x:12,z:19.5};finishBattle(false);notify("Tus Pokémon se han recuperado en casa.");}
+  if(p.hp<=0){battleSay("¡"+p.name+" se ha debilitado! Te han ayudado a recuperar a tu equipo.");await pause(1300);for(const mon of state.team)mon.hp=mon.maxHp;finishBattle(false);if(activeRoom&&activeRoom.id==="gym")exitRoom();notify("Tus Pokémon han recuperado sus fuerzas.");}
   else{battleBusy=false;turn++;battleSay("¿Qué debería hacer "+p.name+"?");updateBattle();}
 }
 function awardXp(){
@@ -518,10 +520,23 @@ function awardXp(){
 }
 function finishBattle(won,caught=false){
   if(!battle)return;
-  if(won){state.wins++;if(state.quest===4&&scriptedBattle)nextQuest(5);}
+  const trainer=battle.trainer;
+  if(won){
+    state.wins++;
+    if(state.quest===4&&scriptedBattle)nextQuest(5);
+    if(trainer){
+      state.money+=trainer.gym?1800:500;
+      if(trainer.gym){state.badges=state.badges||[];if(!state.badges.includes(trainer.city))state.badges.push(trainer.city);
+        if(trainer.city==="oreburgh"&&state.quest===8)nextQuest(9);
+        if(trainer.city==="eterna"&&state.quest===10)nextQuest(11);
+        notify("🏅 ¡Medalla conseguida! "+trainer.name);
+      }else{state.defeated=state.defeated||[];if(!state.defeated.includes(trainer.name))state.defeated.push(trainer.name);}
+      atlas.update();
+    }
+  }
   scriptedBattle=false;
   battle=null;battleBusy=false;hide("battle");updateHud();save();
-  if(won&&!caught)notify("¡Victoria! Tu equipo ha ganado experiencia.");
+  if(won&&!caught)notify(trainer?"¡Victoria! Has ganado dinero y experiencia.":"¡Victoria! Tu equipo ha ganado experiencia.");
 }
 async function playerAttack(special){
   if(!battle||battleBusy)return;
@@ -543,6 +558,7 @@ async function playerAttack(special){
 }
 async function throwBall(){
   if(!battle||battleBusy)return;
+  if(battle.trainer){battleSay("¡No puedes capturar Pokémon de otro entrenador!");return;}
   if(state.balls<=0){battleSay("No te quedan Poké Balls.");return;}
   battleBusy=true;state.balls--;updateBattle();save();
   battleSay("¡Lanzaste una Poké Ball!");tone(900,.15);
@@ -559,7 +575,8 @@ async function throwBall(){
   }else{battleSay("¡Oh, no! ¡"+battle.name+" se ha escapado de la Poké Ball!");tone(280,.15);await pause(1100);await enemyTurn();}
 }
 async function attemptRun(){
-  if(!battle||battleBusy)return;battleBusy=true;updateBattle();
+  if(!battle||battleBusy)return;
+  if(battle.trainer){battleSay("¡No puedes huir de un combate contra un entrenador!");return;}battleBusy=true;updateBattle();
   if(Math.random()<.83){battleSay("¡Escapaste sin problemas!");await pause(600);finishBattle(false);}
   else{battleSay("¡No has podido escapar!");await pause(700);await enemyTurn();}
 }
