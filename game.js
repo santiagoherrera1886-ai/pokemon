@@ -18,6 +18,7 @@ const DATABASE={
   Kricketot:{id:401,type:"Bicho",move:"Picadura",power:6,max:16},
   Budew:{id:406,type:"Planta",move:"Absorber",power:6,max:16},
   Geodude:{id:74,type:"Roca",move:"Lanzarrocas",power:9,max:21},
+  Onix:{id:95,type:"Roca",move:"Atadura",power:10,max:28},
   Magikarp:{id:129,type:"Agua",move:"Salpicadura",power:5,max:19},
   Machop:{id:66,type:"Lucha",move:"Golpe Karate",power:10,max:22},
   Cranidos:{id:408,type:"Roca",move:"Cabezazo",power:12,max:26},
@@ -30,7 +31,29 @@ const DATABASE={
   Luxray:{id:405,type:"Eléctrico",move:"Colmillo Rayo",power:13,max:30},
   Psyduck:{id:54,type:"Agua",move:"Confusión",power:7,max:20},
   Buizel:{id:418,type:"Agua",move:"Acua Jet",power:9,max:22},
-  Pachirisu:{id:417,type:"Eléctrico",move:"Chispa",power:8,max:21}
+  Pachirisu:{id:417,type:"Eléctrico",move:"Chispa",power:8,max:21},
+  Staravia:{id:397,type:"Normal",move:"Ataque Ala",power:11,max:28},
+  Luxio:{id:404,type:"Eléctrico",move:"Chispa",power:10,max:26},
+  Snover:{id:459,type:"Planta",move:"Nieve Polvo",power:11,max:27},
+  Sneasel:{id:215,type:"Siniestro",move:"Arañazo",power:11,max:25},
+  Zubat:{id:41,type:"Veneno",move:"Supersónico",power:8,max:20},
+  Ponyta:{id:77,type:"Fuego",move:"Ascuas",power:11,max:25},
+  Gible:{id:443,type:"Dragón",move:"Furia Dragón",power:11,max:27},
+  Buneary:{id:427,type:"Normal",move:"Patada",power:8,max:20},
+  Drifloon:{id:425,type:"Fantasma",move:"Viento Aciago",power:10,max:23},
+  Shellos:{id:422,type:"Agua",move:"Pistola Agua",power:9,max:25},
+  Croagunk:{id:453,type:"Veneno",move:"Picotazo Veneno",power:11,max:24},
+  Stunky:{id:434,type:"Veneno",move:"Ataque Rápido",power:9,max:23},
+  Bronzor:{id:436,type:"Acero",move:"Confusión",power:10,max:26},
+  Riolu:{id:447,type:"Lucha",move:"Palmada",power:11,max:24},
+  Combee:{id:415,type:"Bicho",move:"Picadura",power:8,max:18},
+  Cherubi:{id:420,type:"Planta",move:"Absorber",power:8,max:20},
+  Monferno:{id:391,type:"Fuego",move:"Rueda Fuego",power:13,max:36},
+  Prinplup:{id:394,type:"Agua",move:"Burbuja",power:13,max:37},
+  Grotle:{id:388,type:"Planta",move:"Hoja Afilada",power:13,max:38},
+  Infernape:{id:392,type:"Fuego",move:"Lanzallamas",power:18,max:58},
+  Empoleon:{id:395,type:"Agua",move:"Hidrobomba",power:18,max:61},
+  Torterra:{id:389,type:"Planta",move:"Terremoto",power:18,max:64}
 };
 const sprite=name=>SPRITE_ROOT+(DATABASE[name]?.id||396)+".png";
 const freshState=()=>({quest:0,starter:null,team:[],balls:5,potions:3,seen:[],caught:[],wins:0,pos:{x:12,z:19.5},room:"bedroom",sound:true,shoes:false,pokedex:false,scriptedBattle:false,visited:["twinleaf"],badges:[],money:3000,portal:null});
@@ -75,7 +98,7 @@ function displayCharacterArt(t){
   const cast=[];
   cast.push({key:"hero",trainer:"lucas",root:world.hero.root,rig:world.hero.rig});
   if(activeRoom){
-    const skins={mom:"lady",barryInside:"barry",barryMom:"lady",rowanLab:"rowan",aideLab:"dawn",neighborInside:"gentleman",healCenter:"nursejoy",shopBalls:"clerk",gymBattle:"roark"};
+    const skins={mom:"lady",barryInside:"barry",barryMom:"lady",rowanLab:"rowan",aideLab:"dawn",neighborInside:"gentleman",healCenter:"nurse",shopBalls:"clerk",gymBattle:"roark"};
     for(const actor of activeRoom.triggers){if(actor.root&&skins[actor.kind])cast.push({key:"room-"+activeRoom.id+"-"+actor.kind,trainer:skins[actor.kind],root:actor.root,indoor:true});}
   }else{
     const skins={barry:"barry",rowan:"rowan",aide:"dawn",neighbor:"lady",gymLeader:"roark",trainer:"youngster",talk:"lass"};
@@ -518,12 +541,36 @@ function startGame(resume){
   }else notify("Partida recuperada. Tu aventura continúa.");
 }
 function randomEnemy(){
-  const candidates=["Starly","Bidoof","Shinx","Kricketot","Budew"];
-  return state.quest===2&&state.wins===0?"Starly":candidates[Math.floor(Math.random()*candidates.length)];
+  const p=world.hero.root.position;
+  const area=PLACES.reduce((best,city)=>Math.hypot(city.x-p.x,city.z-p.z)<Math.hypot(best.x-p.x,best.z-p.z)?city:best,PLACES[0]);
+  const pools={
+    twinleaf:["Starly","Bidoof","Shinx","Kricketot","Budew"],
+    sandgem:["Starly","Bidoof","Shinx","Kricketot","Budew"],
+    jubilife:["Starly","Shinx","Zubat","Buneary","Budew"],
+    oreburgh:["Geodude","Zubat","Machop","Onix","Ponyta"],
+    canalave:["Shellos","Buizel","Psyduck","Magikarp","Bronzor"],
+    floaroma:["Cherubi","Combee","Budew","Buneary","Pachirisu"],
+    eterna:["Roselia","Ponyta","Combee","Zubat","Bronzor"],
+    hearthome:["Drifloon","Buneary","Staravia","Riolu","Bronzor"],
+    solaceon:["Ponyta","Buneary","Pachirisu","Riolu","Stunky"],
+    veilstone:["Croagunk","Machop","Luxio","Bronzor","Geodude"],
+    pastoria:["Shellos","Croagunk","Buizel","Psyduck","Magikarp"],
+    sunyshore:["Buizel","Luxio","Pachirisu","Shellos","Gible"],
+    celestic:["Bronzor","Gible","Drifloon","Roselia","Ponyta"],
+    snowpoint:["Snover","Sneasel","Pachirisu","Gible","Bronzor"]
+  };
+  const candidates=pools[area.id]||pools.twinleaf;
+  return candidates[Math.floor(Math.random()*candidates.length)];
+}
+function wildLevel(){
+  const p=world.hero.root.position;
+  const ranges={twinleaf:2,sandgem:3,jubilife:5,oreburgh:7,canalave:19,floaroma:10,eterna:11,hearthome:14,solaceon:17,veilstone:20,pastoria:20,sunyshore:30,celestic:24,snowpoint:27};
+  const area=PLACES.reduce((best,city)=>Math.hypot(city.x-p.x,city.z-p.z)<Math.hypot(best.x-p.x,best.z-p.z)?city:best,PLACES[0]);
+  return (ranges[area.id]||3)+Math.floor(Math.random()*4);
 }
 function encounter(forcedName=null,isScripted=false,challenger=null){
   if(battle||dialogOpen||!currentPokemon())return;
-  const name=forcedName||randomEnemy(),lev=challenger?.level??(isScripted?3:2+Math.floor(Math.random()*4)),p=DATABASE[name];
+  const name=forcedName||randomEnemy(),lev=challenger?.level??(isScripted?3:wildLevel()),p=DATABASE[name];
   scriptedBattle=isScripted;
   const maxHp=p.max+Math.max(0,lev-3)*2;
   battle={name,level:lev,hp:maxHp,maxHp,trainer:challenger};
@@ -581,7 +628,12 @@ function awardXp(){
   p.xp+=Math.max(12,battle.level*9);
   let leveled=false;
   while(p.xp>=p.level*24&&p.level<100){p.xp-=p.level*24;p.level++;p.maxHp+=3;p.hp=Math.min(p.maxHp,p.hp+6);leveled=true;}
-  if(leveled)notify("✦ "+p.name+" ha subido al nivel "+p.level+"!");
+  const evolve={Chimchar:[14,"Monferno"],Piplup:[16,"Prinplup"],Turtwig:[18,"Grotle"],Monferno:[36,"Infernape"],Prinplup:[36,"Empoleon"],Grotle:[32,"Torterra"],Starly:[14,"Staravia"],Shinx:[15,"Luxio"]};
+  const stage=evolve[p.name];
+  if(stage&&p.level>=stage[0]){
+    const old=p.name;p.name=stage[1];p.maxHp=Math.max(p.maxHp,DATABASE[p.name].max+p.level);p.hp=Math.min(p.maxHp,p.hp+12);
+    $("playerSprite").src=sprite(p.name);updateHud();notify("✦ ¡"+old+" evolucionó a "+p.name+"!");
+  }else if(leveled)notify("✦ "+p.name+" ha subido al nivel "+p.level+"!");
 }
 function finishBattle(won,caught=false){
   if(!battle)return;
