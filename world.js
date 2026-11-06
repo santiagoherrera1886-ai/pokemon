@@ -21,7 +21,7 @@ export function buildWorld(T, scene) {
   mesh(new T.PlaneGeometry(120,120),new T.MeshStandardMaterial({map:grassTex,roughness:1}),scene,0,-.04,0,false,true).rotation.x=-Math.PI/2;
   // Paved lanes cut through town and toward Lake Verity.
   function lane(x,z,w,d){box(scene,w,.045,d,pathMat,x,.007,z);const strips=Math.max(5,Math.floor(w*d/13));for(let i=0;i<strips;i++){let xx=x+(rng()-.5)*w*.9,zz=z+(rng()-.5)*d*.9;const s=patch(xx,zz,.13+rng()*.38,.08+rng()*.23,i%2?0xd3b995:0xe0cda9);s.position.y=.034;}}
-  lane(-.5,2,5.7,81);lane(-15,14,37,4.6);lane(-15,-19,33,4.4);lane(21,-16,42,5.4);lane(29,-27,5.4,22);
+  lane(-.5,2,5.7,81);lane(-2.5,21.5,47,3.8);lane(-15,-19,33,4.4);lane(19,-19,39,4.4);lane(24,-22,3.2,9);
   for(let i=0;i<120;i++){let x=(rng()-.5)*84,z=(rng()-.5)*84;if(rng()<.7&&Math.abs(x)<5)continue;patch(x,z,1+rng()*3,.45+rng()*2,rng()<.5?0x87b86b:0x8bb873);}
   // Lakeside with water, shoreline and a small wooden pier.
   patch(-27,-31,12,8.6,0xd1ca9b);
@@ -58,6 +58,9 @@ export function buildWorld(T, scene) {
   house(13,-1,0xfbe3c0,0x96646c,6.8,6.0,"CASA DEL JARDINERO","cottage");
   house(24,-29,0xe4e3d4,0x4a8d8a,8.7,7.5,"LABORATORIO","lab");
   house(36,-29,0xf3e2ca,0xc47756,5.5,5.1,"CASA","cottage");
+  // Walkways to every reachable front door — no invisible walls blocking interaction.
+  for(const p of portals){box(scene,2.2,.06,2.5,pathMat,p.x,.055,p.z+1.15);}
+
   // Fence lines and garden gates.
   function fence(x1,z1,x2,z2,steps){for(let i=0;i<=steps;i++){const x=x1+(x2-x1)*i/steps,z=z1+(z2-z1)*i/steps;box(scene,.18,.9,.18,0xf8edcd,x,.45,z);box(scene,.3,.13,.32,0xf4e7bd,x,.95,z);}
     if(Math.abs(x1-x2)>Math.abs(z1-z2)){box(scene,Math.abs(x2-x1),.13,.12,0xf8efdc,(x1+x2)/2,.43,z1);box(scene,Math.abs(x2-x1),.12,.12,0xf8efdc,(x1+x2)/2,.7,z1);}
