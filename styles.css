@@ -86,3 +86,12 @@
 #weatherLabel{top:283px}
 @media(max-width:650px){#weatherLabel{top:224px;right:15px}}
 @keyframes scene-reveal{0%{opacity:0}35%{opacity:.4}100%{opacity:0}}
+
+.action.switch{background:#977fae}
+.action.bag{background:#68a79c}
+.battle-actions{min-height:164px;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(60px,1fr))}
+.battle-bottom{grid-template-columns:1fr 1.45fr}
+.team-entry{cursor:pointer;transition:background .18s,border-color .18s,transform .18s}
+.team-entry:hover,.team-entry:focus-visible{background:#ffffff25;border-color:#ffe1a3;transform:translateX(3px);outline:none}
+@media(max-width:800px){.battle-bottom{grid-template-columns:1fr}.battle-actions{height:auto;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,58px)}.battle-log{min-height:70px}}
+@media(max-width:540px){.battle-actions{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,49px)}.action{font-size:10px;gap:4px}}
