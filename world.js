@@ -4,7 +4,7 @@ export function buildWorld(T, scene) {
   function rng(){ seed=(seed*1664525+1013904223)>>>0; return seed/4294967296; }
   const materialCache=new Map();function mat(c, roughness=1, metalness=0){const key=c+'-'+roughness+'-'+metalness;if(!materialCache.has(key))materialCache.set(key,new T.MeshStandardMaterial({color:c,roughness,metalness}));return materialCache.get(key);}
   const grassMat=mat(0x7eaf69), pathMat=mat(0xd8c3a0), wood=mat(0x85543b), paleWood=mat(0xb47a55), rockMat=mat(0xa8b4a0);
-  const obstacles=[], npcs=[], spots=[], leaves=[], clouds=[], animated=[], butterflies=[];
+  const obstacles=[], npcs=[], spots=[], portals=[], leaves=[], clouds=[], animated=[], butterflies=[];
   function mesh(geo, material, parent=scene,x=0,y=0,z=0,cast=true,receive=true){
     const m=new T.Mesh(geo,material);m.position.set(x,y,z);m.castShadow=cast;m.receiveShadow=receive;parent.add(m);return m;
   }
@@ -31,7 +31,7 @@ export function buildWorld(T, scene) {
   for(let i=0;i<8;i++)box(scene,1.7,.24,2.7,0xb78c61,-15.8+i*.45,.15,-30.7);
   for(let i=0;i<18;i++){const angle=rng()*Math.PI*2;const x=-27+Math.cos(angle)*11,z=-31+Math.sin(angle)*8;const stone=sphere(scene,.25+rng()*.55,rng()<.5?0xb8b7a8:0x849d8a,x,.17,z);stone.scale.y=.5;}
   // Houses with visible walls, sloped roofs, balconies and trim.
-  function house(x,z,wall,roof,w=6.2,d=5.7,name=null){
+  function house(x,z,wall,roof,w=6.2,d=5.7,name=null,id='cottage'){
     const root=new T.Group();root.position.set(x,0,z);scene.add(root);
     box(root,w+.35,.4,d+.4,0xb7ab97,0,.21,0);
     box(root,w,3.4,d,wall,0,1.95,0);
@@ -50,14 +50,14 @@ export function buildWorld(T, scene) {
     box(root,.52,.15,.68,roofMat,w*.25,5.6,-d*.2);
     box(root,2,.17,1.25,0xd8c3a6,0,.11,d/2+.7);
     if(name){const l=label(name,root,6.5);l.scale.multiplyScalar(.84);}
-    obstacles.push({x,z,r:Math.max(w,d)*.57+0.9});return root;
+    obstacles.push({x,z,r:Math.max(w,d)*.57+0.9,w:w/2+.65,d:d/2+.65,kind:'building'});portals.push({kind:'door',id,name:'Entrar: '+(name||'Casa'),x,z:z+d/2+1.12,doorZ:z+d/2+.15,exitZ:z+d/2+2.05});return root;
   }
-  house(-17,13,0xf8e2b7,0xc56c5e,7,6.2,"TU CASA");
-  house(12,13,0xf1daa8,0x557baf,7,6.2,"CASA DE BARRY");
-  house(-17,-1,0xf2e9ce,0x9a775a,6.4,5.5);
-  house(13,-1,0xfbe3c0,0x96646c,6.8,6.0);
-  house(24,-29,0xe4e3d4,0x4a8d8a,8.7,7.5,"LABORATORIO");
-  house(36,-29,0xf3e2ca,0xc47756,5.5,5.1);
+  house(-17,13,0xf8e2b7,0xc56c5e,7,6.2,"CASA DE BARRY","barry");
+  house(12,13,0xf1daa8,0x557baf,7,6.2,"TU CASA","home");
+  house(-17,-1,0xf2e9ce,0x9a775a,6.4,5.5,"CASA DEL VECINO","cottage");
+  house(13,-1,0xfbe3c0,0x96646c,6.8,6.0,"CASA DEL JARDINERO","cottage");
+  house(24,-29,0xe4e3d4,0x4a8d8a,8.7,7.5,"LABORATORIO","lab");
+  house(36,-29,0xf3e2ca,0xc47756,5.5,5.1,"CASA","cottage");
   // Fence lines and garden gates.
   function fence(x1,z1,x2,z2,steps){for(let i=0;i<=steps;i++){const x=x1+(x2-x1)*i/steps,z=z1+(z2-z1)*i/steps;box(scene,.18,.9,.18,0xf8edcd,x,.45,z);box(scene,.3,.13,.32,0xf4e7bd,x,.95,z);}
     if(Math.abs(x1-x2)>Math.abs(z1-z2)){box(scene,Math.abs(x2-x1),.13,.12,0xf8efdc,(x1+x2)/2,.43,z1);box(scene,Math.abs(x2-x1),.12,.12,0xf8efdc,(x1+x2)/2,.7,z1);}
@@ -120,18 +120,27 @@ export function buildWorld(T, scene) {
   function actor(name,x,z,color,hat,kind,face){const p=person(x,z,color,hat,0xebc09c,.97);p.root.rotation.y=face||0;label(name,p.root,4);npcs.push({name,x,z,kind,model:p});return p;}
   actor("BARRY",-3,12.1,0xe7ac47,0xecb64d,"barry",-1);
   actor("PROF. SERBAL",-21.4,-20.4,0xeeeeea,0xe0e4e4,"rowan",1);
-  actor("MAMÁ",-14.3,18.9,0xcc7895,0xa77756,"mom",1.6);
+  actor("VECINA",2,26,0xcc7895,0xa77756,"neighbor",1.6);
   actor("AYUDANTE",27,-23.8,0x77ae9a,0x497f7c,"aide",2);
   // Road signs, visible signboards, a small compass stone.
   function sign(x,z,name,kind){const root=new T.Group();root.position.set(x,0,z);scene.add(root);cyl(root,.10,.13,1.4,wood,0,.7,0,6);box(root,1.8,.85,.17,0x85603d,0,1.55,0);box(root,1.57,.63,.19,0xe8d4a7,0,1.55,.10);label(name,root,2.95).scale.multiplyScalar(.72);spots.push({name,x,z,kind});}
   sign(2,-11.5,"RUTA 201","routeSign");sign(18,-19,"PUEBLO ARENA →","townSign");sign(-15,-26.5,"LAGO VERAZ","lakeSign");
+  // Rowan's mysterious briefcase — a real mission interaction, not just a decoration.
+  const caseRoot=new T.Group();caseRoot.position.set(-16.4,0,-23.6);scene.add(caseRoot);
+  box(caseRoot,1.55,.78,.87,0x8c643e,0,.44,0);
+  box(caseRoot,1.65,.15,.92,0x6e4f32,0,.85,0);
+  for(const q of [-.59,.59])box(caseRoot,.13,.91,.97,0xd8b76d,q,.46,0);
+  box(caseRoot,.53,.17,.19,0xd6bc80,0,.98,.03);
+  sphere(caseRoot,.19,0xffdf82,0,1.23,0,2);
+  label("MALETÍN",caseRoot,2.7).scale.multiplyScalar(.82);
+  spots.push({name:"Maletín del profesor",x:-16.4,z:-23.6,kind:"briefcase"});
   // Markers for story characters, slowly spinning.
   const markers=[];
   function marker(x,z){const root=new T.Group();root.position.set(x,3.55,z);scene.add(root);const diamond=mesh(new T.OctahedronGeometry(.27),new T.MeshStandardMaterial({color:0xffd06f,emissive:0xffc557,emissiveIntensity:.55,metalness:.28,roughness:.35}),root,0,.0,0);glowSprite("rgba(255,217,125,.55)",1.4,0,root);markers.push({root,diamond,x,z});return root;}
   marker(-3,12.1);marker(-21.4,-20.4);marker(27,-23.8);
   // Floating forest dust and butterfly lights.
   for(let i=0;i<30;i++){const root=new T.Group();root.position.set((rng()-.5)*73,.9+rng()*2.7,(rng()-.5)*75);scene.add(root);const g=glowSprite(i%3===0?"rgba(255,232,138,.8)":"rgba(230,255,208,.45)",.20+rng()*.25,0,root);butterflies.push({obj:root,t:rng()*10,x:root.position.x,z:root.position.z});}
-  scene.fog=new T.FogExp2(0xb3d8b5,.0145);scene.background=new T.Color(0xb2d9d2);
+  scene.fog=new T.FogExp2(0xb3d8b5,.0085);scene.background=new T.Color(0xb2d9d2);
   function animate(t,quest){for(const a of animated){if(a.kind==="ripple"){a.obj.material.opacity=.24+.19*Math.sin(t*.7+a.t);a.obj.scale.setScalar(1+.08*Math.sin(t*.55+a.t));}
     if(a.kind==="grass")a.obj.rotation.z=Math.sin(t*1.25+a.t)*.045;}
     for(const l of leaves)l.root.rotation.y=Math.sin(t*.37+l.t)*.015;
@@ -139,5 +148,5 @@ export function buildWorld(T, scene) {
     for(let i=0;i<markers.length;i++){const m=markers[i],active=(i===0&&quest===0)||(i===1&&(quest===1||quest===3))||(i===2&&quest>=4);m.root.visible=active;m.root.position.y=3.8+Math.sin(t*2+i)*.2;m.diamond.rotation.y=t*1.7;}
     for(const n of npcs)n.model.walk(t,false);
   }
-  return {hero,npcs,spots,obstacles,grassAt,animate,markers};
+  return {hero,npcs,spots,portals,obstacles,grassAt,animate,markers};
 }
