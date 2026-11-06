@@ -161,57 +161,161 @@ function renderTeam(){
   $("healBtn").disabled=state.potions<1||!currentPokemon()||currentPokemon().hp>=currentPokemon().maxHp;
 }
 function checkPosition(){
-  const p=world.hero.root.position,x=p.x,z=p.z;
-  const name=x<-14&&z<-22?"Lago Veraz":x>18&&z<-20?"Pueblo Arena":z<-5&&x>0?"Ruta 201":z<-12?"Ruta 201":"Pueblo Hojaverde";
-  if($("placeName").textContent!==name){$("placeName").textContent=name;notify("◇ "+name);}
+  const p=world.hero.root.position;
+  const place=activeRoom?({home:"Casa del protagonista",bedroom:"Tu habitación",barry:"Casa de Barry",lab:"Laboratorio Pokémon",cottage:"Casa del vecino"}[activeRoom.id]||"Interior"):
+    p.x<-13&&p.z<-21?"Lago Veraz":p.x>17&&p.z<-19?"Pueblo Arena":p.z<-5?"Ruta 201":"Pueblo Hojaverde";
+  if($("placeName").textContent!==place){$("placeName").textContent=place;if(started)notify("◇ "+place);}
 }
 function closestInteract(){
   const p=world.hero.root.position;
-  const all=[...world.npcs,...world.spots];
-  let best=null,dist=3.5;
-  for(const a of all){const d=Math.hypot(a.x-p.x,a.z-p.z);if(d<dist){best=a;dist=d;}}
-  return best;
+  if(activeRoom)return activeRoom.find(p.x,p.z);
+  const things=[...world.portals,...world.spots,...world.npcs];
+  let nearest=null,dist=3.1;
+  for(const a of things){
+    if(a.model?.root.visible===false)continue;
+    const d=Math.hypot(a.x-p.x,a.z-p.z);
+    if(d<dist){nearest=a;dist=d;}
+  }
+  return nearest;
+}
+function objective(){
+  if(activeRoom){
+    const id=activeRoom.id;
+    if(state.quest===0&&id==="home")return {text:"Habla con mamá",x:1.7,z:.8,local:true};
+    if(state.quest===1&&id==="barry")return {text:"Habla con Barry",x:-1.4,z:-.7,local:true};
+    if(state.quest===5&&id==="home")return {text:"Habla con mamá",x:1.7,z:.8,local:true};
+    if(state.quest===6&&id==="lab")return {text:"Habla con el profesor",x:-2.6,z:.5,local:true};
+    return {text:id==="bedroom"?"Baja al salón":"Sal de la casa",x:0,z:id==="bedroom"?3.35:4.55,local:true};
+  }
+  const targets=[
+    {text:"Entra en tu casa",x:12,z:17.2},
+    {text:"Casa de Barry · entrar",x:-17,z:17.3},
+    {text:"Maletín junto al lago",x:-16.4,z:-23.6},
+    {text:"Elige un compañero",x:-16.4,z:-23.6},
+    {text:"Regresa al maletín",x:-16.4,z:-23.6},
+    {text:"Vuelve a casa",x:12,z:17.2},
+    {text:"Entra al laboratorio",x:24,z:-24.1},
+    {text:"Explora la Ruta 201",x:10,z:-11}
+  ];
+  return targets[state.quest]||targets[7];
+}
+function updateNavigation(){
+  if(!started)return;
+  show("navigator");
+  const target=objective(),p=world.hero.root.position;
+  const dx=target.x-p.x,dz=target.z-p.z,distance=Math.hypot(dx,dz);
+  const yaw=activeRoom?0:cameraYaw;
+  const screenX=dx*Math.cos(yaw)-dz*Math.sin(yaw);
+  const screenUp=-dx*Math.sin(yaw)-dz*Math.cos(yaw);
+  const angle=Math.atan2(screenX,screenUp)*180/Math.PI;
+  $("navArrow").style.transform="rotate("+angle+"deg)";
+  $("navTitle").textContent=target.text;
+  $("navDistance").textContent=distance<2.5?"¡Ya estás cerca!":Math.ceil(distance)+" m de distancia";
+  if(activeRoom){hide("radar");return;}
+  show("radar");
+  const mapPos=(x,z)=>({left:(50+x/84*100).toFixed(1)+"%",top:(50-z/84*100).toFixed(1)+"%"});
+  Object.assign($("radarPlayer").style,mapPos(p.x,p.z));
+  Object.assign($("radarTarget").style,mapPos(target.x,target.z));
 }
 function doInteract(){
   if(dialogOpen){advanceDialogue();return;}
   if(!started||battle||!$("intro").classList.contains("hidden")||!$("teamModal").classList.contains("hidden")||!$("starterModal").classList.contains("hidden")||!$("helpModal").classList.contains("hidden"))return;
-  const n=closestInteract();if(!n)return;const kind=n.kind;
-  if(kind==="barry"){
-    if(state.quest===0){openDialogue([{name:"BARRY",text:"¡Eh! ¡Por fin apareces! ¿Has oído hablar del misterioso Pokémon que vive cerca del Lago Veraz?"},{name:"BARRY",text:"¡Vamos a comprobarlo! El Profesor Serbal anda investigando por allí. Sigue el camino hacia el norte."},{name:"BARRY",text:"¡Y no te metas en la hierba alta sin un Pokémon! ¡Podría ser peligroso!"}],()=>nextQuest(1));}
-    else openDialogue([{name:"BARRY",text:state.starter?"¡Ese "+state.starter+" es increíble! ¡Nos espera una gran aventura!":"¡Nos vemos en el Lago Veraz! ¡No tardes!"}]);
-  }else if(kind==="rowan"){
-    if(!state.starter&&state.quest===0){openDialogue([{name:"PROF. SERBAL",text:"Veo que tienes ganas de explorar. Habla primero con Barry; seguro que está buscándote en el pueblo."}]);}
-    else if(!state.starter){openDialogue([{name:"PROF. SERBAL",text:"¡Ah, llegas justo a tiempo! Soy el Profesor Serbal. Estudio el origen y la evolución de los Pokémon."},{name:"PROF. SERBAL",text:"En Sinnoh conviven cientos de especies fascinantes. Para investigarlas necesitaré tu ayuda."},{name:"PROF. SERBAL",text:"Pero antes, quiero entregarte a un compañero. Piensa bien cuál de estos tres Pokémon quieres que te acompañe."}],()=>show("starterModal"));}
-    else if(state.quest===3){openDialogue([{name:"PROF. SERBAL",text:"¡Excelente trabajo! Ya has tenido tu primer combate. Tu vínculo con "+state.starter+" será cada vez más fuerte."},{name:"PROF. SERBAL",text:"Toma algunas Poké Balls adicionales. Viaja hacia el este hasta Pueblo Arena y habla con mi ayudante junto al laboratorio."},{name:"PROF. SERBAL",text:"¡El mundo Pokémon está esperando a que lo descubras!"}],()=>{state.balls+=5;nextQuest(4);updateHud();});}
-    else openDialogue([{name:"PROF. SERBAL",text:state.quest>=4?"Recuerda cuidar de tu equipo y explorar cada rincón de Sinnoh. ¡El laboratorio está al este!":"Tu Pokémon todavía tiene mucho por aprender. Prueba a combatir en la hierba alta de la Ruta 201."}]);
-  }else if(kind==="mom"){
-    if(state.team.length){let p=currentPokemon();p.hp=p.maxHp;updateHud();save();openDialogue([{name:"MAMÁ",text:"¡Qué alegría verte! He dejado que tus Pokémon descansen. Ya están completamente recuperados."},{name:"MAMÁ",text:"Y recuerda, ningún gran viaje se completa de un solo salto. Disfruta cada paso."}]);}
-    else openDialogue([{name:"MAMÁ",text:"¡Buenos días! Barry te ha estado buscando. Parece muy emocionado por algo. ¡Ve a verlo!"}]);
-  }else if(kind==="aide"){
-    if(state.quest===4){openDialogue([{name:"AYUDANTE",text:"¡Por fin has llegado a Pueblo Arena! El Profesor Serbal me dijo que vendrías."},{name:"AYUDANTE",text:"Has superado el comienzo de tu viaje. ¡Enhorabuena! Esta es una demo: pronto podrás explorar nuevas rutas y ciudades."},{name:"AYUDANTE",text:"Mientras tanto, ¡prueba a capturar nuevos Pokémon para tu equipo!"}],()=>{nextQuest(5);state.potions+=2;save();});}
-    else openDialogue([{name:"AYUDANTE",text:"¡Hola, entrenador! Si necesitas recuperar fuerzas, habla con tu mamá en Pueblo Hojaverde. ¡Y no olvides tus Poké Balls!"}]);
-  }else if(kind==="lakeSign"){openDialogue([{name:"SEÑAL",text:"LAGO VERAZ — Las tranquilas aguas de Sinnoh reflejan historias que aún no han sido contadas."}]);}
-  else if(kind==="townSign"){openDialogue([{name:"SEÑAL",text:"PUEBLO ARENA → Sede del laboratorio del Profesor Serbal."}]);}
-  else if(kind==="routeSign"){openDialogue([{name:"SEÑAL",text:"RUTA 201 — Hierba alta. Habitan Pokémon salvajes. ¡Prepara tu equipo antes de avanzar!"}]);}
+  const n=closestInteract();if(!n)return;
+  const kind=n.kind;
+  if(kind==="door"){enterRoom(n.id);tone(500,.12);return;}
+  if(kind==="exit"){exitRoom();tone(420,.12);return;}
+  if(kind==="stairsUp"){enterRoom("bedroom",true);openDialogue([{name:"NARRADOR",text:"Tu dormitorio. Aquí empezó todo, frente a una noticia sobre un misterioso Gyarados rojo."}]);return;}
+  if(kind==="stairsDown"){enterRoom("home",true);return;}
+  if(kind==="mom"){
+    if(state.quest===0){openDialogue([
+      {name:"MAMÁ",text:"¡Buenos días, cariño! ¿Has visto la noticia? Un equipo de investigación busca un Gyarados rojo en un lago lejano."},
+      {name:"MAMÁ",text:"Barry ha venido preguntando por ti. Tenía tanta prisa que casi tira la puerta."},
+      {name:"MAMÁ",text:"Dice que tiene una idea muy importante. Ve a su casa, pero prométeme que no entrarás en la hierba alta sin un Pokémon."}
+    ],()=>{nextQuest(1);updateNavigation();});}
+    else if(state.quest===5){
+      if(currentPokemon())currentPokemon().hp=currentPokemon().maxHp;
+      openDialogue([
+        {name:"MAMÁ",text:"¡¿Un Starly os atacó en el lago?! Menos mal que tu nuevo Pokémon te protegió. ¡Qué susto!"},
+        {name:"MAMÁ",text:"Si el Profesor Serbal te dejó conservarlo, deberías visitarlo en su laboratorio de Pueblo Arena."},
+        {name:"MAMÁ",text:"Toma, te regalo unos zapatos para correr. Mantén pulsado Shift mientras caminas. Y vuelve a casa cuando necesites descansar."}
+      ],()=>{state.shoes=true;nextQuest(6);updateHud();});}
+    else{if(currentPokemon())for(const mon of state.team)mon.hp=mon.maxHp;updateHud();
+      openDialogue([{name:"MAMÁ",text:state.quest>=6?"¡Qué orgullosa estoy! Tus Pokémon han descansado. El Profesor Serbal te espera en Pueblo Arena.":"¿Ya has hablado con Barry? Si quieres empezar una aventura, ¡ve primero a buscarlo a su casa!"}]);}
+  }else if(kind==="barryInside"){
+    if(state.quest===1){openDialogue([
+      {name:"BARRY",text:"¡Por fin! ¡Pensaba multarte con un millón de monedas por llegar tarde!"},
+      {name:"BARRY",text:"¿Viste lo del Gyarados rojo? ¡Apuesto lo que quieras a que en nuestro lago también hay Pokémon rarísimos!"},
+      {name:"BARRY",text:"Vamos al Lago Veraz. Quiero verlo con mis propios ojos. ¡Te espero fuera! ¡Corre!"}
+    ],()=>{nextQuest(2);updateNavigation();});}
+    else openDialogue([{name:"BARRY",text:"¡El Lago Veraz está hacia el suroeste, siguiendo la Ruta 201! ¡No perdamos ni un minuto!"}]);
+  }else if(kind==="barry"){
+    openDialogue([{name:"BARRY",text:state.quest<2?"¡Mejor nos vemos en mi casa!":state.quest<5?"¡Venga, vamos al Lago Veraz! Creo que vi un maletín cerca del agua.":"¡Ese "+state.starter+" es una pasada! ¡Te esperaré en el próximo pueblo!"}]);
+  }else if(kind==="briefcase"){
+    if(state.quest<2){openDialogue([{name:"NARRADOR",text:"Un maletín con una marca extraña. Aún no sabes quién lo ha dejado aquí. Barry debería ver esto."}]);}
+    else if(state.quest===2){openDialogue([
+      {name:"BARRY",text:"¡Mira! ¡Es un maletín de investigación! ¿Quién se lo habrá dejado junto al lago?"},
+      {name:"NARRADOR",text:"Se escucha un crujido entre los arbustos. ¡Un Starly salvaje se acerca a toda velocidad!"},
+      {name:"BARRY",text:"¡Rápido! ¡Dentro del maletín hay tres Poké Balls! ¡Escoge una, antes de que nos ataque!"}
+    ],()=>{nextQuest(3);show("starterModal");});}
+    else if(state.quest===3){show("starterModal");}
+    else if(state.quest===4){openDialogue([{name:"NARRADOR",text:"¡El Starly salvaje ha vuelto! ¡Protege a tu compañero!"}],()=>encounter("Starly",true));}
+    else openDialogue([{name:"NARRADOR",text:"Es el maletín donde encontraste a "+state.starter+". Un recuerdo de tu primer combate."}]);
+  }else if(kind==="rowan"||kind==="rowanLab"){
+    if(state.quest===6&&kind==="rowanLab"){
+      openDialogue([
+        {name:"PROF. SERBAL",text:"¡Así que tú eres el entrenador que utilizó uno de mis Pokémon junto al lago! He podido observar vuestra conexión."},
+        {name:"PROF. SERBAL",text:"El crecimiento de los Pokémon es un misterio fascinante. Por eso necesito la ayuda de entrenadores curiosos y valientes."},
+        {name:"PROF. SERBAL",text:"Toma esta Pokédex. Registra los Pokémon que encuentres durante tu viaje. También te daré cinco Poké Balls más."},
+        {name:"PROF. SERBAL",text:"Sinnoh es enorme. Este es solo el primer paso: visita nuevas rutas, conoce entrenadores y haz crecer a tu equipo."}
+      ],()=>{state.pokedex=true;state.balls+=5;nextQuest(7);updateHud();});}
+    else if(state.quest<5)openDialogue([{name:"PROF. SERBAL",text:"Soy el Profesor Serbal. Parece que alguien ha movido mi maletín de investigación. Ten mucho cuidado cerca de la hierba alta."}]);
+    else openDialogue([{name:"PROF. SERBAL",text:state.quest===5?"Primero ve a casa a tranquilizar a tu madre. Después hablamos en el laboratorio.":"Cuida bien de tus Pokémon y registra cuantas especies puedas en la Pokédex."}]);
+  }else if(kind==="aide"||kind==="aideLab"){
+    openDialogue([{name:"AYUDANTE",text:state.quest===6?"¡El Profesor Serbal te espera dentro del laboratorio! Acércate a él para hablar.":"Trabajo con el Profesor Serbal. ¡Los Pokémon de Sinnoh son increíbles! Hay muchas especies esperando a ser descubiertas."}]);
+  }else if(kind==="television"){
+    openDialogue([{name:"TELEVISOR",text:"«En búsqueda del Gyarados rojo»: un grupo de investigadores analiza unos extraños avistamientos de un Pokémon de color diferente."},{name:"NARRADOR",text:"La noticia parece haber despertado el espíritu aventurero de Barry."}]);
+  }else if(kind==="computer"){openDialogue([{name:"ORDENADOR",text:"Has abierto tu ordenador. Un mapa de Sinnoh muestra Pueblo Hojaverde, la Ruta 201 y Pueblo Arena."}]);}
+  else if(kind==="bed"){for(const p of state.team)p.hp=p.maxHp;updateHud();openDialogue([{name:"NARRADOR",text:"Te tumbas un momento y descansas. Tu equipo Pokémon ha recuperado todos sus PS."}]);}
+  else if(kind==="pokedex"){openDialogue([{name:"POKÉDEX",text:state.pokedex?"Pokédex Sinnoh · Has registrado "+state.caught.length+" especies capturadas.":"Un dispositivo rojo con una pantalla táctil. Parece diseñado para registrar especies Pokémon."}]);}
+  else if(kind==="barryMom"){openDialogue([{name:"MADRE DE BARRY",text:"¡Barry siempre tiene prisa! Seguro que ya se ha inventado otra expedición. Procura que no se meta en problemas."}]);}
+  else if(kind==="lakeSign"){openDialogue([{name:"SEÑAL",text:"LAGO VERAZ — Se dice que en el fondo de sus aguas habita un Pokémon que controla las emociones."}]);}
+  else if(kind==="townSign"){openDialogue([{name:"SEÑAL",text:"PUEBLO ARENA → Hogar del laboratorio del Profesor Serbal. Abierto a los entrenadores Pokémon."}]);}
+  else if(kind==="routeSign"){openDialogue([{name:"SEÑAL",text:"RUTA 201 — En la hierba alta viven Pokémon salvajes. No entres sin un compañero preparado."}]);}
+  else openDialogue([{name:"NARRADOR",text:kind==="research"?"Notas de investigación sobre la evolución de los Pokémon.":kind==="books"?"Revistas y mapas de Sinnoh. ¡Barry ha marcado el lago con un círculo rojo!":kind==="table"?"Mamá ha dejado el desayuno sobre la mesa.":kind==="neighborInside"?"El vecino te desea suerte en tu aventura.":"¡Sinnoh está lleno de secretos por descubrir!"}]);
 }
 function createStarter(name){
+  if(state.starter)return;
   hide("starterModal");
   const data=DATABASE[name];state.starter=name;
   state.team=[{name,level:5,maxHp:data.max,hp:data.max,xp:0}];
   state.balls=5;state.potions=3;
-  nextQuest(2);updateHud();chirp();
-  openDialogue([{name:"PROF. SERBAL",text:"¡Maravilloso! "+name+" será tu primer compañero. Estoy seguro de que formaréis un equipo extraordinario."},{name:"PROF. SERBAL",text:"Te entrego cinco Poké Balls. Enfréntate a Pokémon salvajes en la hierba alta; así aprenderéis a combatir juntos."}]);
+  nextQuest(4);updateHud();chirp();
+  openDialogue([
+    {name:"BARRY",text:"¡Has elegido a "+name+"! ¡Buena elección! ¡Ahora demuestra lo que vales!"},
+    {name:"NARRADOR",text:"Un Starly salvaje sale de la hierba y ataca. ¡Tu primer combate Pokémon está a punto de empezar!"},
+    {name:"NARRADOR",text:"En combate puedes usar Placaje, un movimiento especial, lanzar Poké Balls o intentar huir."}
+  ],()=>encounter("Starly",true));
   save();
 }
 function startGame(resume){
   state=resume&&saved?{...freshState(),...saved}:freshState();
   if(!resume){try{localStorage.removeItem("sinnohRebornSaveV3");}catch(e){}}
+  started=true;
+  scene.add(world.hero.root);
+  outsidePosition={...state.pos};
   world.hero.root.position.set(state.pos.x,0,state.pos.z);
   cameraTarget.set(state.pos.x,1.1,state.pos.z);
-  started=true;hide("intro");show("hud");show("leftHud");show("bottomHud");
-  updateQuest();updateHud();checkPosition();chirp();save();
-  if(!resume){openDialogue([{name:"NARRADOR",text:"Una mañana dorada en Pueblo Hojaverde, en la región de Sinnoh..."},{name:"NARRADOR",text:"Los días tranquilos están a punto de cambiar. Barry, tu mejor amigo, te espera cerca de casa. Ve a buscarlo."}]);}
-  else notify("Partida recuperada. ¡Bienvenido de nuevo!");
+  hide("intro");show("hud");show("leftHud");show("bottomHud");show("navigator");
+  if(state.room)enterRoom(state.room);
+  else show("radar");
+  updateQuest();updateHud();checkPosition();updateNavigation();chirp();save();
+  if(!resume){
+    openDialogue([
+      {name:"NARRADOR",text:"SINNOH · PUEBLO HOJAVERDE. La mañana comienza frente al televisor, con una noticia que inquieta a toda la región."},
+      {name:"NARRADOR",text:"Un equipo científico investiga rumores sobre un extraño Gyarados rojo. Un mundo lleno de criaturas misteriosas parece estar llamándote."},
+      {name:"NARRADOR",text:"Mamá te espera en el salón. Habla con ella pulsando E cuando estés cerca. ¡El viaje empieza aquí!"}
+    ]);
+  }else notify("Partida recuperada. Tu aventura continúa.");
 }
 function randomEnemy(){
   const candidates=["Starly","Bidoof","Shinx","Kricketot","Budew"];
