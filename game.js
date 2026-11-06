@@ -1,6 +1,8 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js";
 import { buildWorld } from "./world.js";
 import { createInteriors } from "./interiors.js";
+import { expandSinnoh,PLACES,ROUTES } from "./sinnoh.js";
+import { makeAtlas } from "./atlas.js";
 
 const $=id=>document.getElementById(id);
 const show=id=>$(id).classList.remove("hidden");
@@ -14,10 +16,21 @@ const DATABASE={
   Bidoof:{id:399,type:"Normal",move:"Placaje",power:5,max:20},
   Shinx:{id:403,type:"Eléctrico",move:"Chispa",power:8,max:18},
   Kricketot:{id:401,type:"Bicho",move:"Picadura",power:6,max:16},
-  Budew:{id:406,type:"Planta",move:"Absorber",power:6,max:16}
+  Budew:{id:406,type:"Planta",move:"Absorber",power:6,max:16},
+  Geodude:{id:74,type:"Roca",move:"Lanzarrocas",power:9,max:21},
+  Magikarp:{id:129,type:"Agua",move:"Salpicadura",power:5,max:19},
+  Machop:{id:66,type:"Lucha",move:"Golpe Karate",power:10,max:22},
+  Cranidos:{id:408,type:"Roca",move:"Cabezazo",power:12,max:26},
+  Roselia:{id:315,type:"Planta",move:"Hoja Afilada",power:11,max:24},
+  Mismagius:{id:429,type:"Fantasma",move:"Bola Sombra",power:12,max:26},
+  Lucario:{id:448,type:"Lucha",move:"Esfera Aural",power:13,max:28},
+  Floatzel:{id:419,type:"Agua",move:"Acua Jet",power:12,max:27},
+  Bastiodon:{id:411,type:"Roca",move:"Cabeza de Hierro",power:13,max:32},
+  Abomasnow:{id:460,type:"Planta",move:"Ventisca",power:13,max:31},
+  Luxray:{id:405,type:"Eléctrico",move:"Colmillo Rayo",power:13,max:30}
 };
 const sprite=name=>SPRITE_ROOT+(DATABASE[name]?.id||396)+".png";
-const freshState=()=>({quest:0,starter:null,team:[],balls:5,potions:3,seen:[],caught:[],wins:0,pos:{x:12,z:19.5},room:"bedroom",sound:true,shoes:false,pokedex:false,scriptedBattle:false});
+const freshState=()=>({quest:0,starter:null,team:[],balls:5,potions:3,seen:[],caught:[],wins:0,pos:{x:12,z:19.5},room:"bedroom",sound:true,shoes:false,pokedex:false,scriptedBattle:false,visited:["twinleaf"],badges:[],money:3000,portal:null});
 let state=freshState(),saved=null,started=false,battle=null,battleBusy=false,turn=1;
 let dialogQueue=[],dialogIndex=0,dialogAfter=null,dialogOpen=false,toastTimeout;
 const keys=new Set();
@@ -33,10 +46,11 @@ renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.36;
 container.appendChild(renderer.domElement);
 const scene=new THREE.Scene();
-const camera=new THREE.PerspectiveCamera(43,window.innerWidth/window.innerHeight,.1,180);
+const camera=new THREE.PerspectiveCamera(42,window.innerWidth/window.innerHeight,.1,340);
 const hemi=new THREE.HemisphereLight(0xe3fbff,0x6e8e57,2.25);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xffe5b7,3.7);sun.position.set(-22,45,21);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-51;sun.shadow.camera.right=51;sun.shadow.camera.top=51;sun.shadow.camera.bottom=-51;sun.shadow.camera.near=.5;sun.shadow.camera.far=125;sun.shadow.bias=-.00012;sun.shadow.normalBias=.035;scene.add(sun);
 const world=buildWorld(THREE,scene);
+const sinnoh=expandSinnoh(THREE,scene,world);
 
 const trainerLayer=$("characterSprites");
 const trainerElements=new Map();
@@ -94,15 +108,20 @@ function displayCharacterArt(t){
 }
 
 const interiors=createInteriors(THREE);
+const atlas=makeAtlas(PLACES,ROUTES,()=>state);
 let activeRoom=null;
+let activeEntrance=null;
 let outsidePosition={x:12,z:19.5};
 let scriptedBattle=false;
 const trainerPics={"BARRY":"barry","PROF. SERBAL":"rowan","LUCAS":"lucas","MAYA":"dawn","AYUDANTE":"dawn","MAMÁ":"lady","MADRE DE BARRY":"lady","VECINO":"gentleman","VECINA":"lady"};
 function enterRoom(id,fromStairs=false){
+  let roomId=id;
+  if(typeof fromStairs==="object"&&fromStairs){activeEntrance=fromStairs;roomId=fromStairs.room||id;}
+  if(typeof fromStairs==="boolean"&&fromStairs===true)activeEntrance=activeEntrance||null;
   if(battle)return;
   const p=world.hero.root;
   if(!activeRoom){outsidePosition={x:p.position.x,z:p.position.z};}
-  activeRoom=interiors.get(id);
+  activeRoom=interiors.get(roomId);
   activeRoom.scene.add(p);p.position.set(0,0,fromStairs?.9:.85);p.rotation.y=Math.PI;
   cameraTarget.set(0,1.1,0);lastPos={x:0,z:.85};stepDistance=0;cameraYaw=0;
   camDistance=16;
@@ -113,10 +132,10 @@ function exitRoom(){
   if(!activeRoom)return;
   const id=activeRoom.id;
   if(id==="bedroom"){enterRoom("home",true);notify("Has bajado al salón.");return;}
-  const door=world.portals.find(p=>p.id===id)||world.portals.find(p=>p.id==="home");
+  const door=activeEntrance||world.portals.find(p=>p.id===id)||world.portals.find(p=>p.id==="home");
   scene.add(world.hero.root);activeRoom=null;
-  world.hero.root.position.set(door.x,0,door.exitZ+.2);
-  outsidePosition={x:door.x,z:door.exitZ+.2};lastPos={x:door.x,z:door.exitZ+.2};stepDistance=0;
+  world.hero.root.position.set(door.exitX??door.x,0,(door.exitZ??door.z)+.2);
+  outsidePosition={x:door.exitX??door.x,z:(door.exitZ??door.z)+.2};lastPos={...outsidePosition};stepDistance=0;activeEntrance=null;
   cameraTarget.set(door.x,1.1,door.exitZ);
   cameraYaw=.64;camDistance=16;
   show("radar");checkPosition();updateNavigation();save();
@@ -139,6 +158,7 @@ function save(){
   if(!activeRoom)outsidePosition={x:world.hero.root.position.x,z:world.hero.root.position.z};
   state.pos={x:Number(outsidePosition.x.toFixed(2)),z:Number(outsidePosition.z.toFixed(2))};
   state.room=activeRoom?.id||null;
+  state.portal=activeEntrance?.id||null;
   try{localStorage.setItem("sinnohRebornSaveV3",JSON.stringify(state));}catch(e){}
 }
 function load(){
@@ -195,6 +215,7 @@ function advanceDialogue(){
   dialogOpen=false;hide("dialog");const cb=dialogAfter;dialogAfter=null;if(cb)cb();save();
 }
 function hideModal(id){hide(id);}
+function toggleMap(){if(!started||battle||dialogOpen||!$("starterModal").classList.contains("hidden"))return;hide("teamModal");hide("helpModal");atlas.isOpen?atlas.closeMap():atlas.openMap();}
 function toggleTeam(){
   if(!started||battle||dialogOpen||!$("starterModal").classList.contains("hidden"))return;
   if($("teamModal").classList.contains("hidden")){renderTeam();show("teamModal");tone(540,.07);}else hide("teamModal");
@@ -218,8 +239,10 @@ function renderTeam(){
 }
 function checkPosition(){
   const p=world.hero.root.position;
-  const place=activeRoom?({home:"Casa del protagonista",bedroom:"Tu habitación",barry:"Casa de Barry",lab:"Laboratorio Pokémon",cottage:"Casa del vecino"}[activeRoom.id]||"Interior"):
-    p.x<-13&&p.z<-21?"Lago Veraz":p.x>17&&p.z<-19?"Pueblo Arena":p.z<-5?"Ruta 201":"Pueblo Hojaverde";
+  const place=activeRoom?({home:"Casa del protagonista",bedroom:"Tu habitación",barry:"Casa de Barry",lab:"Laboratorio Pokémon",cottage:"Casa del vecino",center:"Centro Pokémon",mart:"Poké Mart",gym:"Gimnasio Pokémon"}[activeRoom.id]||"Interior"):sinnoh.where(p.x,p.z);
+  if(!activeRoom){for(const city of PLACES){if(Math.hypot(p.x-city.x,p.z-city.z)<city.radius+4&&!(state.visited||[]).includes(city.id)){
+    state.visited=state.visited||[];state.visited.push(city.id);notify("✦ ¡Has descubierto "+city.name+"!");tone(900,.1);save();atlas.update();
+  }}}
   if($("placeName").textContent!==place){$("placeName").textContent=place;if(started)notify("◇ "+place);}
 }
 function closestInteract(){
@@ -294,7 +317,7 @@ function doInteract(){
   if(!started||battle||!$("intro").classList.contains("hidden")||!$("teamModal").classList.contains("hidden")||!$("starterModal").classList.contains("hidden")||!$("helpModal").classList.contains("hidden"))return;
   const n=closestInteract();if(!n)return;
   const kind=n.kind;
-  if(kind==="door"){enterRoom(n.id);tone(500,.12);return;}
+  if(kind==="door"){enterRoom(n.room||n.id,n);tone(500,.12);return;}
   if(kind==="exit"){exitRoom();tone(420,.12);return;}
   if(kind==="stairsUp"){enterRoom("bedroom",true);openDialogue([{name:"NARRADOR",text:"Tu dormitorio. Aquí empezó todo, frente a una noticia sobre un misterioso Gyarados rojo."}]);return;}
   if(kind==="stairsDown"){enterRoom("home",true);return;}
@@ -378,7 +401,7 @@ function startGame(resume){
   world.hero.root.position.set(state.pos.x,0,state.pos.z);
   cameraTarget.set(state.pos.x,1.1,state.pos.z);
   hide("intro");show("hud");show("leftHud");show("bottomHud");show("navigator");
-  if(state.room)enterRoom(state.room);
+  if(state.room){activeEntrance=world.portals.find(p=>p.id===state.portal)||null;enterRoom(state.room);}
   else show("radar");
   updateQuest();updateHud();checkPosition();updateNavigation();chirp();save();
   if(!resume){
@@ -507,15 +530,19 @@ $("teamToggle").addEventListener("click",toggleTeam);
 $("teamClose").addEventListener("click",()=>hide("teamModal"));
 $("helpToggle").addEventListener("click",()=>show("helpModal"));
 $("helpClose").addEventListener("click",()=>hide("helpModal"));
+$("mapToggle").addEventListener("click",toggleMap);
+$("mapButton").addEventListener("click",toggleMap);
+$("mapClose").addEventListener("click",()=>atlas.closeMap());
 $("soundToggle").addEventListener("click",()=>{state.sound=!state.sound;$("soundToggle").textContent=state.sound?"♫":"♪̸";notify(state.sound?"Sonido activado":"Sonido desactivado");save();});
 $("healBtn").addEventListener("click",()=>{const p=currentPokemon();if(!p||state.potions<1||p.hp>=p.maxHp)return;state.potions--;p.hp=Math.min(p.maxHp,p.hp+20);tone(760,.14);renderTeam();updateHud();save();notify(p.name+" recuperó PS.");});
 window.addEventListener("keydown",e=>{
   if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," ","Tab"].includes(e.key))e.preventDefault();
-  if(e.repeat&&["e","Enter","r","Escape"].includes(e.key))return;
+  if(e.repeat&&["e","Enter","r","Escape","m"].includes(e.key))return;
   const k=e.key.toLowerCase();keys.add(k);
-  if(k==="escape"){if(dialogOpen)return;hide("teamModal");hide("helpModal");return;}
+  if(k==="escape"){if(dialogOpen)return;hide("teamModal");hide("helpModal");atlas.closeMap();return;}
   if(k==="e"||k==="enter"||k===" "){if(dialogOpen){advanceDialogue();return;}doInteract();}
   if(k==="r"&&!dialogOpen)toggleTeam();
+  if(k==="m"&&!dialogOpen)toggleMap();
 });
 window.addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));
 window.addEventListener("blur",()=>{keys.clear();save();});
@@ -527,10 +554,10 @@ renderer.domElement.addEventListener("pointerdown",e=>{if(activeRoom)return;poin
 window.addEventListener("pointerup",()=>pointerDown=false);
 window.addEventListener("pointermove",e=>{if(!pointerDown)return;const dx=e.clientX-lastPointerX;cameraYaw-=dx*.005;lastPointerX=e.clientX;dragDistance+=Math.abs(dx);});
 renderer.domElement.addEventListener("wheel",e=>{e.preventDefault();if(!activeRoom)camDistance=Math.max(11,Math.min(27,camDistance+e.deltaY*.014));},{passive:false});
-function canMove(){return started&&!battle&&!dialogOpen&&["intro","starterModal","teamModal","helpModal"].every(id=>$(id).classList.contains("hidden"));}
+function canMove(){return started&&!battle&&!dialogOpen&&["intro","starterModal","teamModal","helpModal","mapModal"].every(id=>$(id).classList.contains("hidden"));}
 function collides(x,z){
   if(activeRoom)return activeRoom.collides(x,z);
-  if(x<-41||x>41||z<-41||z>41)return true;
+  if(x<sinnoh.bounds.minX||x>sinnoh.bounds.maxX||z<sinnoh.bounds.minZ||z>sinnoh.bounds.maxZ)return true;
   for(const o of world.obstacles){
     if(o.kind==="building"){if(Math.abs(x-o.x)<o.w+.18&&Math.abs(z-o.z)<o.d+.18)return true;}
     else if(Math.hypot(x-o.x,z-o.z)<o.r+.25)return true;
@@ -551,7 +578,7 @@ function move(dt,t){
   world.hero.walk(t,true);
   const moved=Math.hypot(p.x-lastPos.x,p.z-lastPos.z);
   if(moved>.08){stepDistance+=moved;lastPos={x:p.x,z:p.z};}
-  if(stepDistance>3){stepDistance=0;if(!activeRoom&&state.starter&&state.quest>=5&&world.grassAt(p.x,p.z)&&Math.random()<.25)encounter();}
+  if(stepDistance>3){stepDistance=0;if(!activeRoom&&state.starter&&state.quest>=5&&sinnoh.inGrass(p.x,p.z)&&Math.random()<.21)encounter();}
 }
 let hintTick=0,autosaveTick=0;
 function frame(){
@@ -566,6 +593,7 @@ function frame(){
   if(!started)yaw=.65+Math.sin(t*.18)*.06;
   const newPos=new THREE.Vector3(cameraTarget.x+Math.sin(yaw)*(activeRoom?13:camDistance),cameraTarget.y+(activeRoom?13:camDistance*.62),cameraTarget.z+Math.cos(yaw)*(activeRoom?13:camDistance));
   camera.position.lerp(newPos,Math.min(1,dt*2.8));camera.lookAt(cameraTarget);
+  sinnoh.tick(t);
   renderer.render(activeRoom?.scene||scene,camera);
   displayCharacterArt(t);
   if(started){hintTick+=dt;autosaveTick+=dt;
