@@ -54,10 +54,10 @@ export function buildWorld(T, scene) {
   }
   house(-17,13,0xf8e2b7,0xc56c5e,7,6.2,"CASA DE BARRY","barry");
   house(12,13,0xf1daa8,0x557baf,7,6.2,"TU CASA","home");
-  house(-17,-1,0xf2e9ce,0x9a775a,6.4,5.5,"CASA DEL VECINO","cottage");
-  house(13,-1,0xfbe3c0,0x96646c,6.8,6.0,"CASA DEL JARDINERO","cottage");
+  house(-17,-1,0xf2e9ce,0x9a775a,6.4,5.5,"CASA DEL VECINO","cottage1");
+  house(13,-1,0xfbe3c0,0x96646c,6.8,6.0,"CASA DEL JARDINERO","cottage2");
   house(24,-29,0xe4e3d4,0x4a8d8a,8.7,7.5,"LABORATORIO","lab");
-  house(36,-29,0xf3e2ca,0xc47756,5.5,5.1,"CASA","cottage");
+  house(36,-29,0xf3e2ca,0xc47756,5.5,5.1,"CASA","cottage3");
   // Walkways to every reachable front door — no invisible walls blocking interaction.
   for(const p of portals){box(scene,2.2,.06,2.5,pathMat,p.x,.055,p.z+1.15);}
 
