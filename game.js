@@ -105,6 +105,14 @@ function displayCharacterArt(t){
     el.style.top=((-projected.y*.5+.5)*innerHeight-bob).toFixed(1)+"px";
     el.style.width=width.toFixed(1)+"px";
     el.style.height=height.toFixed(1)+"px";
+    if(actor.key==="hero"){
+      const inMotion=canMove()&&(keys.has("w")||keys.has("s")||keys.has("a")||keys.has("d")||keys.has("arrowup")||keys.has("arrowleft")||keys.has("arrowright")||keys.has("arrowdown"));
+      const turn=Math.sin(actor.root.rotation.y);
+      const flip=turn>0.15?-1:1;
+      const sway=inMotion?Math.sin(t*(keys.has("shift")?17:11))*3.6:Math.sin(t*1.4)*.65;
+      const stretch=inMotion?1+Math.abs(Math.sin(t*11))*.045:1;
+      el.style.transform="translate(-50%,-88%) scaleX("+flip+") scaleY("+stretch.toFixed(2)+") rotate("+sway.toFixed(2)+"deg)";
+    }
     el.classList.remove("hidden-sprite");
   }
   for(const [key,el] of trainerElements)if(!visible.has(key))el.classList.add("hidden-sprite");
@@ -112,6 +120,29 @@ function displayCharacterArt(t){
 
 const interiors=createInteriors(THREE);
 const atlas=makeAtlas(PLACES,ROUTES,()=>state);
+const atmosphere=$("ambientEffects"),weatherLabel=$("weatherLabel");
+for(let i=0;i<32;i++){
+  const p=document.createElement("i");p.className="floating-seed";
+  p.style.left=((i*37+13)%97)+"%";p.style.animationDelay=(-i*1.37)+"s";
+  p.style.animationDuration=(7+(i%7)*1.6)+"s";
+  atmosphere.appendChild(p);
+}
+let lastWeather="none";
+function setWeather(){
+  const p=world.hero.root.position;
+  let nearest=PLACES[0],distance=Infinity;
+  for(const c of PLACES){let d=Math.hypot(c.x-p.x,c.z-p.z);if(d<distance){distance=d;nearest=c;}}
+  const mode=activeRoom||!started?"none":nearest.type==="snow"?"snow":nearest.type==="flower"?"petals":nearest.type==="marsh"?"rain":"sun";
+  if(lastWeather===mode)return;lastWeather=mode;
+  atmosphere.className="ambient-effects "+mode+(mode==="none"?" hidden":"");
+  const descriptions={snow:"❄ Nevada · Montañas de Sinnoh",petals:"❀ Pétalos de Aromaflor",rain:"☂ Lluvia · Gran Pantano",sun:""};
+  weatherLabel.textContent=descriptions[mode]||"";
+  if(mode==="sun"||mode==="none")hide("weatherLabel");else show("weatherLabel");
+}
+function sceneTransition(){
+  const el=$("fade");el.animate([{opacity:0},{opacity:.72},{opacity:0}],{duration:610,easing:"ease-in-out"});
+}
+
 let activeRoom=null;
 let activeEntrance=null;
 let outsidePosition={x:12,z:19.5};
@@ -122,6 +153,7 @@ function enterRoom(id,fromStairs=false){
   if(typeof fromStairs==="object"&&fromStairs){activeEntrance=fromStairs;roomId=fromStairs.room||id;}
   if(typeof fromStairs==="boolean"&&fromStairs===true)activeEntrance=activeEntrance||null;
   if(battle)return;
+  sceneTransition();
   const p=world.hero.root;
   if(!activeRoom){outsidePosition={x:p.position.x,z:p.position.z};}
   activeRoom=interiors.get(roomId);
@@ -133,6 +165,7 @@ function enterRoom(id,fromStairs=false){
 }
 function exitRoom(){
   if(!activeRoom)return;
+  sceneTransition();
   const id=activeRoom.id;
   if(id==="bedroom"){enterRoom("home",true);notify("Has bajado al salón.");return;}
   const door=activeEntrance||world.portals.find(p=>p.id===id)||world.portals.find(p=>p.id==="home");
@@ -483,7 +516,7 @@ function encounter(forcedName=null,isScripted=false,challenger=null){
   turn=1;battleBusy=false;
   $("enemySprite").src=sprite(name);
   $("playerSprite").src=sprite(currentPokemon().name);
-  show("battle");hide("interactHint");
+  sceneTransition();show("battle");hide("interactHint");
   $("battleMessage").textContent="¡Un "+name+" salvaje ha aparecido!";
   updateBattle();tone(360,.1,"triangle",.06);
   setTimeout(()=>tone(510,.1,"triangle",.05),150);
@@ -670,7 +703,7 @@ function frame(){
   renderer.render(activeRoom?.scene||scene,camera);
   displayCharacterArt(t);
   if(started){hintTick+=dt;autosaveTick+=dt;
-    if(hintTick>.24){hintTick=0;checkPosition();updateNavigation();world.npcs.filter(n=>n.kind==="barry").forEach(n=>n.model.root.visible=state.quest>=2);if(canMove()){const n=closestInteract();if(n){$("interactLabel").textContent="Hablar · "+n.name;show("interactHint");}else hide("interactHint");}else hide("interactHint");}
+    if(hintTick>.24){hintTick=0;checkPosition();updateNavigation();setWeather();world.npcs.filter(n=>n.kind==="barry").forEach(n=>n.model.root.visible=state.quest>=2);if(canMove()){const n=closestInteract();if(n){$("interactLabel").textContent="Hablar · "+n.name;show("interactHint");}else hide("interactHint");}else hide("interactHint");}
     if(autosaveTick>12){autosaveTick=0;save();}
   }
 }
