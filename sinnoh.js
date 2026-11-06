@@ -274,6 +274,41 @@ export function expandSinnoh(T,scene,world){
   world.npcs.push(n);
   markerLabel(name,x,z,3.55,4.7);
  }
+ // Roaming Pokémon: animated creatures on the routes, with real encounter triggers.
+ const wildlife=[];
+ const creatures=[
+  ["Starly",396],["Bidoof",399],["Shinx",403],["Kricketot",401],
+  ["Budew",406],["Geodude",74],["Machop",66],["Roselia",315],
+  ["Magikarp",129],["Psyduck",54],["Buizel",418],["Pachirisu",417]
+ ];
+ const spriteCache=new Map(),textureLoader=new T.TextureLoader();
+ textureLoader.setCrossOrigin("anonymous");
+ for(const [species,id] of creatures){
+   textureLoader.load("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/"+id+".png",tex=>{
+      tex.colorSpace=T.SRGBColorSpace;
+      spriteCache.set(species,tex);
+      for(const mon of wildlife)if(mon.name===species){
+        mon.sprite.material.map=tex;mon.sprite.material.needsUpdate=true;mon.sprite.visible=true;
+      }
+   },undefined,()=>{});
+ }
+ for(let i=0;i<84;i++){
+   const zone=PLACES[2+Math.floor(random()*(PLACES.length-2))];
+   const angle=random()*6.283,rad=zone.radius+9+random()*48;
+   const x=zone.x+Math.cos(angle)*rad,z=zone.z+Math.sin(angle)*rad;
+   if(nearbyRoad(x,z,5)||withinCity(x,z,7))continue;
+   let selected=creatures[Math.floor(random()*creatures.length)];
+   if(zone.type==="snow")selected=["Pachirisu",417];
+   if(zone.type==="coastal"&&random()>.5)selected=["Buizel",418];
+   const [name,pokedex]=selected;
+   const root=new T.Group();root.position.set(x,0,z);scene.add(root);
+   const shadow=new T.Mesh(new T.CircleGeometry(.68,20),new T.MeshBasicMaterial({color:0x284d40,transparent:true,opacity:.2,depthWrite:false}));
+   shadow.rotation.x=-Math.PI/2;shadow.position.y=.045;root.add(shadow);
+   const spr=new T.Sprite(new T.SpriteMaterial({map:spriteCache.get(name)||null,transparent:true,depthWrite:false,alphaTest:.04}));
+   spr.position.set(0,1.18,0);spr.scale.set(2.35,2.35,1);spr.visible=!!spriteCache.get(name);root.add(spr);
+   wildlife.push({name,pokedex,root,sprite:spr,shadow,anchorX:x,anchorZ:z,phase:random()*6.28,velocity:.3+random()*.3});
+   world.spots.push({name:"Pokémon salvaje · "+name,x,z,kind:"wildPokemon",pokemon:name});
+ }
  // A compact visual tag for region boundaries.
  for(const city of PLACES){
    if(city.id==="twinleaf"||city.id==="sandgem")continue;
@@ -299,6 +334,12 @@ export function expandSinnoh(T,scene,world){
  }
  function tick(t){
    for(const a of animated)if(a.kind==="water")a.object.position.y=a.base+Math.sin(t*.75+a.seed)*.035;
+   for(const a of wildlife){const stride=t*a.velocity+a.phase;
+     a.root.position.x=a.anchorX+Math.sin(stride)*1.25;
+     a.root.position.z=a.anchorZ+Math.cos(stride*.7)*.7;
+     a.sprite.position.y=1.18+Math.abs(Math.sin(t*2.6+a.phase))*.20;
+     a.shadow.scale.setScalar(.9+Math.sin(t*2.6+a.phase)*.07);
+   }
  }
- return {places:PLACES,routes:ROUTES,lookup,routeSegments,where,inGrass,tick,bounds:{minX:-175,maxX:480,minZ:-475,maxZ:90},nearbyRoad};
+ return {places:PLACES,routes:ROUTES,lookup,routeSegments,wildlife,where,inGrass,tick,bounds:{minX:-175,maxX:480,minZ:-475,maxZ:90},nearbyRoad};
 }
