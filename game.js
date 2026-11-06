@@ -27,7 +27,10 @@ const DATABASE={
   Floatzel:{id:419,type:"Agua",move:"Acua Jet",power:12,max:27},
   Bastiodon:{id:411,type:"Roca",move:"Cabeza de Hierro",power:13,max:32},
   Abomasnow:{id:460,type:"Planta",move:"Ventisca",power:13,max:31},
-  Luxray:{id:405,type:"Eléctrico",move:"Colmillo Rayo",power:13,max:30}
+  Luxray:{id:405,type:"Eléctrico",move:"Colmillo Rayo",power:13,max:30},
+  Psyduck:{id:54,type:"Agua",move:"Confusión",power:7,max:20},
+  Buizel:{id:418,type:"Agua",move:"Acua Jet",power:9,max:22},
+  Pachirisu:{id:417,type:"Eléctrico",move:"Chispa",power:8,max:21}
 };
 const sprite=name=>SPRITE_ROOT+(DATABASE[name]?.id||396)+".png";
 const freshState=()=>({quest:0,starter:null,team:[],balls:5,potions:3,seen:[],caught:[],wins:0,pos:{x:12,z:19.5},room:"bedroom",sound:true,shoes:false,pokedex:false,scriptedBattle:false,visited:["twinleaf"],badges:[],money:3000,portal:null});
@@ -299,6 +302,13 @@ function objective(){
     if(p.z>-18)return {text:"Avanza hacia Pueblo Arena",x:-2,z:-19};
     if(p.x<21)return {text:"Sigue al este",x:24,z:-19};
   }
+  if(state.quest>=7){
+    const badgeOrder=["oreburgh","eterna","hearthome","veilstone","pastoria","canalave","snowpoint","sunyshore"];
+    const targetsByQuest={7:"jubilife",8:"oreburgh",9:"eterna",10:"hearthome"};
+    const next=state.quest>=11?badgeOrder.find(id=>!(state.badges||[]).includes(id))||"sunyshore":targetsByQuest[state.quest]||"jubilife";
+    const city=sinnoh.lookup[next];
+    return {text:state.quest>=11?"Siguiente gimnasio · "+city.name:"Viaja a "+city.name,x:city.x,z:city.z};
+  }
   return targets[state.quest]||targets[7];
 }
 function updateNavigation(){
@@ -315,8 +325,8 @@ function updateNavigation(){
   $("navDistance").textContent=distance<2.5?"¡Ya estás cerca!":Math.ceil(distance)+" m de distancia";
   if(activeRoom){hide("radar");return;}
   show("radar");
-  const mapPos=(x,z)=>({left:(50+x/84*100).toFixed(1)+"%",top:(50-z/84*100).toFixed(1)+"%"});
-  Object.assign($("radarPlayer").style,mapPos(p.x,p.z));
+  const mapPos=(x,z)=>({left:(50+Math.max(-42,Math.min(42,(x-p.x)))/90*100).toFixed(1)+"%",top:(50-Math.max(-42,Math.min(42,(z-p.z)))/90*100).toFixed(1)+"%"});
+  Object.assign($("radarPlayer").style,{left:"50%",top:"50%"});
   Object.assign($("radarTarget").style,mapPos(target.x,target.z));
 }
 function doInteract(){
@@ -358,6 +368,7 @@ function doInteract(){
     if((state.badges||[]).includes(info[1])){openDialogue([{name:"LÍDER "+info[2],text:"¡Ya has conseguido mi medalla! Sigue recorriendo Sinnoh para encontrar nuevos retos."}]);return;}
     openDialogue([{name:"LÍDER "+info[2],text:"¡Así que has venido a desafiarme! El camino de un entrenador se demuestra en combate."},{name:"LÍDER "+info[2],text:"Soy "+info[2]+", líder de "+info[0]+". ¡Prepárate! ¡Te reto a un combate por la medalla!"}],()=>encounter(info[3],false,{name:"LÍDER "+info[2],city:info[1],level:info[4],gym:true}));return;
   }
+  if(kind==="wildPokemon"){if(!state.starter){openDialogue([{name:"NARRADOR",text:"¡Un "+n.pokemon+" salvaje! Necesitas un compañero Pokémon antes de enfrentarlo."}]);}else encounter(n.pokemon);return;}
   if(kind==="trainer"){
     if(!state.starter){openDialogue([{name:n.name,text:"¿Todavía no tienes un Pokémon? ¡Habla con el profesor junto al lago!"}]);return;}
     const beaten=state.defeated||[];
