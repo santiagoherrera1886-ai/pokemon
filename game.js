@@ -72,7 +72,9 @@ renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.36;
 container.appendChild(renderer.domElement);
 const scene=new THREE.Scene();
-const camera=new THREE.PerspectiveCamera(42,window.innerWidth/window.innerHeight,.1,340);
+// Orthographic 2.5D camera: stable DS-style proportions without perspective shrinking.
+const cameraSpan=19;
+const camera=new THREE.OrthographicCamera(-cameraSpan*window.innerWidth/window.innerHeight/2,cameraSpan*window.innerWidth/window.innerHeight/2,cameraSpan/2,-cameraSpan/2,.1,1200);
 const hemi=new THREE.HemisphereLight(0xe3fbff,0x6e8e57,2.25);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xffe5b7,3.7);sun.position.set(-22,45,21);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-51;sun.shadow.camera.right=51;sun.shadow.camera.top=51;sun.shadow.camera.bottom=-51;sun.shadow.camera.near=.5;sun.shadow.camera.far=125;sun.shadow.bias=-.00012;sun.shadow.normalBias=.035;scene.add(sun);
 const world=buildWorld(THREE,scene);
@@ -729,12 +731,12 @@ window.addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));
 window.addEventListener("blur",()=>{keys.clear();save();});
 document.addEventListener("visibilitychange",()=>{if(document.hidden)save();});
 window.addEventListener("beforeunload",save);
-window.addEventListener("resize",()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
+window.addEventListener("resize",()=>{const aspect=window.innerWidth/window.innerHeight;camera.left=-cameraSpan*aspect/2;camera.right=cameraSpan*aspect/2;camera.top=cameraSpan/2;camera.bottom=-cameraSpan/2;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
 let pointerDown=false,lastPointerX=0,dragDistance=0;
 renderer.domElement.addEventListener("pointerdown",e=>{if(activeRoom)return;pointerDown=true;lastPointerX=e.clientX;dragDistance=0;});
 window.addEventListener("pointerup",()=>pointerDown=false);
 window.addEventListener("pointermove",e=>{if(!pointerDown)return;const dx=e.clientX-lastPointerX;cameraYaw-=dx*.005;lastPointerX=e.clientX;dragDistance+=Math.abs(dx);});
-renderer.domElement.addEventListener("wheel",e=>{e.preventDefault();if(!activeRoom)camDistance=Math.max(11,Math.min(27,camDistance+e.deltaY*.014));},{passive:false});
+renderer.domElement.addEventListener("wheel",e=>{e.preventDefault();if(!activeRoom){camera.zoom=Math.max(.72,Math.min(1.75,camera.zoom-e.deltaY*.00065));camera.updateProjectionMatrix();}},{passive:false});
 function canMove(){return started&&!battle&&!dialogOpen&&["intro","starterModal","teamModal","helpModal","mapModal"].every(id=>$(id).classList.contains("hidden"));}
 function collides(x,z){
   if(activeRoom)return activeRoom.collides(x,z);
@@ -772,7 +774,8 @@ function frame(){
   cameraTarget.lerp(new THREE.Vector3(pos.x,activeRoom?1.0:1.2,pos.z),Math.min(1,dt*(activeRoom?6:3.2)));
   let yaw=cameraYaw;
   if(!started)yaw=.65+Math.sin(t*.18)*.06;
-  const newPos=new THREE.Vector3(cameraTarget.x+Math.sin(yaw)*(activeRoom?13:camDistance),cameraTarget.y+(activeRoom?13:camDistance*.62),cameraTarget.z+Math.cos(yaw)*(activeRoom?13:camDistance));
+  const distance=activeRoom?17:28;
+  const newPos=new THREE.Vector3(cameraTarget.x+Math.sin(yaw)*distance,cameraTarget.y+distance*.92,cameraTarget.z+Math.cos(yaw)*distance);
   camera.position.lerp(newPos,Math.min(1,dt*2.8));camera.lookAt(cameraTarget);
   sinnoh.tick(t);
   renderer.render(activeRoom?.scene||scene,camera);
