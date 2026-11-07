@@ -1,38 +1,66 @@
-# Sinnoh Reborn · HD-2D
-Proyecto fan de aventura para navegador inspirado en la región de Sinnoh de Pokémon Diamante y Perla (Nintendo DS).
+# Sinnoh Reborn — navegador, edición pixel art
 
-## 🎮 Jugar sin instalar archivos
-**https://pokemon-sa-ntiago.vercel.app/**
+**Jugar en línea:** https://pokemon-sa-ntiago.vercel.app/
 
-Selecciona **Comenzar aventura**: el juego no solicita ni descarga una ROM .nds. Se ejecuta directamente en el navegador con un motor de dibujo Canvas 2D.
+Este proyecto es una **aventura fan independiente inspirada en la Sinnoh de Pokémon Diamante y Perla**. No requiere cargar ROMs ni instalar emuladores: la entrada `index.html` funciona con Canvas 2D y JavaScript en el navegador.
 
-### Lo que está implementado
-- Introducción en habitación, casa del protagonista y conversación con mamá.
-- **Pueblo Hojaverde**: cuatro casas con el hogar al sureste y la casa de Barry al noroeste, caminos cruzados, estanque, árboles, cercas y buzones.
-- Visita a Barry y viaje por Ruta 201 hacia Lago Veraz.
-- Maletín con Turtwig, Chimchar y Piplup y primer combate contra Starly.
-- Regreso a casa, laboratorio del profesor Serbal en Pueblo Arena, Ruta 202 y acceso a una representación inicial de Ciudad Jubileo.
-- Casas, centro Pokémon, tienda, NPC, captura de Pokémon salvajes, batallas básicas, inventario, equipo y guardado local.
-- Controles WASD o flechas, E/Enter interactuar, Shift correr, R equipo, M mapa, Esc cerrar ventanas. En móvil incluye D-pad, A (interactuar) y B (correr).
+> **Importante:** no es el videojuego comercial, no es un port del código de Nintendo DS y **no reproduce de forma idéntica** todo su contenido. La edición visual V2 usa personajes dibujados por nuestro código en píxeles originales y proporciones más cercanas a Nintendo DS. La decompilación upstream se mantiene vinculada como **referencia**.
 
-### Qué **NO** es
-**No es Pokémon Diamante/Perla original ni una reproducción completa o exacta.** Los gráficos, escenarios, código, combate e historia más allá del capítulo inicial son un prototipo independiente. No incluye las ocho medallas, postgame, todas las especies, movimientos ni todos los eventos originales. No usa ni carga el código compilado de Nintendo DS en el navegador.
+## Qué funciona actualmente
 
-### Código de referencia de Diamante y Perla
-La carpeta `original/pokediamond` es un **submódulo Git**, con enlace al proyecto comunitario de decompilación [pret/pokediamond](https://github.com/pret/pokediamond). Está presente en el repositorio para documentación, estudio e investigación; **no** es parte del bundle web de Vercel.
+- Arranque en la habitación del protagonista y progresión de la primera aventura.
+- Pueblo Hojaverde de cuatro casas, Ruta 201, Lago Veraz, Pueblo Arena, Ruta 202 y una representación inicial de Jubileo.
+- Conversaciones con mamá, Barry y el profesor Serbal.
+- Elección de Turtwig, Chimchar o Piplup; primer Starly; combates, experiencia y captura básica.
+- Centros Pokémon con curación, Poké Mart con compras de Poké Balls y pociones, inventario persistente.
+- Entradas automáticas caminando por las puertas; salida automática por la puerta de los interiores.
+- Bloqueos para no atravesar mobiliario y obstáculos del mapa.
+- Personajes de pixel art originales de cuatro direcciones, árboles en capas y gráficos renderizados a baja resolución con escala nítida.
+- Guardado en el navegador (localStorage); no se envían datos de partida a servidores.
+- Controles táctiles en móvil: flechas, botón **A** interactuar, botón **B** correr. Los diálogos avanzan tocando el cuadro.
 
-Clona los archivos originales de la comunidad con:
+## Controles de escritorio
+
+| Acción | Tecla |
+|---|---|
+| Mover | WASD o flechas |
+| Interactuar y hablar | E, Enter o espacio |
+| Correr | Shift |
+| Mostrar u ocultar misión | Q |
+| Equipo | R |
+| Mapa | M |
+| Cerrar ventana | Esc |
+
+## Código y fuente original
+
+- `index.html` y `hd2d.html`: páginas de juego sincronizadas.
+- `hd2d.js`: motor web y pixel art dibujado por código.
+- `hd2d.css`: controles, diálogos, UI y presentación de juego.
+- `tests/qa-browser.cjs`: prueba real de escritorio y móvil.
+- `original/pokediamond`: **submódulo de Git** apuntando a [pret/pokediamond](https://github.com/pret/pokediamond) (proyecto de decompilación Nintendo DS en desarrollo). Su código no se ejecuta en la web.
+
+Para obtener el código fuente upstream junto al proyecto:
+
 ```bash
 git clone --recurse-submodules https://github.com/santiagoherrera1886-ai/pokemon.git
 ```
 
-Consulta [ORIGINAL-CODE.md](ORIGINAL-CODE.md) para requisitos de compilación y límites.
+Más contexto en [ORIGINAL-CODE.md](ORIGINAL-CODE.md).
 
-### Código web
-- `index.html` interfaz del juego
-- `hd2d.css` diseño y controles táctiles
-- `hd2d.js` motor de exploración, colisiones, historia, personajes y combates
-- `hd2d.html` entrada independiente del mismo juego (referencia)
+## Pruebas reproducibles
 
-### Nota legal
-Proyecto fan no oficial y no comercial, sin relación con Nintendo, Game Freak ni The Pokémon Company. Los nombres, criaturas y marcas de Pokémon pertenecen a sus titulares respectivos. No se incluyen ni redistribuyen ROM comerciales.
+En un entorno de desarrollo con Node y Chromium:
+
+```bash
+npm install --no-save playwright
+npx playwright install chromium
+node tests/qa-browser.cjs
+```
+
+Esta prueba inicia un servidor web local, carga el juego en Chromium, comprueba los pasos 0–7 de la historia, entradas y salidas, compras en Poké Mart, curación en Centro Pokémon, errores JS y movimiento táctil. Para sistemas Linux se pueden necesitar las dependencias de Chromium (`npx playwright install-deps chromium`).
+
+## Qué falta para una versión realmente fiel
+
+El motor actual **no** contiene los mapas extraídos de la ROM comercial, sus modelos/sprites originales, todas las ciudades/rutas ni los ocho gimnasios y la historia completa. La decompilación de `pret` requiere dependencias del entorno Nintendo DS y datos del juego original: incorporarla como submódulo no convierte automáticamente este prototipo en un juego web idéntico.
+
+Este fan project no tiene afiliación con Nintendo, Game Freak ni The Pokémon Company. Pokémon y todos sus personajes y marcas pertenecen a sus titulares. No se incluye ni distribuye ROM comercial.
