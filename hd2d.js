@@ -72,7 +72,7 @@ function treeAt(x,y){
  if(x<1||x>77||y<-24||y>93)return false;
  if(inLake(x,y)||inPond(x,y)||isPath(x,y)||inTown(x,y)||inSandgem(x,y)||inJubilife(x,y))return false;
  if(Math.abs(y-37)<3&&x>13&&x<25)return false;
- return r(Math.floor(x),Math.floor(y))>(y>46&&y<90&&x<44?.64:.82);
+ return r(Math.floor(x),Math.floor(y))>(y>46&&y<90&&x<44?.64:.82)&&r(Math.floor(x)+50,Math.floor(y)+11)>.28;
 }
 function obstacle(x,y){
  if(x<2.5||x>75||y<-22||y>90)return true;
@@ -274,7 +274,7 @@ function drawWorld(){
  for(const [x,y,l] of [[22,43,"RUTA 201"],[21,29,"LAGO VERAZ"],[45,28,"PUEBLO ARENA"],[56,8,"RUTA 202"]])sign(x,y,l);
  // draw sorted tall props, NPC and player for depth
  const things=[];
- for(let yy=minY-2;yy<maxY+2;yy++)for(let xx=minX-2;xx<maxX+2;xx++)if(treeAt(xx+.48,yy+.48)&&r(xx+50,yy+11)>.28)things.push({sort:yy+.8,draw:()=>tree(xx,yy)});
+ for(let yy=minY-2;yy<maxY+2;yy++)for(let xx=minX-2;xx<maxX+2;xx++)if(treeAt(xx+.48,yy+.48))things.push({sort:yy+.8,draw:()=>tree(xx,yy)});
  for(const h of houses)things.push({sort:h.y+h.h,draw:()=>house(h)});
  for(const n of outdoorNPCs)if(n.y>=minY-3&&n.y<=maxY+3)things.push({sort:n.y,draw:()=>character(n.x,n.y,n.skin,"down",elapsed*.13+r(n.x,n.y)*5)});
  things.push({sort:state.y,draw:()=>character(state.x,state.y,"hero",facing,walkClock)});
