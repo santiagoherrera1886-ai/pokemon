@@ -67,7 +67,7 @@ const inSandgem=(x,y)=>x>43&&x<74&&y>12&&y<42;
 const inJubilife=(x,y)=>x>45&&x<75&&y>-24&&y<9;
 const inLake=(x,y)=>Math.pow((x-lake.cx)/lake.rx,2)+Math.pow((y-lake.cy)/lake.ry,2)<1;
 const inPond=(x,y)=>((x-villagePond.cx)/villagePond.rx)**2+((y-villagePond.cy)/villagePond.ry)**2<1;
-const grass=(x,y)=>!isPath(x,y)&&!inTown(x,y)&&!inSandgem(x,y)&&!inJubilife(x,y)&&!inLake(x,y);
+const grass=(x,y)=>!isPath(x,y)&&!inTown(x,y)&&!inSandgem(x,y)&&!inJubilife(x,y)&&!inLake(x,y)&&!inPond(x,y);
 function treeAt(x,y){
  if(x<1||x>77||y<-24||y>93)return false;
  if(inLake(x,y)||inPond(x,y)||isPath(x,y)||inTown(x,y)||inSandgem(x,y)||inJubilife(x,y))return false;
@@ -171,6 +171,16 @@ function house(h){
  if(h.kind==="lab"){
   rounded(w*.32,1.75,w*.36,.86,.1,"#f8efdd");text("LABORATORIO",w/2,2.28,10,"#3e5d76");
  }
+ // Windowsills, plank details and the classic red mailboxes next to the two protagonists' homes.
+ if(h.kind==="home"||h.kind==="barry"){
+   const bx=w+1.03;ellipse(bx,b+.18,.48,.19,"#23433566");
+   rounded(bx-.09,b-1.35,.18,1.4,.04,"#675b4b");
+   rounded(bx-.43,b-1.72,.86,.63,.14,"#bd4c46");
+   rounded(bx-.41,b-1.71,.82,.14,.05,"#e37b67");
+   rect(bx-.25,b-1.47,.48,.065,"#553a3c");
+   rounded(w/2-1.55,b+.08,3.1,.38,.12,"#aaa18b");
+   rounded(w/2-1.28,b+.19,2.56,.20,.07,"#e7ddc5");
+ }
  ctx.restore();
 }
 function flowers(x,y){
@@ -251,18 +261,16 @@ function drawWorld(){
  for(let y=minY;y<maxY;y++)for(let x=minX;x<maxX;x++)groundTile(x,y);
  // handcrafted scenery: flower gardens, lamps, fences, berry bushes and biome flora
  for(let y=minY;y<maxY+2;y++)for(let x=minX;x<maxX+2;x++){
-   if(treeAt(x+.48,y+.48)&&r(x+50,y+11)>.28){
-     if(y-2<cam.y-H/(T*zoom)/2-3)continue;
-     tree(x,y);
-   }else if(grass(x+.5,y+.5)&&r(x+29,y+83)>.936)grassBush(x,y);
-   else if(!isPath(x+.5,y+.5)&&r(x+11,y+73)>.972)flowers(x,y);
+   if(grass(x+.5,y+.5)&&r(x+29,y+83)>.936)grassBush(x,y);
+   else if(!isPath(x+.5,y+.5)&&!inPond(x+.5,y+.5)&&!inLake(x+.5,y+.5)&&r(x+11,y+73)>.972)flowers(x,y);
  }
  // Place decorations on dedicated, hand-composed town blocks
- for(let x=7;x<=39;x+=1.4){if(x<12.7||x>17.2)fence(x,65,.98);}
+ for(let x=6.2;x<=40;x+=1.2){if(x<19.4||x>25.7)fence(x,49.2,1.01);}
+ for(let x=5.5;x<=40;x+=1.2){if(x<5.8||x>11.6)fence(x,87.3,1.01);}
  for(let x=44;x<=72;x+=1.2){if(x<56||x>61)fence(x,14,1.01);}
- for(let j=0;j<16;j++){const x=6.4+(j%8)*1.4,y=82.7+Math.floor(j/8)*1.2;flowers(x,y);}
+ for(let j=0;j<16;j++){const x=11.7+(j%8)*1.1,y=82.7+Math.floor(j/8)*1.2;flowers(x,y);}
  for(let j=0;j<18;j++){const x=42.3+(j%9)*1.5,y=39.5+Math.floor(j/9)*1.2;flowers(x,y);}
- for(const [x,y] of [[8,63],[38,62],[41,27],[71,25],[49,-6]])lamp(x,y);
+ for(const [x,y] of [[7.6,62],[39.2,62],[7.6,78],[39.2,78],[41,27],[71,25],[49,-6]])lamp(x,y);
  for(const [x,y,l] of [[22,43,"RUTA 201"],[21,29,"LAGO VERAZ"],[45,28,"PUEBLO ARENA"],[56,8,"RUTA 202"]])sign(x,y,l);
  // draw sorted tall props, NPC and player for depth
  const things=[];
