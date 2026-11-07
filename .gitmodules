@@ -1,0 +1,4 @@
+[submodule "original/pokediamond"]
+	path = original/pokediamond
+	url = https://github.com/pret/pokediamond.git
+	branch = master
