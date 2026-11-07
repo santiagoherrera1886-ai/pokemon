@@ -386,25 +386,34 @@ function plantPot(x,y){
 }
 function interiorDetails(){
  if(scene==="center"||scene==="center2"){
-  // Pokémon Center reception, bright red service counter and healing machine.
-  rect(.36,1.85,15.28,9.75,"#eedfd7");
+  // DS-era healing reception: pale bluish square tiles, counter, six healing slots.
+  rect(.36,1.85,15.28,9.75,"#d1dcdf");
   for(let y=2;y<11;y++)for(let x=1;x<15;x++){
-   if((x+y)%2===0)rect(x,y,1,1,"#f4e9e2");
+   if((x+y)%2===0)rect(x,y,1,1,"#e5edf0");
+   rect(x+.16,y+.12,.69,.027,"#f9faf73a");
   }
-  rounded(1.15,7.3,13.7,2.9,.3,"#e6a8a4");
-  rounded(1.5,7.65,13,2.25,.26,"#f7d5c9");
-  tileCounter(2.1,3.35,11.8,1.7,"#d65d66","#f7e8dd");
-  rounded(6.6,3.34,2.8,.62,.12,"#a9c9cd");
-  for(let i=0;i<6;i++)pokeballSymbol(6.95+i*.44,3.55,.28);
-  rounded(1.15,3.1,.85,1.25,.1,"#b7d7d4");
-  rounded(14,3.1,.85,1.25,.1,"#b7d7d4");
-  plantPot(1.3,9.3);plantPot(14.5,9.3);
-  for(const x of [2.6,12.5]){
-   rounded(x,5.75,1.25,1.75,.15,"#5a8fa6");
-   rounded(x+.12,5.9,1.0,.66,.1,"#b5d9df");
+  // Semicircular Wi-Fi emblem on the floor, near the lobby entrance.
+  ctx.save();ctx.strokeStyle="#fbfdf7";ctx.lineWidth=.25;
+  for(const rad of [1.08,1.9,2.72]){
+   ctx.beginPath();ctx.arc(8,10.1,rad,Math.PI,Math.PI*2);ctx.stroke();
   }
-  ellipse(8,6.65,.65,.19,"#31545b44");
-  character(8,6.7,"girl");
+  ctx.restore();ellipse(8,10.1,.20,.20,"#f9faf4");
+  // Reception furnishings sit behind the counter, facing the trainer.
+  for(const x of [1.7,12.4]){
+   rounded(x,3.5,1.9,1.5,.08,"#739ab1");
+   rounded(x+.17,3.71,1.55,.75,.05,"#a9d2e1");
+   rect(x+.3,4.63,1.25,.14,"#f0f6f2");
+  }
+  character(8,5.25,"girl");
+  tileCounter(2.25,5.02,11.5,1.46,"#668caa","#acc9d5");
+  rounded(5.65,4.96,4.7,.35,.08,"#8cb1c1");
+  for(let i=0;i<6;i++)pokeballSymbol(6.04+i*.76,5.07,.32);
+  rounded(7.22,5.12,1.55,.30,.08,"#edf3ee");
+  rounded(1.10,6.45,1.65,1.55,.12,"#8caaba");
+  rounded(13.2,6.45,1.65,1.55,.12,"#8caaba");
+  plantPot(1.45,9.15);plantPot(14.35,9.15);
+  // One guest waits on the left, as in the busy DS reception.
+  character(4.15,8.05,"boy","right");
  }else if(scene==="mart"){
   rect(.36,1.85,15.28,9.75,"#dce8ec");
   for(let y=2;y<11;y++)for(let x=1;x<15;x++)if((x+y)%2===0)rect(x,y,1,1,"#e9f0ee");
@@ -417,10 +426,11 @@ function interiorDetails(){
     }
    }
   }
-  tileCounter(4.5,3.4,7,1.8,"#688cab","#d9e9e6");
-  for(let i=0;i<4;i++)pokeballSymbol(5.3+i*1.8,3.57,.34);
+  // Shopkeeper is behind the counter, not standing on the player's feet.
+  character(8,4.95,"boy");
+  tileCounter(4.5,5.03,7,1.6,"#688cab","#d9e9e6");
+  for(let i=0;i<4;i++)pokeballSymbol(5.35+i*1.75,5.13,.32);
   plantPot(3.5,9.3);plantPot(12.2,9.3);
-  character(8,6.7,"boy");
  }
 }
 function drawInterior(){
@@ -624,8 +634,24 @@ function catchBall(){
  }else{$("battleText").textContent="¡Oh, no! ¡El Pokémon se escapó!";setTimeout(enemyTurn,660);}},780);
 }
 function runAway(){if(!battle||battleBusy||battle.trainer)return;battleBusy=true;$("battleText").textContent="¡Escapaste sin problemas!";setTimeout(()=>endBattle(false),450);}
+function indoorCollision(x,y){
+ if(x<.8||x>15.2||y<2.1||y>11.4)return true;
+ const blocks={
+  bedroom:[[1.5,3,4.2,3.3],[10.3,3.1,3.8,2],[10,8,3.8,1.7]],
+  home:[[1.2,3,4.5,2.5],[10.5,3,4.1,2.2],[2.7,8.6,3.9,1.5],[9.4,8.6,3.7,1.6]],
+  barry:[[1.3,3.1,3.3,2.4],[10.7,3.1,3.2,2]],
+  lab:[[1,3.4,4.2,2.3],[10.6,3.4,4.1,2.3]],
+  center:[[2.25,5.02,11.5,1.5],[1.1,6.45,1.65,1.55],[13.2,6.45,1.65,1.55]],
+  center2:[[2.25,5.02,11.5,1.5],[1.1,6.45,1.65,1.55],[13.2,6.45,1.65,1.55]],
+  mart:[[4.5,5.03,7,1.6],[1.1,3.2,2.4,6.55],[12.4,3.2,2.4,6.55]]
+ };
+ for(const [bx,by,bw,bh] of (blocks[scene]||[])){
+  if(x>bx-.23&&x<bx+bw+.23&&y>by-.22&&y<by+bh+.20)return true;
+ }
+ return false;
+}
 function walkable(x,y){
- if(scene!=="outside"){if(x<.8||x>15.2||y<2.1||y>11.4)return false;return true;}
+ if(scene!=="outside")return !indoorCollision(x,y);
  for(const [dx,dy] of [[-.23,0],[.23,0],[0,-.08],[0,.08]])if(obstacle(x+dx,y+dy))return false;
  return true;
 }
@@ -644,6 +670,10 @@ function movement(dt){
  const ox=state.x,oy=state.y;
  if(walkable(state.x+mx,state.y))state.x+=mx;
  if(walkable(state.x,state.y+my))state.y+=my;
+ // Existing indoor exits open automatically when walking into the door.
+ if(scene!=="outside"&&scene!=="bedroom"&&dy>0&&state.y>=11.05&&state.x>=6.75&&state.x<=9.25){
+  outside();sound(580,.10);return;
+ }
  // Walk directly through the entrance, as in the DS games: no interaction key needed.
  if(scene==="outside"&&dy<0){
   const entrance=houses.find(h=>Math.abs(state.x-h.doorX)<1.15&&state.y>=h.doorY-.48&&state.y<=h.doorY+1.15&&oy>=h.doorY-.48);
