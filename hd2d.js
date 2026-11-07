@@ -302,6 +302,66 @@ const roomTypes={
  jubilife:{name:"Estación de Jubileo",floor:"#bfcbd9",wall:"#e2e8e8"}
 };
 function furniture(x,y,w,h,c,top="#fff1d7"){rounded(x,y+.1,w,h,.1,"#6b5b54");rounded(x,y,w,h-.11,.1,c);rect(x+.18,y+.06,w-.36,.12,top);}
+function pokeballSymbol(x,y,size=1){
+ ctx.save();ctx.translate(x,y);ctx.scale(size,size);
+ ellipse(0,0,.52,.52,"#293e4e");ellipse(0,-.12,.45,.36,"#e96468");
+ poly([[-.46,-.05],[.46,-.05],[.46,.09],[-.46,.09]],"#263c4e");
+ ellipse(0,.01,.18,.18,"#f6f6e9");ellipse(0,.01,.09,.09,"#d7e0d9");
+ ctx.restore();
+}
+function tileCounter(x,y,w,h,body,top){
+ rounded(x-.13,y+.18,w+.26,h+.20,.09,"#475a66");
+ rounded(x,y,w,h,.09,body);
+ rounded(x-.17,y-.10,w+.34,.52,.12,top);
+ line(x,y+.44,x+w,y+.44,"#ffffff60",.035);
+}
+function plantPot(x,y){
+ ellipse(x,y+.1,.46,.22,"#324b4b66");
+ rounded(x-.29,y-.30,.58,.42,.07,"#b17a60");
+ ellipse(x,y-.44,.37,.42,"#34785c");
+ ellipse(x-.2,y-.64,.27,.31,"#4d9d73");
+ ellipse(x+.23,y-.61,.29,.32,"#61b987");
+ ellipse(x,y-.80,.25,.28,"#70c88b");
+}
+function interiorDetails(){
+ if(scene==="center"||scene==="center2"){
+  // Pokémon Center reception, bright red service counter and healing machine.
+  rect(.36,1.85,15.28,9.75,"#eedfd7");
+  for(let y=2;y<11;y++)for(let x=1;x<15;x++){
+   if((x+y)%2===0)rect(x,y,1,1,"#f4e9e2");
+  }
+  rounded(1.15,7.3,13.7,2.9,.3,"#e6a8a4");
+  rounded(1.5,7.65,13,2.25,.26,"#f7d5c9");
+  tileCounter(2.1,3.35,11.8,1.7,"#d65d66","#f7e8dd");
+  rounded(6.6,3.34,2.8,.62,.12,"#a9c9cd");
+  for(let i=0;i<6;i++)pokeballSymbol(6.95+i*.44,3.55,.28);
+  rounded(1.15,3.1,.85,1.25,.1,"#b7d7d4");
+  rounded(14,3.1,.85,1.25,.1,"#b7d7d4");
+  plantPot(1.3,9.3);plantPot(14.5,9.3);
+  for(const x of [2.6,12.5]){
+   rounded(x,5.75,1.25,1.75,.15,"#5a8fa6");
+   rounded(x+.12,5.9,1.0,.66,.1,"#b5d9df");
+  }
+  ellipse(8,6.65,.65,.19,"#31545b44");
+  character(8,6.7,"girl");
+ }else if(scene==="mart"){
+  rect(.36,1.85,15.28,9.75,"#dce8ec");
+  for(let y=2;y<11;y++)for(let x=1;x<15;x++)if((x+y)%2===0)rect(x,y,1,1,"#e9f0ee");
+  for(const x of [1.1,12.4]){
+   for(const y of [3.2,5.6,8]){
+    tileCounter(x,y,2.4,1.55,"#668ea9","#c6d6df");
+    for(let k=0;k<4;k++){
+     rounded(x+.21+k*.51,y-.27,.38,.55,.05,["#efaf71","#80b7c4","#8dbf89","#d2a2c1"][k]);
+     rect(x+.24+k*.51,y-.1,.31,.06,"#f5f4df");
+    }
+   }
+  }
+  tileCounter(4.5,3.4,7,1.8,"#688cab","#d9e9e6");
+  for(let i=0;i<4;i++)pokeballSymbol(5.3+i*1.8,3.57,.34);
+  plantPot(3.5,9.3);plantPot(12.2,9.3);
+  character(8,6.7,"boy");
+ }
+}
 function drawInterior(){
  const t=roomTypes[scene]||roomTypes.home;
  rect(0,0,16,12,t.floor);rect(0,0,16,1.9,t.wall);rect(0,0,.33,12,"#ad937d");rect(15.67,0,.33,12,"#ad937d");
@@ -332,13 +392,8 @@ function drawInterior(){
   furniture(1,3.4,4.2,2.3,"#7e9aa8");furniture(10.6,3.4,4.1,2.3,"#829fab");
   for(let x of [4.3,6.4,8.5]){rounded(x,8,.85,1.1,.1,"#aac7cb");ellipse(x+.42,7.9,.32,.23,"#f7fff1");}
   character(8,5.2,"rowan");character(12.5,7.2,"girl");
- }else if(scene==="center"||scene==="center2"){
-  furniture(3.1,3.1,9.8,2.4,"#df7781");
-  for(let x of [5.1,7.6,10.1]){ellipse(x,3.7,.58,.54,"#fff4f0");ellipse(x,3.7,.33,.34,"#e8767a");}
-  character(8,6.7,"girl");
- }else if(scene==="mart"){
-  for(let x of [1,12.4])for(let y of [3.5,6.6])furniture(x,y,2.7,2.4,"#5f8ab7");
-  furniture(5,3.3,6,2.3,"#92acc6");character(8,6.7,"boy");
+ }else if(scene==="center"||scene==="center2"||scene==="mart"){
+  interiorDetails();
  }else{furniture(2,3.4,4,2.6,"#a1acbd");furniture(10,3.6,3.6,2.2,"#af9786");character(8,6.4,"neighbor");}
  character(state.x,state.y,"hero",facing,walkClock);
 }
