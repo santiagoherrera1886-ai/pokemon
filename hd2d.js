@@ -20,7 +20,7 @@ const questInfo=[
  ["El profesor Serbal","Ve al laboratorio de Pueblo Arena y habla con el profesor."],
  ["Un mundo por explorar","Explora rutas, encuentra entrenadores y captura Pokémon."]
 ];
-function fresh(){return {quest:0,scene:"bedroom",x:8.5,y:10,exitX:14.2,exitY:77.6,team:[],starter:null,balls:6,potions:3,wins:0,money:3000,flags:{},visited:["Hojaverde"],sound:true};}
+function fresh(){return {quest:0,scene:"bedroom",x:8.5,y:10,exitX:33.2,exitY:76.1,team:[],starter:null,balls:6,potions:3,wins:0,money:3000,flags:{},visited:["Hojaverde"],sound:true};}
 let state=fresh();
 const r=(x,y)=>{const h=Math.sin(x*127.1+y*311.7+42.13)*43758.5453123;return h-Math.floor(h)};
 function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(x,y,w,h)}
@@ -33,10 +33,10 @@ function resize(){W=innerWidth;H=innerHeight;dpr=Math.min(2,devicePixelRatio||1)
 window.addEventListener("resize",resize);resize();
 let cam={x:8,y:10};
 const houses=[
- {x:9,y:68,w:10,h:7,kind:"home",name:"Tu casa",roof:"#cf6061",walls:"#f7ddaa",doorX:14,doorY:75.5},
- {x:27,y:68,w:10,h:7,kind:"barry",name:"Casa de Barry",roof:"#cc7774",walls:"#efe0c4",doorX:32,doorY:75.5},
- {x:9,y:52,w:10,h:7,kind:"neighbor1",name:"Casa de los vecinos",roof:"#5583b2",walls:"#f4dfc8",doorX:14,doorY:59.5},
- {x:27,y:52,w:10,h:7,kind:"neighbor2",name:"Casa de los vecinos",roof:"#609c8c",walls:"#f7dcb7",doorX:32,doorY:59.5},
+ {x:27.7,y:68,w:11,h:7.8,kind:"home",name:"Tu casa",roof:"#317c70",walls:"#e6dfba",doorX:33.2,doorY:76.2},
+ {x:8.5,y:52,w:11,h:7.8,kind:"barry",name:"Casa de Barry",roof:"#32887b",walls:"#e2d9b5",doorX:14,doorY:60.2},
+ {x:8.5,y:68,w:9.5,h:7,kind:"neighbor1",name:"Casa de los vecinos",roof:"#367f72",walls:"#e4d5ad",doorX:13.3,doorY:75.3},
+ {x:28,y:52,w:9.5,h:7,kind:"neighbor2",name:"Casa de los vecinos",roof:"#367f72",walls:"#e2d5ad",doorX:32.8,doorY:59.3},
  {x:52,y:17,w:10,h:8,kind:"lab",name:"Laboratorio Pokémon",roof:"#5e83a8",walls:"#e2e5d5",doorX:57,doorY:25.5},
  {x:62,y:29,w:8,h:7,kind:"center",name:"Centro Pokémon",roof:"#d65b68",walls:"#faf0dd",doorX:66,doorY:36.5},
  {x:46,y:29,w:8,h:7,kind:"mart",name:"Tienda Pokémon",roof:"#598bbb",walls:"#edf4e7",doorX:50,doorY:36.5},
@@ -53,28 +53,30 @@ const outdoorNPCs=[
  {x:60,y:-18,name:"ENTRENADOR TOMÁS",kind:"trainer",skin:"barry",pokemon:"Geodude",dialog:["¡Mi Pokémon está listo para luchar!"]}
 ];
 const pathRects=[
- [20.4,41,4.4,53],[6,76.8,34,3.4],[12.7,57.4,2.9,22],
- [31,57.4,2.9,22],[11.9,59,23.6,2.7],[15,35.2,10,3.5],
+ [20.35,41,5,51],[5,77.6,35.4,3.9],[12.7,60.9,21.8,3.6],
+ [12.6,59.1,3,21],[31.6,59.1,3.2,21],[13.1,75.6,21.2,3],[15,35.2,10,3.5],
  [20.5,19.5,4.3,23],[22,23.5,42.5,4.3],[55,14,4.4,11.4],
  [54.6,2,4.8,22],[50,36,16.8,3.5],[52,-23,5.4,27],
  [52,-3.5,17.3,3.3],[65,-4,4,16],[15.5,47,21,2.3]
 ];
 const lake={cx:10.8,cy:32.2,rx:7.3,ry:9};
+const villagePond={cx:8.6,cy:84.2,rx:2.25,ry:1.65};
 const isPath=(x,y)=>pathRects.some(p=>x>=p[0]&&y>=p[1]&&x<=p[0]+p[2]&&y<=p[1]+p[3]);
 const inTown=(x,y)=>x>6&&x<40&&y>49&&y<88;
 const inSandgem=(x,y)=>x>43&&x<74&&y>12&&y<42;
 const inJubilife=(x,y)=>x>45&&x<75&&y>-24&&y<9;
 const inLake=(x,y)=>Math.pow((x-lake.cx)/lake.rx,2)+Math.pow((y-lake.cy)/lake.ry,2)<1;
+const inPond=(x,y)=>((x-villagePond.cx)/villagePond.rx)**2+((y-villagePond.cy)/villagePond.ry)**2<1;
 const grass=(x,y)=>!isPath(x,y)&&!inTown(x,y)&&!inSandgem(x,y)&&!inJubilife(x,y)&&!inLake(x,y);
 function treeAt(x,y){
  if(x<1||x>77||y<-24||y>93)return false;
- if(inLake(x,y)||isPath(x,y)||inTown(x,y)||inSandgem(x,y)||inJubilife(x,y))return false;
+ if(inLake(x,y)||inPond(x,y)||isPath(x,y)||inTown(x,y)||inSandgem(x,y)||inJubilife(x,y))return false;
  if(Math.abs(y-37)<3&&x>13&&x<25)return false;
- return r(Math.floor(x),Math.floor(y))>.23;
+ return r(Math.floor(x),Math.floor(y))>(y>46&&y<90&&x<44?.64:.82);
 }
 function obstacle(x,y){
  if(x<2.5||x>75||y<-22||y>90)return true;
- if(inLake(x,y))return true;
+ if(inLake(x,y)||inPond(x,y))return true;
  if(houses.some(h=>x>h.x+.18&&x<h.x+h.w-.18&&y>h.y+1.4&&y<h.y+h.h-.35))return true;
  if(scene!=="outside")return false;
  if(treeAt(x,y))return true;
@@ -88,7 +90,7 @@ function sky(){
 function groundTile(x,y){
  let color;
  const n=r(x,y);
- if(inLake(x+.5,y+.5)){color=n>.5?"#6fbcc6":"#77c8cf";}
+ if(inLake(x+.5,y+.5)||inPond(x+.5,y+.5)){color=n>.5?"#6fbcc6":"#77c8cf";}
  else if(isPath(x+.5,y+.5)){color=n>.84?"#e6d4a9":n>.45?"#e2cca4":"#d9c39a";}
  else if(inTown(x+.5,y+.5)||inSandgem(x+.5,y+.5)||inJubilife(x+.5,y+.5)){color=n>.7?"#93c17a":n>.3?"#95c57f":"#8ec077";}
  else color=n>.73?"#79b36b":n>.33?"#80b96d":"#84b974";
@@ -261,9 +263,10 @@ function drawWorld(){
  for(let j=0;j<16;j++){const x=6.4+(j%8)*1.4,y=82.7+Math.floor(j/8)*1.2;flowers(x,y);}
  for(let j=0;j<18;j++){const x=42.3+(j%9)*1.5,y=39.5+Math.floor(j/9)*1.2;flowers(x,y);}
  for(const [x,y] of [[8,63],[38,62],[41,27],[71,25],[49,-6]])lamp(x,y);
- for(const [x,y,l] of [[22,43,"RUTA 201"],[21,29,"LAGO VERAZ"],[45,28,"PUEBLO ARENA"],[56,8,"JUBILEO"]])sign(x,y,l);
+ for(const [x,y,l] of [[22,43,"RUTA 201"],[21,29,"LAGO VERAZ"],[45,28,"PUEBLO ARENA"],[56,8,"RUTA 202"]])sign(x,y,l);
  // draw sorted tall props, NPC and player for depth
  const things=[];
+ for(let yy=minY-2;yy<maxY+2;yy++)for(let xx=minX-2;xx<maxX+2;xx++)if(treeAt(xx+.48,yy+.48)&&r(xx+50,yy+11)>.28)things.push({sort:yy+.8,draw:()=>tree(xx,yy)});
  for(const h of houses)things.push({sort:h.y+h.h,draw:()=>house(h)});
  for(const n of outdoorNPCs)if(n.y>=minY-3&&n.y<=maxY+3)things.push({sort:n.y,draw:()=>character(n.x,n.y,n.skin,"down",elapsed*.13+r(n.x,n.y)*5)});
  things.push({sort:state.y,draw:()=>character(state.x,state.y,"hero",facing,walkClock)});
@@ -333,7 +336,8 @@ function drawInterior(){
 }
 function currentZone(){
  if(scene!=="outside")return (roomTypes[scene]||roomTypes.home).name;
- if(state.y<9)return "Ciudad Jubileo";
+ if(state.y< -5)return "Ciudad Jubileo";
+ if(state.y<10&&state.x>42)return "Ruta 202";
  if(state.x>43&&state.y<42)return "Pueblo Arena";
  if(state.x<20&&state.y<44)return "Lago Veraz";
  if(state.y<50)return "Ruta 201";
@@ -522,9 +526,9 @@ function drawMap(){
  g.fillStyle="#94bf8b";g.fillRect(0,0,w,h);
  const mx=x=>x/77*w,my=y=>(y+24)/118*h;
  g.lineCap="round";g.strokeStyle="#f3e6c7";g.lineWidth=13;
- const paths=[[22,77,22,25],[22,26,57,26],[22,36,16,36],[57,26,57,-5],[14,77,32,77]];
+ const paths=[[22,77,22,25],[22,26,57,26],[22,36,16,36],[57,26,57,-5],[14,77,32,77],[14,62,32,62]];
  for(const [x,y,xx,yy] of paths){g.beginPath();g.moveTo(mx(x),my(y));g.lineTo(mx(xx),my(yy));g.stroke();}
- for(const [name,x,y] of [["HOJAVERDE",22,70],["RUTA 201",22,44],["LAGO VERAZ",10,33],["PUEBLO ARENA",58,29],["JUBILEO",58,-9]]){
+ for(const [name,x,y] of [["HOJAVERDE",22,70],["RUTA 201",22,44],["LAGO VERAZ",10,33],["PUEBLO ARENA",58,29],["RUTA 202",57,8],["JUBILEO",58,-9]]){
   g.fillStyle="#163b53";g.beginPath();g.arc(mx(x),my(y),5,0,TAU);g.fill();
   g.fillStyle="#18354b";g.font="900 11px Outfit";g.textAlign="center";g.fillText(name,mx(x),my(y)-11);
  }
