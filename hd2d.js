@@ -33,10 +33,10 @@ function resize(){W=innerWidth;H=innerHeight;dpr=.5;canvas.width=Math.max(1,Math
 window.addEventListener("resize",resize);resize();
 let cam={x:8,y:10};
 const houses=[
- {x:27.7,y:68,w:11,h:7.8,kind:"home",name:"Tu casa",roof:"#317c70",walls:"#e6dfba",doorX:33.2,doorY:76.2},
- {x:8.5,y:52,w:11,h:7.8,kind:"barry",name:"Casa de Barry",roof:"#32887b",walls:"#e2d9b5",doorX:14,doorY:60.2},
- {x:8.5,y:68,w:9.5,h:7,kind:"neighbor1",name:"Casa de los vecinos",roof:"#367f72",walls:"#e4d5ad",doorX:13.3,doorY:75.3},
- {x:28,y:52,w:9.5,h:7,kind:"neighbor2",name:"Casa de los vecinos",roof:"#367f72",walls:"#e2d5ad",doorX:32.8,doorY:59.3},
+ {x:29.8,y:70.6,w:6.8,h:5.2,kind:"home",name:"Tu casa",roof:"#317c70",walls:"#e6dfba",doorX:33.2,doorY:76.2},
+ {x:10.6,y:54.6,w:6.8,h:5.2,kind:"barry",name:"Casa de Barry",roof:"#32887b",walls:"#e2d9b5",doorX:14,doorY:60.2},
+ {x:9.9,y:70.1,w:6.8,h:5.2,kind:"neighbor1",name:"Casa de los vecinos",roof:"#367f72",walls:"#e4d5ad",doorX:13.3,doorY:75.7},
+ {x:29.4,y:54.2,w:6.8,h:5.2,kind:"neighbor2",name:"Casa de los vecinos",roof:"#367f72",walls:"#e2d5ad",doorX:32.8,doorY:59.8},
  {x:52,y:17,w:10,h:8,kind:"lab",name:"Laboratorio Pokémon",roof:"#5e83a8",walls:"#e2e5d5",doorX:57,doorY:25.5},
  {x:62,y:29,w:8,h:7,kind:"center",name:"Centro Pokémon",roof:"#d65b68",walls:"#faf0dd",doorX:66,doorY:36.5},
  {x:46,y:29,w:8,h:7,kind:"mart",name:"Tienda Pokémon",roof:"#598bbb",walls:"#edf4e7",doorX:50,doorY:36.5},
@@ -88,26 +88,42 @@ function sky(){
  ctx.fillStyle=g;ctx.fillRect(0,0,canvas.width,canvas.height);
 }
 function groundTile(x,y){
- let color;
- const n=r(x,y);
- if(inLake(x+.5,y+.5)||inPond(x+.5,y+.5)){color=n>.5?"#6fbcc6":"#77c8cf";}
- else if(isPath(x+.5,y+.5)){color=n>.84?"#e6d4a9":n>.45?"#e2cca4":"#d9c39a";}
- else if(inTown(x+.5,y+.5)||inSandgem(x+.5,y+.5)||inJubilife(x+.5,y+.5)){color=n>.7?"#93c17a":n>.3?"#95c57f":"#8ec077";}
- else color=n>.73?"#79b36b":n>.33?"#80b96d":"#84b974";
- rect(x,y,1.01,1.01,color);
- if(inLake(x+.5,y+.5)){
-   const wave=Math.sin(elapsed*1.5+x*2.8+y)*.055;
-   if(n>.42)ellipse(x+.2+n*.6,y+.6,wave+.11,.025,"#d9fcf3a1");
- }else if(isPath(x+.5,y+.5)){
-   if(n>.6)ellipse(x+.25+n*.32,y+.63,.04,.028,"#c4a77d88");
- }else{
-   if(n>.1){
-     const u=x+.12+n*.73,v=y+.3+r(x+71,y)*.55;
-     line(u-.06,v+.1,u,v-.075,"#699d5b6b",.027);
-     line(u+.05,v+.09,u,v-.075,"#699d5b6b",.027);
-   }
-   if(n>.89){ellipse(x+.55,y+.43,.055,.08,"#f3e2a7");ellipse(x+.62,y+.48,.055,.07,"#fff9e3");}
+ // Each tile is decorated at a 1/16-tile subgrid, rather than one huge smooth square.
+ // This is newly-drawn art in the 2006 DS palette: no assets extracted from any ROM.
+ const n=r(x,y),water=inLake(x+.5,y+.5)||inPond(x+.5,y+.5);
+ const road=isPath(x+.5,y+.5);
+ const settled=inTown(x+.5,y+.5)||inSandgem(x+.5,y+.5)||inJubilife(x+.5,y+.5);
+ let base=water?"#72b7c7":road?"#d7bd8e":settled?"#8ecb76":"#7bbb68";
+ rect(x,y,1.01,1.01,base);
+ if(water){
+  if(n>.24){const wave=Math.sin(elapsed*1.65+x*2.8+y)*.06;
+    rect(x+.16,y+.28+wave,.38,.036,"#bbebeb");
+    rect(x+.50,y+.68-wave,.31,.028,"#d1f5ef");
+  }
+  if(r(x+19,y+31)>.5)rect(x+.06,y+.85,.2,.025,"#579aad");
+  return;
  }
+ if(road){
+  // Small hand-placed pebbles and subtle grain; no high-contrast checkerboard squares.
+  for(let i=0;i<5;i++){
+   const u=r(x+i*31,y-i*7),v=r(x-i*13,y+i*17);
+   rect(x+.10+u*.75,y+.08+v*.83,.06+(i%2)*.025,.025,
+    i%2?"#bd9d73":"#eddbb5");
+  }
+  if(n>.78)rect(x+.2,y+.55,.24,.033,"#d0ae80");
+  return;
+ }
+ // DS-like grassy clover speckles; keep decorative clusters smaller than a tile.
+ for(let i=0;i<5;i++){
+  const u=r(x+i*29,y-i*17),v=r(x-i*21,y+i*31);
+  rect(x+.10+u*.78,y+.11+v*.76,.07,.10,i%2?"#74b45e":"#97d27b");
+ }
+ if(n>.35){
+  const u=x+.18+r(x+71,y)*.65,v=y+.23+r(x,y+52)*.60;
+  rect(u,v,.045,.22,"#509853");rect(u-.10,v+.07,.11,.034,"#5b9f57");
+  rect(u+.05,v+.10,.12,.034,"#6caf5d");
+ }
+ if(n>.89){rect(x+.63,y+.33,.12,.10,"#f4edba");rect(x+.64,y+.25,.05,.21,"#fff8d7");}
 }
 function tree(x,y){
  ctx.save();ctx.translate(x+.5,y+.85);
