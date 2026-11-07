@@ -468,10 +468,25 @@ function interact(){
   if(state.quest===3){talk([{name:"NARRADOR",text:"Dos Starly salvajes salen de la hierba. Barry grita al verlos."},{name:"BARRY",text:"¡Rápido! ¡Elige un Pokémon del maletín para defenderte!"}],()=>{show("starterModal");modal="starter";});}else talk(["El maletín ya no está aquí. Has elegido a tu compañero."]);return;}
  if(kind==="rowan"){if(state.quest===6){talk([{name:"PROF. SERBAL",text:"¡Bienvenido! Soy Serbal, profesor Pokémon de Sinnoh."},{name:"PROF. SERBAL",text:"Veo que has establecido un vínculo con tu nuevo Pokémon. Quiero confiarte una tarea importante."},{name:"PROF. SERBAL",text:"Llévate esta Pokédex y descubre las especies que habitan nuestra región. ¡El mundo te espera!"}],()=>{state.balls+=5;advance(7);renderTeam();});}else talk([{name:"PROF. SERBAL",text:"La vida y evolución de los Pokémon son verdaderos misterios. ¡Continúa tu aventura!"}]);return;}
  if(kind==="heal"){for(const p of state.team)p.hp=p.max;renderTeam();save();talk([{name:"ENFERMERA JOY",text:"¡Tus Pokémon han recuperado toda su energía! ¡Vuelve siempre que lo necesites!"}]);return;}
- if(kind==="mart"){if(state.money>=500){state.money-=500;state.balls+=5;renderTeam();save();talk([{name:"DEPENDIENTE",text:"¡Gracias por tu compra! Cinco Poké Balls por 500 ₽. ¡Buena suerte!"}]);}else talk(["No tienes suficiente dinero para comprar Poké Balls."]);return;}
+ if(kind==="mart"){openShop();return;}
  if(kind==="trainer"){if(!state.starter){talk(["Consigue un Pokémon antes de desafiar entrenadores."]);return;}if(state.flags[obj.name])talk([{name:obj.name,text:"¡Bien jugado! Entrenaré más para la revancha."}]);else talk([{name:obj.name,text:"¡Te desafío a un combate Pokémon!"}],()=>startBattle(obj.pokemon,obj.name));return;}
  if(kind==="sign"){talk(["RUTA 201 · Pueblo Hojaverde ↔ Pueblo Arena y Lago Veraz."]);return;}
  talk((obj.dialog||[{name:obj.name||"VECINO",text:"¡Bienvenido a Sinnoh! Que tengas un buen viaje."}]).map(t=>typeof t==="string"?{name:obj.name||"VECINO",text:t}:t));
+}
+function openShop(){
+ if(battle||dialog)return;
+ modal="shopModal";show("shopModal");
+ $("shopMoney").textContent="Dinero: "+state.money+" ₽";
+ $("shopMessage").textContent="Selecciona un artículo para comprar.";
+}
+function buyShopItem(kind){
+ const items={ball:{cost:200,balls:1,potions:0,name:"Poké Ball"},potion:{cost:300,balls:0,potions:1,name:"Poción"},five:{cost:1000,balls:5,potions:0,name:"5 Poké Balls"}};
+ const item=items[kind];if(!item)return;
+ if(state.money<item.cost){$("shopMessage").textContent="No tienes dinero suficiente para este artículo.";sound(230,.14);return;}
+ state.money-=item.cost;state.balls+=item.balls;state.potions+=item.potions;
+ $("shopMoney").textContent="Dinero: "+state.money+" ₽";
+ $("shopMessage").textContent="¡Gracias! Has comprado "+item.name+".";
+ renderTeam();save();sound(830,.16);
 }
 function renderTeam(){
  const first=state.team[0];
@@ -604,7 +619,7 @@ function drawMap(){
 }
 function toggleModal(id){if(dialog||battle)return;const opened=!$(id).classList.contains("hidden");for(const m of ["teamModal","mapModal","helpModal"])hide(m);
  if(!opened){show(id);modal=id;if(id==="teamModal")renderTeam();if(id==="mapModal")drawMap();}else modal="";}
-function closeModal(){for(const m of ["teamModal","mapModal","helpModal"])hide(m);modal="";}
+function closeModal(){for(const m of ["teamModal","mapModal","helpModal","shopModal"])hide(m);modal="";}
 function bind(){
  $("newGame").addEventListener("click",()=>start(false));
  const old=load();if(old){show("continueGame");$("continueGame").addEventListener("click",()=>start(true));}
@@ -613,6 +628,8 @@ function bind(){
  $("catchBtn").addEventListener("click",catchBall);$("runBtn").addEventListener("click",runAway);
  $("teamBtn").addEventListener("click",()=>toggleModal("teamModal")) ;$("mapBtn").addEventListener("click",()=>toggleModal("mapModal"));
  $("openMapBtn").addEventListener("click",()=>toggleModal("mapModal"));$("helpBtn").addEventListener("click",()=>toggleModal("helpModal"));
+ $("shopClose").addEventListener("click",closeModal);
+ document.querySelectorAll("[data-buy]").forEach(b=>b.addEventListener("click",()=>buyShopItem(b.dataset.buy)));
  $("teamClose").addEventListener("click",closeModal);$("mapClose").addEventListener("click",closeModal);$("helpClose").addEventListener("click",closeModal);
  $("teamHeal").addEventListener("click",()=>{const p=state.team[0];if(!p||state.potions<1||p.hp>=p.max)return;state.potions--;p.hp=Math.min(p.max,p.hp+20);renderTeam();save();sound(840,.15);notify("✚ "+p.name+" recuperó 20 PS.");});
  $("soundBtn").addEventListener("click",()=>{state.sound=!state.sound;$("soundBtn").textContent=state.sound?"♫":"♪";save();});
