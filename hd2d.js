@@ -693,6 +693,7 @@ function bind(){
  document.querySelectorAll("[data-buy]").forEach(b=>b.addEventListener("click",()=>buyShopItem(b.dataset.buy)));
  $("teamClose").addEventListener("click",closeModal);$("mapClose").addEventListener("click",closeModal);$("helpClose").addEventListener("click",closeModal);
  $("teamHeal").addEventListener("click",()=>{const p=state.team[0];if(!p||state.potions<1||p.hp>=p.max)return;state.potions--;p.hp=Math.min(p.max,p.hp+20);renderTeam();save();sound(840,.15);notify("✚ "+p.name+" recuperó 20 PS.");});
+ $("missionToggle").addEventListener("click",()=>{const ui=$("game-ui"),opened=ui.classList.contains("show-quest");if(opened)ui.classList.remove("show-quest");else ui.classList.add("show-quest");});
  $("soundBtn").addEventListener("click",()=>{state.sound=!state.sound;$("soundBtn").textContent=state.sound?"♫":"♪";save();});
  // Mobile inputs are first-class controls (no external keyboard required).
  for(const button of document.querySelectorAll("[data-game-key]")){
@@ -715,6 +716,7 @@ function bind(){
   if(e.repeat&&["e","enter","r","m","escape"].includes(k))return;
   if(k==="escape"){closeModal();return;}
   if(k==="e"||k==="enter"||k===" "){if(dialog){nextDialog();return;}interact();return;}
+  if(k==="q"&&!dialog){$("missionToggle").click();return;}
   if(k==="r"&&!dialog)toggleModal("teamModal");
   if(k==="m"&&!dialog)toggleModal("mapModal");
  });
