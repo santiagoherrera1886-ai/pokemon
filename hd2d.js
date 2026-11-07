@@ -126,18 +126,22 @@ function groundTile(x,y){
  if(n>.89){rect(x+.63,y+.33,.12,.10,"#f4edba");rect(x+.64,y+.25,.05,.21,"#fff8d7");}
 }
 function tree(x,y){
+ // Original newly-drawn stepped canopy. Layered pine silhouette instead of
+ // overlapping smooth circles; this keeps paths and obstacles readable.
  ctx.save();ctx.translate(x+.5,y+.85);
- ellipse(.12,.03,.77,.30,"#1c694b60");
- rounded(-.15,-.64,.3,.69,.08,"#76583c");
- rounded(-.09,-.64,.13,.64,.03,"#9c7551");
- // two-tone clustered evergreen canopy
- ellipse(-.25,-1.19,.73,.82,"#317756");
- ellipse(.32,-1.25,.74,.84,"#377e58");
- ellipse(0,-1.50,.79,.91,"#4e9b6b");
- ellipse(-.22,-1.79,.44,.44,"#77b986");
- ellipse(.34,-1.47,.32,.37,"#63ab77");
- ellipse(-.55,-1.18,.25,.34,"#5a9f6c");
- line(-.25,-1.8,-.43,-1.6,"#a2d9a5",.045);
+ ellipse(.10,.13,.73,.24,"#265d4558");
+ rect(-.17,-.72,.38,.85,"#654e38");
+ rect(-.09,-.66,.14,.57,"#98714d");
+ // Cutout-edge pines, three depth layers.
+ poly([[-.85,-.22],[-.72,-.53],[-.89,-.68],[-.58,-1.00],[-.71,-1.14],[-.42,-1.41],[-.51,-1.64],[-.23,-1.92],[-.18,-2.15],[.21,-2.15],[.25,-1.91],[.55,-1.62],[.47,-1.40],[.78,-1.16],[.64,-.96],[.93,-.66],[.70,-.48],[.82,-.23]],"#244d41");
+ poly([[-.75,-.28],[-.66,-.59],[-.72,-.72],[-.43,-1.04],[-.56,-1.18],[-.29,-1.47],[-.36,-1.68],[-.13,-1.96],[.15,-1.96],[.35,-1.67],[.29,-1.49],[.59,-1.18],[.45,-1.03],[.72,-.71],[.61,-.57],[.72,-.30]],"#387a54");
+ poly([[-.69,-.46],[-.48,-.75],[-.60,-.85],[-.32,-1.14],[-.41,-1.30],[-.13,-1.61],[-.08,-1.88],[.08,-1.85],[.27,-1.53],[.20,-1.33],[.49,-1.06],[.36,-.87],[.61,-.65],[.45,-.44]],"#499768");
+ poly([[-.46,-.96],[-.30,-1.18],[-.38,-1.30],[-.12,-1.60],[-.10,-1.85],[.13,-1.58],[.26,-1.40],[.18,-1.17],[.38,-1.00]],"#72b881");
+ rect(-.39,-1.26,.14,.10,"#93d497");
+ rect(.22,-1.11,.19,.09,"#7fc88e");
+ rect(-.27,-1.69,.16,.08,"#b6e4a3");
+ rect(-.61,-.62,.17,.09,"#67af78");
+ rect(.42,-.48,.14,.08,"#2e744f");
  ctx.restore();
 }
 function house(h){
@@ -713,6 +717,8 @@ function toggleModal(id){if(dialog||battle)return;const opened=!$(id).classList.
 function closeModal(){for(const m of ["teamModal","mapModal","helpModal","shopModal"])hide(m);modal="";}
 function bind(){
  $("newGame").addEventListener("click",()=>start(false));
+ // On touch devices the dialogue box itself advances, so the D-pad is never blocked.
+ $("dialog").addEventListener("click",()=>{if(dialog)nextDialog();});
  const old=load();if(old){show("continueGame");$("continueGame").addEventListener("click",()=>start(true));}
  document.querySelectorAll("[data-starter]").forEach(b=>b.addEventListener("click",()=>chooseStarter(b.dataset.starter)));
  $("attackBtn").addEventListener("click",()=>attack(6));$("specialBtn").addEventListener("click",()=>attack(11));
