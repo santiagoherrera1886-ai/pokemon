@@ -4,7 +4,7 @@
 "use strict";
 const $=id=>document.getElementById(id),show=id=>$(id).classList.remove("hidden"),hide=id=>$(id).classList.add("hidden");
 const canvas=$("screen"),ctx=canvas.getContext("2d",{alpha:false});
-const T=54,TAU=Math.PI*2;
+const T=36,TAU=Math.PI*2;
 let W=innerWidth,H=innerHeight,dpr=1,zoom=1,last=0,elapsed=0,clock=0,near=null;
 let started=false,modal="",dialog=null,dialogCallback=null,battle=null,battleBusy=false,scene="bedroom";
 const keys=new Set(),saveKey="sinnohHD2DGameV1";
@@ -29,7 +29,7 @@ function poly(pts,color){ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let
 function line(x1,y1,x2,y2,color,width=.06){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()}
 function rounded(x,y,w,h,rad,color){ctx.beginPath();ctx.roundRect(x,y,w,h,rad);ctx.fillStyle=color;ctx.fill()}
 function text(t,x,y,size,color,align="center"){ctx.fillStyle=color;ctx.font="900 "+(size/T)+"px Outfit,Arial";ctx.textAlign=align;ctx.fillText(t,x,y)}
-function resize(){W=innerWidth;H=innerHeight;dpr=Math.min(2,devicePixelRatio||1);canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);canvas.style.width=W+"px";canvas.style.height=H+"px";zoom=Math.min(1.58,Math.max(.82,Math.min(W/1280,H/740)*1.18));}
+function resize(){W=innerWidth;H=innerHeight;dpr=.5;canvas.width=Math.max(1,Math.round(W*dpr));canvas.height=Math.max(1,Math.round(H*dpr));canvas.style.width=W+"px";canvas.style.height=H+"px";ctx.imageSmoothingEnabled=false;zoom=Math.min(2.3,Math.max(.7,Math.min(W/(20*T),H/(12.5*T))));}
 window.addEventListener("resize",resize);resize();
 let cam={x:8,y:10};
 const houses=[
@@ -204,55 +204,100 @@ function fence(x,y,w){
 function grassBush(x,y){ellipse(x+.5,y+.7,.58,.35,"#3b8a59");ellipse(x+.24,y+.49,.40,.42,"#57a96a");ellipse(x+.68,y+.39,.39,.39,"#65b678");ellipse(x+.48,y+.19,.36,.40,"#75c481");}
 function sign(x,y,label){rounded(x-.55,y-1.55,1.1,.79,.1,"#7b5f45");rounded(x-.45,y-1.43,.9,.56,.04,"#f0dfb9");rect(x-.07,y-.77,.14,1.02,"#91704d");text(label,x,y-1.1,9,"#3a5962");}
 function briefcase(x,y){ellipse(x,y+.13,.71,.30,"#2b4e4466");rounded(x-.65,y-.65,1.30,.86,.1,"#79533b");rounded(x-.54,y-.58,1.08,.68,.07,"#a47a51");rounded(x-.24,y-.82,.48,.17,.06,"#5c4132");rect(x-.57,y-.18,1.13,.1,"#cfb77d");rect(x-.09,y-.3,.18,.27,"#f6dc9b");}
-function character(x,y,skin="hero",facing="down",walk=0){
- const palette={
-  hero:["#cc413f","#354d71","#262e43","#f3c99b","#30374d"],
-  barry:["#efbb55","#e2a646","#48434c","#f4c69e","#e9b34f"],
-  mom:["#da7890","#aa657e","#414255","#f0c7a3","#775a4a"],
-  rowan:["#f3f0e6","#c6ced4","#4f585f","#e8c0a1","#e9e9e0"],
-  neighbor:["#81aa82","#507f7c","#444954","#edc5a0","#9b6351"],
-  girl:["#ef94aa","#b24e6b","#505365","#f1c4a0","#624d4d"],
-  boy:["#80b5d1","#4f728d","#3b4d60","#edc6a5","#8d6650"]
+// Character art: original 24 x 36 pixel sprites constructed in-memory.
+// No Nintendo image/ROM files are needed. All four directions have independent silhouettes.
+const spriteCache=new Map();
+function spriteImage(skin="hero",direction="down",walk=0){
+ const frame=walk?Math.floor(walk*8)%2:0;
+ const id=skin+"/"+direction+"/"+frame;
+ if(spriteCache.has(id))return spriteCache.get(id);
+ const sheet=document.createElement("canvas");sheet.width=24;sheet.height=36;
+ const g=sheet.getContext("2d");if(!g)return sheet;
+ g.imageSmoothingEnabled=false;
+ const q=(x,y,w,h,color)=>{g.fillStyle=color;g.fillRect(x,y,w,h)};
+ const pal={
+  hero:{coat:"#406eac",trim:"#fbf2e2",pants:"#303b56",hair:"#25344e",hat:"#db4045",skin:"#edbd90",shoes:"#51352f"},
+  barry:{coat:"#f1d16b",trim:"#faf3e3",pants:"#5c584e",hair:"#eeb63d",hat:null,skin:"#efc69e",shoes:"#594b48"},
+  mom:{coat:"#c77c90",trim:"#e9b6bf",pants:"#89626f",hair:"#775648",hat:null,skin:"#ecc59d",shoes:"#614b4c"},
+  rowan:{coat:"#efeee2",trim:"#a7bbc6",pants:"#5b5960",hair:"#d0d0cd",hat:null,skin:"#edc49d",shoes:"#494953"},
+  girl:{coat:"#cf6e89",trim:"#f6f1dc",pants:"#354e69",hair:"#654b4d",hat:"#e76e88",skin:"#eec19d",shoes:"#5c4356"},
+  boy:{coat:"#6099bf",trim:"#c0dfeb",pants:"#42566a",hair:"#6e5646",hat:null,skin:"#ecc49d",shoes:"#4d4b51"},
+  neighbor:{coat:"#8eb78b",trim:"#e3e5bd",pants:"#556b5c",hair:"#655145",hat:null,skin:"#ecc09c",shoes:"#514f46"}
  };
- const [coat,trim,pants,skinColor,hair]=palette[skin]||palette.hero;
- const stride=Math.sin(walk*10)*.115;
- const bob=walk?Math.abs(Math.sin(walk*10))*.055:Math.sin(elapsed*2+x+y)*.015;
- ctx.save();ctx.translate(x,y-bob);
- ellipse(0,.06,.38,.17,"#1a594951");
- // legs + stride
- rounded(-.23,-.44,.18,.45,.05,pants);rounded(.05,-.44,.18,.45,.05,pants);
- if(walk){rect(-.21,-.22+stride,.15,.15,"#364052");rect(.07,-.22-stride,.15,.15,"#364052");}
- // body outline
- rounded(-.41,-1.12,.82,.83,.14,"#334454");
- rounded(-.35,-1.08,.70,.76,.12,coat);
- rounded(-.10,-1.05,.20,.75,.04,trim);
- // arms
- rounded(-.51,-1.04,.17,.65,.06,coat);
- rounded(.34,-1.04,.17,.65,.06,coat);
- if(skin==="hero"||skin==="barry")rounded(.14,-.97,.23,.44,.09,"#c59b76");
- // neck and face
- rounded(-.115,-1.33,.23,.26,.06,skinColor);
- ellipse(0,-1.54,.36,.40,skinColor);
- if(facing!=="up"){
-  ellipse(-.14,-1.55,.046,.060,"#29364b");ellipse(.14,-1.55,.046,.06,"#29364b");
-  if(skin==="mom"||skin==="girl")ellipse(.0,-1.37,.09,.028,"#b77f73");
- }
- // cap / hair
- if(skin==="hero"){
-  ellipse(0,-1.82,.43,.24,hair);
-  poly([[-.48,-1.80],[-.35,-2.02],[.24,-2.08],[.49,-1.83]],"#d84747");
-  rounded(-.57,-1.81,1.05,.13,.05,"#f8f1e2");
- }else if(skin==="barry"){
-  ellipse(0,-1.86,.45,.24,"#eab954");
-  poly([[-.38,-1.95],[-.50,-2.15],[-.11,-2.03],[.14,-2.24],[.33,-1.99],[.48,-2.10],[.42,-1.78]],"#e5bd5d");
- }else if(skin==="mom"||skin==="girl"){
-  ellipse(0,-1.93,.46,.28,hair);rect(-.43,-1.83,.12,.42,hair);rect(.33,-1.83,.12,.42,hair);
- }else if(skin==="rowan"){
-  ellipse(0,-1.87,.46,.20,"#e6e8e4");rect(-.45,-1.85,.14,.27,"#eeeeeb");
+ const p=pal[skin]||pal.boy;
+ const line="#253545",outline="#293b4c";
+ const moving=walk>0.05;
+ const stride=moving?(frame?1:-1):0;
+ // Two-layer floor shadow is drawn in world coordinates, not baked into the sprite.
+ // Boots have independent running/walking frames.
+ q(5,32+Math.max(0,stride),6,3,outline);q(13,32+Math.max(0,-stride),6,3,outline);
+ q(6,32+Math.max(0,stride),5,2,p.shoes);q(14,32+Math.max(0,-stride),5,2,p.shoes);
+ q(6,26,6,7,line);q(12,26,6,7,line);
+ q(7,26,4,5,p.pants);q(13,26,4,5,p.pants);
+ // Outlined torso and arms, front and back each use their own highlight.
+ q(5,17,14,11,outline);q(6,18,12,9,p.coat);
+ q(2,20+(moving?stride:0),5,9,outline);q(3,20+(moving?stride:0),3,7,p.coat);
+ q(18,20-(moving?stride:0),5,9,outline);q(19,20-(moving?stride:0),3,7,p.coat);
+ q(3,26+(moving?stride:0),3,2,p.skin);
+ q(19,26-(moving?stride:0),3,2,p.skin);
+ if(direction==="up"){
+  q(9,18,6,9,p.trim);q(10,19,4,9,"#456180");
+  q(7,17,10,3,p.hair);
+ }else if(direction==="left"||direction==="right"){
+  const lx=direction==="right"?9:7;
+  q(lx,18,5,8,p.trim);
+  q(direction==="right"?17:6,18,2,9,"#334d71");
  }else{
-  ellipse(0,-1.88,.43,.26,hair);rect(-.41,-1.81,.13,.32,hair);
+  q(10,18,4,9,p.trim);q(11,20,2,5,"#e15253");
  }
- if(facing==="up"){rounded(-.29,-1.0,.58,.47,.06,"#2d475bb8");}
+ // Neck, neck outline and pixelated head/face.
+ q(9,15,6,4,outline);q(10,15,4,3,p.skin);
+ q(6,6,12,11,outline);q(7,5,10,12,p.hair);
+ if(direction==="up"){
+  q(7,8,10,8,p.hair);q(7,14,10,2,"#353e50");
+ }else if(direction==="left"){
+  q(7,8,10,9,p.skin);q(7,7,4,8,p.hair);
+  q(10,11,2,2,outline);q(16,13,2,2,"#d99b80");
+ }else if(direction==="right"){
+  q(7,8,10,9,p.skin);q(13,7,4,8,p.hair);
+  q(13,11,2,2,outline);q(6,13,2,2,"#d99b80");
+ }else{
+  q(7,8,10,9,p.skin);q(9,11,2,2,outline);q(15,11,2,2,outline);
+  q(10,14,5,1,"#d79c7e");q(9,8,6,2,p.hair);
+ }
+ // 2D silhouette of the Diamond cap, Barry's pointed hair and nurses/other hats.
+ if(p.hat){
+  q(4,4,16,5,outline);q(5,3,14,5,p.hat);
+  q(7,2,10,3,p.hat);
+  q(5,8,15,2,"#f5e7d5");
+  q(direction==="up"?8:3,9,direction==="up"?9:18,2,p.hat);
+  if(skin==="hero"){q(10,4,4,3,"#f5f3ec");q(11,4,2,3,"#f0d2a5");}
+ }else if(skin==="barry"){
+  q(6,4,12,6,"#d89f35");q(7,3,10,5,p.hair);
+  q(4,7,5,4,p.hair);q(15,5,5,5,p.hair);
+  q(8,1,3,5,"#f5d57d");q(13,1,3,5,"#f5d57d");
+ }else if(skin==="rowan"){
+  q(7,4,10,6,"#dee4dd");q(8,2,8,4,"#f3f2e4");
+  q(6,7,2,6,"#ebe6dc");q(17,7,2,6,"#ebe6dc");
+ }else{
+  q(7,4,10,5,p.hair);q(5,7,4,7,p.hair);q(16,7,3,7,p.hair);
+ }
+ if(skin==="mom"||skin==="girl"){q(5,11,3,8,p.hair);q(16,11,3,8,p.hair);}
+ // Pixel highlights, depth and outline details.
+ q(7,19,2,5,"#ffffff35");q(16,19,1,4,"#00000024");
+ g.imageSmoothingEnabled=false;
+ spriteCache.set(id,sheet);
+ return sheet;
+}
+function character(x,y,skin="hero",direction="down",walk=0){
+ ctx.save();
+ ctx.translate(Math.round(x*16)/16,Math.round(y*16)/16);
+ ellipse(0,.06,.47,.17,"#1d4a3f66");
+ const old=ctx.imageSmoothingEnabled;
+ ctx.imageSmoothingEnabled=false;
+ const sprite=spriteImage(skin,direction,walk);
+ ctx.drawImage(sprite,-.7,-1.92,1.4,2.02);
+ ctx.imageSmoothingEnabled=old;
  ctx.restore();
 }
 function drawWorld(){
