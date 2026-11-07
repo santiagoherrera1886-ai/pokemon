@@ -556,6 +556,21 @@ function bind(){
  $("teamClose").addEventListener("click",closeModal);$("mapClose").addEventListener("click",closeModal);$("helpClose").addEventListener("click",closeModal);
  $("teamHeal").addEventListener("click",()=>{const p=state.team[0];if(!p||state.potions<1||p.hp>=p.max)return;state.potions--;p.hp=Math.min(p.max,p.hp+20);renderTeam();save();sound(840,.15);notify("✚ "+p.name+" recuperó 20 PS.");});
  $("soundBtn").addEventListener("click",()=>{state.sound=!state.sound;$("soundBtn").textContent=state.sound?"♫":"♪";save();});
+ // Mobile inputs are first-class controls (no external keyboard required).
+ for(const button of document.querySelectorAll("[data-game-key]")){
+  const key=button.dataset.gameKey;
+  function release(e){if(e)e.preventDefault();keys.delete(key);button.classList.remove("pressed");}
+  button.addEventListener("pointerdown",e=>{
+    e.preventDefault();
+    button.setPointerCapture?.(e.pointerId);
+    button.classList.add("pressed");
+    if(key==="e"){if(dialog)nextDialog();else interact();}
+    else keys.add(key);
+  });
+  button.addEventListener("pointerup",release);
+  button.addEventListener("pointercancel",release);
+  button.addEventListener("lostpointercapture",release);
+ }
  window.addEventListener("keydown",e=>{
   if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," ","Tab"].includes(e.key))e.preventDefault();
   const k=e.key.toLowerCase();keys.add(k);
