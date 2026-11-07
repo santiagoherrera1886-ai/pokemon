@@ -390,7 +390,7 @@ function inside(id,origin){
  scene=id;state.scene=id;state.x=8;state.y=10.5;cam.x=8;cam.y=8;facing="up";save();locationUpdate();
 }
 function outside(){
- scene="outside";state.scene="outside";state.x=state.exitX||14;state.y=(state.exitY||77)+.6;cam.x=state.x;cam.y=state.y;facing="down";save();locationUpdate();
+ scene="outside";state.scene="outside";state.x=state.exitX??14;state.y=(state.exitY??77)+1.1;cam.x=state.x;cam.y=state.y;facing="down";save();locationUpdate();
 }
 function interact(){
  if(dialog){nextDialog();return;}
@@ -513,6 +513,11 @@ function movement(dt){
  const ox=state.x,oy=state.y;
  if(walkable(state.x+mx,state.y))state.x+=mx;
  if(walkable(state.x,state.y+my))state.y+=my;
+ // Walk directly through the entrance, as in the DS games: no interaction key needed.
+ if(scene==="outside"&&dy<0){
+  const entrance=houses.find(h=>Math.abs(state.x-h.doorX)<1.15&&state.y>=h.doorY-.48&&state.y<=h.doorY+1.15&&oy>=h.doorY-.48);
+  if(entrance){inside(entrance.kind,{x:entrance.doorX,y:entrance.doorY});sound(700,.10);return;}
+ }
  const delta=Math.hypot(state.x-ox,state.y-oy);
  if(delta>.0001){walkClock+=dt*(keys.has("shift")?1.7:1);step+=delta;
   if(step>1.35){step=0;if(scene==="outside"&&state.starter&&state.quest>=5&&grass(state.x,state.y)&&Math.random()<.12)startBattle(["Starly","Bidoof","Shinx","Budew","Kricketot","Buizel"][Math.floor(Math.random()*6)]);}}
