@@ -28,7 +28,7 @@ function ellipse(x,y,rx,ry,c){ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,TAU);ctx
 function poly(pts,color){ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);ctx.closePath();ctx.fillStyle=color;ctx.fill()}
 function line(x1,y1,x2,y2,color,width=.06){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()}
 function rounded(x,y,w,h,rad,color){ctx.beginPath();ctx.roundRect(x,y,w,h,rad);ctx.fillStyle=color;ctx.fill()}
-function text(t,x,y,size,color,align="center"){ctx.fillStyle=color;ctx.font="900 "+size+"px Outfit,Arial";ctx.textAlign=align;ctx.fillText(t,x,y)}
+function text(t,x,y,size,color,align="center"){ctx.fillStyle=color;ctx.font="900 "+(size/T)+"px Outfit,Arial";ctx.textAlign=align;ctx.fillText(t,x,y)}
 function resize(){W=innerWidth;H=innerHeight;dpr=Math.min(2,devicePixelRatio||1);canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);canvas.style.width=W+"px";canvas.style.height=H+"px";zoom=Math.min(1.58,Math.max(.82,Math.min(W/1280,H/740)*1.18));}
 window.addEventListener("resize",resize);resize();
 let cam={x:8,y:10};
