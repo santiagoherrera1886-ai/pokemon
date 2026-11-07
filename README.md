@@ -1,62 +1,38 @@
-# SINNOH REBORN — Expanded 3D fan-game prototype
+# Sinnoh Reborn · HD-2D
+Proyecto fan de aventura para navegador inspirado en la región de Sinnoh de Pokémon Diamante y Perla (Nintendo DS).
 
-An unofficial browser game inspired by the Sinnoh setting from Pokémon Diamond and Pearl. Built for playing on desktop with WASD, real 3D terrain, a story introduction, over-world Pokémon, turn-based battles, gyms, and local saving.
-
-## Play on your PC
-
+## 🎮 Jugar sin instalar archivos
 **https://pokemon-sa-ntiago.vercel.app/**
 
-The game is deployed automatically from the repository's default \`main\` branch using the existing Vercel project \`sa-ntiago/pokemon\`.
+Selecciona **Comenzar aventura**: el juego no solicita ni descarga una ROM .nds. Se ejecuta directamente en el navegador con un motor de dibujo Canvas 2D.
 
-## Controls
+### Lo que está implementado
+- Introducción en habitación, casa del protagonista y conversación con mamá.
+- **Pueblo Hojaverde**: cuatro casas con el hogar al sureste y la casa de Barry al noroeste, caminos cruzados, estanque, árboles, cercas y buzones.
+- Visita a Barry y viaje por Ruta 201 hacia Lago Veraz.
+- Maletín con Turtwig, Chimchar y Piplup y primer combate contra Starly.
+- Regreso a casa, laboratorio del profesor Serbal en Pueblo Arena, Ruta 202 y acceso a una representación inicial de Ciudad Jubileo.
+- Casas, centro Pokémon, tienda, NPC, captura de Pokémon salvajes, batallas básicas, inventario, equipo y guardado local.
+- Controles WASD o flechas, E/Enter interactuar, Shift correr, R equipo, M mapa, Esc cerrar ventanas. En móvil incluye D-pad, A (interactuar) y B (correr).
 
-| Action | Control |
-| --- | --- |
-| Move | WASD or arrow keys |
-| Run | Hold Shift |
-| Speak / enter buildings / interact | E or Enter |
-| Team / heal with potions | R |
-| Regional Sinnoh atlas | M |
-| Rotate the outside camera | Drag mouse |
-| Zoom | Mouse wheel |
-| Close menus | Esc |
+### Qué **NO** es
+**No es Pokémon Diamante/Perla original ni una reproducción completa o exacta.** Los gráficos, escenarios, código, combate e historia más allá del capítulo inicial son un prototipo independiente. No incluye las ocho medallas, postgame, todas las especies, movimientos ni todos los eventos originales. No usa ni carga el código compilado de Nintendo DS en el navegador.
 
-### Story start
+### Código de referencia de Diamante y Perla
+La carpeta `original/pokediamond` es un **submódulo Git**, con enlace al proyecto comunitario de decompilación [pret/pokediamond](https://github.com/pret/pokediamond). Está presente en el repositorio para documentación, estudio e investigación; **no** es parte del bundle web de Vercel.
 
-1. Select **Nueva aventura**. The story begins in the protagonist's bedroom with a news report about a red Gyarados.
-2. Go downstairs, speak to Mom, and visit Barry at his house.
-3. Head to Lake Verity and investigate the briefcase.
-4. Select Turtwig, Chimchar or Piplup, and battle a Starly.
-5. Return home, visit Professor Rowan's Sandgem lab, and receive the Pokédex.
-6. Explore Route 202 and Jubilife, fight the Oreburgh Gym Leader, and continue exploring Sinnoh.
+Clona los archivos originales de la comunidad con:
+```bash
+git clone --recurse-submodules https://github.com/santiagoherrera1886-ai/pokemon.git
+```
 
-## Features implemented
+Consulta [ORIGINAL-CODE.md](ORIGINAL-CODE.md) para requisitos de compilación y límites.
 
-- Original procedural 3D world with 14 locations and 17 connected routes, inspired by Sinnoh's geography. It is **not** a pixel-for-pixel or geographically exact port.
-- Town districts with unique visual themes: gardens, mining, urban centers, coastline, wetlands, old towns, and snow.
-- Route network and region atlas with visited town tracking, compass, objective marker and minimap.
-- Playable interiors (home, bedroom, Barry's house, laboratory, Pokémon Center, Poké Mart, gyms, and houses).
-- Scripted introduction with dialogues, a starter choice, the lake encounter, the Pokédex, and extended gym progression.
-- 8 gym leaders, trainer challenges, earned badges, prize money and interactive shop.
-- Wild encounters, roaming Pokémon, ball capture, basic type effectiveness, HP, XP, levels, starter evolution and switching the lead party Pokémon.
-- Potions and Pokémon Center healing, team of up to 6, autosave with browser localStorage.
-- Daytime lighting, changing scenic biomes, animated roaming Pokémon, petals, snow, rain, walking motion, and camera transitions.
-- Keyboard-focused desktop gameplay.
+### Código web
+- `index.html` interfaz del juego
+- `hd2d.css` diseño y controles táctiles
+- `hd2d.js` motor de exploración, colisiones, historia, personajes y combates
+- `hd2d.html` entrada independiente del mismo juego (referencia)
 
-## Technology
-
-- Three.js with low-poly procedural geometry, standard materials, shadows and fog.
-- HTML/CSS interface, JavaScript ES modules; no build step, no backend.
-- External artwork for official Pokémon from PokeAPI's sprite repository and selected character graphics hosted by Pokémon Showdown. Requires Internet and WebGL.
-- Game save stored only within the current browser/profile using localStorage. Clearing site data deletes it.
-- Latest content is deployed by pushing to GitHub; no second Vercel project is needed.
-
-## What is not done yet
-
-This is **not the complete Pokémon Diamond/Pearl game**, nor a 1:1 remake of every interior, story beat, move, item, quest, route, evolution, animation or Pokédex entry. The eight gym leaders currently use simplified one-opponent battles. There is no full Team Galactic campaign, Elite Four, Legendary storyline, online play, or a full 3D creature model pipeline. Many characters still use animated 2D artwork rather than fully rigged models.
-
-Runtime smoke tests checked procedural region generation, the beginning-of-game dialogue progression, gym badge rewards, module syntax and Vercel deployment output. These checks are not substitutes for complete in-browser gameplay and visual QA.
-
-## Legal notice
-
-This is an unofficial, non-commercial fan prototype, not affiliated with Nintendo, Game Freak, Creatures Inc. or The Pokémon Company. Pokémon and associated names and artwork belong to their respective owners. Treat external assets according to their owners' terms.
+### Nota legal
+Proyecto fan no oficial y no comercial, sin relación con Nintendo, Game Freak ni The Pokémon Company. Los nombres, criaturas y marcas de Pokémon pertenecen a sus titulares respectivos. No se incluyen ni redistribuyen ROM comerciales.
