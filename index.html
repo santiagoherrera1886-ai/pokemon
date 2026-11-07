@@ -1,134 +1,48 @@
 <!doctype html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#101a30">
-  <meta name="description" content="Sinnoh Reborn: aventura fan 3D jugable en el navegador para PC.">
-  <title>SINNOH REBORN — Aventura 3D</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css">
-</head>
-<body>
-  <div id="app">
-    <div id="viewport"></div>
-    <div id="characterSprites" class="character-sprites" aria-hidden="true"></div>
-    <div id="ambientEffects" class="ambient-effects hidden" aria-hidden="true"></div><div id="weatherLabel" class="hidden">Clima: soleado</div>
-    <div class="world-vignette"></div>
-    <div class="lens-shine"></div>
-    <div id="fade"></div>
-
-    <header id="hud" class="hud hidden">
-      <div class="brand-panel">
-        <div class="brand-emblem">✦</div>
-        <div><span class="eyebrow">A NEW JOURNEY BEGINS</span><strong>SINNOH <em>REBORN</em></strong></div>
-      </div>
-      <div class="location-pill"><span class="loc-dot"></span><span id="placeName">Pueblo Hojaverde</span><span class="sun-icon">☀</span><span>17:24</span></div>
-      <div class="top-actions">
-        <button id="soundToggle" class="icon-button" title="Activar / desactivar sonido" aria-label="Sonido">♫</button>
-        <button id="mapToggle" class="icon-button" title="Mapa de Sinnoh (M)" aria-label="Mapa de Sinnoh">⌖</button>
-        <button id="helpToggle" class="icon-button" title="Controles" aria-label="Controles">?</button>
-      </div>
-    </header>
-
-    <aside id="leftHud" class="hud hidden">
-      <div class="quest-panel">
-        <div class="tiny-label"><span class="quest-diamond">◆</span> MISIÓN PRINCIPAL <span class="chapter-label">CAP. 01</span></div>
-        <h3 id="questTitle">Un nuevo comienzo</h3>
-        <p id="questDescription">Encuentra a tu amigo Barry y comienza la aventura.</p>
-        <div class="quest-line"><div id="questProgress"></div></div>
-      </div>
-      <div id="partyPanel" class="party-panel hidden">
-        <div class="tiny-label">TU EQUIPO <span id="partyCount">01 / 06</span></div>
-        <div class="party-main"><img id="partyImg" alt="Pokémon" src=""><div><strong id="partyName">Pokémon</strong><small id="partyLevel">Nv. 5</small><div class="hp-track"><div id="partyHpBar"></div></div></div></div>
-      </div>
-    </aside>
-
-    <div id="navigator" class="navigator hud hidden"><div class="nav-symbol" id="navArrow">↑</div><div><small>SIGUIENTE OBJETIVO</small><strong id="navTitle">Habla con mamá</strong><span id="navDistance">A 3 pasos</span></div></div>
-    <div id="radar" class="radar hud hidden" title="Minimapa de Sinnoh"><div class="radar-label">MAPA</div><div class="radar-field"><div id="radarLake" class="radar-lake"></div><div class="radar-home" style="left:62%;top:28%"></div><div class="radar-barry" style="left:30%;top:28%"></div><div class="radar-lab" style="left:75%;top:78%"></div><div id="radarTarget" class="radar-target"></div><div id="radarPlayer" class="radar-player"></div></div></div>
-    <div id="interactHint" class="interact-hint hidden"><span class="keycap">E</span><span id="interactLabel">Hablar</span></div>
-
-    <footer id="bottomHud" class="hud hidden">
-      <div class="controls-caption"><div class="control-keys"><span>W</span><div><span>A</span><span>S</span><span>D</span></div></div><div><strong>MOVERSE</strong><small>Shift correr · E hablar · R equipo · M mapa</small></div></div>
-      <div class="bottom-right"><div class="mini-info"><span class="pokeball-small">◉</span> <span id="ballCount">05</span> <small>Poké Balls</small></div><button id="mapButton" class="hud-button">◇ <span>Mapa</span> <kbd>M</kbd></button><button id="teamToggle" class="hud-button">☷ <span>Equipo</span> <kbd>R</kbd></button></div>
-    </footer>
-
-    <section id="intro" class="intro-cover" aria-label="Menú principal">
-      <div class="intro-grain"></div>
-      <div class="intro-top"><div class="intro-logo">✦ SINNOH <b>REBORN</b></div><span class="intro-chip">FAN GAME · EPISODIO 01</span></div>
-      <div class="intro-main">
-        <span class="intro-kicker"><i></i> EL VIAJE COMIENZA EN SINNOH</span>
-        <h1>Un mundo<br><em>por descubrir.</em></h1>
-        <p>Vuelve a Pueblo Hojaverde. Recorre rutas, encuentra Pokémon salvajes y comienza tu propia leyenda en un mundo 3D.</p>
-        <div class="intro-buttons"><button id="startBtn" class="primary-btn"><span>Nueva aventura</span><span class="arrow">↗</span></button><button id="continueBtn" class="outline-btn hidden">Continuar partida →</button></div>
-        <div class="intro-story-note">EPISODIO 01 · El lago, el maletín y tu primer Pokémon.</div><div class="intro-features"><span>✧ MUNDO 3D</span><span>◉ COMBATES POR TURNOS</span><span>✦ GUARDADO AUTOMÁTICO</span></div>
-      </div>
-      <div class="intro-bottom"><span>EDICIÓN DE PRUEBA · DESARROLLADO PARA NAVEGADOR</span><span>NO AFILIADO A NINTENDO / THE POKÉMON COMPANY</span></div>
-    </section>
-
-    <section id="dialog" class="dialog-panel hidden" aria-live="polite">
-      <div class="dialog-avatar" id="dialogAvatar">✦</div><img id="dialogCharacter" class="dialog-character hidden" alt="Retrato del personaje">
-      <div class="dialog-body"><span id="dialogSpeaker">PROFESOR SERBAL</span><p id="dialogText"></p><small>Presiona ENTER o E para continuar <span class="dialog-caret">▼</span></small></div>
-    </section>
-
-    <section id="starterModal" class="modal-backdrop hidden">
-      <div class="starter-modal">
-        <div class="modal-kicker">PROFESOR SERBAL · LABORATORIO POKÉMON</div>
-        <h2>Tres Pokémon.<br><em>Un destino.</em></h2>
-        <p>Tu primera elección marcará el comienzo de una gran historia.</p>
-        <div class="starter-grid">
-          <button class="starter-card leaf" data-starter="Turtwig"><span class="type">✿ PLANTA</span><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/387.png" alt="Turtwig"><strong>Turtwig</strong><small>El pequeño hoja</small><span class="select-arrow">ELEGIR ↗</span></button>
-          <button class="starter-card fire" data-starter="Chimchar"><span class="type">✦ FUEGO</span><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/390.png" alt="Chimchar"><strong>Chimchar</strong><small>El pequeño mono</small><span class="select-arrow">ELEGIR ↗</span></button>
-          <button class="starter-card water" data-starter="Piplup"><span class="type">◈ AGUA</span><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/393.png" alt="Piplup"><strong>Piplup</strong><small>El pequeño pingüino</small><span class="select-arrow">ELEGIR ↗</span></button>
-        </div>
-        <button id="starterCancel" class="text-btn">← Volver a hablar con el profesor</button>
-      </div>
-    </section>
-
-    <section id="battle" class="battle-scene hidden" aria-label="Combate Pokémon">
-      <div class="battle-bg"><div class="battle-sun"></div><div class="battle-hills"></div><div class="battle-field field-back"></div><div class="battle-field field-front"></div></div>
-      <div class="battle-header"><div class="battle-mark">◈ ENCUENTRO SALVAJE</div><div id="battleTurn" class="battle-count">TURNO 1</div></div>
-      <div class="enemy-status creature-status"><div class="creature-title"><strong id="enemyName">STARLY</strong><span id="enemyLevel">NV. 3</span></div><span class="stat-hp">PS</span><div class="battle-hp-track"><div id="enemyHpBar"></div></div><small id="enemyHpText">18 / 18</small></div>
-      <img id="enemySprite" class="combat-sprite enemy-sprite" alt="Pokémon salvaje">
-      <div class="player-status creature-status"><div class="creature-title"><strong id="battlePlayerName">TURTWIG</strong><span id="battlePlayerLevel">NV. 5</span></div><span class="stat-hp">PS</span><div class="battle-hp-track"><div id="playerHpBar"></div></div><small id="playerHpText">21 / 21</small><div class="xp-track"><div id="xpBar"></div></div></div>
-      <img id="playerSprite" class="combat-sprite player-sprite" alt="Tu Pokémon">
-      <div class="battle-bottom"><div class="battle-log"><span class="battle-label">BATTLE LOG</span><p id="battleMessage">¡Un Pokémon salvaje ha aparecido!</p></div><div id="battleActions" class="battle-actions"><button id="attackBtn" class="action attack">⚔ <span>ATACAR</span></button><button id="specialBtn" class="action special">✦ <span id="specialName">HOJA AFILADA</span></button><button id="catchBtn" class="action ball">◉ <span>POKÉ BALL</span></button><button id="runBtn" class="action run">↗ <span>HUIR</span></button><button id="switchBtn" class="action switch">↔ <span>CAMBIAR</span></button><button id="bagBtn" class="action bag">✚ <span>POCIÓN</span></button></div></div>
-    </section>
-
-    <section id="teamModal" class="modal-backdrop hidden">
-      <div class="team-modal"><button id="teamClose" class="modal-close">✕</button><div class="modal-kicker">ENTRENADOR · SINNOH</div><h2>Mi equipo.</h2><div id="teamList" class="team-list"></div><div class="inventory-row"><span>◉ Poké Balls</span><strong id="inventoryBalls">5</strong></div><button id="healBtn" class="outline-btn">Usar poción (+20 PS) <small id="potionCount">x 3</small></button><p class="team-hint">La partida se guarda automáticamente en este navegador.</p></div>
-    </section>
-
-
-    <section id="mapModal" class="modal-backdrop hidden" aria-label="Mapa de Sinnoh">
-      <div class="regional-map">
-        <div class="regional-heading">
-          <div><div class="modal-kicker">POKÉNAV · REGIÓN DE SINNOH</div><h2>Tu aventura<br><em>no tiene límites.</em></h2><p>Explora las rutas y descubre las ciudades. Las localidades visitadas se iluminan a medida que avanzas.</p></div>
-          <button id="mapClose" class="modal-close" title="Cerrar mapa">✕</button>
-        </div>
-        <div class="regional-body">
-          <div id="sinnohMap" class="sinnoh-map" aria-label="Mapa regional interactivo"></div>
-          <aside class="regional-info">
-            <div class="regional-info-top"><span id="mapRegionKind">REGIÓN DE SINNOH</span><h3 id="mapRegionTitle">Pueblo Hojaverde</h3><p id="mapRegionDesc">Tu hogar. Aquí comienza el viaje.</p></div>
-            <div class="regional-progress"><div>RUTAS EXPLORADAS <strong id="visitedCounter">01 / 14</strong></div><div class="regional-progress-track"><div id="visitedBar"></div></div></div>
-            <div class="badge-heading">MEDALLAS DE GIMNASIO <span id="badgeCounter">0 / 8</span></div>
-            <div id="badgeList" class="badge-collection"></div>
-            <p class="map-tip">Utiliza WASD para viajar por los caminos. El mapa sirve para orientarte; no teletransporta a zonas sin descubrir.</p>
-          </aside>
-        </div>
-        <div class="regional-footer"><span><i class="legend-dot current"></i> TU POSICIÓN</span><span><i class="legend-dot discovered"></i> DESCUBIERTO</span><span><i class="legend-dot unknown"></i> SIN EXPLORAR</span><span>ESC para volver al juego</span></div>
-      </div>
-    </section>
-    <section id="helpModal" class="modal-backdrop hidden">
-      <div class="help-modal"><button id="helpClose" class="modal-close">✕</button><div class="modal-kicker">MANUAL DE ENTRENADOR</div><h2>Cómo jugar</h2><div class="help-grid"><div><kbd>W A S D</kbd><span>Caminar por el mundo</span></div><div><kbd>↑ ← ↓ →</kbd><span>También mueven</span></div><div><kbd>SHIFT</kbd><span>Correr más rápido</span></div><div><kbd>E / ENTER</kbd><span>Hablar e interactuar</span></div><div><kbd>R</kbd><span>Abrir tu equipo</span></div><div><kbd>M</kbd><span>Abrir el mapa completo de Sinnoh</span></div><div><kbd>RATÓN</kbd><span>Rueda: zoom / arrastra: cámara</span></div><div><kbd>ESC</kbd><span>Cerrar ventanas</span></div></div><p>Explora el pueblo, habla con Barry y busca al Profesor Serbal cerca del lago. En la hierba alta podrás encontrar Pokémon salvajes.</p></div>
-    </section>
-
-    <div id="toast" class="toast hidden"><span>✦</span><strong id="toastText">¡Misión completada!</strong></div>
-    <div id="loading" class="loading"><div class="pokeball-loading"></div><strong>Preparando Sinnoh...</strong><small>Cargando el mundo 3D</small></div>
-    <div id="error" class="error-screen hidden"><h2>El mundo 3D no pudo cargarse</h2><p>Comprueba tu conexión a Internet, activa WebGL en el navegador y recarga la página.</p><button onclick="location.reload()">Reintentar</button></div>
-  </div>
-  <script type="module" src="./game.js"></script>
-</body>
-</html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sinnoh HD · Edición original en PC</title><meta name="theme-color" content="#0b1728">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
+:root{color-scheme:dark}*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Outfit,system-ui,sans-serif;background:#071324;color:#f5f7ff}
+body{background:radial-gradient(ellipse at 80% 8%,#315c7d5c,transparent 45%),radial-gradient(ellipse at 6% 92%,#346b6352,transparent 50%),#071324}
+.wrap{max-width:1280px;margin:auto;padding:26px 24px 40px}
+nav{display:flex;align-items:center;justify-content:space-between;gap:15px}.brand{display:flex;align-items:center;gap:12px;font-weight:900;letter-spacing:1px}.brand-icon{height:42px;width:42px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(145deg,#f6df9e,#e4aa6e);color:#152a45;font-size:24px}.brand em{color:#ffd78c;font-style:normal}.navtag{border:1px solid #ffffff38;background:#ffffff0b;border-radius:30px;padding:10px 14px;color:#b9d1e4;font-size:11px;font-weight:700}
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:42px;align-items:center;min-height:420px}.eyebrow{font-size:11px;letter-spacing:2.6px;font-weight:900;color:#f6ce8d}.hero h1{font-size:clamp(48px,6.4vw,91px);line-height:.97;letter-spacing:-3.5px;margin:16px 0 21px}.hero h1 span{color:#f6d18e}.hero p{color:#b9cbda;line-height:1.65;font-size:15px;max-width:530px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:22px}.chip{border:1px solid #ffffff2e;border-radius:8px;padding:8px 10px;font-size:11px;font-weight:700;color:#c6d5e3;background:#ffffff0a}
+.art{min-height:320px;border-radius:26px;position:relative;overflow:hidden;background:linear-gradient(165deg,#83b8c7 0 39%,#6da888 39% 62%,#3b735d 62%);box-shadow:0 25px 75px #0005;border:1px solid #ffffff2b}
+.art:before{content:"";position:absolute;width:80%;height:62%;left:10%;top:35%;background:linear-gradient(90deg,#d4c4a6 0 30%,#e4d6b7 30% 70%,#cdbd9c 70%);clip-path:polygon(0 45%,50% 0,100% 45%,100% 100%,0 100%);filter:drop-shadow(0 10px 15px #123c3255)}
+.art:after{content:"";position:absolute;width:90%;height:38%;left:5%;top:14%;background:#476e91;clip-path:polygon(0 95%,50% 0,100% 95%);filter:drop-shadow(0 8px 0 #244e68)}
+.art .window{position:absolute;z-index:1;left:45%;top:63%;width:16%;height:17%;background:#2c5874;border:8px solid #b6d0d3;border-radius:6px}.art .tree{position:absolute;z-index:2;bottom:-8%;width:31%;height:69%;background:radial-gradient(circle at 50% 34%,#5fae7b 0 40%,#397e62 41% 65%,transparent 66%);filter:drop-shadow(5px 8px 6px #123a2d88)}.art .tree.a{left:-13%}.art .tree.b{right:-17%;transform:scale(1.1)}.art .note{position:absolute;z-index:4;left:18px;bottom:17px;background:#122b3cdb;border:1px solid #ffffff55;border-radius:10px;padding:10px 13px;font-size:11px;font-weight:800}
+.panel{background:#122439d9;border:1px solid #ffffff2a;border-radius:24px;padding:26px;box-shadow:0 22px 60px #0004}.panel h2{font-size:27px;margin:0 0 8px}.muted{color:#a7c0d3;font-size:13px;line-height:1.6}.options{display:flex;gap:9px;flex-wrap:wrap;margin:20px 0}.opt{background:#20374b;border:1px solid #ffffff35;color:#c8d6e3;border-radius:11px;padding:12px 18px;font-weight:800;cursor:pointer}.opt.active{background:#f4d395;color:#192b41;border-color:#f4d395}.drop{border:2px dashed #7393a7;border-radius:17px;background:#183047;padding:28px;text-align:center;cursor:pointer;transition:background .15s}.drop:hover,.drop.drag{background:#244760;border-color:#f4d395}.drop strong{display:block;font-size:17px;margin:7px}.drop span{display:block;color:#aec3d3;font-size:12px}.drop input{display:none}.primary{display:inline-flex;align-items:center;justify-content:center;gap:9px;margin-top:17px;border:0;border-radius:12px;padding:15px 23px;background:#f4d395;color:#182b3d;font:900 14px Outfit;cursor:pointer}.primary:disabled{opacity:.4;cursor:not-allowed}.secondary{border:1px solid #ffffff55;border-radius:12px;padding:12px 15px;background:#ffffff12;color:white;font:700 12px Outfit;cursor:pointer}.fine{font-size:11px;color:#9db5c6;line-height:1.7}.status{color:#f5cf90;font-size:12px;margin-top:12px;min-height:20px}.player-shell{display:none;position:fixed;inset:0;z-index:20;background:#06111e;flex-direction:column}.player-shell.active{display:flex}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 18px;background:#10263a;border-bottom:1px solid #ffffff28;min-height:62px}.toolbar .controls{display:flex;gap:8px;flex-wrap:wrap}.toolbar button{background:#213b51;border:1px solid #ffffff38;color:#fff;border-radius:8px;padding:10px 13px;font:800 12px Outfit;cursor:pointer}.toolbar button:hover{background:#315a73}.emulator{flex:1;min-height:0;display:grid;place-items:center;padding:12px}.emulator #game{width:min(100%,1080px);height:100%;min-height:300px}.emulator iframe{width:100%;height:100%;border:0}.controlhelp{text-align:center;padding:8px;color:#aec3d3;font-size:11px;background:#0b1b2d}
+footer{padding-top:18px;font-size:11px;color:#7f9bb0}
+@media(max-width:850px){.hero{grid-template-columns:1fr;gap:18px;padding:42px 0}.art{min-height:220px}.wrap{padding:16px}.panel{padding:18px}.navtag{display:none}.toolbar{align-items:flex-start;flex-direction:column}.toolbar .controls{width:100%}}
+</style></head>
+<body><div class="wrap"><nav><div class="brand"><div class="brand-icon">✦</div><div>SINNOH <em>HD</em><div style="font-size:9px;color:#a8c1d4;letter-spacing:2px">EDICIÓN ORIGINAL · PC</div></div></div><div class="navtag">NINTENDO DS · REPRODUCCIÓN FIEL</div></nav>
+<section class="hero"><div><div class="eyebrow">EL JUEGO ORIGINAL, NO UNA IMITACIÓN</div><h1>Vuelve a<br><span>Sinnoh.</span></h1><p>La historia, los personajes, las casas, los combates y los Pokémon de Diamante y Perla, ejecutados directamente desde tu propia copia de Nintendo DS. Juega en tu PC con teclado, ratón o mando.</p><div class="chips"><span class="chip">✦ Historia original</span><span class="chip">✦ Controles de PC</span><span class="chip">✦ Pantalla ampliada</span><span class="chip">✦ Guardado del emulador</span></div></div><div class="art" aria-hidden="true"><div class="window"></div><div class="tree a"></div><div class="tree b"></div><div class="note">✦ Tu aventura comienza en Pueblo Hojaverde</div></div></section>
+<section class="panel"><div class="eyebrow">01 · CONFIGURAR AVENTURA</div><h2>Elige tu edición</h2><p class="muted">No necesitas instalar un programa. Selecciona tu edición y carga el archivo <strong>.nds</strong> obtenido de tu propia copia del juego. El archivo se entrega directamente al emulador del navegador; no se sube a GitHub ni a nuestro servidor.</p>
+<div class="options"><button class="opt active" data-edition="diamond">◆ Diamante</button><button class="opt" data-edition="pearl">◇ Perla</button><button class="opt" data-edition="platinum">✦ Platino</button></div>
+<label class="drop" id="drop"><input id="rom" type="file" accept=".nds"><div style="font-size:30px">▣</div><strong id="fileLabel">Selecciona o arrastra tu archivo .nds</strong><span>Tu ROM permanece en tu dispositivo · No se distribuyen archivos de Nintendo</span></label>
+<div class="status" id="status" role="status">Esperando tu archivo para iniciar la aventura.</div>
+<button class="primary" id="play" disabled>▶ Jugar en pantalla completa</button>
+<button class="secondary" id="help" style="margin-left:8px">¿Cómo consigo mi archivo?</button>
+<p class="fine">La interfaz usa EmulatorJS y su núcleo Nintendo DS. La ampliación de pantalla y los filtros dependen de las opciones del emulador y del rendimiento de tu equipo; no es una remasterización de los modelos originales. Para conservar el juego completo, necesitas aportar tu propia ROM.</p></section>
+<footer>Proyecto de uso personal, no afiliado con Nintendo, Game Freak ni The Pokémon Company. La aplicación no contiene ROM, BIOS ni recursos del juego original.</footer></div>
+<div class="player-shell" id="player"><div class="toolbar"><div class="brand" style="font-size:13px"><div class="brand-icon" style="height:34px;width:34px">✦</div><span id="playingName">SINNOH HD</span></div><div class="controls"><button id="fullscreen">⛶ Pantalla completa</button><button id="settings">⚙ Ajustes de imagen y controles</button><button id="exit">← Volver al inicio</button></div></div><div class="emulator"><div id="game"></div></div><div class="controlhelp">Flechas / WASD: moverse · Z / Enter: A · X / Retroceso: B · Ratón: pantalla táctil · Los controles pueden configurarse en el emulador.</div></div>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);let selected='diamond',file=null,launched=false;
+document.querySelectorAll('[data-edition]').forEach(btn=>btn.addEventListener('click',()=>{selected=btn.dataset.edition;document.querySelectorAll('[data-edition]').forEach(x=>x.classList.toggle('active',x===btn));}));
+function selectFile(f){if(!f)return;if(!/\.nds$/i.test(f.name)){$('status').textContent='Selecciona un archivo de Nintendo DS con extensión .nds';return;}file=f;$('fileLabel').textContent=f.name+' · '+(f.size/1048576).toFixed(1)+' MB';$('status').textContent='Archivo listo. Presiona Jugar para iniciar.';$('play').disabled=false;}
+$('rom').addEventListener('change',e=>selectFile(e.target.files[0]));
+const drop=$('drop');['dragenter','dragover'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.add('drag')}));['dragleave','drop'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.remove('drag')}));drop.addEventListener('drop',e=>selectFile(e.dataTransfer.files[0]));
+$('help').addEventListener('click',()=>alert('Necesitas un volcado .nds de un cartucho que poseas, obtenido con herramientas de copia de seguridad compatibles. Esta página no descarga ni proporciona ROMs comerciales.'));
+$('play').addEventListener('click',()=>{
+ if(!file||launched)return;launched=true;$('player').classList.add('active');$('playingName').textContent='SINNOH HD · '+({diamond:'DIAMANTE',pearl:'PERLA',platinum:'PLATINO'}[selected]);
+ window.EJS_player='#game';window.EJS_gameName='Sinnoh '+selected;window.EJS_core='nds';window.EJS_gameUrl=file;window.EJS_pathtodata='https://cdn.emulatorjs.org/stable/data/';window.EJS_startOnLoaded=true;window.EJS_language='es-ES';window.EJS_color='#f4d395';window.EJS_backgroundColor='#071324';
+ const script=document.createElement('script');script.src='https://cdn.emulatorjs.org/stable/data/loader.js';script.onerror=()=>{alert('No se pudo cargar el motor del emulador. Comprueba la conexión a Internet.');};document.body.appendChild(script);
+});
+$('fullscreen').addEventListener('click',()=>{const p=$('player');if(!document.fullscreenElement)p.requestFullscreen?.();else document.exitFullscreen?.();});
+$('settings').addEventListener('click',()=>{const menu=document.querySelector('.ejs_menu_bar')||document.querySelector('[class*="settings"]');if(menu&&menu!==$('settings'))menu.click();else alert('Usa el menú de ajustes que aparece dentro del emulador para configurar filtros, controles y guardado.');});
+$('exit').addEventListener('click',()=>{if(confirm('¿Salir del emulador? Guarda tu partida antes de continuar.'))location.reload();});
+})();
+</script></body></html>
