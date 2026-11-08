@@ -228,13 +228,32 @@ async function run() {
     const before = await st();
     await walkTo(17, 19, 'arenal');
     await walkTo(2, 4); await tap('ArrowUp'); await talk();
-    await choose(0); await choose('capsula'); await choose('plus'); await shot('tienda');
+    await choose(0); await shot('tienda');
+    assert.ok(await page.$$eval('#panel .shop-list [data-act]', b => b.length) >= 8, 'el mostrador general debe tener al menos 8 productos');
+    await choose('capsula'); await choose('plus'); await shot('tienda-cantidad');
     await choose('buy');
     for (let i = 0; i < 20 && !(await page.$('#panel .ilist')); i++) { await tap('z', 40); await sleep(120); }
+    await page.click('#panel [data-back]');
+    await choose(1);                                                     // Vender: una Cápsula a mitad de precio
+    await choose('capsula'); await choose('buy');
+    for (let i = 0; i < 20 && !(await page.$('#panel .ilist')); i++) { await tap('z', 40); await sleep(120); }
+    await page.click('#panel [data-back]');
+    await choose(2); await settle();                                     // Nada, gracias
+    s = await st();
+    assert.equal(s.money, before.money - 400 + 100); assert.equal(s.bag.capsula, before.bag.capsula + 1);
+    // Mostrador especial de la vendedora y máquina de bebidas
+    await walkTo(4, 4); await tap('ArrowUp'); await talk(); await choose(0);
+    await choose('miel'); await choose('buy');
+    for (let i = 0; i < 20 && !(await page.$('#panel .ilist')); i++) { await tap('z', 40); await sleep(120); }
+    await page.click('#panel [data-back]'); await choose(1); await settle();
+    await walkTo(9, 2); await tap('ArrowRight'); await talk();
+    await choose('jugoLulo'); await choose('buy');
+    for (let i = 0; i < 20 && !(await page.$('#panel .ilist')); i++) { await tap('z', 40); await sleep(120); }
+    await shot('maquina');
     await page.click('#panel [data-back]'); await settle();
     s = await st();
-    assert.equal(s.money, before.money - 400); assert.equal(s.bag.capsula, before.bag.capsula + 2);
-    log('posada y tienda OK');
+    assert.equal(s.bag.miel, 1); assert.equal(s.bag.jugoLulo, 1); assert.equal(s.money, before.money - 300 - 300 - 300);
+    log('posada, tienda (comprar, vender, especial y máquina) OK');
     await walkTo(5, 7);
 
     // ------------------------------------------------ Ruta 2 y Corola

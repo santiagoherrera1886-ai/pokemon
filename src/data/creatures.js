@@ -107,19 +107,7 @@ export function rivalForm(base, level) {
   return s;
 }
 
-export const ITEMS = {
-  capsula: { name: 'Cápsula', price: 200, desc: 'Sirve para atrapar criaturas salvajes.' },
-  supercapsula: { name: 'Supercápsula', price: 600, desc: 'Atrapa criaturas con más facilidad que una Cápsula.', catchBonus: 1.6 },
-  tonico: { name: 'Tónico', price: 300, desc: 'Restaura 20 PS de una criatura.', heal: 20 },
-  supertonico: { name: 'Supertónico', price: 700, desc: 'Restaura 60 PS de una criatura.', heal: 60 },
-  hipertonico: { name: 'Hipertónico', price: 1200, desc: 'Restaura 120 PS de una criatura.', heal: 120 },
-  despertar: { name: 'Revivir', price: 1500, desc: 'Reanima a una criatura debilitada con la mitad de sus PS.', revive: true }
-};
-export const SHOP_STOCK = {
-  1: ['capsula', 'tonico', 'supertonico', 'despertar'],
-  2: ['capsula', 'supercapsula', 'tonico', 'supertonico', 'despertar'],
-  3: ['capsula', 'supercapsula', 'supertonico', 'hipertonico', 'despertar']
-};
+// Los objetos y las tiendas viven en items.js.
 
 export const ENCOUNTERS = {
   sendero1: { rate: 0.12, list: [['pipiu', 2, 4, 50], ['roedin', 2, 4, 40], ['capullin', 2, 3, 10]] },
@@ -132,13 +120,14 @@ export const ENCOUNTERS = {
 };
 
 // ---------- Fórmulas ----------
-export function calcStats(s, level) {
-  const b = SPECIES[s].base;
+// bonus: lo que han sumado las Semillas (permanente, por estadística).
+export function calcStats(s, level, bonus = {}) {
+  const b = SPECIES[s].base, k = bonus || {};
   return {
-    hp: Math.floor(2 * b.hp * level / 100) + level + 10,
-    atk: Math.floor(2 * b.atk * level / 100) + 5,
-    def: Math.floor(2 * b.def * level / 100) + 5,
-    spe: Math.floor(2 * b.spe * level / 100) + 5
+    hp: Math.floor(2 * b.hp * level / 100) + level + 10 + (k.hp || 0),
+    atk: Math.floor(2 * b.atk * level / 100) + 5 + (k.atk || 0),
+    def: Math.floor(2 * b.def * level / 100) + 5 + (k.def || 0),
+    spe: Math.floor(2 * b.spe * level / 100) + 5 + (k.spe || 0)
   };
 }
 export const expForLevel = l => l * l * l;
@@ -163,6 +152,6 @@ export function makeCreature(s, level) {
 
 export function refreshStats(c) {
   const old = c.stats.hp;
-  c.stats = calcStats(c.sp, c.level);
+  c.stats = calcStats(c.sp, c.level, c.bonus);
   if (c.hp > 0) c.hp = Math.min(c.stats.hp, c.hp + (c.stats.hp - old));
 }

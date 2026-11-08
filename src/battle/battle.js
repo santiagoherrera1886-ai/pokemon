@@ -1,11 +1,13 @@
 // Combate por turnos a pantalla completa: escena con fondo según el terreno, sprites con animación,
 // efectos por tipo de movimiento, entrenadores con varias criaturas, experiencia, niveles, aprendizaje y captura.
 import { ui, esc } from '../ui/ui.js';
+import { itemIcon } from '../art/items.js';
 import { input } from '../core/input.js';
 import { battleSprite, silhouette, iconURL } from '../art/creatures.js';
 import { sheet } from '../art/characters.js';
 import { canvas, px, ellipse, hash } from '../core/pixel.js';
-import { SPECIES, MOVES, TYPES, ITEMS, effectiveness, expForLevel, refreshStats } from '../data/creatures.js';
+import { SPECIES, MOVES, TYPES, effectiveness, expForLevel, refreshStats } from '../data/creatures.js';
+import { ITEMS, POCKETS, BATTLE_POCKETS, pocketItems, isCapsule, canUseOn, useOnCreature, catchBonus } from '../data/items.js';
 
 const $ = id => document.getElementById(id);
 const STAGE = s => s >= 0 ? (2 + s) / 2 : 2 / (2 - s);
@@ -95,11 +97,7 @@ export class Battle {
       g.drawImage(battleSprite(this.ally.sp, true), Math.round(L.ally[0] - size / 2 + f.allyX * L.w + sh), Math.round(L.ally[1] - size + 10 * k + f.allyY * k - bob), size, size);
       g.globalAlpha = 1;
     }
-    if (f.ball) {
-      const b = f.ball, x = Math.round(b.x * L.w), y = Math.round(b.y * L.h);
-      ellipse(g, x, y, 4 * k, 4 * k, '#26222e'); ellipse(g, x, y, 3 * k, 3 * k, '#f4f4f4');
-      px(g, x - 3 * k, y - 3 * k, b.color || '#3a9ad8', 7 * k, 3 * k); px(g, x - 4 * k, y, '#26222e', 9 * k, k); px(g, x - k, y - k, '#ffffff', 2 * k, 2 * k);
-    }
+    if (f.ball) this.drawCapsule(g, f.ball, L, k);
     for (const p of this.parts) {
       p.x += p.vx; p.y += p.vy; p.vy += p.g || 0; p.life--;
       g.globalAlpha = Math.max(0, Math.min(1, p.life / 12));
@@ -110,6 +108,20 @@ export class Battle {
     this.parts = this.parts.filter(p => p.life > 0);
     if (f.flash > 0) { g.fillStyle = `rgba(255,255,255,${f.flash})`; g.fillRect(0, 0, r.w, r.h); f.flash = Math.max(0, f.flash - 0.06); }
     this.L = L;
+  }
+
+  // Cápsula alargada: mitad de color, mitad crema, unión oscura y gema; gira mientras vuela.
+  drawCapsule(g, b, L, k) {
+    const x = Math.round(b.x * L.w), y = Math.round(b.y * L.h), r = 3 * k, half = 4 * k;
+    const pill = (x0, x1, rad, color) => { g.fillStyle = color; g.beginPath(); g.arc(x0, 0, rad, Math.PI / 2, Math.PI * 1.5); g.lineTo(x1, -rad); g.arc(x1, 0, rad, -Math.PI / 2, Math.PI / 2); g.closePath(); g.fill(); };
+    g.save(); g.translate(x, y); g.rotate(b.spin || 0);
+    pill(-half, half, r + k, '#26222e');
+    pill(-half, 0, r, b.color || '#3a9ad8');
+    pill(0, half, r, '#f6ead2');
+    g.fillStyle = '#26222e'; g.fillRect(-k / 2, -r, k, r * 2);
+    g.fillStyle = '#ffffff'; g.fillRect(-k, -k, 2 * k, 2 * k);
+    g.fillStyle = 'rgba(255,255,255,.6)'; g.fillRect(-half - k, -r + k, 2 * k, k); g.fillRect(k * 2, -r + k, 2 * k, k);
+    g.restore();
   }
 
   // Efecto visual según el tipo del movimiento, centrado en el objetivo.
@@ -190,6 +202,7 @@ export class Battle {
   async sendOut() {
     this.fx.allyX = -1; this.fx.allyAlpha = 1; this.fx.allyY = 0;
     this.allyStages = { atk: 0, def: 0, spe: 0 };
+    this.allyCrit = false;
     this.participants.add(this.activeIdx);
     ui.show(`¡Adelante, ${this.ally.name}!`);
     await this.tween(this.fx, 'allyX', 0, 22);
@@ -216,24 +229,35 @@ export class Battle {
         ui.setPanel(`<div class="bt-moves">${al.moves.map((m, i) => { const M = MOVES[m.id]; const eff = M.power ? effectiveness(M.type, SPECIES[this.foe.sp].types) : 1; return `<button class="mv" style="--t:${TYPES[M.type].color}" data-act="${i}" ${m.pp <= 0 ? 'disabled' : ''}><b>${esc(M.name)}</b><small>${TYPES[M.type].name}${M.power ? ' · ' + M.power : ''}${this.st.dex?.[this.foe.sp] && eff !== 1 ? (eff > 1 ? ' · ¡eficaz!' : ' · poco eficaz') : ''}</small><em>PP ${m.pp}/${M.pp}</em></button>`; }).join('')}</div><button class="bt-back" data-back>VOLVER</button>`,
           { modal: true, cls: 'battle-panel', onAct: a => resolve({ type: 'move', i: +a }), onBack: main });
       };
-      const bag = () => {
-        const ids = Object.keys(ITEMS).filter(id => this.st.bag[id] > 0);
-        const isBall = id => id === 'capsula' || id === 'supercapsula';
-        ui.setPanel(`<div class="bt-list">${ids.length ? ids.map(id => `<button data-act="${id}" ${isBall(id) && !this.opts.canCatch ? 'disabled' : ''}><b>${esc(ITEMS[id].name)}</b><span>x${this.st.bag[id]}</span></button>`).join('') : '<p class="empty">La mochila está vacía.</p>'}</div><button class="bt-back" data-back>VOLVER</button>`,
-          { modal: true, cls: 'battle-panel', onAct: id => {
-            if (isBall(id)) return resolve({ type: 'catch', id });
-            if (ITEMS[id].revive) return party(false, id);
-            return party(false, id);
-          }, onBack: main });
+      // Mochila de combate: bolsillos de Cápsulas, Medicinas y Batalla.
+      const bag = pocket => {
+        const st = this.st;
+        pocket = pocket || this.pocket || (this.opts.canCatch ? 'capsulas' : 'medicinas');
+        this.pocket = pocket;
+        const ids = pocketItems(st.bag, pocket);
+        const tabs = BATTLE_POCKETS.map(p => `<button data-act="tab:${p}" class="tab${p === pocket ? ' on' : ''}" style="--c:${POCKETS[p].color}">${POCKETS[p].name}<small>${pocketItems(st.bag, p).reduce((a, id) => a + st.bag[id], 0)}</small></button>`).join('');
+        const off = id => isCapsule(id) && !this.opts.canCatch;
+        ui.setPanel(`<div class="tabs">${tabs}</div><div class="bt-list items">${ids.length ? ids.map(id => `<button data-act="${id}" class="it" ${off(id) ? 'disabled' : ''}><img class="ico" src="${itemIcon(id)}" alt=""><b>${esc(ITEMS[id].name)}</b><span>x${st.bag[id]}</span></button>`).join('') : '<p class="empty">Este bolsillo está vacío.</p>'}</div><button class="bt-back" data-back>VOLVER</button>`,
+          { modal: true, cls: 'battle-panel bag-panel', focus: ids.length ? BATTLE_POCKETS.length : BATTLE_POCKETS.indexOf(pocket),
+            onFocus: el => { const a = el.dataset.act; if (ITEMS[a]) ui.show(off(a) ? 'Las Cápsulas sólo sirven contra criaturas salvajes.' : `${ITEMS[a].name}: ${ITEMS[a].desc}`); else ui.show(`¿Qué hará ${this.ally.name}?`); },
+            onAct: a => {
+              if (a.startsWith('tab:')) return bag(a.slice(4));
+              const it = ITEMS[a];
+              if (isCapsule(a)) return resolve({ type: 'catch', id: a });
+              if (it.boost) return resolve({ type: 'boost', id: a });
+              return party(false, a);
+            }, onBack: main });
       };
       const party = (forced, itemId) => {
-        ui.setPanel(`<div class="bt-list party">${this.st.party.map((c, i) => `<button data-act="${i}" class="${i === this.activeIdx ? 'cur' : ''}"><img src="${iconURL(c.sp)}" alt=""><b>${esc(c.name)}</b><span>Nv${c.level} · ${Math.ceil(c.hp)}/${c.stats.hp}</span></button>`).join('')}</div>${forced ? '' : '<button class="bt-back" data-back>VOLVER</button>'}`,
+        const usable = c => itemId ? canUseOn(itemId, c) : (c.hp > 0 && this.st.party.indexOf(c) !== this.activeIdx);
+        if (itemId) ui.show(`¿En quién vas a usar ${ITEMS[itemId].name}?`);
+        ui.setPanel(`<div class="bt-list party">${this.st.party.map((c, i) => `<button data-act="${i}" class="${i === this.activeIdx ? 'cur' : ''}${usable(c) ? '' : ' dim'}"><img src="${iconURL(c.sp)}" alt=""><b>${esc(c.name)}</b><span>Nv${c.level} · ${Math.ceil(c.hp)}/${c.stats.hp}</span></button>`).join('')}</div>${forced ? '' : '<button class="bt-back" data-back>VOLVER</button>'}`,
           { modal: true, cls: 'battle-panel', onAct: a => {
             const i = +a, c = this.st.party[i];
-            if (itemId) { if (ITEMS[itemId].revive ? c.hp > 0 : (c.hp <= 0 || c.hp >= c.stats.hp)) return; return resolve({ type: 'item', id: itemId, target: i }); }
+            if (itemId) { if (!canUseOn(itemId, c)) { ui.show('No tendría ningún efecto.'); return; } return resolve({ type: 'item', id: itemId, target: i }); }
             if (c.hp <= 0 || i === this.activeIdx) return;
             resolve({ type: 'switch', i });
-          }, onBack: forced ? null : main });
+          }, onBack: forced ? null : (itemId ? () => { ui.show(`¿Qué hará ${this.ally.name}?`); bag(); } : main) });
       };
       if (this.needSwitch) party(true); else main();
     });
@@ -255,6 +279,7 @@ export class Battle {
   async turn(act) {
     ui.closePanel();
     this.needSwitch = false;
+    this.turnN = (this.turnN || 0) + 1;
     if (act.type === 'run') {
       if (this.trainer) { await this.msg('¡No puedes huir de un combate contra un entrenador!'); return null; }
       if (!this.opts.canRun) { await this.msg('¡No puedes huir ahora!'); return null; }
@@ -273,9 +298,26 @@ export class Battle {
     if (act.type === 'item') {
       const c = this.st.party[act.target], it = ITEMS[act.id];
       this.st.bag[act.id]--;
-      if (it.revive) c.hp = Math.floor(c.stats.hp / 2);
-      else { const to = Math.min(c.stats.hp, c.hp + it.heal); await this.tween(c, 'hp', to, 24); c.hp = Math.round(c.hp); }
-      await this.msg(`Usaste ${it.name} en ${c.name}.`);
+      await this.msg(`${this.st.name} usó ${it.name} en ${c.name}.`, 20);
+      const res = useOnCreature(act.id, c);
+      if (res.to !== undefined && act.target === this.activeIdx) { c.hp = res.from; await this.tween(c, 'hp', res.to, 24); c.hp = res.to; this.hud(); }
+      await this.msg(res.msg);
+      return this.foeTurn();
+    }
+    if (act.type === 'boost') {
+      const it = ITEMS[act.id], al = this.ally;
+      this.st.bag[act.id]--;
+      await this.msg(`¡${this.st.name} usó ${it.name}!`, 20);
+      this.effect('normal', false);
+      if (it.boost === 'crit') {
+        if (this.allyCrit) await this.msg(`${al.name} ya está concentrado al máximo.`);
+        else { this.allyCrit = true; await this.msg(`¡${al.name} se concentró! Sus golpes críticos serán más probables.`); }
+      } else {
+        const names = { atk: 'el Ataque', def: 'la Defensa', spe: 'la Velocidad' };
+        const before = this.allyStages[it.boost];
+        this.allyStages[it.boost] = Math.min(6, before + 2);
+        await this.msg(before >= 6 ? `¡${names[it.boost]} de ${al.name} no puede subir más!` : `¡Subió mucho ${names[it.boost]} de ${al.name}!`);
+      }
       return this.foeTurn();
     }
     if (act.type === 'catch') return this.throwCapsule(act.id);
@@ -308,7 +350,7 @@ export class Battle {
       this.effect(M.type, isAlly);
       await this.wait(16);
       if (eff === 0) { await this.msg(`No afecta a ${target.name}...`); return undefined; }
-      const crit = rand() < 1 / 16 ? 1.5 : 1;
+      const crit = rand() < (isAlly && this.allyCrit ? 1 / 4 : 1 / 16) ? 1.5 : 1;
       const A = user.stats.atk * (crit > 1 ? Math.max(1, STAGE(us.atk)) : STAGE(us.atk));
       const D = target.stats.def * (crit > 1 ? Math.min(1, STAGE(ts.def)) : STAGE(ts.def));
       const stab = SPECIES[user.sp].types.includes(M.type) ? 1.5 : 1;
@@ -391,20 +433,23 @@ export class Battle {
     await this.msg(`¡${this.st.name} lanzó una ${ITEMS[id].name}!`, 10);
     const f = this.fx, L = this.L;
     const tx = L.foe[0] / L.w, ty = (L.foe[1] - 30 * L.k) / L.h;
-    f.ball = { x: 0.25, y: 0.8, color: id === 'supercapsula' ? '#e04848' : '#3a9ad8' };
-    for (let i = 1; i <= 26; i++) { const k = i / 26; f.ball.x = 0.25 + (tx - 0.25) * k; f.ball.y = 0.8 + (ty - 0.8) * k - Math.sin(k * Math.PI) * 0.25; await this.wait(1); }
+    f.ball = { x: 0.25, y: 0.8, color: ITEMS[id].color, spin: 0 };
+    for (let i = 1; i <= 26; i++) { const k = i / 26; f.ball.x = 0.25 + (tx - 0.25) * k; f.ball.y = 0.8 + (ty - 0.8) * k - Math.sin(k * Math.PI) * 0.25; f.ball.spin = k * Math.PI * 4; await this.wait(1); }
+    f.ball.spin = 0;
     f.flash = 0.8; f.foeWhite = true;
     await Promise.all([this.tween(f, 'foeScale', 0.05, 12), this.tween(f, 'foeAlpha', 0, 12)]);
     f.foeWhite = false;
     f.ball.y = (L.foe[1] - 6 * L.k) / L.h;
     const max = this.foe.stats.hp, hp = this.foe.hp;
     const rate = this.opts.legendary ? 45 : 190;
-    const chance = Math.min(1, ((3 * max - 2 * hp) * rate * (ITEMS[id].catchBonus || 1)) / (3 * max) / 255 + 0.04);
+    const hour = this.game.hour();
+    const bonus = catchBonus(id, { turn: this.turnN || 1, foe: this.foe, night: hour >= 19 || hour < 6, dark: !!this.game.ow?.map?.dark || this.opts.bg === 'cave' });
+    const chance = Math.min(1, ((3 * max - 2 * hp) * rate * bonus) / (3 * max) / 255 + 0.04);
     const ok = rand() < chance;
     const wobbles = ok ? 3 : Math.floor(rand() * 3);
     for (let w = 0; w < wobbles; w++) {
       await this.wait(18);
-      for (const dx of [-0.006, 0.006, -0.006, 0]) { f.ball.x = tx + dx; await this.wait(4); }
+      for (const dx of [-0.006, 0.006, -0.006, 0]) { f.ball.x = tx + dx; f.ball.spin = dx * 60; await this.wait(4); }
     }
     await this.wait(16);
     if (ok) {

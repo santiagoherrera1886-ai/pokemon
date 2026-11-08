@@ -4,6 +4,7 @@ import {Environment} from './environment.js';
 import {DioramaCamera} from './camera.js';
 import {Lighting} from './lighting.js';
 import {character,animateCharacter,creature} from './actors.js';
+import {capsuleModel} from './models.js';
 import {QUALITY,normalizeQuality,actorPosition,visibleMapIds} from './policy.js';
 import {ui} from '../ui/ui.js';
 import {hash} from '../core/pixel.js';
@@ -93,7 +94,7 @@ export class PremiumRenderer {
       r.batch(ground);
       this.creatures={foe:creature(r,b.foe.sp),ally:b.ally?creature(r,b.ally.sp):null};
       for(const rig of Object.values(this.creatures))if(rig)this.battleRoot.add(rig.root);
-      this.ball=r.ball(this.battleRoot,'#f2e5cf',0,.2,0,.13);this.ball.visible=false;
+      this.ball=capsuleModel(r);this.battleRoot.add(this.ball);this.ball.visible=false;
       this.trainerRig=trainer?character(r,trainer):null;if(this.trainerRig)this.battleRoot.add(this.trainerRig.root);
       const geo=new T.BufferGeometry();geo.setAttribute('position',new T.BufferAttribute(new Float32Array(128*3),3));geo.setAttribute('color',new T.BufferAttribute(new Float32Array(128*3),3));
       this.battleParticles=new T.Points(geo,new T.PointsMaterial({size:.1,vertexColors:true,transparent:true,opacity:.8,depthWrite:false,depthTest:false}));this.battleParticles.userData.ownedGeometry=true;this.battleParticles.userData.ownedMaterial=true;this.battleParticles.frustumCulled=false;this.battleRoot.add(this.battleParticles);
@@ -110,7 +111,7 @@ export class PremiumRenderer {
       rig.model.position.y=Math.sin(time*3.8+(ally?0:1))*.045;
       rig.model.rotation.z=Math.sin(time*2.4)*.025;
     }
-    this.ball.visible=!!f.ball;if(f.ball){this.ball.position.set((f.ball.x-.5)*10,Math.max(.2,(.5-f.ball.y)*9),(f.ball.y-.43)*9-1.8);this.ball.material=this.r.mat(f.ball.color||'#f2e5cf');}
+    this.ball.visible=!!f.ball;if(f.ball){this.ball.position.set((f.ball.x-.5)*10,Math.max(.2,(.5-f.ball.y)*9),(f.ball.y-.43)*9-1.8);this.ball.userData.paint(f.ball.color||'#3a9ad8');this.ball.rotation.set(0,.45,f.ball.spin||0);}
     if(this.trainerRig){this.trainerRig.root.visible=f.trainerA>.05;this.trainerRig.root.position.set(2+f.trainerX*13,0,-1.8);this.trainerRig.root.scale.setScalar(1.5);}
     this.camera.update(null,null,dt,true);this.lights.update(this.camera.focus,false);
     this.camera.camera.updateMatrixWorld(true);

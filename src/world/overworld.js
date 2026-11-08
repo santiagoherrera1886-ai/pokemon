@@ -12,7 +12,7 @@ const DXY = [[0, 1], [0, -1], [-1, 0], [1, 0]];
 const WALK = 16, RUN = 8, NPC_WALK = 18;
 
 export const NAMES = {
-  mom: 'Mamá', rival: 'Nico', prof: 'Prof. Ceiba', nurse: 'Enfermera Malva', clerk: 'Dependiente', rivalMom: 'Mamá de Nico', aide: 'Ayudante',
+  mom: 'Mamá', rival: 'Nico', prof: 'Prof. Ceiba', nurse: 'Enfermera Malva', clerk: 'Dependiente', vendor: 'Vendedora', rivalMom: 'Mamá de Nico', aide: 'Ayudante',
   hiedra: 'Hiedra', basalto: 'Basalto', coral: 'Coral', grunt: 'Recluta Eclipse', bruma: 'Bruma', umbra: 'Umbra', aurora: 'Campeona Aurora', courier: 'Mensajera', guard: 'Guardia'
 };
 
@@ -168,6 +168,7 @@ export class Overworld {
     if (w && (w.needDir === undefined || w.needDir === p.dir) && (!w.when || w.when(this.st))) { await this.warp(w.to, w.tx, w.ty, w.face); return; }
     if (await this.checkTriggers()) return;
     if (await this.checkTrainers()) return;
+    if (stepped && this.st.repel > 0) await this.game.repelStep();
     const t = m.at(p.x, p.y);
     if (stepped && m.encounters && (t === 'g' || (m.allEncounter && (t === 'c')))) await this.game.maybeEncounter(m.encounters, m.battleBg);
   }

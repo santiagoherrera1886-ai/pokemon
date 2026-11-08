@@ -20,10 +20,10 @@ const COAT = [[.001, -.02], [.215, -.02], [.205, .1], [.19, .2], [.165, .29], [.
 const SKIRT = [[.13, .14], [.25, 0], [.255, -.012], [.001, -.012], [.001, .14]];
 
 // Rasgos por personaje que no están en LOOKS (color de ojos y extras).
-const EYES = { player: '#3a5a9a', rival: '#3f8a52', mom: '#7a4a2e', prof: '#3e6a4a', nurse: '#c0507a', hiedra: '#2f7a3a', coral: '#2a7ac0', bruma: '#7a5ab0', umbra: '#b83a3a', aurora: '#3a9ad0', grunt: '#7a3a5a' };
-const SKIRT_LOOKS = new Set(['mom', 'girl', 'lass', 'nurse', 'coral', 'hiedra', 'aurora', 'bruma', 'rivalMom']);
+const EYES = { vendor: '#6a4a2a', player: '#3a5a9a', rival: '#3f8a52', mom: '#7a4a2e', prof: '#3e6a4a', nurse: '#c0507a', hiedra: '#2f7a3a', coral: '#2a7ac0', bruma: '#7a5ab0', umbra: '#b83a3a', aurora: '#3a9ad0', grunt: '#7a3a5a' };
+const SKIRT_LOOKS = new Set(['mom', 'girl', 'lass', 'nurse', 'coral', 'hiedra', 'aurora', 'bruma', 'rivalMom', 'vendor']);
 const GLASSES = new Set(['prof', 'old', 'clerk']);
-const LASHES = new Set(['mom', 'girl', 'lass', 'nurse', 'coral', 'hiedra', 'aurora', 'bruma', 'rivalMom', 'prof']);
+const LASHES = new Set(['mom', 'girl', 'lass', 'nurse', 'coral', 'hiedra', 'aurora', 'bruma', 'rivalMom', 'prof', 'vendor']);
 
 function shade(hex, f) { const c = new T.Color(hex); return '#' + (f > 0 ? c.lerp(new T.Color('#ffffff'), f) : c.multiplyScalar(1 + f)).getHexString(); }
 

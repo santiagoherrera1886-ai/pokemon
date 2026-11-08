@@ -27,14 +27,17 @@ export function posadaGen(id, name, back) {
   b.npc({ id: id + 'Msj', look: 'courier', x: 10, y: 5, dir: 2, talk: 'viaje' });
   return b.build();
 }
-export function tiendaGen(id, name, back, tier) {
+// Tienda: mostrador general (dependiente), mostrador especial de la ciudad (vendedora) y máquina de bebidas.
+export function tiendaGen(id, name, back, town) {
   const b = interior(id, 11, 8, { name, floor: 'k', style: 'lab' });
   exitMat(b, 5, 7, 11, back);
-  b.furniture('shopCounter', 1, 3, 3, 1, { sy: -8, counter: true, arg: 3 });
+  b.furniture('shopCounter', 1, 3, 4, 1, { sy: -8, counter: true, arg: 4 });
   b.furniture('storeShelf', 6, 3, 2, 1, { sy: -14 }).furniture('storeShelf', 9, 3, 2, 1, { sy: -14 });
   b.furniture('storeShelf', 6, 5, 2, 1, { sy: -14 }).furniture('storeShelf', 9, 5, 2, 1, { sy: -14 });
   b.furniture('plant', 0, 2, 1, 1, { sy: -8 });
-  b.npc({ id: id + 'Dep', look: 'clerk', x: 2, y: 2, dir: 0, talk: 'tienda', tier });
+  b.furniture('vending', 10, 2, 1, 1, { sy: -18, script: 'maquina' });
+  b.npc({ id: id + 'Dep', look: 'clerk', x: 2, y: 2, dir: 0, talk: 'tienda', town });
+  b.npc({ id: id + 'Esp', look: 'vendor', x: 4, y: 2, dir: 0, talk: 'tiendaEspecial', town });
   return b.build();
 }
 function casaGen(id, name, look, lines, back, wallColor = '#f2e8d2') {
@@ -262,9 +265,9 @@ export function buildStoryMaps() {
     [{ look: 'swimmer', x: 6, y: 9, dir: 0, sight: 2, trainer: T('Nadador Íker', 'swimmer', [['medusin', 19], ['medusin', 19]], 500, ['¡Splash! ¡Hora de pelear!'], ['Glub...'], ['Coral entrena a las 5 de la mañana.']) }]);
   const list = [
     ruta2(), corola(), ruta3(), cueva(), cobre(), ruta4(), marea(), bodega(), ruta5(), liga(), g1, g2, g3,
-    posadaGen('posadaCorola', 'Posada de Corola', ['corola', 6, 16]), tiendaGen('tiendaCorola', 'Tienda de Corola', ['corola', 25, 16], 2),
-    posadaGen('posadaCobre', 'Posada de Cobre', ['cobre', 6, 17]), tiendaGen('tiendaCobre', 'Tienda de Cobre', ['cobre', 20, 17], 2),
-    posadaGen('posadaMarea', 'Posada de Marea', ['marea', 22, 8]), tiendaGen('tiendaMarea', 'Tienda de Marea', ['marea', 28, 8], 3),
+    posadaGen('posadaCorola', 'Posada de Corola', ['corola', 6, 16]), tiendaGen('tiendaCorola', 'Tienda de Corola', ['corola', 25, 16], 'corola'),
+    posadaGen('posadaCobre', 'Posada de Cobre', ['cobre', 6, 17]), tiendaGen('tiendaCobre', 'Tienda de Cobre', ['cobre', 20, 17], 'cobre'),
+    posadaGen('posadaMarea', 'Posada de Marea', ['marea', 22, 8]), tiendaGen('tiendaMarea', 'Tienda de Marea', ['marea', 28, 8], 'marea'),
     casaGen('casaCorola1', 'Casa de los Pétalos', 'girl', ['¿Viste la fuente de la plaza? La construyó la abuela de Hiedra.'], ['corola', 6, 23]),
     casaGen('casaCorola2', 'Casa del cartero', 'man', ['Llevo cartas a todo Alborada.', 'Si quieres viajar rápido, habla con la Mensajera en cualquier Posada.'], ['corola', 25, 24]),
     casaGen('casaCobre', 'Casa del minero', 'old', ['Yo encontré el primer cristal en la Cueva Eco, hace cincuenta años.', 'Brillaba igualito al Lago Espejo.'], ['cobre', 20, 7], '#e8dcc8'),
