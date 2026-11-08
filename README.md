@@ -54,7 +54,7 @@ La tienda muestra íconos en pixel art, descripción de cada objeto, cantidad x1
 
 Dos modos, que se cambian en **Opciones → Gráficos** sin perder la partida:
 
-- **3D (por defecto):** pantalla completa con Three.js. Cámara alta casi cenital con perspectiva suave, personajes cabezones que inclinan la cabeza hacia la cámara, materiales satinados, sol desde arriba a la izquierda con sombras suaves, resplandor (bloom) en lo brillante, gradación cálida y leve desenfoque en los bordes. Las ciudades (Villa Arenal, Corola, Marea) tienen calles de asfalto con bordillo y andenes de baldosa. Los combates usan cámara baja con cielo y fondo según el terreno. Calidad baja, media o alta.
+- **3D (por defecto):** pantalla completa con Three.js. Cámara alta casi cenital con perspectiva suave, personajes cabezones que inclinan la cabeza hacia la cámara, criaturas con acabado de figura (formas lisas y brillantes, ojos grandes con brillo que parpadean, cachetes y boquita), casas de juguete (techo de tejas en franjas gruesas, cumbrera con remates, ventanas de marco blanco con jardinera, alero festoneado y letreros en placa legibles desde arriba), materiales satinados, sol desde arriba a la izquierda con sombras suaves, resplandor (bloom) en lo brillante, gradación cálida y leve desenfoque en los bordes. Las ciudades (Villa Arenal, Corola, Marea) tienen calles de asfalto con bordillo y andenes de baldosa. Los combates usan cámara baja con cielo y fondo según el terreno. Calidad baja, media o alta.
 - **Pixel clásico:** el motor 2D anterior.
 
 Detalles del modo pixel clásico:
