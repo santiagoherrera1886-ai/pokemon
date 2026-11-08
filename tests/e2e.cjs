@@ -102,7 +102,7 @@ async function step(key) {
   const a = await st();
   await page.keyboard.down(key);
   const t = Date.now();
-  while (Date.now() - t < 700) {
+  while (Date.now() - t < 2500) {   // margen amplio: con render por software el juego puede ir a pocos cuadros por segundo
     const b = await st();
     if (b.moving || b.x !== a.x || b.y !== a.y || b.map !== a.map || b.dialog || b.locked) break;
     await sleep(10);
