@@ -110,6 +110,10 @@ export class PremiumRenderer {
       const s=ally?1.35:(f.foeScale??1)*1.12;rig.root.scale.setScalar(s);
       rig.model.position.y=Math.sin(time*3.8+(ally?0:1))*.045;
       rig.model.rotation.z=Math.sin(time*2.4)*.025;
+      // Parpadeo de figura: cada 2 a 5 segundos los ojos se cierran un instante.
+      rig.blinkAt=rig.blinkAt??time+1+Math.random()*2.5;
+      if(time>rig.blinkAt+.14)rig.blinkAt=time+2+Math.random()*3;
+      const closed=time>rig.blinkAt;for(const e of rig.eyes||[])e.scale.y=closed?.12:1;
     }
     this.ball.visible=!!f.ball;if(f.ball){this.ball.position.set((f.ball.x-.5)*10,Math.max(.2,(.5-f.ball.y)*9),(f.ball.y-.43)*9-1.8);this.ball.userData.paint(f.ball.color||'#3a9ad8');this.ball.rotation.set(0,.45,f.ball.spin||0);}
     if(this.trainerRig){this.trainerRig.root.visible=f.trainerA>.05;this.trainerRig.root.position.set(2+f.trainerX*13,0,-1.8);this.trainerRig.root.scale.setScalar(1.5);}

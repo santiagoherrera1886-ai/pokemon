@@ -30,26 +30,31 @@ export class Resources {
     group.updateMatrixWorld(true);
     const groups = new Map(), remove = [];
     group.traverse(m => {
-      if (!m.isMesh || m.isInstancedMesh || m.material.map || m.material.transparent) return;
+      // userData.keep: piezas que se animan aparte (por ejemplo los ojos que parpadean).
+      if (!m.isMesh || m.isInstancedMesh || m.material.map || m.material.transparent || m.userData.keep) return;
       const mat = m.material;
       const emissive = mat.emissive?.getHex() || 0;
-      const key = `${emissive}:${mat.emissiveIntensity || 0}`;
+      const roughness = mat.roughness ?? .62, metalness = mat.metalness ?? 0;
+      const key = `${emissive}:${mat.emissiveIntensity || 0}:${roughness}:${metalness}`;
       const g = m.geometry.clone().applyMatrix4(m.matrixWorld);
       const count = g.attributes.position.count, colors = new Float32Array(count * 3);
       for (let i=0;i<count;i++) mat.color.toArray(colors,i*3);
       g.setAttribute('color',new T.BufferAttribute(colors,3));
       const plain = g.index ? g.toNonIndexed() : g;
       if (plain !== g) g.dispose();
-      if (!groups.has(key)) groups.set(key,{list:[],emissive,intensity:mat.emissiveIntensity});
+      if (!groups.has(key)) groups.set(key,{list:[],emissive,intensity:mat.emissiveIntensity,roughness,metalness});
       groups.get(key).list.push(plain); remove.push(m);
     });
     remove.forEach(m=>{m.removeFromParent();if(m.userData.ownedGeometry)m.geometry.dispose();});
     const inverse = new T.Matrix4().copy(group.matrixWorld).invert();
-    for (const {list,emissive,intensity} of groups.values()) {
+    for (const {list,emissive,intensity,roughness,metalness} of groups.values()) {
       const geo=mergeGeometries(list); list.forEach(g=>g.dispose());
       if (!geo) throw new Error('Geometría incompatible');
       geo.applyMatrix4(inverse); this.merged.add(geo);
-      const mesh=new T.Mesh(geo,this.mat('#ffffff',{vertexColors:true,emissive,emissiveIntensity:intensity}));
+      const opts={vertexColors:true,emissive,emissiveIntensity:intensity};
+      if (roughness!==.62) opts.roughness=roughness;
+      if (metalness) opts.metalness=metalness;
+      const mesh=new T.Mesh(geo,this.mat('#ffffff',opts));
       mesh.castShadow=true; mesh.receiveShadow=true; group.add(mesh);
     }
     return group;
