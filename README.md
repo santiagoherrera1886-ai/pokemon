@@ -21,6 +21,26 @@ El mundo, los personajes, las criaturas, los nombres y todo el pixel art son **o
 
 **Contenido:** 28 especies con evoluciones, 10 tipos, 33 movimientos, más de 20 entrenadores con línea de visión, 3 gimnasios, viaje rápido con la Mensajera de las posadas, PC de almacenamiento, registro de criaturas vistas y atrapadas.
 
+## Tiendas y objetos
+
+Cada tienda tiene tres puestos:
+
+- **Dependiente (mostrador general):** comprar y vender (te pagan la mitad). Lo que vende crece con las medallas y lo que todavía no llega se ve bloqueado.
+- **Vendedora (mostrador especial):** cosas propias de cada ciudad. Arenal: Miel Silvestre y Pócimas. Corola: Semillas que suben estadísticas para siempre. Cobre: cápsulas especiales. Marea: todas las Pócimas y el Dulce de Arequipe.
+- **Máquina expendedora:** Agua de Panela, Jugo de Lulo y Avena (curan más barato).
+
+Son 32 objetos originales en 5 bolsillos de la mochila:
+
+| Bolsillo | Objetos |
+|---|---|
+| Cápsulas | Cápsula, Supercápsula, Hipercápsula, Veloz (primer turno), Ocaso (noche y cuevas), Reloj (combates largos), Malla (Agua y Bicho), Alba (regalo al llevar 10) |
+| Medicinas | Tónico, Supertónico, Hipertónico, Tónico Máximo, Revivir, bebidas, Rocío y Rocío Puro (PP) |
+| Batalla | Pócimas Fuerza, Coraza, Viento (suben dos etapas) y Certera (más críticos) |
+| Campo | Repelente (100, 200 o 250 pasos; avisa y ofrece otro al acabarse), Silbato de Regreso (te lleva a la última Posada), Miel Silvestre (atrae una criatura) |
+| Cuidado | Semillas Vital, Fuerza, Coraza y Viento (+3 permanentes, hasta +15), Dulce de Arequipe (sube un nivel, aprende movimientos y puede evolucionar) |
+
+La tienda muestra íconos en pixel art, descripción de cada objeto, cantidad x1/x10 y total con lo que te queda.
+
 ## Controles
 
 | Acción | Teclado | Táctil |
@@ -58,8 +78,9 @@ src/art/              tiles con autotiling, objetos y edificios, personajes, cri
 src/world/            constructor de mapas, mapas (maps.js inicio, maps2.js resto de la historia), colisiones y exploración
 src/story/scripts.js  guiones de toda la historia
 src/battle/battle.js  combate, entrenadores, experiencia, niveles, aprendizaje y captura
-src/ui/               diálogo, paneles, menú, equipo, mochila, tienda, opciones, viaje rápido, título
-src/data/creatures.js especies, movimientos, tipos, objetos y encuentros
+src/ui/               diálogo, paneles, menú, equipo, mochila por bolsillos, tienda, opciones, viaje rápido, título
+src/data/creatures.js especies, movimientos, tipos y encuentros
+src/data/items.js     objetos, bolsillos, inventario de cada tienda y efectos (combate y mapa)
 tests/e2e.cjs         prueba que juega toda la historia en Chromium real
 ```
 
@@ -71,7 +92,7 @@ npx playwright install chromium
 npm test
 ```
 
-La prueba juega **la historia entera** con teclas reales: camina con una ruta calculada sobre las colisiones del juego (sin teletransportes), entra y sale de edificios, pelea con Nico, los entrenadores, los tres líderes, Bruma, Umbra, Espejalba, Nico en la Liga y la Campeona Aurora, usa la posada, la tienda y el viaje rápido, guarda y continúa tras recargar, prueba las opciones y los controles táctiles en un celular, y falla si aparece cualquier error de JavaScript. Las capturas quedan en `tests/screenshots/`.
+La prueba juega **la historia entera** con teclas reales: camina con una ruta calculada sobre las colisiones del juego (sin teletransportes), entra y sale de edificios, pelea con Nico, los entrenadores, los tres líderes, Bruma, Umbra, Espejalba, Nico en la Liga y la Campeona Aurora, usa la posada, compra y vende en la tienda, compra en el mostrador especial y en la máquina, usa el viaje rápido, guarda y continúa tras recargar, prueba las opciones y los controles táctiles en un celular, y falla si aparece cualquier error de JavaScript. Las capturas quedan en `tests/screenshots/`.
 
 Para que la prueba sea rápida y no dependa del azar, después de elegir inicial sube su nivel y le recarga los PP en algunos puntos. Todo lo demás es entrada real.
 
