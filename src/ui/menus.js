@@ -14,7 +14,7 @@ export class Menus {
 
   // La pantalla inferior muestra los objetivos; Esc y MENÚ abren la versión modal.
   home(modal = false) {
-    if (!modal && ui.panel?.modal) return;
+    if (!modal) { if (!ui.panel || !ui.panel.modal) ui.closePanel(); return; }
     const st = this.st, map = this.game.ow?.map;
     const goals = ['Baja a hablar con mamá', 'Ve a la casa de Nico (techo azul)', 'Ve al Lago Espejo (Sendero 1, al oeste)', 'Vuelve a casa', 'Ve al laboratorio de Villa Arenal',
       'Sigue la Ruta 2 hacia Ciudad Corola', 'Gana la Medalla Hoja en el gimnasio de Corola', 'Cruza la Cueva Eco hasta Pueblo Cobre y gana la Medalla Roca', 'Baja por la Ruta 4 hasta Ciudad Marea y gana la Medalla Marea',
@@ -31,8 +31,8 @@ export class Menus {
         <button data-act="save" class="hb hb-save"><i></i>GUARDAR</button>
         <button data-act="options" class="hb hb-opt"><i></i>OPCIONES</button>
       </div>
-      ${modal ? '<button class="bt-back" data-back>CERRAR</button>' : ''}</div>`,
-    { modal, cls: 'home-panel', onAct: a => this.open(a), onBack: () => { ui.panel=null; this.home(false); } });
+      <button class="bt-back" data-back>CERRAR</button></div>`,
+    { modal: true, cls: 'home-panel', onAct: a => this.open(a), onBack: () => ui.closePanel() });
   }
   open(what) {
     ({ party: () => this.party(), bag: () => this.bag(), save: () => this.save(), options: () => this.options() })[what]();
@@ -82,15 +82,15 @@ export class Menus {
       const ok = saveState(this.st);
       await ui.say([ok ? `${this.st.name} guardó la partida.` : 'No se pudo guardar (el navegador bloquea el almacenamiento).']);
     }
-    ui.closePanel(); this.home(false);
+    ui.closePanel();
   }
 
   options() {
     const o = this.st.options, graphics = this.game.graphics;
     ui.setPanel(`<h3 class="ph">OPCIONES</h3><div class="opts">
-      <button data-act="graphics">Gráficos: <b>${graphics.mode === 'premium' ? '3D PREMIUM' : 'CLÁSICO'}</b></button>
+      <button data-act="graphics">Gráficos: <b>${graphics.mode === 'premium' ? '3D' : 'PIXEL CLÁSICO'}</b></button>
       <button data-act="quality">Calidad 3D: <b>${({low:'BAJA',medium:'MEDIA',high:'ALTA'})[graphics.quality]}</b></button>
-      <button data-act="persp">Perspectiva clásica: <b>${o.perspective ? 'SÍ' : 'NO'}</b></button>
+      <button data-act="persp">Perspectiva (pixel clásico): <b>${o.perspective ? 'SÍ' : 'NO'}</b></button>
       <button data-act="speed">Velocidad del texto: <b>${['LENTA', 'NORMAL', 'RÁPIDA', 'INSTANTÁNEA'][o.textSpeed]}</b></button>
       <button data-act="hour">Hora del día: <b>${o.forceHour === undefined ? 'REAL' : o.forceHour === 12 ? 'SIEMPRE DÍA' : 'SIEMPRE NOCHE'}</b></button>
       <button data-act="full">Pantalla completa del navegador</button>

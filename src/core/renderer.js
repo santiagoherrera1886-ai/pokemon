@@ -14,11 +14,15 @@ export class Renderer {
   }
 
   resize() {
-    // The classic algorithm is unchanged; its viewport is the upper portable screen.
-    this.scale = 1; this.w = 256; this.h = 192;
+    const vw = innerWidth, vh = innerHeight;
+    // Escala entera: ~24 casillas de ancho en escritorio, ~12 en celular vertical.
+    let s = Math.max(2, Math.round(Math.min(vw / 400, vh / 230)));
+    if (vw < 700) s = Math.max(2, Math.round(Math.min(vw / 200, vh / 300)));
+    this.scale = s;
+    this.w = Math.ceil(vw / s); this.h = Math.ceil(vh / s);
     const el = this.screen;
     el.width = this.w; el.height = this.h;
-    el.style.width = this.w + 'px'; el.style.height = this.h + 'px';
+    el.style.width = this.w * s + 'px'; el.style.height = this.h * s + 'px';
     this.g = el.getContext('2d');
     this.g.imageSmoothingEnabled = false;
     // Tabla de proyección

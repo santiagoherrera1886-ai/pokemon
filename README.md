@@ -32,6 +32,13 @@ El mundo, los personajes, las criaturas, los nombres y todo el pixel art son **o
 
 ## Gráficos
 
+Dos modos, que se cambian en **Opciones → Gráficos** sin perder la partida:
+
+- **3D (por defecto):** pantalla completa con Three.js. Cámara alta casi cenital con perspectiva suave, personajes cabezones que inclinan la cabeza hacia la cámara, materiales satinados, sol desde arriba a la izquierda con sombras suaves, resplandor (bloom) en lo brillante, gradación cálida y leve desenfoque en los bordes. Las ciudades (Villa Arenal, Corola, Marea) tienen calles de asfalto con bordillo y andenes de baldosa. Los combates usan cámara baja con cielo y fondo según el terreno. Calidad baja, media o alta.
+- **Pixel clásico:** el motor 2D anterior.
+
+Detalles del modo pixel clásico:
+
 - Pantalla completa con resolución interna dinámica y escala entera: el pixel art se ve nítido en cualquier pantalla.
 - Perspectiva tipo portátil (desactivable en Opciones).
 - Sombras de árboles, edificios y personajes; nubes que cruzan el mapa; pétalos y hojas que caen; pasto que se mueve al pisarlo; polvo al correr.

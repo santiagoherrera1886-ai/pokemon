@@ -10,7 +10,7 @@ async function run(){
  await new Promise(r=>server.listen(0,'127.0.0.1',r));
  const browser=await chromium.launch({args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
  try{
-  const page=await browser.newPage({viewport:{width:1100,height:950}});page.on('pageerror',e=>report.errors.push(e.message));
+  const page=await browser.newPage({viewport:{width:1280,height:720}});page.on('pageerror',e=>report.errors.push(e.message));
   page.on('console',m=>{if(m.type()==='error'&&!/font|net::|favicon/.test(m.text()))report.errors.push(m.text());});
   await page.route(/fonts\.(googleapis|gstatic)\.com/,r=>r.abort());
   await page.goto(`http://127.0.0.1:${server.address().port}/`);
@@ -27,7 +27,7 @@ async function run(){
     const snapshot=await page.evaluate(()=>{const s=structuredClone(__game.state);delete s.playTime;return s;});
     for(const mode of ['classic','premium']){
       await page.evaluate(mode=>__game.graphics.setMode(mode),mode);await sleep(550);
-      await page.locator('#ds').screenshot({path:path.join(out,`${id}-${mode}.png`)});
+      await page.screenshot({path:path.join(out,`${id}-${mode}.png`)});
       const after=await page.evaluate(()=>{const s=structuredClone(__game.state);delete s.playTime;return s;});assert.deepEqual(after,snapshot,`mode preserves state in ${id}`);
     }
     report.scenes.push({id,...await page.evaluate(()=>{const e=__game.graphics.engine;return {calls:e.webgl.info.render.calls,triangles:e.webgl.info.render.triangles,geometries:e.webgl.info.memory.geometries,textures:e.webgl.info.memory.textures,maps:e.maps.size};})});
@@ -53,7 +53,7 @@ async function run(){
   // All creature models use the existing battle presentation state.
   for(const sp of await page.evaluate(async()=>Object.keys((await import('/src/data/creatures.js')).SPECIES))){
     await page.evaluate(async sp=>{const {makeCreature}=await import('/src/data/creatures.js');const {Battle}=await import('/src/battle/battle.js');const g=__game;g.state.party=[makeCreature(sp,5)];g.battleObj=new Battle(g,{foe:makeCreature('pipiu',3),wild:true});Object.assign(g.battleObj.fx,{foeX:0,allyX:0});g.scene='battle';g.battleObj.showHud(true,true);g.battleObj.hud();__ui.show('Escena de combate · '+g.state.party[0].name);},sp);
-    await sleep(250);await page.locator('#ds').screenshot({path:path.join(out,`battle-${sp}.png`)});
+    await sleep(250);await page.screenshot({path:path.join(out,`battle-${sp}.png`)});
   }
   report.checks.push('28 creature models and battle HUD rendered');
   // Exercise the original capture menu/turn with a guaranteed catch fixture in both renderers.
@@ -70,7 +70,7 @@ async function run(){
     },mode);
     await page.click('#panel .bt-bag');await page.click('#panel [data-act="supercapsula"]');
     await page.waitForFunction(()=>__game.battleObj.fx.ball!==null,null,{timeout:30000});
-    await page.locator('#ds').screenshot({path:path.join(out,`capture-${mode}.png`)});
+    await page.screenshot({path:path.join(out,`capture-${mode}.png`)});
     await page.waitForFunction(()=>window.__captureResult!==null,null,{timeout:45000});
     assert.deepEqual(await page.evaluate(()=>[__captureResult,__game.state.party.length,__game.state.bag.supercapsula,__game.state.dex.pipiu]),['caught',2,0,2]);
   }
@@ -84,10 +84,10 @@ async function run(){
     await page.evaluate(q=>__game.graphics.setQuality(q),quality);await sleep(300);
     const actual=await page.evaluate(()=>{const e=__game.graphics.engine;return {quality:e.quality,shadow:e.webgl.shadowMap.enabled,width:e.canvas.width};});
     assert.equal(actual.quality,quality);assert.equal(actual.shadow,quality!=='low');assert.ok(actual.width>0);
-    await page.locator('#ds').screenshot({path:path.join(out,`quality-${quality}.png`)});
+    await page.screenshot({path:path.join(out,`quality-${quality}.png`)});
   }
   report.checks.push('low, medium and high quality render successfully');
-  await page.evaluate(()=>{__game.ow.scripts=1;__game.ow.load('brisal',10,10,0,false);__game.state.options.forceHour=22;});await sleep(350);await page.locator('#ds').screenshot({path:path.join(out,'brisal-night.png')});
+  await page.evaluate(()=>{__game.ow.scripts=1;__game.ow.load('brisal',10,10,0,false);__game.state.options.forceHour=22;});await sleep(350);await page.screenshot({path:path.join(out,'brisal-night.png')});
   // Expected messages emitted by deliberately losing the context are not shader errors.
   report.errors=report.errors.filter(e=>!/CONTEXT_LOST_WEBGL/.test(e));assert.deepEqual(report.errors,[]);
   report.passed=true;

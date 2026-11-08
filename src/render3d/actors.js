@@ -14,7 +14,7 @@ export function character(r, look='player') {
   if(L.bag){b(body,L.bag,0,.6,-.22,.33,.35,.19);b(body,'#cf8943',0,.53,-.33,.25,.15,.03);for(const x of [-.13,.13])b(body,L.bag,x,.58,.15,.05,.31,.025);}
   if(L.scarf){b(body,L.scarf,0,.76,0,.43,.13,.35);b(body,L.scarf,-.14,.56,-.21,.13,.37,.07);}
   r.batch(body);
-  const head=new T.Group();head.position.y=.96;root.add(head);
+  const head=new T.Group();head.position.y=.96;head.scale.setScalar(1.18);root.add(head);
   ball(head,L.skin,0,.08,0,.29,.29,.26);ball(head,L.hair,0,.19,-.035,.3,.23,.27);
   b(head,L.skin,0,.04,.17,.43,.3,.16);
   for(const x of [-.105,.105]){
@@ -24,7 +24,7 @@ export function character(r, look='player') {
   }
   b(head,'#ab7059',0,-.045,.269,.06,.012,.01);
   if(L.style==='cap'){
-    ball(head,L.hat,0,.27,-.025,.32,.15,.285);b(head,L.hat,0,.22,.21,.5,.055,.35);
+    ball(head,L.hat,0,.27,-.025,.32,.15,.285);b(head,L.hat,0,.22,.19,.46,.05,.26);
     b(head,L.hatBand,0,.3,.23,.15,.075,.025);b(head,L.hatBand,0,.23,-.28,.3,.04,.025);
   } else if(L.style==='spiky') {
     for(let i=0;i<5;i++){const spike=r.mesh(head,'cone',L.hair,[-.2+i*.1,.38,0],[.085,.19+(i%2)*.08,.09]);spike.rotation.z=(2-i)*.2;}
@@ -58,7 +58,9 @@ export function animateCharacter(rig, actor, map, time, dt, talking=false) {
   rig.limbs[2].rotation.x=-swing;rig.limbs[3].rotation.x=swing;
   rig.body.position.y=walk?Math.abs(Math.sin(rig.phase))*.045:Math.sin(time*2.2)*.009;
   rig.head.position.y=.96+rig.body.position.y;
-  rig.head.rotation.x=talking?Math.sin(time*7)*.05:0;
+  // La cabeza se inclina hacia la cámara alta (más si mira hacia ella) para que la cara se lea desde arriba.
+  const facing=Math.cos(rig.root.rotation.y);
+  rig.head.rotation.x=-.42*Math.max(0,facing)+(talking?Math.sin(time*7)*.05:0);
   if(talking&&!walk)rig.limbs[1].rotation.z=-.22-Math.sin(time*4)*.08;else rig.limbs[1].rotation.z=0;
 }
 

@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#1c1f2b">
-<meta name="description" content="Alborada — aventura original de criaturas con el estilo de las portátiles de doble pantalla. Se juega en el navegador, sin ROM.">
+<meta name="theme-color" content="#14161e">
+<meta name="description" content="Alborada — aventura original de criaturas en pixel art. Se juega en el navegador a pantalla completa, sin ROM.">
 <title>Alborada · Edición Bruma</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,22 +14,17 @@
 </head>
 <body class="at-title">
 <main id="app">
-  <div id="ds">
-    <div class="screen" id="topScreen">
-      <canvas id="top" width="256" height="192" aria-label="Pantalla superior del juego"></canvas>
-      <div id="ui" class="ui">
-        <button id="menuBtn" class="hidden" aria-label="Abrir menú">☰</button>
-        <div id="banner" class="hidden"></div>
-        <div id="hudFoe" class="hud foe hidden"></div>
-        <div id="hudAlly" class="hud ally hidden"></div>
-        <div id="logo"><h1>ALBORADA</h1><p>EDICIÓN BRUMA</p></div>
-        <div id="msg" class="hidden"><span id="msgName" class="hidden"></span><p id="msgText"></p><i id="msgArrow" class="hidden">▼</i></div>
-        <div id="toast" class="hidden"></div>
-        <div id="fade"></div>
-      </div>
-    </div>
-    <div class="hinge"><span></span><span></span></div>
-    <div class="screen" id="bottomScreen"><div id="panel" class="ui bottom-ui"></div></div>
+  <canvas id="top" aria-label="Pantalla del juego"></canvas>
+  <div id="ui">
+    <div id="banner" class="hidden"></div>
+    <button id="menuBtn" class="hidden" aria-label="Abrir menú">☰ <span>MENÚ</span></button>
+    <div id="hudFoe" class="hud foe hidden"></div>
+    <div id="hudAlly" class="hud ally hidden"></div>
+    <div id="logo"><h1>ALBORADA</h1><p>EDICIÓN BRUMA</p></div>
+    <div id="msg" class="hidden"><span id="msgName" class="hidden"></span><p id="msgText"></p><i id="msgArrow" class="hidden">▼</i></div>
+    <div id="panel" class="hidden"></div>
+    <div id="toast" class="hidden"></div>
+    <div id="fade"></div>
   </div>
   <div id="pad" aria-label="Controles táctiles">
     <div class="dpad">
@@ -39,7 +34,6 @@
       <button data-btn="down" class="d" aria-label="Abajo"></button>
       <span class="c"></span>
     </div>
-    <div class="mid"><button data-btn="start" class="start">START</button></div>
     <div class="ab">
       <button data-btn="b" class="b" aria-label="Botón B">B</button>
       <button data-btn="a" class="a" aria-label="Botón A">A</button>

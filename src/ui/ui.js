@@ -80,7 +80,7 @@ class UI {
   // ---------- Paneles de la pantalla inferior ----------
   // html: contenido; los elementos con data-act son botones. modal: bloquea el mundo y toma el teclado.
   setPanel(html, { onAct, onBack, modal = false, focus = 0, cls = '' } = {}) {
-    this.bottom.className = 'ui bottom-ui ' + cls;
+    this.bottom.className = cls;
     this.bottom.innerHTML = html;
     const els = [...this.bottom.querySelectorAll('[data-act]')];
     els.forEach(el => el.addEventListener('click', e => {

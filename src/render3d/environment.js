@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {hash} from '../core/pixel.js';
 import {furniture,wallDecoration,building,smallProp} from './models.js';
+import {toonMaterial} from './stylize.js';
 
 const dummy=new T.Object3D();
 function instances(parent,geometry,material,items,shadow=true) {
@@ -25,7 +26,7 @@ export class Environment {
         for(let i=0;i<8;i++){g.fillStyle='rgba(116,76,38,.075)';g.fillRect(hash(i,y)*s,y*s/4+4+hash(y,i)*20,8+hash(i,y,8)*50,1);}
       }
     });
-    this.floorMat=new T.MeshStandardMaterial({map:this.wood,roughness:.9});
+    this.floorMat=toonMaterial({map:this.wood});
     this.water=new T.ShaderMaterial({uniforms:{time},vertexShader:`
       uniform float time; varying vec3 world;
       void main(){vec4 p=vec4(position,1.); #ifdef USE_INSTANCING
@@ -45,7 +46,7 @@ export class Environment {
   }
   windMat(color) {
     if(!this.wind.has(color)){
-      const m=new T.MeshStandardMaterial({color,roughness:1,side:T.DoubleSide});
+      const m=toonMaterial({color,side:T.DoubleSide});
       m.onBeforeCompile=shader=>{shader.uniforms.alboradaTime=this.time;shader.vertexShader='uniform float alboradaTime;\n'+shader.vertexShader;
         shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
           #ifdef USE_INSTANCING
@@ -69,6 +70,17 @@ export class Environment {
       let key=ground,height=-.035,color=ground==='grass'?new T.Color('#9dbd74').multiplyScalar(.96+n*.07):null;
       if(ground==='tile'&&map.floorColors)color=map.floorColors[(x+z)%map.floorColors.length];
       if(code==='p'||code==='s'){key='path';color=code==='s'?'#eddbac':'#dfcda3';height=-.005;}
+      if(map.paved&&code==='p'){
+        // Calle de asfalto con bordillo claro donde termina la calzada.
+        color=new T.Color('#8c919c').multiplyScalar(.96+n*.06);
+        for(const [dx,dz] of [[-1,0],[1,0],[0,-1],[0,1]]){const t=map.at(x+dx,z+dz);if(t!=='p'&&t!==undefined)tile(x,z,'curb',{p:[x+.5+dx*.47,.035,z+.5+dz*.47],s:[dx?.07:1,.08,dz?.07:1]});}
+      }
+      if(map.paved&&(code==='.'||code==='F')){
+        let near=false;for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++)if(map.at(x+dx,z+dz)==='p')near=true;
+        if(near){key='sidewalk';height=.01;color=((x+z)%2)?'#efdfa6':'#e6d18f';
+          tile(x,z,'grout',{p:[x+.5,.06,z+.99],s:[1,.006,.02]});tile(x,z,'grout',{p:[x+.99,.06,z+.5],s:[.02,.006,1]});
+          if(hash(x,z,61)>.55)tile(x,z,'inlay',{p:[x+.5,.062,z+.5],s:[.42,.006,.42]});}
+      }
       if(code==='w'){key='water';height=-.045;}
       if(code==='g'){color='#79a761';}
       if(code==='c'){key='cave';color=new T.Color('#9d9b8e').multiplyScalar(.78+n*.2);}
@@ -90,7 +102,7 @@ export class Environment {
         for(let i=0;i<6;i++){const h=code==='U'?(6-i)*.055:.02+i*.035;r.box(staticProps,'#bfa47d',x+.5,h/2,z+.08+i*.16,.85,h,.15);}
         for(const xx of [x+.06,x+.94])r.box(staticProps,'#866a4d',xx,.22,z+.5,.06,.44,.98,true);
       }
-      if(code==='g'||code==='F'||(code==='.'&&n>.7)) {
+      if((code==='g'||code==='F'||(code==='.'&&n>.7))&&key!=='sidewalk') {
         const amount=code==='g'?13:code==='F'?5:2;
         for(let i=0;i<amount;i++){
           const xx=x+.12+hash(x,z,i+2)*.76,zz=z+.12+hash(z,x,i+8)*.76;
@@ -129,7 +141,7 @@ export class Environment {
       const patch=new T.Mesh(r.geometries.plane,new T.MeshBasicMaterial({map:light,transparent:true,depthWrite:false}));patch.userData.ownedMaterial=true;patch.rotation.x=-Math.PI/2;patch.position.set(3.2,.014,4.5);patch.scale.set(3.8,4,1);root.add(patch);
     }
     r.batch(staticProps);root.add(staticProps);
-    const mats={grass:r.mat('#ffffff'),path:r.mat('#ffffff'),cave:r.mat('#ffffff'),water:this.water,wood:this.floorMat,tile:r.mat(map.floorColors?'#ffffff':'#dce3d5'),grout:r.mat('#b6c6bb'),rug:r.mat(map.style==='league'?'#af6977':'#789faa'),mat:r.mat('#cc8e74'),trim:r.mat('#edd4a2'),shore:r.mat('#e8d5a5'),foam:r.mat('#b9dcd2')};
+    const mats={grass:r.mat('#ffffff'),path:r.mat('#ffffff'),cave:r.mat('#ffffff'),water:this.water,wood:this.floorMat,tile:r.mat(map.floorColors?'#ffffff':'#dce3d5'),grout:r.mat('#b6c6bb'),rug:r.mat(map.style==='league'?'#af6977':'#789faa'),mat:r.mat('#cc8e74'),trim:r.mat('#edd4a2'),curb:r.mat('#e4e6ea'),sidewalk:r.mat('#ffffff'),inlay:r.mat('#d4b56a'),shore:r.mat('#e8d5a5'),foam:r.mat('#b9dcd2')};
     const lods=[];
     for(const C of chunks.values()){
       const chunk=new T.Group();root.add(chunk);

@@ -1,13 +1,14 @@
 import * as T from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {toonMaterial} from './stylize.js';
 
 export class Resources {
   constructor() {
     this.materials = new Map(); this.textures = new Set();
     this.geometries = {
       box: new T.BoxGeometry(1,1,1), soft: new RoundedBoxGeometry(1,1,1,2,0.09),
-      ball: new T.SphereGeometry(1,16,12), leaf: new T.IcosahedronGeometry(1,1),
+      ball: new T.SphereGeometry(1,20,14), leaf: new T.IcosahedronGeometry(1,1),
       cylinder: new T.CylinderGeometry(1,1,1,12), cone: new T.ConeGeometry(1,1,8),
       plane: new T.PlaneGeometry(1,1), ring: new T.TorusGeometry(1,.06,6,32)
     };
@@ -15,7 +16,7 @@ export class Resources {
   }
   mat(color, options = {}) {
     const key = color + JSON.stringify(options);
-    if (!this.materials.has(key)) this.materials.set(key, new T.MeshStandardMaterial({color, roughness:.85, metalness:0, ...options}));
+    if (!this.materials.has(key)) this.materials.set(key, toonMaterial({color, ...options}));
     return this.materials.get(key);
   }
   mesh(parent, shape, color, pos, scale, options = {}) {
