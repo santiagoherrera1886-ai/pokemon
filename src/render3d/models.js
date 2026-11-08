@@ -137,54 +137,94 @@ export function wallDecoration(r,o) {
   g.position.set(o.px/16+.55,1.65,1.91);return g;
 }
 
+const shade=(hex,f)=>{const c=new T.Color(hex);return '#'+(f>0?c.lerp(new T.Color('#ffffff'),f):c.multiplyScalar(1+f)).getHexString();};
+const WHITE_TRIM='#fff8ec';
+
+// Edificios con acabado de juguete: cimiento de piedra, paredes con zócalo y esquineros, ventanas de marco
+// blanco con postigos y jardinera, puerta con alero de tela festoneado, techo de tejas en franjas gruesas
+// con canal y cumbrera redondeados, y letreros en placa. Todo es diseño propio (sin emblemas de terceros).
 export function building(r,o) {
-  const g=new T.Group(), w=o.w,d=o.h, opt=o.opt||{}, lab=o.kind==='lab';
-  const b=(c,x,y,z,W,H,D,soft=false)=>r.box(g,c,x,y,z,W,H,D,soft);
-  const roof=opt.roof||'#648d96', front=d-.59, dc=(opt.doorCol ?? Math.floor(w/2))+.5;
-  b('#899a85',w/2,.13,d/2-.3,w-.04,.26,d-.6,true);
-  b(opt.wall||CREAM,w/2,1.12,d/2-.3,w-.15,2,d-.7,true);
-  b('#c9b99b',w/2,.35,front,w-.07,.18,.08);
-  for(const x of [.12,w-.12])b('#b19169',x,1.15,front,.14,1.9,.1);
-  for(let y=.6;y<2;y+=.35)b('#e4d5b8',w/2,y,front,w-.24,.025,.025);
+  const g=new T.Group(), w=o.w,d=o.h, opt=o.opt||{}, lab=o.kind==='lab', big=o.kind==='big';
+  const b=(c,x,y,z,W,H,D,soft=true)=>r.box(g,c,x,y,z,W,H,D,soft);
+  const ball=(c,x,y,z,W,H=W,D=W)=>r.ball(g,c,x,y,z,W,H,D);
+  const gloss=c=>r.mat(c,{roughness:.42});
+  const roof=opt.roof||'#648d96', wall=opt.wall||CREAM, trim=opt.trim||shade(wall,-.12);
+  const dc=(opt.doorCol ?? Math.floor(w/2))+.5, zc=d/2-.3, zf=d-.65;      // centro de la puerta, centro y frente de las paredes
+  // Cimiento, paredes, zócalo y moldura superior
+  b('#a3a493',w/2,.1,zc,w+.04,.2,d-.5);
+  b(wall,w/2,1.13,zc,w-.15,1.95,d-.7);
+  b(shade(wall,-.07),w/2,.42,zf+.02,w-.12,.44,.06);
+  b(shade(wall,-.16),w/2,.66,zf+.04,w-.1,.06,.07);
+  b(WHITE_TRIM,w/2,2.06,zf+.03,w-.08,.1,.09);
+  for(const x of [.1,w-.1]){b(trim,x,1.13,zf,.2,1.95,.18);b(shade(trim,.2),x,2.12,zf,.26,.08,.22);b(shade(trim,-.1),x,.24,zf,.26,.12,.22);}
+  // Puerta: marco blanco, hoja con tableros, pomo, escalón y alero festoneado
+  const doorColor=opt.door||(lab?'#86bdc0':'#a47b52');
+  b(WHITE_TRIM,dc,.9,zf+.04,.98,1.46,.12);
+  b(doorColor,dc,.86,zf+.1,.74,1.32,.05);
+  if(!lab)for(const y of [.55,1.15])b(shade(doorColor,-.12),dc,y,zf+.13,.52,.42,.02,false);
+  else r.mesh(g,'soft',r.mat('#bfe6e8',{emissive:'#cfe9e0',emissiveIntensity:.2,roughness:.15}),[dc,.95,zf+.13],[.58,1.0,.02]);
+  ball('#e8c060',dc+.25,.84,zf+.15,.045,.045,.03);
+  b('#c9c2b4',dc,.1,zf+.36,1.12,.2,.5);
+  const awning=lab?'#7aa6aa':shade(roof,-.05);
+  const aw=r.box(g,awning,dc,1.79,zf+.32,1.16,.07,.56,true);aw.rotation.x=.42;
+  for(let i=0;i<5;i++)ball(i%2?WHITE_TRIM:awning,dc-.46+i*.23,1.66,zf+.56,.12,.08,.06);
+  // Ventanas: marco blanco, vidrio que brilla un poco, travesaños, postigos, alféizar y jardinera
+  for(let i=0;i<w;i++)if(Math.abs(i+.5-dc)>.9){
+    const x=i+.5;
+    b(WHITE_TRIM,x,1.32,zf+.04,.66,.8,.1);
+    r.mesh(g,'soft',r.mat('#a9dbe4',{emissive:'#d7c78a',emissiveIntensity:.2,roughness:.15}),[x,1.33,zf+.09],[.52,.64,.03]);
+    b(WHITE_TRIM,x,1.33,zf+.11,.035,.64,.02,false);b(WHITE_TRIM,x,1.4,zf+.11,.52,.035,.02,false);
+    b(WHITE_TRIM,x,.9,zf+.1,.76,.07,.16);
+    if(opt.flowers!==false&&!lab){
+      b('#b6805d',x,.79,zf+.16,.66,.15,.2);
+      for(let n=0;n<5;n++){ball('#6aa85a',x-.24+n*.12,.88,zf+.14,.06,.05,.06);ball(['#e79d84','#f2d06a','#fff4f0','#e79d84','#f2a8c0'][n],x-.24+n*.12,.92,zf+.19,.055,.05,.055);}
+    }
+  }
   if(lab){
-    b('#547b82',w/2,2.28,d/2-.3,w+.25,.32,d-.35,true);b('#91b6b0',w/2,2.46,d/2-.3,w-.2,.08,d-.8);
-    for(let i=0;i<3;i++)b('#a8d1cf',1.4+i*2.7,2.57,d/2-.35,1.6,.15,1.1,true);
+    // Techo plano con pretil redondeado y claraboyas de vidrio
+    b('#547b82',w/2,2.26,zc,w+.25,.3,d-.35);
+    b('#6f969c',w/2,2.44,zc,w+.3,.1,d-.3);b('#91b6b0',w/2,2.47,zc,w-.3,.06,d-.8,false);
+    for(let i=0;i<3;i++){const x=1.4+i*(w-2.8)/2;b('#e8f2ee',x,2.56,zc-.05,1.66,.16,1.16);r.mesh(g,'soft',r.mat('#a8d8dc',{emissive:'#cfeee6',emissiveIntensity:.25,roughness:.12}),[x,2.66,zc-.05],[1.46,.06,.96]);}
   } else {
+    // Base del techo: prisma a dos aguas (también lo usa la prueba de visibilidad).
     const geometry=new T.BufferGeometry();
     const W=w/2+.22,D=d/2-.12,H=.95;
     const v=[-W,0,-D,W,0,-D,0,H,-D, -W,0,D,0,H,D,W,0,D, -W,0,-D,0,H,-D,0,H,D,-W,0,-D,0,H,D,-W,0,D, 0,H,-D,W,0,-D,W,0,D,0,H,-D,W,0,D,0,H,D];
     geometry.setAttribute('position',new T.Float32BufferAttribute(v,3));
     geometry.setAttribute('uv',new T.Float32BufferAttribute(new Array(v.length/3*2).fill(0),2));
-    // Outward winding keeps the slopes visible with front-face rendering.
     geometry.setIndex(Array.from({length:6},(_,i)=>[i*3,i*3+2,i*3+1]).flat());
     geometry.computeVertexNormals();
-    // Ridge runs across the house; rotate roof axes so the front slope is readable.
     geometry.rotateY(Math.PI/2);
-    const roofMesh=new T.Mesh(geometry,r.mat(roof));roofMesh.scale.set((w+.44)/(d-.24),1,(d-.24)/(w+.44));roofMesh.position.set(w/2,2.16,d/2-.3);roofMesh.castShadow=true;roofMesh.receiveShadow=true;roofMesh.userData.ownedGeometry=true;g.add(roofMesh);
-    b('#76564b',w/2,2.14,front+.1,w+.35,.13,.14,true);
-    for(let row=0;row<6;row++){
-      const k=(row+.5)/6, z=d/2-.3+(d/2-.12)*k,y=2.16+.95*(1-k);
-      b(roof,w/2,y+.015,z,w+.42,.045,.055,true);
-      for(let col=0;col<w*2;col++) b(roof,.22+col*.5+(row%2)*.1,y+.018,z-.08,.025,.025,.17);
+    const roofMesh=new T.Mesh(geometry,r.mat(shade(roof,-.35)));roofMesh.scale.set((w+.44)/(d-.24),1,(d-.24)/(w+.44));roofMesh.position.set(w/2,2.16,zc);roofMesh.castShadow=true;roofMesh.receiveShadow=true;roofMesh.userData.ownedGeometry=true;g.add(roofMesh);
+    // Tejas en franjas gruesas y redondeadas, con una ranura oscura entre franja y franja.
+    const run=D,rise=H,L=Math.hypot(run,rise),theta=Math.atan2(rise,run),N=5,len=L/N;
+    const nx=0,ny=Math.cos(theta),nz=Math.sin(theta);
+    for(const side of [1,-1])for(let j=0;j<N;j++){
+      const k=(j+.55)/N,y=2.16+rise*(1-k)+ny*.06,z=zc+side*(run*k+nz*.06);
+      const strip=r.mesh(g,'soft',gloss(j%2?roof:shade(roof,.07)),[w/2,y,z],[w+.52,.09,len*.9]);strip.rotation.x=side*theta;
+      if(side===1){const lip=r.mesh(g,'soft',gloss(shade(roof,-.12)),[w/2,y-Math.sin(theta)*len*.45-.035,z+Math.cos(theta)*len*.45],[w+.5,.06,.07]);lip.rotation.x=theta;}
     }
-    b(roof,w/2,3.12,d/2-.3,w+.44,.12,.13,true);
-    if(opt.chimney){b('#ac7760',w-.95,2.9,d/2-.6,.52,1,.5);b('#e3b69a',w-.95,3.42,d/2-.6,.64,.12,.62);b('#544c47',w-.95,3.49,d/2-.6,.42,.015,.4);}
+    // Canal del alero, cumbrera y remates
+    for(const side of [1,-1])b(shade(roof,-.3),w/2,2.13,zc+side*(D+.07),w+.62,.16,.18);
+    const ridge=r.mesh(g,'cylinder',gloss(shade(roof,-.16)),[w/2,3.16,zc],[.14,w+.6,.14]);ridge.rotation.z=Math.PI/2;
+    for(const x of [-.3,w+.3])ball(shade(roof,-.22),x,3.16,zc,.17);
+    if(opt.chimney){b('#b9785e',w-.95,2.95,zc-.25,.5,1.05,.5);for(let k=0;k<3;k++)b('#a6684f',w-.95,2.6+k*.26,zc-.005,.52,.03,.02,false);b('#e3b69a',w-.95,3.5,zc-.25,.64,.13,.64);b('#544c47',w-.95,3.57,zc-.25,.4,.02,.4,false);}
   }
-  b('#6e6756',dc,.8,front+.04,.9,1.6,.12,true);b(lab?'#86bdc0':'#a47b52',dc,.79,front+.12,.71,1.45,.035,true);
-  b('#dbc17f',dc+.22,.75,front+.16,.055,.055,.03,true);b('#b7aaa0',dc,.12,front+.35,1.1,.2,.48,true);
-  for(let i=0;i<w;i++)if(Math.abs(i+.5-dc)>.9){
-    const x=i+.5;b('#997550',x,1.28,front+.03,.68,.82,.12,true);
-    r.mesh(g,'soft',r.mat('#b5dfe1',{emissive:'#d7bb75',emissiveIntensity:.22}),[x,1.3,front+.11],[.53,.64,.03]);
-    b(CREAM,x,1.3,front+.15,.035,.65,.025);b(CREAM,x,1.3,front+.15,.55,.035,.025);
-    if(opt.flowers!==false&&!lab){b('#b6805d',x,.79,front+.14,.8,.17,.28,true);for(let n=0;n<4;n++)r.ball(g,n%2?'#e79d84':'#e7ca75',x-.25+n*.17,.92,front+.17,.085,.07,.085);}
-  }
+  // Letrero en placa sobre el alero, inclinado hacia la cámara alta: borde de color, fondo crema y letras grandes.
   if(opt.sign||lab){
-    const text=lab?'CEIBA':opt.sign, map=r.texture((c,s)=>{c.fillStyle='#f7f0dc';c.fillRect(0,0,s,s);c.fillStyle=opt.signColor||'#467b70';c.font='bold 30px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(text,s/2,s/2);},256);
-    const sign=new T.Mesh(r.geometries.plane,new T.MeshBasicMaterial({map}));sign.userData.ownedMaterial=true;sign.position.set(dc,1.89,front+.17);sign.scale.set(1.65,.42,1);g.add(sign);
+    const text=lab?'CEIBA':opt.sign, color=opt.signColor||'#467b70';
+    const map=r.texture((c,s)=>{c.fillStyle='#fffaf0';c.fillRect(0,0,s,s);c.fillStyle=color;c.font=`bold ${Math.round(s*.22)}px sans-serif`;c.textAlign='center';c.textBaseline='middle';
+      const fit=Math.min(1,s*.9/c.measureText(text).width);c.save();c.translate(s/2,s/2);c.scale(fit,2.9);c.fillText(text,0,0);c.restore();},256);
+    const sw=Math.min(w-.5,Math.max(1.9,text.length*.3)),sy=lab?2.75:2.66,sz=lab?zf-.05:zf-.12;
+    const plate=new T.Group();plate.position.set(dc,sy,sz);plate.rotation.x=-.5;g.add(plate);
+    r.box(plate,color,0,0,0,sw+.2,.58,.1,true);r.box(plate,WHITE_TRIM,0,0,.04,sw+.04,.46,.06,true);
+    for(const x of [-sw/2+.15,sw/2-.15])r.box(plate,shade(color,-.2),x,-.38,-.06,.08,.34,.08,true);
+    const sign=new T.Mesh(r.geometries.plane,new T.MeshBasicMaterial({map}));sign.userData.ownedMaterial=true;sign.position.set(0,0,.08);sign.scale.set(sw-.08,.4,1);plate.add(sign);
   }
-  if(o.kind==='big'){
-    for(const x of [.35,w-.35]){b(opt.trim||'#c4b790',x,1.2,front+.15,.28,2.25,.34,true);b('#eee1bb',x,2.3,front+.15,.46,.16,.46,true);}
-    if(opt.emblem)r.ball(g,opt.emblem,w/2,2.67,front-.25,.28,.28,.07);
+  if(big){
+    for(const x of [.35,w-.35]){b(opt.trim||'#c4b790',x,1.2,zf+.15,.3,2.25,.36);b('#eee1bb',x,2.32,zf+.15,.48,.16,.48);b(shade(opt.trim||'#c4b790',-.15),x,.18,zf+.15,.42,.2,.46);}
+    // Escudo redondo del gimnasio sobre la cumbrera (sólo el color de la medalla, nada de logos).
+    if(opt.emblem){const ey=lab?2.9:3.42,ez=zc+.12;ball(WHITE_TRIM,w/2,ey,ez,.42,.42,.1);ball(opt.emblem,w/2,ey,ez+.05,.32,.32,.08);ball('#ffffff',w/2-.1,ey+.1,ez+.12,.07,.06,.02);r.box(g,shade(opt.trim||'#c4b790',-.1),w/2,ey-.4,ez-.02,.1,.4,.08,true);}
   }
   return g;
 }

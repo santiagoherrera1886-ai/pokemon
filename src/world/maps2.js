@@ -198,7 +198,7 @@ function marea() {
   b.building('big', 4, 4, 8, 5, { roof: '#3a7ad8', sign: 'GIMNASIO', signColor: '#2a5aa8', emblem: '#3e98dc', doorCol: 4 }, 'gym3', 6, 14)
     .building('house', 19, 4, 6, 4, { roof: '#e05050', wall: '#fff6f0', sign: 'POSADA', signColor: '#d83a4a', doorCol: 3, flowers: false }, 'posadaMarea', 6, 7)
     .building('house', 26, 4, 5, 4, { roof: '#3a6ad8', wall: '#f0f6ff', sign: 'TIENDA', signColor: '#2a5ac8', doorCol: 2, flowers: false }, 'tiendaMarea', 5, 6)
-    .building('big', 22, 12, 8, 5, { roof: '#4a3a5a', wall: '#d8d0c8', trim: '#2a2232', sign: 'BODEGA', signColor: '#3a2c4a', doorCol: 4, door: '#5a4a6a' }, 'bodega', 8, 11)
+    .building('big', 22, 12, 8, 5, { roof: '#4a3a5a', wall: '#d8d0c8', trim: '#2a2232', sign: 'BODEGA', signColor: '#3a2c4a', doorCol: 4, door: '#5a4a6a', flowers: false }, 'bodega', 8, 11)
     .building('house', 3, 13, 6, 4, { roof: '#40a8a0', doorCol: 3 }, 'casaMarea', 4, 5);
   b.obj({ kind: 'boat', x: 4, y: 20, w: 3, h: 1, text: ['Un barco pesquero. Huele a sal y a pescado fresco.'] });
   b.obj({ kind: 'fountain', x: 11, y: 13, w: 2, h: 2 });
