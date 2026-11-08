@@ -37,7 +37,7 @@ export class DioramaCamera {
     const key = battle ? 'battle' : map.outdoor ? 'outside' : map.id;
     const frame = !battle && !follow ? this.interiorFrame(map) : null;
     const a = this.aspect;
-    let h = battle ? 7 : follow ? 11 : Math.max(frame.width / a, frame.height);
+    let h = battle ? 7 : follow ? 9.2 : Math.max(frame.width / a, frame.height);
     if (follow && a < 1) h = Math.min(17, 9.5 / a);
     if (battle && a < 1) h = Math.min(15, 9 / a);
     this.camera.aspect = a; this.camera.updateProjectionMatrix();
