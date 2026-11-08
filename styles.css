@@ -23,8 +23,8 @@ body.landscape #app { flex-direction: row; }
 .premium-active .goal { border-color:#c6ac75;background:#fff5da; }
 .premium-active .hb { border-color:#6e8b7d;box-shadow:0 2px 0 #9aa998; }
 .ui { position: absolute; inset: 0; font-family: var(--font); color: var(--ink); }
-#topui { pointer-events: none; }
-#topui #msg { pointer-events: auto; }
+#ui { pointer-events: none; }
+#ui #msg { pointer-events: auto; }
 
 /* Título */
 #logo { position: absolute; left: 0; right: 0; top: 18px; text-align: center; display: none; }
@@ -165,3 +165,16 @@ body.landscape #pad > * { pointer-events: auto; }
 body.landscape .dpad { position: absolute; left: 20px; bottom: 30px; }
 body.landscape .ab { position: absolute; right: 20px; bottom: 30px; }
 body.landscape .mid { position: absolute; right: 50px; top: 24px; }
+
+/* Full-story menus retain their data inside the portable layout. */
+#menuBtn { position:absolute; right:5px; top:5px; pointer-events:auto; z-index:2; border:1px solid #fff; border-radius:4px; background:#385c59; color:#fff; font:10px var(--font); padding:3px 5px; }
+.badges { display:flex; gap:3px; align-items:center; font-size:7px; color:#5a6078; }
+.badges i { width:8px; height:8px; border-radius:50%; border:1px solid var(--ink); background:#c8ccd8; }
+.badges i.on { background:var(--c); }
+.home { gap:4px; }
+.home .goal { max-height:42px; overflow:auto; }
+.home .hb { min-height:32px; }
+#credits { position:absolute; inset:0; background:#17232c; color:#fff5dd; pointer-events:auto; overflow:auto; font-size:9px; text-align:center; z-index:10; }
+#credits .roll { padding:12px; animation:creditroll 36s linear forwards; }
+#credits h2 { font-size:11px; margin-top:16px; }
+@keyframes creditroll { from {transform:translateY(170px)} to {transform:translateY(-100%)} }

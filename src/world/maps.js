@@ -1,12 +1,13 @@
 // Definición de todos los mapas de la Etapa 1 de Alborada.
 // Los mapas exteriores comparten un plano global (origin) para que se conecten sin cortes.
 import { MapBuilder } from './builder.js';
+import { buildStoryMaps } from './maps2.js';
 
 const S = st => st.story;
 
 // ---------------------------------------------------------------- PUEBLO BRISAL
 function brisal() {
-  const b = new MapBuilder('brisal', 24, 22).meta({ name: 'Pueblo Brisal', outdoor: true, origin: [0, 0] });
+  const b = new MapBuilder('brisal', 24, 22).meta({ name: 'Pueblo Brisal', outdoor: true, origin: [0, 0], battleBg: 'grass' });
   b.border('T', 2);
   b.rect(11, 0, 2, 2, 'p');                 // salida norte al Sendero 1
   b.rect(11, 2, 2, 16, 'p');                // calle principal
@@ -34,7 +35,7 @@ function brisal() {
 
 // ---------------------------------------------------------------- SENDERO 1
 function sendero1() {
-  const b = new MapBuilder('sendero1', 40, 16).meta({ name: 'Sendero 1', outdoor: true, origin: [-8, -16], encounters: 'sendero1' });
+  const b = new MapBuilder('sendero1', 40, 16).meta({ name: 'Sendero 1', outdoor: true, origin: [-8, -16], encounters: 'sendero1', battleBg: 'grass' });
   b.border('T', 2);
   b.rect(0, 7, 2, 2, 'p').rect(38, 7, 2, 2, 'p');   // conexiones oeste (lago) y este (villa)
   b.rect(19, 14, 2, 2, 'p');                        // conexión sur (Brisal)
@@ -59,7 +60,7 @@ function sendero1() {
 
 // ---------------------------------------------------------------- LAGO ESPEJO
 function lago() {
-  const b = new MapBuilder('lago', 22, 20).meta({ name: 'Lago Espejo', outdoor: true, origin: [-30, -20], encounters: 'lago' });
+  const b = new MapBuilder('lago', 22, 20).meta({ name: 'Lago Espejo', outdoor: true, origin: [-30, -20], encounters: 'lago', battleBg: 'lake' });
   b.border('T', 2);
   b.rect(20, 11, 2, 2, 'p');
   b.rect(12, 11, 8, 2, 'p');
@@ -72,18 +73,24 @@ function lago() {
   b.rect(6, 15, 4, 1, 'F');
   b.obj({ kind: 'sign', x: 19, y: 13, text: ['LAGO ESPEJO', 'En días quietos, el agua refleja un cielo que no es este.'] });
   b.obj({ kind: 'rock', x: 2, y: 12 }).obj({ kind: 'rock', x: 13, y: 3 });
-  b.obj({ kind: 'briefcase', x: 9, y: 12, when: st => st.flags.vioProfe && S(st) < 3, text: ['Un maletín de cuero. Tiene grabado: "Lab. Ceiba".'] });
+  b.obj({ kind: 'briefcase', x: 9, y: 12, when: st => st.flags.vioProfe && S(st) < 3, script: 'escenaMaletin' });
   b.npc({ id: 'nicoLago', look: 'rival', x: 15, y: 11, dir: 2, when: st => S(st) === 2 && st.flags.nicoSendero });
   b.npc({ id: 'profeLago', look: 'prof', x: 7, y: 12, dir: 3, when: st => S(st) === 2 && st.flags.nicoSendero && !st.flags.vioProfe });
   b.npc({ id: 'ayudanteLago', look: 'aide', x: 6, y: 11, dir: 3, when: st => S(st) === 2 && st.flags.nicoSendero && !st.flags.vioProfe });
-  b.trigger({ x: 17, y: 11, w: 1, h: 2, when: st => S(st) === 2 && st.flags.nicoSendero && !st.flags.vioProfe, script: 'escenaProfe' });
+  b.trigger({ x: 17, y: 3, w: 1, h: 14, when: st => S(st) === 2 && st.flags.nicoSendero && !st.flags.vioProfe, script: 'escenaProfe' });
   b.trigger({ x: 12, y: 11, w: 1, h: 2, when: st => S(st) === 2 && st.flags.vioProfe, script: 'escenaMaletin' });
+  // Evento final del Equipo Eclipse
+  b.npc({ id: 'umbra', look: 'umbra', x: 8, y: 12, dir: 3, when: st => S(st) === 10 });
+  b.npc({ id: 'gruntLago1', look: 'grunt', x: 7, y: 11, dir: 3, when: st => S(st) === 10 });
+  b.npc({ id: 'gruntLago2', look: 'grunt', x: 9, y: 11, dir: 3, when: st => S(st) === 10 });
+  b.trigger({ x: 17, y: 3, w: 1, h: 14, when: st => S(st) === 10, script: 'eventoLago' });
+  b.obj({ kind: 'shimmer', x: 8, y: 10, solid: true, when: st => S(st) >= 11 && !st.flags.espejalba, script: 'espejalbaOtraVez' });
   return b.build();
 }
 
 // ---------------------------------------------------------------- VILLA ARENAL
 function arenal() {
-  const b = new MapBuilder('arenal', 26, 24).meta({ name: 'Villa Arenal', outdoor: true, origin: [32, -22] });
+  const b = new MapBuilder('arenal', 26, 24).meta({ name: 'Villa Arenal', outdoor: true, origin: [32, -22], battleBg: 'grass' });
   b.border('T', 2);
   b.rect(0, 13, 2, 2, 'p');                 // conexión oeste
   b.rect(2, 13, 21, 2, 'p');
@@ -92,15 +99,15 @@ function arenal() {
   b.rect(3, 20, 17, 1, 'p');
   b.rect(19, 15, 5, 1, 's').rect(20, 16, 4, 5, 's').rect(21, 18, 3, 3, 'w');
   b.rect(3, 9, 3, 1, 'F').rect(9, 9, 2, 1, 'F').rect(15, 9, 2, 1, 'F').rect(20, 9, 2, 1, 'F').rect(9, 16, 2, 2, 'F');
-  b.rect(12, 0, 2, 2, 'T');                 // ruta 2: cerrada en la etapa 1
   b.building('lab', 3, 3, 9, 5, {}, 'lab', 7, 9)
     .building('house', 15, 4, 6, 4, { roof: '#e05050', wall: '#fff6f0', sign: 'POSADA', signColor: '#d83a4a', doorCol: 3, flowers: false }, 'posada', 6, 7)
     .building('house', 15, 16, 5, 4, { roof: '#3a6ad8', wall: '#f0f6ff', sign: 'TIENDA', signColor: '#2a5ac8', doorCol: 2, flowers: false }, 'tienda', 5, 6)
     .building('house', 4, 16, 5, 4, { roof: '#8a6ab8', doorCol: 2 }, 'vecino3', 4, 5);
   b.obj({ kind: 'sign', x: 14, y: 11, text: ['VILLA ARENAL', 'Un pueblo de arena tibia y viento salado.'] });
-  b.obj({ kind: 'sign', x: 14, y: 2, text: ['RUTA 2 · CERRADA', 'Se abre en la Etapa 2 del proyecto (Ciudad Corola).'] });
+  b.obj({ kind: 'sign', x: 14, y: 2, text: ['RUTA 2 ↑ CIUDAD COROLA', 'Gimnasio de tipo Planta.'] });
   b.obj({ kind: 'lamp', x: 11, y: 10 }).obj({ kind: 'lamp', x: 14, y: 16 });
-  b.npc({ id: 'obrero', look: 'man', x: 13, y: 3, dir: 0, talk: ['La Ruta 2 está en obras.', 'Vuelve cuando llegue la siguiente etapa.'] });
+  b.npc({ id: 'obrero', look: 'man', x: 14, y: 4, dir: 2, talk: ['Por la Ruta 2 se llega a Ciudad Corola.', 'Allá está el primer gimnasio.'] });
+  b.trigger({ x: 12, y: 1, w: 2, h: 1, when: st => S(st) < 5, script: 'bloqueoArenal' });
   b.npc({ id: 'abuelo', look: 'old', x: 9, y: 14, dir: 3, wander: 2, talk: ['En la Posada curan a tus criaturas gratis.', 'Y en la Tienda venden Cápsulas para atrapar nuevas.'] });
   b.npc({ id: 'ayudanteVilla', look: 'aide', x: 7, y: 9, dir: 0, when: st => S(st) === 4, talk: 'ayudanteVilla' });
   return b.build();
@@ -209,7 +216,8 @@ function posada() {
   b.furniture('pc', 11, 2, 1, 1, { sy: -14, text: ['Un PC de almacenamiento. (Disponible en la Etapa 2.)'] });
   b.furniture('sofa', 1, 6, 2, 1, { sy: -6 }).furniture('plant', 0, 2, 1, 1, { sy: -8 }).furniture('plant', 12, 2, 1, 1, { sy: -8 });
   b.furniture('table', 9, 6, 2, 1, { sy: -8 });
-  b.npc({ id: 'enfermera', look: 'nurse', x: 6, y: 2, dir: 0, talk: 'posada' });
+  b.npc({ id: 'enfermera', look: 'nurse', x: 6, y: 2, dir: 0, talk: 'posada', arg: { map: 'posada', x: 6, y: 7 } });
+  b.npc({ id: 'mensajeraArenal', look: 'courier', x: 10, y: 5, dir: 2, talk: 'viaje' });
   b.npc({ id: 'viajero', look: 'girl', x: 2, y: 5, dir: 0, talk: ['Cuando tus criaturas estén cansadas, habla con la enfermera Malva.'] });
   return b.build();
 }
@@ -222,7 +230,7 @@ function tienda() {
   b.furniture('storeShelf', 6, 3, 2, 1, { sy: -14 }).furniture('storeShelf', 9, 3, 2, 1, { sy: -14 });
   b.furniture('storeShelf', 6, 5, 2, 1, { sy: -14 }).furniture('storeShelf', 9, 5, 2, 1, { sy: -14 });
   b.furniture('plant', 0, 2, 1, 1, { sy: -8 });
-  b.npc({ id: 'dependiente', look: 'clerk', x: 2, y: 2, dir: 0, talk: 'tienda' });
+  b.npc({ id: 'dependiente', look: 'clerk', x: 2, y: 2, dir: 0, talk: 'tienda', tier: 1 });
   b.npc({ id: 'cliente', look: 'kid', x: 8, y: 4, dir: 1, talk: ['¡Con Cápsulas puedes atrapar criaturas!', 'Primero bájales los PS, así es más fácil.'] });
   return b.build();
 }
@@ -235,5 +243,6 @@ export function buildMaps() {
     vecino('vecino2', 'Casa de los Ocampo', 'man', ['¿Sabías que las criaturas suben de nivel ganando combates?', 'Y al subir aprenden movimientos nuevos.'], ['brisal', 18, 16]),
     vecino('vecino3', 'Casa de la playa', 'girl', ['Mi abuela dice que el mar trae criaturas raras en invierno.'], ['arenal', 6, 20])
   ];
+  list.push(...buildStoryMaps());
   return Object.fromEntries(list.map(m => [m.id, m]));
 }

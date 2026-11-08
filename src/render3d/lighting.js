@@ -8,9 +8,11 @@ export class Lighting {
     this.fill=new T.DirectionalLight('#9ccce1',.65);this.fill.position.set(4,6,-8);scene.add(this.fill);
   }
   quality(settings){this.sun.castShadow=settings.shadow>0;if(settings.shadow){this.sun.shadow.mapSize.set(settings.shadow,settings.shadow);this.sun.shadow.map?.dispose();this.sun.shadow.map=null;}}
-  update(focus,interior){
+  update(focus,interior,hour=12,dark=false){
     this.sun.position.set(focus.x-8,16,focus.z+6);this.sun.target.position.copy(focus);
-    this.sun.intensity=interior?2.3:2.8;this.hemi.intensity=interior?1.7:1.9;
+    const night=!interior&&(hour>=19||hour<5),dusk=!interior&&hour>=17&&hour<19;
+    this.sun.color.set(night?'#9bb9e2':dusk?'#ffd09c':'#fff0cb');
+    this.sun.intensity=dark?.65:night?.55:interior?2.3:2.8;this.hemi.intensity=dark?.7:night?.65:interior?1.7:1.9;
     this.hemi.groundColor.set(interior?'#ad8f77':'#789171');
   }
   dispose(){this.sun.shadow.map?.dispose();}

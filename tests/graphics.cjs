@@ -16,12 +16,12 @@ async function run(){
   await page.goto(`http://127.0.0.1:${server.address().port}/`);
   await page.click('[data-act="new"]');await page.click('[data-act="ok"]');
   await page.waitForFunction(()=>window.__game?.graphics.status==='ready',{},{timeout:30000});
-  await page.evaluate(()=>{while(__ui.dialog)__ui.advance();});
+  await page.evaluate(()=>{while(__ui.dialog)__ui.advance();__game.state.options.forceHour=12;});
   await sleep(700);
   report.checks.push('WebGL2 renderer created');
   const maps=await page.evaluate(()=>Object.keys(__game.world.maps));
-  for(const id of ['cuarto','casa1','brisal','sendero1','lago','arenal','lab','posada','tienda','casa2','casa2f2','vecino1','vecino2','vecino3']){
-    await page.evaluate(id=>{const g=__game;g.state.story=5;g.state.flags={};const m=g.world.get(id);const pos=id==='brisal'?[10,10]:id==='lago'?[10,12]:id==='sendero1'?[19,8]:id==='arenal'?[12,10]:[Math.floor(m.w/2),Math.min(m.h-2,5)];g.ow.load(id,...pos,0,false);g.ow.scripts=1;},id);
+  for(const id of maps){
+    await page.evaluate(id=>{const g=__game;g.state.story=12;g.state.flags={};const m=g.world.get(id);const pos=id==='brisal'?[10,10]:id==='lago'?[10,12]:id==='sendero1'?[19,8]:id==='arenal'?[12,10]:[Math.floor(m.w/2),Math.min(m.h-2,5)];g.ow.load(id,...pos,0,false);g.ow.scripts=1;},id);
     const snapshot=await page.evaluate(()=>{const s=structuredClone(__game.state);delete s.playTime;return s;});
     for(const mode of ['classic','premium']){
       await page.evaluate(mode=>__game.graphics.setMode(mode),mode);await sleep(550);
@@ -31,7 +31,7 @@ async function run(){
     report.scenes.push({id,...await page.evaluate(()=>{const e=__game.graphics.engine;return {calls:e.webgl.info.render.calls,triangles:e.webgl.info.render.triangles,geometries:e.webgl.info.memory.geometries,textures:e.webgl.info.memory.textures,maps:e.maps.size};})});
     console.log('Rendered both modes:',id);
   }
-  assert.equal(maps.length,report.scenes.length);report.checks.push('14 maps captured in both modes; state equality verified');
+  assert.equal(maps.length,report.scenes.length);report.checks.push('37 maps captured in both modes; state equality verified');
   // The screen swaps while a movement is in progress; simulation remains continuous.
   await page.evaluate(()=>{const g=__game;g.ow.load('cuarto',2,4,3,false);g.ow.scripts=0;g.menus.home(false);g.ow.player.startMove(3,16);});
   await page.evaluate(()=>__game.graphics.setMode('classic'));await sleep(350);await page.evaluate(()=>__game.graphics.setMode('premium'));
@@ -48,12 +48,12 @@ async function run(){
   await page.evaluate(()=>__game.graphics.engine.webgl.forceContextRestore());await sleep(1500);
   assert.equal(await page.evaluate(()=>__game.graphics.engine.lost),false);
   assert.equal(await page.evaluate(()=>localStorage.getItem('alborada-save-v1')),save);report.checks.push('WebGL loss/restoration preserves save');
-  // Six creatures use the existing battle presentation state.
-  for(const sp of ['brotelo','brasin','charquin','pipiu','roedin','capullin']){
+  // All creature models use the existing battle presentation state.
+  for(const sp of await page.evaluate(async()=>Object.keys((await import('/src/data/creatures.js')).SPECIES))){
     await page.evaluate(async sp=>{const {makeCreature}=await import('/src/data/creatures.js');const {Battle}=await import('/src/battle/battle.js');const g=__game;g.state.party=[makeCreature(sp,5)];g.battleObj=new Battle(g,{foe:makeCreature('pipiu',3),wild:true});Object.assign(g.battleObj.fx,{foeX:0,allyX:0});g.scene='battle';g.battleObj.showHud(true,true);g.battleObj.hud();__ui.show('Escena de combate · '+g.state.party[0].name);},sp);
     await sleep(250);await page.locator('#ds').screenshot({path:path.join(out,`battle-${sp}.png`)});
   }
-  report.checks.push('six creature models and battle HUD rendered');
+  report.checks.push('28 creature models and battle HUD rendered');
   await page.evaluate(()=>{const g=__game;g.battleObj.cleanup();g.scene='overworld';g.ow.load('cuarto',2,4,0,false);g.menus.home(false);g.ow.scripts=0;});
   await page.setViewportSize({width:390,height:844});await page.evaluate(()=>document.body.classList.add('force-pad'));await page.setViewportSize({width:391,height:844});await sleep(400);
   await page.locator('[data-btn="right"]').dispatchEvent('pointerdown');await sleep(450);await page.locator('[data-btn="right"]').dispatchEvent('pointerup');await sleep(350);
@@ -66,6 +66,7 @@ async function run(){
     await page.locator('#ds').screenshot({path:path.join(out,`quality-${quality}.png`)});
   }
   report.checks.push('low, medium and high quality render successfully');
+  await page.evaluate(()=>{__game.ow.scripts=1;__game.ow.load('brisal',10,10,0,false);__game.state.options.forceHour=22;});await sleep(350);await page.locator('#ds').screenshot({path:path.join(out,'brisal-night.png')});
   // Expected messages emitted by deliberately losing the context are not shader errors.
   report.errors=report.errors.filter(e=>!/CONTEXT_LOST_WEBGL/.test(e));assert.deepEqual(report.errors,[]);
   report.passed=true;

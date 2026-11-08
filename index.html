@@ -17,7 +17,8 @@
   <div id="ds">
     <div class="screen" id="topScreen">
       <canvas id="top" width="256" height="192" aria-label="Pantalla superior del juego"></canvas>
-      <div id="topui" class="ui">
+      <div id="ui" class="ui">
+        <button id="menuBtn" class="hidden" aria-label="Abrir menú">☰</button>
         <div id="banner" class="hidden"></div>
         <div id="hudFoe" class="hud foe hidden"></div>
         <div id="hudAlly" class="hud ally hidden"></div>
@@ -28,7 +29,7 @@
       </div>
     </div>
     <div class="hinge"><span></span><span></span></div>
-    <div class="screen" id="bottomScreen"><div id="botui" class="ui bottom-ui"></div></div>
+    <div class="screen" id="bottomScreen"><div id="panel" class="ui bottom-ui"></div></div>
   </div>
   <div id="pad" aria-label="Controles táctiles">
     <div class="dpad">
@@ -46,7 +47,6 @@
   </div>
 </main>
 <noscript>Este juego necesita JavaScript.</noscript>
-<script type="module" src="./src/core/layout.js"></script>
 <script type="module" src="./src/main.js"></script>
 </body>
 </html>

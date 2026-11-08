@@ -65,11 +65,18 @@ export class Environment {
     const tile=(x,z,key,item)=>{const c=getChunk(x,z);(c.tiles[key]??=[]).push(item);};
     for(let z=0;z<map.h;z++)for(let x=0;x<map.w;x++){
       const code=map.at(x,z);if(code===' '||code==='W')continue;
-      const C=getChunk(x,z),n=hash(x,z),ground=map.outdoor?'grass':map.floor==='k'?'tile':'wood';
+      const C=getChunk(x,z),n=hash(x,z),ground=map.outdoor?'grass':map.dark?'cave':map.floor==='k'?'tile':'wood';
       let key=ground,height=-.035,color=ground==='grass'?new T.Color('#9dbd74').multiplyScalar(.96+n*.07):null;
+      if(ground==='tile'&&map.floorColors)color=map.floorColors[(x+z)%map.floorColors.length];
       if(code==='p'||code==='s'){key='path';color=code==='s'?'#eddbac':'#dfcda3';height=-.005;}
       if(code==='w'){key='water';height=-.045;}
       if(code==='g'){color='#79a761';}
+      if(code==='c'){key='cave';color=new T.Color('#9d9b8e').multiplyScalar(.78+n*.2);}
+      if(code==='K'||code==='R'){
+        key=map.dark?'cave':'grass';
+        r.box(staticProps,code==='K'?'#9e9c86':'#777d7a',x+.5,.55,z+.5,.99,1.12,.99,true);
+        r.box(staticProps,code==='K'?'#b2b09b':'#949990',x+.5,1.13,z+.5,.95,.11,.95,true);
+      }
       tile(x,z,key,{p:[x+.5,height,z+.5],s:[1,.08,1],c:color});
       if(ground==='tile'){
         tile(x,z,'grout',{p:[x+.5,.008,z+.99],s:[1,.006,.018]});tile(x,z,'grout',{p:[x+.99,.008,z+.5],s:[.018,.006,1]});
@@ -102,13 +109,13 @@ export class Environment {
       let model;
       if(o.kind==='deco')model=wallDecoration(r,o);
       else if(o.kind==='furniture'){model=furniture(r,o);model.position.set(o.x+o.w/2,0,o.y+o.h/2);}
-      else if(o.kind==='house'||o.kind==='lab'){model=building(r,o);model.position.set(o.x,0,o.y);}
-      else {model=smallProp(r,o);model.position.set(o.x+.5,0,o.y+.5);}
+      else if(o.kind==='house'||o.kind==='lab'||o.kind==='big'){model=building(r,o);model.position.set(o.x,0,o.y);}
+      else {model=smallProp(r,o);model.position.set(o.x+o.w/2,0,o.y+o.h/2);}
       if(o.when){r.batch(model);root.add(model);dynamic.push({model,when:o.when});model.visible=!!o.when(state);}
       else staticProps.add(model);
       if(o.solid&&o.kind!=='deco')r.shadow(root,o.x+o.w/2,o.y+o.h/2,o.w+.6,o.h+.45);
     }
-    if(!map.outdoor){
+    if(!map.outdoor&&!map.dark){
       const wall=map.wallColor||(map.style?'#c4ded7':'#eadbc2');
       r.box(staticProps,'#857361',map.w/2,-.21,(map.h+2)/2,map.w+.3,.4,map.h-2+.3,true);
       r.box(staticProps,wall,map.w/2,1.12,1.76,map.w+.12,2.25,.3,true);
@@ -122,7 +129,7 @@ export class Environment {
       const patch=new T.Mesh(r.geometries.plane,new T.MeshBasicMaterial({map:light,transparent:true,depthWrite:false}));patch.userData.ownedMaterial=true;patch.rotation.x=-Math.PI/2;patch.position.set(3.2,.014,4.5);patch.scale.set(3.8,4,1);root.add(patch);
     }
     r.batch(staticProps);root.add(staticProps);
-    const mats={grass:r.mat('#ffffff'),path:r.mat('#ffffff'),water:this.water,wood:this.floorMat,tile:r.mat('#dce3d5'),grout:r.mat('#b6c6bb'),rug:r.mat('#789faa'),mat:r.mat('#cc8e74'),trim:r.mat('#edd4a2'),shore:r.mat('#e8d5a5'),foam:r.mat('#b9dcd2')};
+    const mats={grass:r.mat('#ffffff'),path:r.mat('#ffffff'),cave:r.mat('#ffffff'),water:this.water,wood:this.floorMat,tile:r.mat(map.floorColors?'#ffffff':'#dce3d5'),grout:r.mat('#b6c6bb'),rug:r.mat(map.style==='league'?'#af6977':'#789faa'),mat:r.mat('#cc8e74'),trim:r.mat('#edd4a2'),shore:r.mat('#e8d5a5'),foam:r.mat('#b9dcd2')};
     const lods=[];
     for(const C of chunks.values()){
       const chunk=new T.Group();root.add(chunk);

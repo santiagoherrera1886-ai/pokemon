@@ -1,3 +1,4 @@
+export function initLayout() {
 // Escala la consola de doble pantalla para que quepa en cualquier ventana (escala entera cuando se puede).
 const ds = document.getElementById('ds');
 const pad = document.getElementById('pad');
@@ -29,3 +30,5 @@ function layout() {
 addEventListener('resize', layout);
 addEventListener('orientationchange', () => setTimeout(layout, 120));
 layout();
+
+}

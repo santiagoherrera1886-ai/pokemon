@@ -18,7 +18,7 @@ export class PremiumRenderer {
     catch(e){this.canvas.remove();throw e;}
     this.webgl.outputColorSpace=T.SRGBColorSpace;this.webgl.toneMapping=T.ACESFilmicToneMapping;this.webgl.toneMappingExposure=1.12;
     this.webgl.shadowMap.type=T.PCFSoftShadowMap;
-    document.getElementById('topScreen').insertBefore(this.canvas,document.getElementById('topui'));
+    document.getElementById('topScreen').insertBefore(this.canvas,document.getElementById('ui'));
     this.scene=new T.Scene();this.scene.background=new T.Color('#9aaea7');this.scene.fog=new T.Fog('#b7c8b0',28,68);
     this.r=new Resources();this.time={value:0};this.environment=new Environment(this.r,this.time);this.camera=new DioramaCamera();this.lights=new Lighting(this.scene);
     this.worldRoot=new T.Group();this.scene.add(this.worldRoot);this.battleRoot=new T.Group();this.scene.add(this.battleRoot);
@@ -56,7 +56,8 @@ export class PremiumRenderer {
   world(dt){
     const g=this.game,ow=g.ow,m=ow.map;if(!m)return;
     const p=actorPosition(ow.player,m);this.worldRoot.visible=true;this.battleRoot.visible=false;
-    this.scene.background.set(m.outdoor?'#a5ba9d':'#485d60');this.scene.fog.color.set('#b7c8b0');
+    const hour=g.hour(),night=m.outdoor&&(hour>=19||hour<5);
+    this.scene.background.set(m.dark?'#243038':night?'#334956':m.outdoor?'#a5ba9d':'#485d60');this.scene.fog.color.set(night?'#334956':'#b7c8b0');
     const wanted=new Set(visibleMapIds(g.world,m,p,this.settings.radius));
     for(const [id,e]of this.maps)if(!wanted.has(id)){this.r.release(e.root);this.maps.delete(id);}
     for(const id of wanted)if(!this.maps.has(id)){const e=this.environment.build(g.world.get(id),g.state);this.worldRoot.add(e.root);this.maps.set(id,e);}
@@ -69,24 +70,30 @@ export class PremiumRenderer {
       animateCharacter(this.actors.get(id),actor,m,this.time.value,dt,!!ui.dialog&&!actor.moving);
     }
     for(const [id,rig]of this.actors)if(!active.has(id)){this.r.release(rig.root);this.actors.delete(id);}
-    this.camera.update(m,p,dt);this.lights.update(this.camera.focus,!m.outdoor);
+    this.camera.update(m,p,dt);this.lights.update(this.camera.focus,!m.outdoor,hour,m.dark);
     this.particles.visible=true;this.particles.geometry.setDrawRange(0,m.outdoor?this.settings.particles:12);
     this.particles.position.set(p.x,0,p.z);this.particles.rotation.y=this.time.value*.015;
     this.currentMap=m.id;
   }
   battle(dt){
     const b=this.game.battleObj;if(!b)return;
-    const key=b.foe.sp+':'+b.ally?.sp;
+    b.L=b.layout(this.game.renderer);
+    const terrain=b.opts.bg||'grass',trainer=b.trainer?.look||'';
+    const key=b.foe.sp+':'+b.ally?.sp+':'+terrain+':'+trainer;
     if(key!==this.battleKey){
       this.clearBattle();this.battleKey=key;
       const r=this.r,ground=new T.Group();this.battleRoot.add(ground);
-      r.box(ground,'#9ab982',0,-.19,0,22,.3,18,true);
+      const colors={grass:'#9ab982',lake:'#a4c9b5',cave:'#78807d',beach:'#e4d3ad',mountain:'#a4ac91',gym:'#c8d8bf',eclipse:'#74657f',league:'#dfd2ad'};
+      r.box(ground,colors[terrain]||colors.grass,0,-.19,0,22,.3,18,true);
       for(const [x,z]of [[-2,1.5],[2,-1.8]]){r.mesh(ground,'cylinder','#e6d8af',[x,-.005,z],[1.65,.12,1.3]);r.mesh(ground,'cylinder','#c0cf94',[x,.06,z],[1.51,.025,1.16]);}
-      for(let i=0;i<18;i++){const x=(i%9)*2-8,z=i<9?-5.5:6; r.mesh(ground,'cone','#6e9c6b',[x,1.2,z],[1.15,2.7,1]);}
+      for(let i=0;i<18;i++){const x=(i%9)*2-8,z=i<9?-5.5:6,rock=terrain==='cave'||terrain==='mountain';r.mesh(ground,rock?'leaf':'cone',rock?'#858d86':'#6e9c6b',[x,1.2,z],[1.15,rock?1.7:2.7,1]);}
       r.batch(ground);
       this.creatures={foe:creature(r,b.foe.sp),ally:b.ally?creature(r,b.ally.sp):null};
       for(const rig of Object.values(this.creatures))if(rig)this.battleRoot.add(rig.root);
       this.ball=r.ball(this.battleRoot,'#f2e5cf',0,.2,0,.13);this.ball.visible=false;
+      this.trainerRig=trainer?character(r,trainer):null;if(this.trainerRig)this.battleRoot.add(this.trainerRig.root);
+      const geo=new T.BufferGeometry();geo.setAttribute('position',new T.BufferAttribute(new Float32Array(128*3),3));geo.setAttribute('color',new T.BufferAttribute(new Float32Array(128*3),3));
+      this.battleParticles=new T.Points(geo,new T.PointsMaterial({size:.1,vertexColors:true,transparent:true,opacity:.8,depthWrite:false,depthTest:false}));this.battleParticles.userData.ownedGeometry=true;this.battleParticles.userData.ownedMaterial=true;this.battleParticles.frustumCulled=false;this.battleRoot.add(this.battleParticles);
     }
     this.worldRoot.visible=false;this.battleRoot.visible=true;this.particles.visible=false;this.scene.background.set('#bfd3bd');
     const f=b.fx,time=this.time.value;
@@ -94,14 +101,25 @@ export class PremiumRenderer {
       const rig=this.creatures[side];if(!rig)continue;
       const ally=side==='ally',blink=f[side+'Blink']&&(this.game.frame>>2)%2;
       rig.root.visible=f[side+'Alpha']>.05&&!blink;
-      rig.root.position.set((ally?-2:2)+f[side+'X']/20,Math.max(-1,-f[side+'Y']/30),ally?1.5:-1.8);
+      rig.root.position.set((ally?-2:2)+f[side+'X']*13,Math.max(-1,-f[side+'Y']/30),ally?1.5:-1.8);
       rig.root.rotation.y=ally?Math.PI+.3:.3;
       const s=ally?1.35:(f.foeScale??1)*1.12;rig.root.scale.setScalar(s);
       rig.model.position.y=Math.sin(time*3.8+(ally?0:1))*.045;
       rig.model.rotation.z=Math.sin(time*2.4)*.025;
     }
-    this.ball.visible=!!f.ball;if(f.ball)this.ball.position.set((f.ball.x-128)/24,Math.max(.2,(110-f.ball.y)/35),(f.ball.y-90)/25);
+    this.ball.visible=!!f.ball;if(f.ball){this.ball.position.set((f.ball.x-.5)*10,Math.max(.2,(.5-f.ball.y)*9),(f.ball.y-.43)*9-1.8);this.ball.material=this.r.mat(f.ball.color||'#f2e5cf');}
+    if(this.trainerRig){this.trainerRig.root.visible=f.trainerA>.05;this.trainerRig.root.position.set(2+f.trainerX*13,0,-1.8);this.trainerRig.root.scale.setScalar(1.5);}
     this.camera.update(null,null,dt,true);this.lights.update(this.camera.focus,false);
+    this.camera.camera.updateMatrixWorld(true);
+    const positions=this.battleParticles.geometry.attributes.position,colors=this.battleParticles.geometry.attributes.color,c=new T.Color();
+    b.parts.forEach((p,i)=>{
+      p.x+=p.vx;p.y+=p.vy;p.vy+=p.g||0;p.life--;
+      if(i>=128)return;
+      const point=new T.Vector3(p.x/b.L.w*2-1,1-p.y/b.L.h*2,0).unproject(this.camera.camera);
+      positions.setXYZ(i,point.x,point.y,point.z);c.set(p.color);colors.setXYZ(i,c.r,c.g,c.b);
+    });
+    this.battleParticles.geometry.setDrawRange(0,Math.min(128,b.parts.length));positions.needsUpdate=colors.needsUpdate=true;b.parts=b.parts.filter(p=>p.life>0);
+    if(f.shake>0){this.camera.camera.position.x+=Math.sin(this.game.frame*13)*f.shake*.012;f.shake--;}
     // Existing battle FX is presentation state. Consume flash exactly as classic render does.
     if(f.flash>0){this.canvas.style.filter=`brightness(${1+f.flash*2})`;f.flash=Math.max(0,f.flash-.08);}else this.canvas.style.filter='';
   }

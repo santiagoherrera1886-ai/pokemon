@@ -1,6 +1,8 @@
 import * as T from 'three';
 import {LOOKS} from '../art/characters.js';
 import {actorPosition} from './policy.js';
+import {storyCreature,STORY_SPECIES} from './story-creatures.js';
+export const MODEL_SPECIES=['brotelo','brasin','charquin','pipiu','roedin','capullin',...STORY_SPECIES];
 
 export function character(r, look='player') {
   const L=LOOKS[look] || LOOKS.player, root=new T.Group(), body=new T.Group();root.add(body);
@@ -29,6 +31,7 @@ export function character(r, look='player') {
   } else if(L.style==='bun')ball(head,L.hair,0,.34,-.2,.16);
   else if(L.style==='long'){b(head,L.hair,0,-.06,-.18,.51,.43,.14);for(const x of [-.24,.24])b(head,L.hair,x,.02,-.01,.1,.4,.17);}
   if(L.cap){b(head,L.cap,0,.31,0,.43,.12,.35);b(head,L.accent,0,.31,.19,.08,.06,.025);}
+  if(L.style==='hood'){ball(head,L.hood,0,.17,-.05,.34,.32,.28);for(const x of [-.28,.28])b(head,L.hood,x,-.02,.04,.12,.4,.2);b(head,L.accent,0,.37,.18,.08,.06,.025);}
   r.batch(head);
   const limbs=[];
   for(const side of [-1,1]) {
@@ -61,6 +64,8 @@ export function animateCharacter(rig, actor, map, time, dt, talking=false) {
 
 // Six original creatures, modeled from their existing palettes and species descriptions.
 export function creature(r,sp) {
+  if(STORY_SPECIES.includes(sp)){const root=new T.Group(),model=storyCreature(r,sp);root.add(model);r.shadow(root,0,0,1.8,1.3);return {root,model,sp};}
+  if(!MODEL_SPECIES.includes(sp))throw new Error(`Especie sin modelo: ${sp}`);
   const root=new T.Group(),model=new T.Group();root.add(model);
   const b=(c,x,y,z,w,h,d)=>r.box(model,c,x,y,z,w,h,d,true);
   const ball=(c,x,y,z,w,h=w,d=w)=>r.ball(model,c,x,y,z,w,h,d);

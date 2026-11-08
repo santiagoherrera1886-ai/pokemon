@@ -14,7 +14,7 @@ class UI {
   }
   init() {
     this.msg = $('msg'); this.msgText = $('msgText'); this.msgName = $('msgName'); this.msgArrow = $('msgArrow');
-    this.bottom = $('botui'); this.fadeEl = $('fade'); this.bannerEl = $('banner');
+    this.bottom = $('panel'); this.fadeEl = $('fade'); this.bannerEl = $('banner');
     this.msg.addEventListener('pointerdown', e => { e.preventDefault(); this.advance(); });
   }
   get busy() { return !!this.dialog || !!(this.panel && this.panel.modal); }
@@ -33,7 +33,7 @@ class UI {
   }
   // Parte un texto en páginas que quepan en el cuadro (máximo 2 líneas, como en la portátil).
   fit(text) {
-    const el = this.msgText, maxH = 2 * 15 + 2;
+    const el = this.msgText, maxH = parseFloat(getComputedStyle(el).lineHeight) * 2 + 4;
     const fits = t => { el.textContent = t; return el.scrollHeight <= maxH; };
     if (fits(text)) return [text];
     const words = text.split(' '), out = [];
@@ -94,6 +94,11 @@ class UI {
     this.panel = { els, index: Math.min(focus, els.length - 1), onAct, onBack, modal };
     this.paintFocus();
   }
+  closePanel() {
+    this.panel = null;
+    this.bottom.className = 'hidden';
+    this.bottom.innerHTML = '';
+  }
   paintFocus() {
     const p = this.panel; if (!p) return;
     p.els.forEach((el, i) => el.classList.toggle('focus', p.modal && i === p.index));
@@ -121,7 +126,7 @@ class UI {
       const prev = this.saveBottom();
       if (question) this.say([question], { keep: true, name: opts.name });
       const html = `<div class="choices">${options.map((o, i) => `<button class="choice" data-act="${i}">${esc(o)}</button>`).join('')}</div>`;
-      const done = i => { this.panel = null; this.closeDialog(); this.restoreBottom(prev); resolve(i); };
+      const done = i => { this.closePanel(); this.closeDialog(); this.restoreBottom(prev); resolve(i); };
       this.setPanel(html, { modal: true, onAct: a => done(+a), onBack: opts.cancel !== false ? () => done(options.length - 1) : null, cls: 'choice-panel' });
       this.panel.allowDuringDialog = true;
     });

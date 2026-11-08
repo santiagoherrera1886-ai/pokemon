@@ -19,12 +19,13 @@ export class DioramaCamera {
     this.frames.set(map.id,frame);return frame;
   }
   update(map,position,dt,battle=false){
+    const follow=!battle&&(map.outdoor||map.dark||map.h>12);
     const key=battle?'battle':map.outdoor?'outside':map.id;
-    const frame=!battle&&!map.outdoor?this.interiorFrame(map):null;
-    const h=battle?7.4:map.outdoor?11.5:frame.height;
+    const frame=!battle&&!follow?this.interiorFrame(map):null;
+    const h=battle?7.4:follow?11.5:frame.height;
     this.camera.left=-h*2/3;this.camera.right=h*2/3;this.camera.top=h/2;this.camera.bottom=-h/2;
     this.camera.updateProjectionMatrix();
-    const target=battle?new T.Vector3(0,.4,0):map.outdoor?new T.Vector3(position.x,.1,position.z-.5):frame.target;
+    const target=battle?new T.Vector3(0,.4,0):follow?new T.Vector3(position.x,.1,position.z-.5):frame.target;
     if(this.key!==key)this.focus.copy(target);else this.focus.lerp(target,1-Math.exp(-dt*8));
     this.key=key;
     this.camera.position.copy(this.focus).add(this.offset);this.camera.lookAt(this.focus);

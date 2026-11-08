@@ -1,8 +1,8 @@
 // Guiones de la historia de la Etapa 1. Cada guion es una función async que recibe el overworld.
 import { ui } from '../ui/ui.js';
-import { SPECIES, RIVAL_PICK, makeCreature } from '../data/creatures.js';
+import { SPECIES, RIVAL_PICK, ITEMS, makeCreature, rivalForm } from '../data/creatures.js';
 
-const N = { mom: 'Mamá', nico: 'Nico', prof: 'Prof. Ceiba', aide: 'Ayudante', kid: 'Niño', nurse: 'Enfermera Malva', clerk: 'Dependiente', rivalMom: 'Mamá de Nico' };
+const N = { mom: 'Mamá', nico: 'Nico', prof: 'Prof. Ceiba', aide: 'Ayudante', kid: 'Niño', nurse: 'Enfermera Malva', clerk: 'Dependiente', rivalMom: 'Mamá de Nico', guard: 'Guardia', grunt: 'Recluta Eclipse', bruma: 'Bruma', umbra: 'Umbra', aurora: 'Campeona Aurora', courier: 'Mensajera' };
 
 export class Scripts {
   constructor(game) { this.game = game; }
@@ -139,27 +139,199 @@ const S = {
     await say(N.prof, 'Y toma esto también.');
     st.bag.capsula = (st.bag.capsula || 0) + 5;
     await ui.say(['¡Recibiste 5 CÁPSULAS!']);
-    await say(N.prof, 'Con las Cápsulas puedes atrapar criaturas salvajes. Bájales los PS primero.', 'En la Posada Vital curan a tus criaturas, y en la Tienda venden objetos.', 'Cuando abran la Ruta 2, quiero que sigas hasta Ciudad Corola.');
+    await say(N.prof, 'Con las Cápsulas puedes atrapar criaturas salvajes. Bájales los PS primero.', 'En la Posada Vital curan a tus criaturas, y en la Tienda venden objetos.', 'Al norte de Villa Arenal está la Ruta 2. Síguela hasta Ciudad Corola: allá está el primer gimnasio.');
     st.story = 5;
-    game.toast('Etapa 1 completada');
+    game.toast('Nuevo objetivo: Ciudad Corola');
   },
   async profe(ow, game) {
     if (game.state.story === 4) return S.profeEntrega(ow, game);
-    await say(N.prof, '¿Ya pasaste por la Posada y la Tienda?', 'La Ruta 2 abrirá pronto. Prepárate bien.');
+    const n = (game.state.badges || []).length;
+    await say(N.prof, n ? `¡${n} medalla${n > 1 ? 's' : ''}! Vas muy bien.` : '¿Ya pasaste por la Posada y la Tienda?', 'Recuerda: el Lago Espejo guarda un secreto. Yo sigo investigando.');
   },
-  async posada(ow, game) {
+  async posada(ow, game, npc) {
     const st = game.state;
-    if (!st.party.length) return say(N.nurse, '¡Bienvenido a la Posada Vital!', 'Cuando tengas criaturas, aquí las curamos gratis.');
-    const i = await ui.ask('¡Bienvenido a la Posada Vital! ¿Quieres que cure a tus criaturas?', ['Sí, por favor', 'No, gracias'], { name: N.nurse });
+    if (!st.party.length) return say(N.nurse, '¡Bienvenido a la Posada!', 'Cuando tengas criaturas, aquí las curamos gratis.');
+    const i = await ui.ask('¡Bienvenido a la Posada! ¿Quieres que cure a tus criaturas?', ['Sí, por favor', 'No, gracias'], { name: N.nurse });
     if (i !== 0) return say(N.nurse, '¡Vuelve cuando quieras!');
     await say(N.nurse, 'Muy bien, déjamelas un momento...');
     await game.healParty(true);
-    st.lastHeal = { map: 'posada', x: 6, y: 7 };
+    st.lastHeal = (npc && npc.arg) || { map: 'posada', x: 6, y: 7 };
     await say(N.nurse, '¡Listo! Tus criaturas están en plena forma.', '¡Que te vaya bien!');
   },
-  async tienda(ow, game) {
-    const i = await ui.ask('¡Bienvenido a la Tienda Arenal! ¿Qué deseas?', ['Comprar', 'Nada, gracias'], { name: N.clerk });
-    if (i === 0) await game.openShop();
+  async tienda(ow, game, npc) {
+    const i = await ui.ask('¡Bienvenido! ¿Qué deseas?', ['Comprar', 'Nada, gracias'], { name: N.clerk });
+    if (i === 0) await game.openShop(npc && npc.tier || 1);
     await say(N.clerk, '¡Gracias, vuelve pronto!');
+  },
+  async pc(ow, game) {
+    const st = game.state;
+    st.box = st.box || [];
+    if (!st.box.length) return ui.say(['PC de almacenamiento.', 'La caja está vacía. Las criaturas que atrapes con el equipo lleno llegan aquí.']);
+    const list = st.box.slice(0, 5);
+    const i = await ui.ask('PC de almacenamiento. ¿A quién quieres sacar?', [...list.map(c => `${c.name} Nv${c.level}`), 'Salir']);
+    if (i >= list.length) return;
+    if (st.party.length >= 6) return ui.say(['Tu equipo está lleno. Deja a alguien primero (habla de nuevo con la enfermera para curar y vuelve).']);
+    const [c] = st.box.splice(i, 1);
+    st.party.push(c);
+    await ui.say([`${c.name} se unió a tu equipo.`]);
+  },
+  async viaje(ow, game) {
+    const st = game.state;
+    if (!(st.badges || []).length) return say(N.courier, '¡Hola! Soy la Mensajera de Alborada.', 'Cuando tengas tu primera medalla, te llevo volando a cualquier pueblo que ya conozcas.');
+    const places = [['Pueblo Brisal', 'brisal', 5, 8], ['Villa Arenal', 'arenal', 18, 8], ['Ciudad Corola', 'corola', 6, 16], ['Pueblo Cobre', 'cobre', 6, 17], ['Ciudad Marea', 'marea', 22, 8], ['Liga Alborada', 'ruta5', 7, 7]]
+      .filter(p => st.visited && st.visited[p[1]]).map(([name, map, x, y]) => ({ name, map, x, y }));
+    await say(N.courier, '¡Hola! ¿A dónde te llevo?');
+    const i = await game.menus.travel(places);
+    if (i < 0) return say(N.courier, '¡Cuando quieras!');
+    await say(N.courier, `¡Agárrate fuerte! Rumbo a ${places[i].name}.`);
+    await ow.warp(places[i].map, places[i].x, places[i].y, 0);
+  },
+
+  // ---------- Etapa 2: Ruta 2 y Corola ----------
+  async bloqueoArenal(ow) {
+    await ui.say(['(Primero deberías pasar por el laboratorio de la Profesora Ceiba.)']);
+    await ow.stepBack();
+  },
+  async nicoRuta2(ow, game) {
+    const st = game.state, nico = ow.npc('nicoR2');
+    if (nico) { ow.emote(nico, '!'); await game.frames(30); await ow.approach(nico); }
+    await say(N.nico, `¡${st.name}! ¡Te estaba esperando!`, 'La profe me dio Cápsulas a mí también. ¡Mira lo que ya entrené!', '¡Vamos a ver quién es mejor!');
+    const res = await game.trainerBattle({ name: 'Nico', look: 'rival', party: [['pipiu', 5], [st.rivalStarter || 'brasin', 7]], money: 300 }, 'grass', { noBlackout: true });
+    if (res === 'lose') { await game.healParty(); await say(N.nico, '¡Ja! ¡Te gané!', 'Tranqui, ya curé a tus criaturas. ¡La próxima será más pareja!'); }
+    else await say(N.nico, '¡¿Qué?! ¡Perdí!', 'Bueno... ¡la próxima te gano seguro! ¡Me voy a Corola a entrenar!');
+    st.flags.nicoR2 = true;
+    if (nico) for (let i = 0; i < 3; i++) { if (ow.blocked(nico.x, nico.y - 1, nico)) break; await ow.walk(nico, ['up'], 9); }
+  },
+  async eclipseCorola(ow, game) {
+    const st = game.state;
+    await ui.say(['Dos personas con capuchas moradas discuten frente al gimnasio...']);
+    await say(N.grunt, '...Te digo que el cristal de la cueva no basta.', 'El jefe Umbra quiere a la guardiana del Lago Espejo. Con ella el Eclipse va a cubrir todo Alborada.');
+    await say(N.grunt, '¡Shh! Alguien nos mira. ¡Vámonos!');
+    const a = ow.npc('gruntA'), b = ow.npc('gruntB');
+    if (a && b) await Promise.all([ow.walk(a, ['right', 'right', 'right', 'right'], 9), ow.walk(b, ['right', 'right', 'right'], 9)]);
+    st.flags.eclipseCorola = true;
+    st.story = Math.max(st.story, 6);
+    game.toast('Nuevo objetivo: Medalla Hoja');
+  },
+  async bloqueoCorola(ow) {
+    await say(N.guard, 'Lo siento. La Ruta 3 pasa por la Cueva Eco y es peligrosa.', 'Sólo dejo pasar a quien tenga la Medalla Hoja del gimnasio de Corola.');
+    await ow.stepBack();
+  },
+  async guardiaCorola(ow, game) {
+    if ((game.state.badges || []).includes('hoja')) return say(N.guard, '¡Esa Medalla Hoja se ve muy bien! Pasa, y cuidado en la cueva.');
+    await say(N.guard, 'Sin la Medalla Hoja no puedo dejarte pasar a la Ruta 3.');
+  },
+  async bloqueoLiga(ow) {
+    await say(N.guard, 'Este es el camino a la Liga Alborada.', 'Sólo pueden pasar entrenadores con tres medallas... y con el visto bueno de la Profesora Ceiba.');
+    await ow.stepBack();
+  },
+  async guardiaLiga(ow, game) {
+    if (game.state.story >= 11) return say(N.guard, '¡Adelante, campeón en potencia! La Liga te espera al final de la Ruta 5.');
+    await say(N.guard, 'La Ruta 5 lleva a la Liga Alborada. Vuelve cuando tengas las tres medallas.');
+  },
+  async medalla(ow, game, npc) {
+    const st = game.state, badge = npc.badge;
+    st.badges = st.badges || [];
+    if (st.badges.includes(badge)) return;
+    st.badges.push(badge);
+    const names = { hoja: 'MEDALLA HOJA', roca: 'MEDALLA ROCA', marea: 'MEDALLA MAREA' };
+    const gift = { hoja: ['supertonico', 2], roca: ['supercapsula', 3], marea: ['hipertonico', 2] }[badge];
+    await ui.say([`¡${st.name} recibió la ${names[badge]}!`]);
+    st.bag[gift[0]] = (st.bag[gift[0]] || 0) + gift[1];
+    await ui.say([`¡Y además ${gift[1]} ${ITEMS[gift[0]].name}!`]);
+    st.story = Math.max(st.story, { hoja: 7, roca: 8, marea: 9 }[badge]);
+    game.toast({ hoja: 'Nuevo objetivo: Pueblo Cobre (Ruta 3 y Cueva Eco)', roca: 'Nuevo objetivo: Ciudad Marea (Ruta 4)', marea: 'Nuevo objetivo: la bodega del Equipo Eclipse' }[badge]);
+  },
+
+  // ---------- Cobre y Ruta 4 ----------
+  async bloqueoCobre(ow) {
+    await say(N.guard, 'La Ruta 4 baja hasta la costa.', 'Basalto me pidió que sólo dejara pasar a quien tenga la Medalla Roca.');
+    await ow.stepBack();
+  },
+  async guardiaCobre(ow, game) {
+    if ((game.state.badges || []).includes('roca')) return say(N.guard, '¡Medalla Roca! Adelante, el mar te espera.');
+    await say(N.guard, 'Sin la Medalla Roca no puedes bajar a la Ruta 4.');
+  },
+  async nicoRuta4(ow, game) {
+    const st = game.state, nico = ow.npc('nicoR4');
+    if (nico) { ow.emote(nico, '!'); await game.frames(30); await ow.approach(nico); }
+    await say(N.nico, '¡Ey! ¡Dos medallas! Yo también tengo dos, ¿qué creías?', 'Oí que el Equipo Eclipse tiene una bodega en Ciudad Marea.', '¡Pero primero, revancha!');
+    const res = await game.trainerBattle({ name: 'Nico', look: 'rival', party: [['pipiolo', 17], ['setin', 16], [rivalForm(st.rivalStarter || 'brasin', 18), 18]], money: 800 }, 'beach');
+    if (res !== 'win') return;
+    st.flags.nicoR4 = true;
+    await say(N.nico, '¡Otra vez! ¿Cómo haces?', 'Bueno, ¡me adelanto a Marea! ¡Nos vemos!');
+    if (nico) { const blocked = ow.blocked(nico.x, nico.y + 1, nico); if (!blocked) await ow.walk(nico, ['down', 'down'], 9); }
+  },
+
+  // ---------- Marea y el Equipo Eclipse ----------
+  async bruma(ow, game) {
+    const st = game.state;
+    if (st.flags.bruma) return say(N.bruma, 'Ya es tarde, mocoso. Umbra ya está en el Lago Espejo.');
+    await say(N.bruma, '¿Un niño aquí? Qué ternura.', 'Soy Bruma, administradora del Equipo Eclipse.', 'Nuestro jefe va a despertar a la guardiana del Lago Espejo y con su poder cubrirá el cielo de Alborada.', '¿Quieres detenernos? Inténtalo.');
+    const res = await game.trainerBattle({ name: 'Admin. Bruma', look: 'bruma', party: [['sombrador', 23], ['voltaz', 22], ['mentelin', 22]], money: 2000 }, 'eclipse');
+    if (res !== 'win') return;
+    st.flags.bruma = true;
+    st.story = Math.max(st.story, 10);
+    await say(N.bruma, '...No importa. Umbra ya salió para el Lago Espejo hace una hora.', 'Cuando llegues, todo habrá terminado.');
+    await say(N.prof, `(Suena tu teléfono) ¡${st.name}! ¡Hay gente rara en el Lago Espejo!`, '¡Ve rápido! La Mensajera de cualquier Posada te puede llevar a Pueblo Brisal.');
+    game.toast('Nuevo objetivo: ¡al Lago Espejo!');
+  },
+  async eventoLago(ow, game) {
+    const st = game.state, umbra = ow.npc('umbra');
+    if (umbra) { umbra.dir = 3; ow.emote(umbra, '!'); await game.frames(30); }
+    await say(N.umbra, 'Así que tú eres el niño que molestó a mis reclutas.', 'Mira el lago. En unos minutos, la guardiana despertará y obedecerá al Equipo Eclipse.', 'Y nadie, NADIE, nos va a detener.');
+    const res = await game.trainerBattle({ name: 'Jefe Umbra', look: 'umbra', party: [['sombrador', 26], ['mentelin', 25], ['penon', 26], ['voltaz', 26]], money: 3500 }, 'lake');
+    if (res !== 'win') return;
+    await say(N.umbra, '¡¿Cómo?! ¡¿Un niño?!', '...¡Esperen! ¡El lago está brillando!');
+    await ui.say(['El agua del Lago Espejo se vuelve plata.', 'Del reflejo del cielo sale una criatura con alas como espejos...']);
+    await say(N.umbra, '¡Es ella! ¡ESPEJALBA! ¡Atrápenla!');
+    await ui.say(['Espejalba mira a Umbra... y luego te mira a ti.']);
+    await S.espejalbaOtraVez(ow, game);
+    await say(N.umbra, 'Esto no se queda así. ¡Retirada!');
+    await say(N.prof, `¡${st.name}! Llegué en cuanto pude... ¿qué pasó aquí?`, '¿Derrotaste al jefe del Equipo Eclipse? ¿Y viste a Espejalba?', 'Increíble. Eres el entrenador que Alborada necesitaba.', 'Con tres medallas ya puedes ir a la Liga Alborada. Le aviso a los guardias: la Ruta 5, al norte de Corola, está abierta para ti.');
+    st.bag.hipertonico = (st.bag.hipertonico || 0) + 3;
+    await ui.say(['¡La Profesora Ceiba te dio 3 Hipertónicos!']);
+    st.story = 11;
+    game.toast('Nuevo objetivo: Liga Alborada (Ruta 5)');
+  },
+  async espejalbaOtraVez(ow, game) {
+    const st = game.state;
+    if (st.flags.espejalba) return;
+    if (st.story >= 11) await ui.say(['El agua brilla... ¡Espejalba aparece otra vez!']);
+    const foe = makeCreature('espejalba', 30);
+    const res = await game.battle({ foe, wild: true, legendary: true, canRun: true, canCatch: true, bg: 'lake' });
+    if (res === 'caught') { st.flags.espejalba = true; await ui.say(['Espejalba ahora es tu compañera. El lago se ve tranquilo.']); }
+    else if (res === 'lose') await game.blackout();
+    else await ui.say(['Espejalba se sumergió en el lago... Un brillo se quedó en la orilla.', '(Puedes volver a buscarla cuando quieras.)']);
+  },
+
+  // ---------- Liga ----------
+  async nicoLiga(ow, game) {
+    const st = game.state, nico = ow.npc('nicoLiga');
+    await say(N.nico, `¡Sabía que llegarías, ${st.name}!`, 'Desde ese día en el lago supe que eras mi gran rival.', 'Antes de que llegues a la campeona... ¡tienes que pasar por mí! ¡Con todo!');
+    const res = await game.trainerBattle({ name: 'Nico', look: 'rival', party: [['pipiolo', 30], ['roedon', 29], ['voltaz', 30], [rivalForm(st.rivalStarter || 'brasin', 33), 33]], money: 4000 }, 'league');
+    if (res !== 'win') return;
+    st.flags.nicoLiga = true;
+    await say(N.nico, '...Ganaste. Otra vez.', '¿Sabes qué? Me alegra que seas tú. ¡Ve! ¡Aurora te espera!');
+    if (nico) await ow.walk(nico, ['left', 'left', 'left'], 10);
+  },
+  async aurora(ow, game) {
+    const st = game.state;
+    if (st.story >= 12) return say(N.aurora, `¡${st.name}, campeón de Alborada!`, 'Vuelve cuando quieras. Las puertas de la Liga siempre estarán abiertas para ti.');
+    const aur = ow.npc('aurora');
+    if (aur) aur.dir = 0;
+    await say(N.aurora, 'Bienvenido. Soy Aurora, campeona de la Liga Alborada.', 'Supe lo que hiciste en el Lago Espejo. Gracias por proteger nuestra región.', 'Pero aquí no hay favores: muéstrame todo lo que aprendiste en tu viaje.');
+    const res = await game.trainerBattle({ name: 'Campeona Aurora', look: 'aurora', party: [['meduson', 33], ['voltaz', 33], ['seton', 34], ['penon', 34], ['sombrador', 35]], money: 10000 }, 'league');
+    if (res !== 'win') return;
+    st.story = 12;
+    await say(N.aurora, '...Qué combate tan hermoso.', `Desde hoy, ${st.name}, eres el nuevo campeón de la Liga Alborada.`, 'Tu nombre y el de tus criaturas quedarán grabados en el Salón de la Fama.');
+    await game.fadeOut();
+    await game.credits();
+    await game.healParty();
+    ow.load('casa1', 5, 6, 1);
+    st.lastHeal = { map: 'casa1', x: 5, y: 6 };
+    await game.fadeIn();
+    await say(N.mom, `¡${st.name}! ¡Te vimos en la tele! ¡Campeón de Alborada!`, 'Nico vino a contarme todo. Está orgullosísimo... aunque no lo admita.', 'Descansa, cariño. Y cuando quieras, el mundo sigue ahí afuera.');
+    game.toast('¡Eres campeón de Alborada!');
   }
 };
