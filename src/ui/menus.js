@@ -222,7 +222,7 @@ export class Menus {
           if (st.money < total) { await ui.say(['No te alcanza la plata.']); return list(id); }
           st.money -= total;
           st.bag[id] = (st.bag[id] || 0) + n;
-          await ui.say([vending ? (n > 1 ? `¡Clonc, clonc! Cayeron ${n} bebidas: ${it.name} x${n}.` : `¡Clonc! Cayó un ${it.name}.`) : `¡Listo! Compraste ${it.name} x${n} por ${money(total)}.`]);
+          await ui.say([vending ? (n > 1 ? `¡Clonc, clonc! Cayeron ${n} bebidas: ${it.name} x${n}.` : `¡Clonc! Cayó tu ${it.name}.`) : `¡Listo! Compraste ${it.name} x${n} por ${money(total)}.`]);
           if (isCapsule(id) && n >= 10) { st.bag.capsulaAlba = (st.bag.capsulaAlba || 0) + 1; await ui.say(['¡Por llevar tantas, te regalamos una Cápsula Alba de la casa!']); }
           list(id);
         } });
