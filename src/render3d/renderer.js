@@ -5,6 +5,7 @@ import {DioramaCamera} from './camera.js';
 import {Lighting} from './lighting.js';
 import {character,animateCharacter,creature} from './actors.js';
 import {capsuleModel} from './models.js';
+import {TitleScene} from './title.js';
 import {QUALITY,normalizeQuality,actorPosition,visibleMapIds} from './policy.js';
 import {ui} from '../ui/ui.js';
 import {hash} from '../core/pixel.js';
@@ -56,6 +57,47 @@ export class PremiumRenderer {
     const floor=this.r.mesh(this.backdrop,'box','#8fae75',[cx,-.13,cz],[70,.1,70]);floor.castShadow=false;
   }
   clearWorld(){for(const e of this.maps.values())this.r.release(e.root);this.maps.clear();for(const a of this.actors.values())this.r.release(a.root);this.actors.clear();this.backdropCell='';this.currentMap=null;}
+  // Pantalla de inicio: escena propia (lago al amanecer) con cielo en degradé, niebla cálida y sol bajo.
+  title(dt){
+    if(!this.titleScene){this.titleScene=new TitleScene(this.r);this.scene.add(this.titleScene.root);this.savedFill=this.lights.fill.position.clone();}
+    const ts=this.titleScene,t=this.time.value;
+    this.worldRoot.visible=false;this.battleRoot.visible=false;this.particles.visible=true;this.canvas.style.filter='';
+    this.scene.background=ts.background;this.scene.fog.color.set('#f6d8bd');this.scene.fog.near=22;this.scene.fog.far=75;
+    ts.update(this.camera.camera,this.camera.aspect,t,dt);
+    this.lights.update(new T.Vector3(0,0,-2),false,12);
+    this.lights.sun.position.set(6,10,-7);this.lights.sun.target.position.set(-1,0,0);this.lights.sun.color.set('#ffd6a6');this.lights.sun.intensity=2.6;
+    this.lights.hemi.color.set('#ffece0');this.lights.hemi.groundColor.set('#8aa070');this.lights.hemi.intensity=1.7;
+    this.lights.fill.position.set(-4,6,12);this.lights.fill.intensity=.9;
+    this.camera.camera.updateMatrixWorld(true);
+    this.styleOpts={focusY:.55,tilt:.12,night:0,bloom:.55,lift:.1,grade:[1.08,1.0,.94],sat:1.14};
+  }
+  clearTitle(){
+    this.titleScene.dispose();this.titleScene=null;
+    this.scene.background=new T.Color('#9aaea7');this.camera.camera.fov=28;this.camera.camera.updateProjectionMatrix();
+    if(this.savedFill){this.lights.fill.position.copy(this.savedFill);this.lights.fill.intensity=.65;}
+  }
+  // Retrato 3D de una criatura para la interfaz (tarjetas de inicial, equipo). Se dibuja en una esquina del
+  // lienzo y se copia de inmediato; el siguiente cuadro del juego lo tapa, así que no se ve ningún parpadeo.
+  portrait(sp){
+    this.portraits=this.portraits||new Map();
+    if(this.portraits.has(sp))return this.portraits.get(sp);
+    const size=Math.min(224,this.canvas.width,this.canvas.height),scene=new T.Scene();scene.background=new T.Color('#fff8ec');
+    scene.add(new T.HemisphereLight('#fff6ec','#a8b4a0',2.0));
+    const key=new T.DirectionalLight('#fff0d8',2.8);key.position.set(-2,4,5);scene.add(key);
+    const rim=new T.DirectionalLight('#cfe6ff',1.4);rim.position.set(3,3,-4);scene.add(rim);
+    const rig=creature(this.r,sp);scene.add(rig.root);rig.root.rotation.y=.42;
+    rig.root.traverse(o=>{if(o.material===this.r.shadowMat)o.visible=false;});
+    rig.root.updateMatrixWorld(true);
+    const box=new T.Box3().setFromObject(rig.model),c=box.getCenter(new T.Vector3()),d=box.getSize(new T.Vector3());
+    const cam=new T.PerspectiveCamera(28,1,.1,60),h=Math.max(d.y,d.x*.95)*1.12,dist=h/(2*Math.tan(14*Math.PI/180));
+    cam.position.set(c.x,c.y+h*.18,c.z+dist);cam.lookAt(c.x,c.y,c.z);
+    const prev=this.webgl.getViewport(new T.Vector4()),prevRT=this.webgl.getRenderTarget();
+    this.webgl.setRenderTarget(null);this.webgl.setViewport(0,0,size,size);this.webgl.render(scene,cam);
+    const out=document.createElement('canvas');out.width=out.height=size;
+    out.getContext('2d').drawImage(this.canvas,0,this.canvas.height-size,size,size,0,0,size,size);
+    this.webgl.setViewport(prev);this.webgl.setRenderTarget(prevRT);this.r.release(rig.root);
+    const url=out.toDataURL('image/png');this.portraits.set(sp,url);return url;
+  }
   clearBattle(){this.r.release(this.battleRoot);this.battleRoot=new T.Group();this.scene.add(this.battleRoot);this.battleKey=null;this.creatures=null;}
   world(dt){
     const g=this.game,ow=g.ow,m=ow.map;if(!m)return;
@@ -134,7 +176,8 @@ export class PremiumRenderer {
   render(){
     const now=performance.now(),raw=(now-this.last)/1000,dt=Math.min(.1,raw);this.last=now;this.time.value=now/1000;
     if(document.hidden)return;
-    if(this.game.scene==='battle')this.battle(dt);else{this.canvas.style.filter='';this.world(dt);}
+    if(this.game.scene!=='title'&&this.titleScene)this.clearTitle();
+    if(this.game.scene==='battle')this.battle(dt);else if(this.game.scene==='title')this.title(dt);else{this.canvas.style.filter='';this.world(dt);}
     this.resize();const so={...(this.styleOpts||{})};if(this.degrade>=1)so.tilt=0;if(this.degrade>=2)so.bloom=0;this.style.render(this.scene,this.camera.camera,so);
     if(++this.frameCount%120===0){this.stats={drawCalls:this.webgl.info.render.calls,triangles:this.webgl.info.render.triangles,textures:this.webgl.info.memory.textures,geometries:this.webgl.info.memory.geometries,maps:this.maps.size,resolution:this.canvas.width,quality:this.quality};}
     // Sustained slow frames reduce only pixel resolution; no simulation changes.

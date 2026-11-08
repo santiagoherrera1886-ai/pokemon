@@ -57,6 +57,7 @@ export class Battle {
     document.body.classList.add('in-battle');
   }
   get foe() { return this.foeParty[this.foeIdx]; }
+  pic(sp) { const p = this.game.graphics?.portrait(sp); return p ? `<img class="pt" src="${p}" alt="">` : `<img src="${iconURL(sp)}" alt="">`; }
   get ally() { return this.st.party[this.activeIdx]; }
 
   // Disposición según el tamaño de pantalla
@@ -251,7 +252,7 @@ export class Battle {
       const party = (forced, itemId) => {
         const usable = c => itemId ? canUseOn(itemId, c) : (c.hp > 0 && this.st.party.indexOf(c) !== this.activeIdx);
         if (itemId) ui.show(`¿En quién vas a usar ${ITEMS[itemId].name}?`);
-        ui.setPanel(`<div class="bt-list party">${this.st.party.map((c, i) => `<button data-act="${i}" class="${i === this.activeIdx ? 'cur' : ''}${usable(c) ? '' : ' dim'}"><img src="${iconURL(c.sp)}" alt=""><b>${esc(c.name)}</b><span>Nv${c.level} · ${Math.ceil(c.hp)}/${c.stats.hp}</span></button>`).join('')}</div>${forced ? '' : '<button class="bt-back" data-back>VOLVER</button>'}`,
+        ui.setPanel(`<div class="bt-list party">${this.st.party.map((c, i) => `<button data-act="${i}" class="${i === this.activeIdx ? 'cur' : ''}${usable(c) ? '' : ' dim'}">${this.pic(c.sp)}<b>${esc(c.name)}</b><span>Nv${c.level} · ${Math.ceil(c.hp)}/${c.stats.hp}</span></button>`).join('')}</div>${forced ? '' : '<button class="bt-back" data-back>VOLVER</button>'}`,
           { modal: true, cls: 'battle-panel', onAct: a => {
             const i = +a, c = this.st.party[i];
             if (itemId) { if (!canUseOn(itemId, c)) { ui.show('No tendría ningún efecto.'); return; } return resolve({ type: 'item', id: itemId, target: i }); }

@@ -88,16 +88,19 @@ class Game {
       for (let x = 0; x < W; x += 7) px(tg, x, hz + 4 + (x % 21) / 3, '#b8e4f8', 4, 1);
       px(tg, 0, Math.round(H * 0.7), '#79c85a', W, H);
       for (let i = 0; i < W / 14 + 1; i++) tg.drawImage(tree(i % 3), i * 14 - 6, Math.round(H * 0.62) + (i % 2) * 6);
-      tg.drawImage(house(5, 3, { roof: '#d8504a', chimney: true }), Math.round(W * 0.62), Math.round(H * 0.66));
+      tg.drawImage(house(5, 3, { roof: '#d8504a', chimney: true }), Math.max(Math.round(W * 0.62), Math.round(W / 2 + Math.ceil(200 / r.scale) + 6)), Math.round(H * 0.66));
       this.titleBg = c;
     }
     g.drawImage(this.titleBg, 0, 0);
-    const t = this.frame, bob = Math.round(Math.sin(t / 20) * 2), y = Math.round(H * 0.74);
-    g.drawImage(battleSprite('brotelo'), Math.round(W * 0.10), y + bob, 48, 48);
-    g.drawImage(battleSprite('charquin'), Math.round(W * 0.10) + 44, y + 4 - bob, 48, 48);
-    g.drawImage(battleSprite('brasin'), Math.round(W * 0.10) + 88, y + bob, 48, 48);
-    g.drawImage(sheet('player')[0][0], Math.round(W * 0.62) + 88, Math.round(H * 0.66) + 48);
-    g.drawImage(battleSprite('espejalba'), Math.round(W * 0.42), Math.round(H * 0.30) + Math.round(Math.sin(t / 30) * 4), 40, 40);
+    // Las iniciales quedan a la izquierda del menú y la casa a la derecha, sin taparse.
+    const t = this.frame, bob = Math.round(Math.sin(t / 20) * 2), y = Math.round(H * 0.72);
+    const menuHalf = Math.ceil(200 / r.scale), size = Math.max(28, Math.min(48, Math.floor((W / 2 - menuHalf - 8) / 2.6)));
+    const x0 = Math.max(2, Math.round(W / 2 - menuHalf - size * 2.6));
+    g.drawImage(battleSprite('brotelo'), x0, y + bob, size, size);
+    g.drawImage(battleSprite('charquin'), x0 + Math.round(size * .8), y + 4 - bob, size, size);
+    g.drawImage(battleSprite('brasin'), x0 + Math.round(size * 1.6), y + bob, size, size);
+    g.drawImage(sheet('player')[0][0], Math.max(Math.round(W * 0.62), Math.round(W / 2 + menuHalf + 6)) + 88, Math.round(H * 0.66) + 48);
+    g.drawImage(battleSprite('espejalba'), Math.round(W * 0.16), Math.round(H * 0.36) + Math.round(Math.sin(t / 30) * 4), 40, 40);
   }
   renderFlash(r) {
     const g = r.g, k = this.flashT++;

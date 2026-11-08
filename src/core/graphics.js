@@ -36,8 +36,13 @@ export class Graphics {
     }).finally(() => {this.pending = null;});
     return this.pending;
   }
+  // Retrato 3D para la interfaz cuando el modo 3D está activo (si no, null y se usa el pixel art).
+  portrait(sp) {
+    if (this.mode !== 'premium' || this.status !== 'ready' || !this.engine || this.engine.lost) return null;
+    try { return this.engine.portrait(sp); } catch (error) { console.warn('Alborada: retrato no disponible', error.message); return null; }
+  }
   render() {
-    const supportedScene = this.game.scene === 'overworld' || this.game.scene === 'battle';
+    const supportedScene = this.game.scene === 'overworld' || this.game.scene === 'battle' || this.game.scene === 'title';
     if (this.mode !== 'premium' || !supportedScene || this.status === 'unavailable') {this.engine?.setVisible(false); return false;}
     if (!this.engine) {this.ensure(); return false;}
     if (this.engine.lost) {this.engine.setVisible(false); return false;}

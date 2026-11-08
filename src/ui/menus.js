@@ -21,6 +21,8 @@ const POCKET_HINTS = {
 export class Menus {
   constructor(game) { this.game = game; }
   get st() { return this.game.state; }
+  // Imagen de la criatura: retrato 3D en modo 3D, pixel art en modo clásico.
+  pic(sp) { const p = this.game.graphics?.portrait(sp); return p ? `<img class="pt" src="${p}" alt="">` : `<img src="${iconURL(sp)}" alt="">`; }
 
   // La pantalla inferior muestra los objetivos; Esc y MENÚ abren la versión modal.
   home(modal = false) {
@@ -50,14 +52,14 @@ export class Menus {
 
   party() {
     const st = this.st;
-    ui.setPanel(`<h3 class="ph">EQUIPO</h3><div class="plist">${st.party.length ? st.party.map((c, i) => `<button data-act="${i}"><img src="${iconURL(c.sp)}" alt=""><span class="pn"><b>${esc(c.name)}</b><small>Nv${c.level}</small></span>${hpBar(c)}<em>${Math.ceil(c.hp)}/${c.stats.hp}</em></button>`).join('') : '<p class="empty">Todavía no tienes criaturas.</p>'}</div><button class="bt-back" data-back>VOLVER</button>`,
+    ui.setPanel(`<h3 class="ph">EQUIPO</h3><div class="plist">${st.party.length ? st.party.map((c, i) => `<button data-act="${i}">${this.pic(c.sp)}<span class="pn"><b>${esc(c.name)}</b><small>Nv${c.level}</small></span>${hpBar(c)}<em>${Math.ceil(c.hp)}/${c.stats.hp}</em></button>`).join('') : '<p class="empty">Todavía no tienes criaturas.</p>'}</div><button class="bt-back" data-back>VOLVER</button>`,
       { modal: true, cls: 'list-panel', onAct: i => this.creature(+i), onBack: () => this.home(true) });
   }
   creature(i) {
     const c = this.st.party[i], s = SPECIES[c.sp];
     const toNext = expForLevel(c.level + 1) - c.exp;
     const bonus = Object.entries(c.bonus || {}).filter(([, v]) => v > 0).map(([k, v]) => `${k.toUpperCase()} +${v}`).join(' · ');
-    ui.setPanel(`<div class="detail"><img src="${iconURL(c.sp)}" alt=""><div><b>${esc(c.name)}</b> <small>Nv${c.level}</small><div>${typeTags(c.sp)}</div></div></div>
+    ui.setPanel(`<div class="detail">${this.pic(c.sp)}<div><b>${esc(c.name)}</b> <small>Nv${c.level}</small><div>${typeTags(c.sp)}</div></div></div>
       <p class="desc">${esc(s.desc)}</p>
       <div class="stats"><span>PS ${Math.ceil(c.hp)}/${c.stats.hp}</span><span>ATQ ${c.stats.atk}</span><span>DEF ${c.stats.def}</span><span>VEL ${c.stats.spe}</span><span>Sig. nivel: ${toNext} exp</span>${bonus ? `<span>Semillas: ${bonus}</span>` : ''}</div>
       <div class="moves">${c.moves.map(m => `<span style="--t:${TYPES[MOVES[m.id].type].color}">${esc(MOVES[m.id].name)} <small>PP ${m.pp}/${MOVES[m.id].pp}</small></span>`).join('')}</div>
@@ -113,7 +115,7 @@ export class Menus {
     const extra = c => it.pp ? ` · PP ${c.moves.reduce((a, m) => a + m.pp, 0)}/${c.moves.reduce((a, m) => a + MOVES[m.id].pp, 0)}`
       : it.seed ? ` · ${it.seed.toUpperCase()} +${c.bonus?.[it.seed] || 0}/${SEED_MAX}` : '';
     ui.show(`¿En quién vas a usar ${it.name}?`);
-    ui.setPanel(`<h3 class="ph">${ico(id, 'ico sm')} ${esc(it.name)} <small>x${st.bag[id] || 0}</small></h3><div class="plist">${st.party.map((c, i) => `<button data-act="${i}" class="${canUseOn(id, c) ? '' : 'dim'}"><img src="${iconURL(c.sp)}" alt=""><span class="pn"><b>${esc(c.name)}</b><small>Nv${c.level}${extra(c)}</small></span>${hpBar(c)}<em>${Math.ceil(c.hp)}/${c.stats.hp}</em></button>`).join('')}</div><button class="bt-back" data-back>VOLVER</button>`,
+    ui.setPanel(`<h3 class="ph">${ico(id, 'ico sm')} ${esc(it.name)} <small>x${st.bag[id] || 0}</small></h3><div class="plist">${st.party.map((c, i) => `<button data-act="${i}" class="${canUseOn(id, c) ? '' : 'dim'}">${this.pic(c.sp)}<span class="pn"><b>${esc(c.name)}</b><small>Nv${c.level}${extra(c)}</small></span>${hpBar(c)}<em>${Math.ceil(c.hp)}/${c.stats.hp}</em></button>`).join('')}</div><button class="bt-back" data-back>VOLVER</button>`,
       { modal: true, cls: 'list-panel', onBack: () => this.bag(it.pocket), onAct: async a => {
         const c = st.party[+a];
         const res = useOnCreature(id, c);
@@ -245,7 +247,7 @@ export class Menus {
     return new Promise(resolve => {
       const pick = () => {
         ui.show('Dentro del maletín hay tres Cápsulas. ¿Cuál vas a abrir?');
-        ui.setPanel(`<div class="starters">${STARTERS.map(sp => `<button data-act="${sp}"><img src="${iconURL(sp)}" alt=""><b>${esc(SPECIES[sp].name)}</b>${typeTags(sp)}</button>`).join('')}</div>`,
+        ui.setPanel(`<div class="starters">${STARTERS.map(sp => `<button data-act="${sp}">${this.pic(sp)}<b>${esc(SPECIES[sp].name)}</b>${typeTags(sp)}</button>`).join('')}</div>`,
           { modal: true, cls: 'starter-panel', onAct: async sp => {
             ui.panel = null;
             await ui.say([SPECIES[sp].desc]);
