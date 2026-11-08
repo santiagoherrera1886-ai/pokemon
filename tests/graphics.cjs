@@ -54,6 +54,25 @@ async function run(){
     await sleep(250);await page.locator('#ds').screenshot({path:path.join(out,`battle-${sp}.png`)});
   }
   report.checks.push('28 creature models and battle HUD rendered');
+  // Exercise the original capture menu/turn with a guaranteed catch fixture in both renderers.
+  for(const mode of ['classic','premium']){
+    await page.evaluate(async mode=>{
+      const {makeCreature}=await import('/src/data/creatures.js');const {Battle}=await import('/src/battle/battle.js');
+      const g=__game;g.battleObj.cleanup();await g.graphics.setMode(mode);
+      g.state.party=[makeCreature('charquin',5)];g.state.bag.supercapsula=1;
+      const foe=makeCreature('pipiu',3);foe.hp=1;
+      const b=new Battle(g,{foe,wild:true,canCatch:true});g.battleObj=b;g.scene='battle';
+      Object.assign(b.fx,{foeX:0,allyX:0});b.showHud(true,true);b.hud();b.seen(foe);
+      window.__captureResult=null;
+      b.choose().then(action=>b.turn(action)).then(result=>window.__captureResult=result);
+    },mode);
+    await page.click('#panel .bt-bag');await page.click('#panel [data-act="supercapsula"]');
+    await page.waitForFunction(()=>__game.battleObj.fx.ball!==null,null,{timeout:30000});
+    await page.locator('#ds').screenshot({path:path.join(out,`capture-${mode}.png`)});
+    await page.waitForFunction(()=>window.__captureResult!==null,null,{timeout:45000});
+    assert.deepEqual(await page.evaluate(()=>[__captureResult,__game.state.party.length,__game.state.bag.supercapsula,__game.state.dex.pipiu]),['caught',2,0,2]);
+  }
+  report.checks.push('capture menu, capsule animation, inventory and dex verified in both modes');
   await page.evaluate(()=>{const g=__game;g.battleObj.cleanup();g.scene='overworld';g.ow.load('cuarto',2,4,0,false);g.menus.home(false);g.ow.scripts=0;});
   await page.setViewportSize({width:390,height:844});await page.evaluate(()=>document.body.classList.add('force-pad'));await page.setViewportSize({width:391,height:844});await sleep(400);
   await page.locator('[data-btn="right"]').dispatchEvent('pointerdown');await sleep(450);await page.locator('[data-btn="right"]').dispatchEvent('pointerup');await sleep(350);

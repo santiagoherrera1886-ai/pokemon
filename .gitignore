@@ -1,5 +1,5 @@
 node_modules/
-tests/screenshots/*.png
+tests/screenshots/**
 !tests/screenshots/.keep
 
 vendor/

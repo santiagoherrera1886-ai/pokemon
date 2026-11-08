@@ -32,9 +32,22 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const log = (...a) => console.log('  ·', ...a);
 let page, errors = [], shotN = 0;
 
-const st = () => page.evaluate(() => { const g = __game, s = g.state; return { map: s.map, x: s.x, y: s.y, dir: s.dir, story: s.story, scene: g.scene, money: s.money, badges: [...(s.badges || [])], bag: { ...s.bag }, party: s.party.map(c => ({ sp: c.sp, hp: c.hp, max: c.stats.hp, level: c.level })), dialog: !!__ui.dialog, keep: !!(__ui.dialog && __ui.dialog.keep), modal: !!(__ui.panel && __ui.panel.modal), locked: g.ow.locked, moving: !!g.ow.player.moving, flags: { ...s.flags } }; });
+const st = () => page.evaluate(() => { const g = __game, s = g.state; return { map: s.map, x: s.x, y: s.y, dir: g.ow.player.dir, story: s.story, scene: g.scene, money: s.money, badges: [...(s.badges || [])], bag: { ...s.bag }, party: s.party.map(c => ({ sp: c.sp, hp: c.hp, max: c.stats.hp, level: c.level })), dialog: !!__ui.dialog, keep: !!(__ui.dialog && __ui.dialog.keep), modal: !!(__ui.panel && __ui.panel.modal), locked: g.ow.locked, moving: !!g.ow.player.moving, flags: { ...s.flags } }; });
 async function shot(name) { await sleep(150); await page.screenshot({ path: path.join(SHOTS, `${String(++shotN).padStart(2, '0')}-${name}.png`) }); }
-async function tap(key, hold = 60) { await page.keyboard.down(key); await sleep(hold); await page.keyboard.up(key); await sleep(30); }
+// Wait for the simulation to observe input; SwiftShader may render slower than a short key tap.
+async function face(key) {
+  const dir={ArrowDown:0,ArrowUp:1,ArrowLeft:2,ArrowRight:3}[key];
+  await page.keyboard.down(key);
+  try { await page.waitForFunction(dir=>__game.ow.player.dir===dir,dir,{timeout:5000}); }
+  finally { await page.keyboard.up(key); }
+}
+async function tap(key, hold = 60) {
+  if(key.startsWith('Arrow')) return face(key);
+  await page.keyboard.down(key);
+  try { const frame=await page.evaluate(()=>__game.frame); await page.waitForFunction(frame=>__game.frame>frame,frame,{timeout:5000}); await sleep(hold); }
+  finally { await page.keyboard.up(key); }
+  await sleep(30);
+}
 
 // Resuelve lo que esté pendiente: diálogos, preguntas (elige la primera opción), combates y créditos.
 async function settle(maxMs = 120000, { answer = 0 } = {}) {
