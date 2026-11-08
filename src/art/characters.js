@@ -11,6 +11,7 @@ export const LOOKS = {
   aide: { skin: '#e8b890', hair: '#2a2a3a', style: 'short', shirt: '#5aa0d0', accent: '#ffffff', pants: '#3a3a44', shoes: '#3a3a44', coat: '#f8f8f8' },
   nurse: { skin: '#f8d0a8', hair: '#f08ab0', style: 'long', shirt: '#ffffff', accent: '#f05a8a', pants: '#ffffff', shoes: '#f8f8f8', apron: '#ffe4ee', cap: '#ffffff' },
   clerk: { skin: '#e8b890', hair: '#3a2a20', style: 'short', shirt: '#4a8ad8', accent: '#ffffff', pants: '#3a3a44', shoes: '#3a3a44', apron: '#3a6ab8' },
+  vendor: { skin: '#f0c8a0', hair: '#6a3420', style: 'bun', shirt: '#f2a65a', accent: '#ffffff', pants: '#7a5a9a', shoes: '#4a3a3a', apron: '#e2725a' },
   kid: { skin: '#f8d0a8', hair: '#6a3a2a', style: 'spiky', shirt: '#5cb04c', accent: '#ffffff', pants: '#3a5a8a', shoes: '#f0f0f0' },
   girl: { skin: '#f0c8a0', hair: '#2a2a3a', style: 'long', shirt: '#f0c040', accent: '#ffffff', pants: '#d84a7a', shoes: '#ffffff' },
   old: { skin: '#e8c0a0', hair: '#d8d8e0', style: 'bald', shirt: '#8a6a4a', accent: '#c8a878', pants: '#5a4a3a', shoes: '#3a3a44' },

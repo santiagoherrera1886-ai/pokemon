@@ -323,6 +323,8 @@ const F = {
   window: () => { const [c, g] = canvas(24, 16); windowAt(g, 2, 2, 20, 11, false); return c; },
   picture: () => { const [c, g] = canvas(16, 14); px(g, 1, 1, '#8a5a30', 14, 12); px(g, 2, 2, '#9ad8f0', 12, 10); px(g, 2, 8, '#6ac05a', 12, 4); px(g, 9, 3, '#f8e070', 3, 3); return c; },
   clock: () => { const [c, g] = canvas(12, 12); ellipse(g, 6, 6, 5, 5, '#8a5a30'); ellipse(g, 6, 6, 4, 4, '#ffffff'); px(g, 6, 3, '#3a3a44', 1, 3); px(g, 6, 6, '#3a3a44', 2, 1); return c; },
+  // Máquina de bebidas: vitrina iluminada con botellas de colores, letrero y ranura de monedas.
+  vending: () => { const [c, g] = canvas(16, 34); px(g, 1, 1, '#2f8f86', 14, 32); px(g, 1, 1, '#45b0a6', 14, 5); px(g, 3, 2, '#fff2c8', 10, 3); px(g, 5, 3, '#e06a4a', 6, 1); px(g, 2, 7, '#dff4f0', 9, 18); const cols = ['#c8873a', '#e8c030', '#efe2c4', '#e06a4a']; for (let r = 0; r < 4; r++) { px(g, 2, 11 + r * 4, '#9ac8c0', 9, 1); for (let i = 0; i < 4; i++) px(g, 3 + i * 2, 8 + r * 4, cols[(i + r) % 4], 1, 3); } px(g, 12, 9, '#26303a', 2, 3); px(g, 12, 14, '#f0d060', 2, 2); px(g, 12, 18, '#d84a4a', 2, 2); px(g, 3, 27, '#1f5f5a', 8, 4); px(g, 4, 28, '#0f2f2c', 6, 2); outline(c, OUT); return c; },
   boxes: () => { const [c, g] = canvas(16, 18); px(g, 1, 6, '#c89a5a', 14, 11); px(g, 1, 6, '#e0b878', 14, 2); px(g, 7, 6, '#a07a40', 2, 11); px(g, 3, 1, '#c89a5a', 9, 6); outline(c, OUT); return c; }
 };
 

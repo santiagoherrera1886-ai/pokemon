@@ -46,18 +46,37 @@ export function furniture(r, o) {
       b('#9f5453',0,.28,0,w-.1,.4,.8);b('#c4776c',0,.68,-.28,w-.1,.65,.27);
       for(const x of [-1,1]){b('#b9655e',x*(w/2-.18),.56,0,.28,.55,.9);b('#e39682',x*w*.2,.5,.1,w*.36,.22,.62);}
       break;
-    case 'shelf': case 'storeShelf':
-      b(name==='shelf'?WOOD:'#a6b9b6',0,.83,-.3,w-.1,1.66,.14);
-      for(const x of [-1,1])b(name==='shelf'?LIGHTWOOD:'#d8e4da',x*(w/2-.08),.83,0,.1,1.66,.74);
+    case 'shelf':
+      b(WOOD,0,.83,-.3,w-.1,1.66,.14);
+      for(const x of [-1,1])b(LIGHTWOOD,x*(w/2-.08),.83,0,.1,1.66,.74);
       for(let row=0;row<3;row++){
-        b(name==='shelf'?LIGHTWOOD:'#d8e4da',0,.11+row*.52,0,w-.08,.08,.74);
-        for(let i=0;i<7;i++){
-          const x=-w/2+.24+i*(w-.42)/7,y=.32+row*.52;
-          if(name==='shelf')b(BOOKS[(row+i)%5],x,y,-.03,.14,.3+(i%3)*.04,.4);
-          else {r.mesh(g,'cylinder',BOOKS[(row+i)%5],[x,y,-.01],[.07,.23,.07]);b(CREAM,x,y+.13,-.01,.08,.035,.08);b(CREAM,x,y,.065,.1,.07,.012);}
+        b(LIGHTWOOD,0,.11+row*.52,0,w-.08,.08,.74);
+        for(let i=0;i<7;i++)b(BOOKS[(row+i)%5],-w/2+.24+i*(w-.42)/7,.32+row*.52,-.03,.14,.3+(i%3)*.04,.4);
+      }
+      b(LIGHTWOOD,0,1.66,0,w,.12,.8);break;
+    case 'storeShelf': {
+      // Góndola bien surtida: cajas de cápsulas, atomizadores y frascos con los colores de los objetos del juego.
+      const BOX=['#3a9ad8','#e04848','#f0b428','#2ab8b0','#5a4a96'],SPRAY=['#9a6ad0','#e0588a','#e8862a','#2a8ed8','#3f9e62'],JAR=['#5aa850','#f0a020','#2f9a8a','#d8b040','#e05a6a'];
+      b('#9fc8bc',0,.83,-.3,w-.1,1.66,.14);
+      for(const x of [-1,1])b('#f1ead8',x*(w/2-.08),.83,0,.1,1.66,.74);
+      const n=5,step=(w-.5)/(n-1);
+      for(let row=0;row<3;row++){
+        const y0=.11+row*.52;
+        b('#f1ead8',0,y0,0,w-.08,.08,.74);b('#3a6ab8',0,y0+.02,.37,w-.1,.07,.02,false);
+        for(let i=0;i<n;i++){
+          const x=-(w-.5)/2+i*step,y=y0+.04;
+          if(row===0){const c=BOX[i%5];b(c,x,y+.15,.02,.27,.3,.34);b(CREAM,x,y+.17,.19,.2,.12,.02,false);ball(c,x-.035,y+.17,.205,.035,.03,.012);ball(CREAM,x+.035,y+.17,.205,.035,.03,.012);}
+          else if(row===1){const c=SPRAY[i%5];r.mesh(g,'cylinder',c,[x,y+.15,.02],[.1,.28,.1]);r.mesh(g,'cylinder','#5a6070',[x,y+.33,.02],[.05,.08,.05]);b(CREAM,x,y+.14,.115,.12,.1,.02,false);}
+          else {const c=JAR[i%5];r.mesh(g,'cylinder',c,[x,y+.13,.02],[.11,.24,.11]);r.mesh(g,'cylinder',CREAM,[x,y+.13,.02],[.115,.07,.115]);r.mesh(g,'cylinder','#e8e2d0',[x,y+.27,.02],[.09,.04,.09]);}
         }
       }
-      b(name==='shelf'?LIGHTWOOD:'#d8e4da',0,1.66,0,w,.12,.8);break;
+      b('#f1ead8',0,1.66,0,w,.12,.8);
+      for(let i=0;i<3;i++)b(BOX[(i+1)%5],-w/2+.4+i*.32,1.85,.05,.28,.26,.3);
+      b(BOX[3],-w/2+.56,2.09,.05,.28,.24,.3);
+      b('#fff4d6',w/2-.45,1.98,-.1,.6,.5,.06);b('#e04848',w/2-.45,2.13,-.065,.5,.1,.02,false);
+      b('#3a6ab8',w/2-.45,1.95,-.065,.38,.06,.02,false);b('#3a6ab8',w/2-.45,1.85,-.065,.3,.06,.02,false);
+      break;
+    }
     case 'kitchen':
       b('#d8dfd0',0,.44,0,w-.1,.82,.82);b(CREAM,0,.9,0,w,.12,.9);
       for(const x of [-.48,.48]){b('#b6c4b8',x,.44,.43,.84,.65,.04);b('#6b7d72',x+.25,.56,.46,.06,.18,.035);}
@@ -80,6 +99,19 @@ export function furniture(r, o) {
       b('#f0e6db',0,.4,0,w-.08,.8,.83);b('#c98491',0,.87,-.27,w-.12,.24,.28);
       for(let i=0;i<6;i++) {const x=-.6+(i%3)*.6,z=-.14+Math.floor(i/3)*.4;r.mesh(g,'cylinder','#43565a',[x,.82,z],[.2,.03,.2]);ball('#f29897',x,.9,z,.12);}
       r.mesh(g,'soft',r.mat('#87d9d5',{emissive:'#87d9d5',emissiveIntensity:.4}),[0,1.08,-.28],[.65,.18,.1]);break;
+    case 'vending': {
+      // Máquina de bebidas: cuerpo redondeado, letrero y vitrina iluminados, botellas, botonera y bandeja.
+      b('#2f8f86',0,.95,0,.86,1.9,.78);b('#45b0a6',0,1.84,.02,.92,.2,.84);
+      r.mesh(g,'soft',r.mat('#fff2c8',{emissive:'#ffe2a0',emissiveIntensity:.65}),[0,1.84,.44],[.64,.13,.03]);
+      r.mesh(g,'soft',r.mat('#e4f6f2',{emissive:'#c8f2ea',emissiveIntensity:.4}),[-.09,1.13,.4],[.56,1.02,.03]);
+      const cols=['#c8873a','#e8c030','#efe2c4','#e06a4a'];
+      for(let row=0;row<4;row++){
+        const y=.76+row*.25;b('#9ac8c0',-.09,y-.09,.42,.52,.02,.03,false);
+        for(let i=0;i<4;i++){const x=-.3+i*.14,col=cols[(i+row)%4];r.mesh(g,'cylinder',col,[x,y,.43],[.04,.15,.04]);ball('#f4f0e6',x,y+.09,.43,.03,.02,.03);}
+      }
+      b('#26303a',.3,1.3,.41,.13,.22,.03);ball('#f0d060',.3,1.06,.42,.035,.035,.02);ball('#e05a4a',.3,.95,.42,.035,.035,.02);
+      b('#1f5f5a',-.04,.33,.4,.52,.2,.05);b('#0f2f2c',-.04,.31,.43,.42,.1,.02,false);break;
+    }
     case 'boxes':
       b('#c69d66',0,.3,0,.8,.6,.78);b('#eee1bd',0,.61,0,.12,.025,.8);b('#ad7b48',.1,.78,-.1,.6,.34,.5);b('#eee1bd',.1,.96,-.1,.1,.025,.5);break;
     default: b(LIGHTWOOD,0,.4,0,w-.1,.8,d-.1);
@@ -205,5 +237,20 @@ export function smallProp(r,o) {
     for(const x of [-.58,.58])r.mesh(g,'leaf','#8c928a',[x,.65,0],[.29,.72,.4]);
     r.mesh(g,'leaf','#a8ada0',[0,1.2,0],[.75,.26,.42]);b('#263134',0,.6,-.21,.92,1.05,.04);
   }
+  return g;
+}
+
+// Cápsula de captura de Alborada: alargada, mitad de color y mitad crema, con una gema en la unión.
+export function capsuleModel(r) {
+  const g=new T.Group(),paint=new T.Group(),cream=new T.Group();g.add(paint,cream);
+  const half=(parent,side,c)=>{
+    r.mesh(parent,'ball',c,[side*.08,0,0],[.11,.11,.11]);
+    const body=r.mesh(parent,'cylinder',c,[side*.04,0,0],[.11,.08,.11]);body.rotation.z=Math.PI/2;
+  };
+  half(paint,-1,'#3a9ad8');half(cream,1,'#f6ead2');
+  const seam=r.mesh(g,'ring','#3a3f4a',[0,0,0],[.112,.112,.112]);seam.rotation.y=Math.PI/2;
+  r.mesh(g,'ball',r.mat('#ffffff',{emissive:'#bfe8ff',emissiveIntensity:.7}),[0,.02,.1],[.03,.03,.02]);
+  g.userData.paint=c=>{const m=r.mat(c);paint.children.forEach(x=>{x.material=m;});};
+  g.scale.setScalar(1.6);
   return g;
 }

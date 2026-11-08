@@ -226,11 +226,13 @@ function tienda() {
   const b = interior('tienda', 11, 8, { name: 'Tienda Arenal', floor: 'k', style: 'lab' });
   b.set(5, 7, 'm').rect(0, 7, 5, 1, ' ').rect(6, 7, 5, 1, ' ');
   b.warp(5, 7, 'arenal', 17, 20, { face: 0, needDir: 0 });
-  b.furniture('shopCounter', 1, 3, 3, 1, { sy: -8, counter: true, arg: 3 });
+  b.furniture('shopCounter', 1, 3, 4, 1, { sy: -8, counter: true, arg: 4 });
   b.furniture('storeShelf', 6, 3, 2, 1, { sy: -14 }).furniture('storeShelf', 9, 3, 2, 1, { sy: -14 });
   b.furniture('storeShelf', 6, 5, 2, 1, { sy: -14 }).furniture('storeShelf', 9, 5, 2, 1, { sy: -14 });
   b.furniture('plant', 0, 2, 1, 1, { sy: -8 });
-  b.npc({ id: 'dependiente', look: 'clerk', x: 2, y: 2, dir: 0, talk: 'tienda', tier: 1 });
+  b.furniture('vending', 10, 2, 1, 1, { sy: -18, script: 'maquina' });
+  b.npc({ id: 'dependiente', look: 'clerk', x: 2, y: 2, dir: 0, talk: 'tienda', town: 'arenal' });
+  b.npc({ id: 'vendedora', look: 'vendor', x: 4, y: 2, dir: 0, talk: 'tiendaEspecial', town: 'arenal' });
   b.npc({ id: 'cliente', look: 'kid', x: 8, y: 4, dir: 1, talk: ['¡Con Cápsulas puedes atrapar criaturas!', 'Primero bájales los PS, así es más fácil.'] });
   return b.build();
 }

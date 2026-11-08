@@ -4,6 +4,8 @@ import { input } from '../core/input.js';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// Plata con punto de miles, como en Colombia: $12.500
+const money = n => '$' + String(Math.floor(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
 class UI {
   constructor() {
@@ -79,29 +81,52 @@ class UI {
 
   // ---------- Paneles de la pantalla inferior ----------
   // html: contenido; los elementos con data-act son botones. modal: bloquea el mundo y toma el teclado.
-  setPanel(html, { onAct, onBack, modal = false, focus = 0, cls = '' } = {}) {
+  // onFocus(el): avisa qué botón quedó resaltado (para mostrar su descripción, como en la portátil).
+  setPanel(html, { onAct, onBack, onFocus, modal = false, focus = 0, cls = '' } = {}) {
     this.bottom.className = cls;
     this.bottom.innerHTML = html;
     const els = [...this.bottom.querySelectorAll('[data-act]')];
-    els.forEach(el => el.addEventListener('click', e => {
-      e.preventDefault();
-      if (el.disabled || el.classList.contains('off')) return;
-      if (this.dialog && !this.panel?.allowDuringDialog) return;
-      onAct && onAct(el.dataset.act, el);
-    }));
+    els.forEach((el, i) => {
+      el.addEventListener('click', e => {
+        e.preventDefault();
+        if (el.disabled || el.classList.contains('off')) return;
+        if (this.dialog && !this.panel?.allowDuringDialog) return;
+        onAct && onAct(el.dataset.act, el);
+      });
+      if (onFocus) el.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse' && this.panel?.els === els && this.panel.index !== i) { this.panel.index = i; this.paintFocus(false); } });
+    });
     const back = this.bottom.querySelector('[data-back]');
     if (back) back.addEventListener('click', e => { e.preventDefault(); onBack && onBack(); });
-    this.panel = { els, index: Math.min(focus, els.length - 1), onAct, onBack, modal };
+    this.panel = { els, index: Math.max(0, Math.min(focus, els.length - 1)), onAct, onBack, onFocus, modal };
     this.paintFocus();
+  }
+  // Desplaza sólo la lista que contiene al elemento (nunca la página): así el cursor no se pierde en listas largas.
+  reveal(el, align = 'nearest') {
+    const box = el.closest('.ilist, .plist, .bt-list, .opts');
+    if (!box || box.scrollHeight <= box.clientHeight) return;
+    const top = el.offsetTop - box.offsetTop, bottom = top + el.offsetHeight;
+    if (align === 'start') box.scrollTop = top - 2;
+    else if (top < box.scrollTop) box.scrollTop = top - 4;
+    else if (bottom > box.scrollTop + box.clientHeight) box.scrollTop = bottom - box.clientHeight + 4;
+  }
+  // Resalta el botón con ese data-act (por ejemplo, volver a dejar el cursor en el objeto que se compró).
+  focusAct(act) {
+    const p = this.panel; if (!p) return;
+    const i = p.els.findIndex(e => e.dataset.act === act);
+    if (i >= 0) { p.index = i; this.paintFocus(); }
   }
   closePanel() {
     this.panel = null;
     this.bottom.className = 'hidden';
     this.bottom.innerHTML = '';
   }
-  paintFocus() {
+  paintFocus(scroll = true) {
     const p = this.panel; if (!p) return;
     p.els.forEach((el, i) => el.classList.toggle('focus', p.modal && i === p.index));
+    const el = p.els[p.index];
+    if (!el) return;
+    if (p.modal && scroll) this.reveal(el);
+    if (p.onFocus) p.onFocus(el);
   }
   // Elige con el teclado el botón más cercano en la dirección pulsada.
   moveFocus(dir) {
@@ -169,4 +194,4 @@ class UI {
 }
 
 export const ui = new UI();
-export { esc };
+export { esc, money };

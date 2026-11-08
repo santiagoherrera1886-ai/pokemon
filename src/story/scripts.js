@@ -1,8 +1,9 @@
 // Guiones de la historia de la Etapa 1. Cada guion es una función async que recibe el overworld.
 import { ui } from '../ui/ui.js';
-import { SPECIES, RIVAL_PICK, ITEMS, makeCreature, rivalForm } from '../data/creatures.js';
+import { SPECIES, RIVAL_PICK, makeCreature, rivalForm } from '../data/creatures.js';
+import { ITEMS, SPECIAL } from '../data/items.js';
 
-const N = { mom: 'Mamá', nico: 'Nico', prof: 'Prof. Ceiba', aide: 'Ayudante', kid: 'Niño', nurse: 'Enfermera Malva', clerk: 'Dependiente', rivalMom: 'Mamá de Nico', guard: 'Guardia', grunt: 'Recluta Eclipse', bruma: 'Bruma', umbra: 'Umbra', aurora: 'Campeona Aurora', courier: 'Mensajera' };
+const N = { mom: 'Mamá', nico: 'Nico', prof: 'Prof. Ceiba', aide: 'Ayudante', kid: 'Niño', nurse: 'Enfermera Malva', clerk: 'Dependiente', vendor: 'Vendedora', rivalMom: 'Mamá de Nico', guard: 'Guardia', grunt: 'Recluta Eclipse', bruma: 'Bruma', umbra: 'Umbra', aurora: 'Campeona Aurora', courier: 'Mensajera' };
 
 export class Scripts {
   constructor(game) { this.game = game; }
@@ -158,10 +159,29 @@ const S = {
     st.lastHeal = (npc && npc.arg) || { map: 'posada', x: 6, y: 7 };
     await say(N.nurse, '¡Listo! Tus criaturas están en plena forma.', '¡Que te vaya bien!');
   },
+  // Mostrador general: comprar (crece con las medallas) o vender a mitad de precio.
   async tienda(ow, game, npc) {
-    const i = await ui.ask('¡Bienvenido! ¿Qué deseas?', ['Comprar', 'Nada, gracias'], { name: N.clerk });
-    if (i === 0) await game.openShop(npc && npc.tier || 1);
+    const town = npc && npc.town || 'arenal', title = ow.map.name;
+    for (let first = true; ; first = false) {
+      const i = await ui.ask(first ? '¡Bienvenido! ¿Qué deseas?' : '¿Te ayudo con algo más?', ['Comprar', 'Vender', 'Nada, gracias'], { name: N.clerk });
+      if (i === 0) await game.openShop({ kind: 'general', town, title });
+      else if (i === 1) await game.openShop({ kind: 'sell', title: 'Vender' });
+      else break;
+    }
     await say(N.clerk, '¡Gracias, vuelve pronto!');
+  },
+  // Mostrador especial: cada ciudad vende cosas propias.
+  async tiendaEspecial(ow, game, npc) {
+    const town = npc && npc.town || 'arenal', sp = SPECIAL[town];
+    for (let first = true; ; first = false) {
+      const i = await ui.ask(first ? `¡A la orden! Esto es el ${sp.name}: cositas que no consigues en otro lado.` : '¿Te provoca algo más?', ['Ver productos', 'Nada, gracias'], { name: N.vendor });
+      if (i !== 0) break;
+      await game.openShop({ kind: 'special', town, title: sp.name });
+    }
+    await say(N.vendor, '¡Que te rinda el viaje!');
+  },
+  async maquina(ow, game) {
+    await game.openShop({ kind: 'vending', title: 'Máquina expendedora' });
   },
   async pc(ow, game) {
     const st = game.state;

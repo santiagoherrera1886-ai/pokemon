@@ -15,6 +15,7 @@ import { battleSprite, silhouette } from './art/creatures.js';
 import { tree, house } from './art/objects.js';
 import { sheet } from './art/characters.js';
 import { ENCOUNTERS, SPECIES, MOVES, makeCreature, refreshStats } from './data/creatures.js';
+import { ITEMS, repelled } from './data/items.js';
 
 class Game {
   constructor() {
@@ -151,7 +152,43 @@ class Game {
     for (const c of this.state.party) { c.hp = c.stats.hp; for (const m of c.moves) m.pp = MOVES[m.id].pp; }
   }
   chooseStarter() { return this.menus.starter(); }
-  async openShop(tier) { await this.menus.shop(tier); ui.hideMsg(); this.menus.home(false); }
+  async openShop(opts) { await this.menus.shop(opts); ui.hideMsg(); this.menus.home(false); }
+
+  // ---------- Objetos de campo ----------
+  // Silbato de Regreso: la Mensajera te lleva a la última Posada donde descansaste.
+  async whistle() {
+    const ow = this.ow; ow.scripts++;
+    try {
+      await ui.say(['¡Fiiiiuuu!', 'La Mensajera llegó volando y te llevó de vuelta.']);
+      await this.fadeOut();
+      const h = this.state.lastHeal;
+      ow.load(h.map, h.x, h.y, 1);
+      await this.fadeIn();
+    } finally { ow.scripts--; this.menus.home(false); }
+  }
+  // Miel Silvestre: sirve parado en una casilla donde salen criaturas salvajes.
+  canLure() {
+    const ow = this.ow, m = ow.map, p = ow.player, t = m.at(p.x, p.y);
+    return !!(m.encounters && ENCOUNTERS[m.encounters] && this.state.story >= 3 && (t === 'g' || (m.allEncounter && t === 'c')));
+  }
+  async lure() {
+    await ui.say(['Untaste un poquito de Miel Silvestre...', '¡Algo se acerca atraído por el olor!']);
+    await this.maybeEncounter(this.ow.map.encounters, this.ow.map.battleBg, { force: true });
+    this.menus.home(false);
+  }
+  // Cada paso gasta el repelente; al acabarse avisa y ofrece usar otro igual.
+  async repelStep() {
+    const st = this.state;
+    if (!(st.repel > 0) || --st.repel > 0) return;
+    const id = st.repelItem || 'repelente', it = ITEMS[id];
+    this.ow.scripts++;
+    try {
+      if ((st.bag[id] || 0) > 0) {
+        const i = await ui.ask(`Se acabó el efecto del ${it.name}. ¿Usar otro? (te quedan ${st.bag[id]})`, ['Sí', 'No']);
+        if (i === 0) { st.bag[id]--; st.repel = it.repel; await ui.say([`Usaste otro ${it.name}.`]); }
+      } else await ui.say([`Se acabó el efecto del ${it.name}.`]);
+    } finally { this.ow.scripts--; }
+  }
 
   // Aprende los movimientos de su especie para ese nivel; si ya sabe cuatro, pregunta cuál olvidar.
   async learnMoves(c, level, say = t => ui.say([t])) {
@@ -165,14 +202,16 @@ class Game {
     }
   }
 
-  async maybeEncounter(key, bg) {
+  async maybeEncounter(key, bg, { force = false } = {}) {
     const table = ENCOUNTERS[key];
     if (!table || !this.state.party.some(c => c.hp > 0) || this.state.story < 3) return;
-    if (Math.random() >= table.rate) return;
+    if (!force && Math.random() >= table.rate) return;
     let roll = Math.random() * 100, pick = table.list[0];
     for (const e of table.list) { if ((roll -= e[3]) < 0) { pick = e; break; } }
     const [sp, lo, hi] = pick;
-    const foe = makeCreature(sp, lo + Math.floor(Math.random() * (hi - lo + 1)));
+    const level = lo + Math.floor(Math.random() * (hi - lo + 1));
+    if (!force && repelled(this.state, level)) return;
+    const foe = makeCreature(sp, level);
     this.ow.scripts++;
     const res = await this.battle({ foe, wild: true, canRun: true, canCatch: true, bg });
     if (res === 'lose') await this.blackout();
