@@ -58,6 +58,14 @@ async function run(){
   await page.setViewportSize({width:390,height:844});await page.evaluate(()=>document.body.classList.add('force-pad'));await page.setViewportSize({width:391,height:844});await sleep(400);
   await page.locator('[data-btn="right"]').dispatchEvent('pointerdown');await sleep(450);await page.locator('[data-btn="right"]').dispatchEvent('pointerup');await sleep(350);
   assert.ok(await page.evaluate(()=>__game.state.x>2),'touch movement');await page.screenshot({path:path.join(out,'mobile-premium.png')});report.checks.push('mobile layout and touch movement');
+  await page.setViewportSize({width:1100,height:950});
+  for(const quality of ['low','medium','high']){
+    await page.evaluate(q=>__game.graphics.setQuality(q),quality);await sleep(300);
+    const actual=await page.evaluate(()=>{const e=__game.graphics.engine;return {quality:e.quality,shadow:e.webgl.shadowMap.enabled,width:e.canvas.width};});
+    assert.equal(actual.quality,quality);assert.equal(actual.shadow,quality!=='low');assert.ok(actual.width>0);
+    await page.locator('#ds').screenshot({path:path.join(out,`quality-${quality}.png`)});
+  }
+  report.checks.push('low, medium and high quality render successfully');
   // Expected messages emitted by deliberately losing the context are not shader errors.
   report.errors=report.errors.filter(e=>!/CONTEXT_LOST_WEBGL/.test(e));assert.deepEqual(report.errors,[]);
   report.passed=true;

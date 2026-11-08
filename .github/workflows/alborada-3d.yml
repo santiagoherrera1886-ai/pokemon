@@ -2,8 +2,10 @@ name: Alborada 3D verification
 on:
   push:
     branches: [feature/alborada-3d]
+    paths-ignore: ['docs/**', 'README.md']
   pull_request:
     branches: [main]
+    paths-ignore: ['docs/**', 'README.md']
 permissions:
   contents: read
 concurrency:
