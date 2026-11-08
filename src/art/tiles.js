@@ -16,18 +16,44 @@ const C = {
   void: '#101018'
 };
 
-export const SOLID = new Set(['T', 'w', 'W', 'x', ' ', 'f', 'B', 'C']);
+export const SOLID = new Set(['T', 'w', 'W', 'x', ' ', 'f', 'B', 'C', 'R', 'K']);
 export const OUTDOOR = new Set(['.', 'g', 'p', 'w', 's', 'F', 'T', 'f', 'x', 'B']);
 
 function grassBase(g, dx, dy, x, y) {
   px(g, dx, dy, C.grass, 16, 16);
-  // Matas pequeñas en forma de "v", como el césped de las portátiles.
-  for (let i = 0; i < 3; i++) {
+  // Variación suave de tono por casilla y matas en forma de "v".
+  if (hash(x, y, 77) > 0.7) px(g, dx + 2, dy + 2, '#80cc60', 12, 12);
+  for (let i = 0; i < 4; i++) {
     const r = hash(x, y, i + 1);
     const ax = dx + Math.floor(r * 13) + 1, ay = dy + Math.floor(hash(x, y, i + 9) * 13) + 1;
     px(g, ax, ay, C.grassD); px(g, ax + 2, ay, C.grassD); px(g, ax + 1, ay + 1, C.grassD);
-    if (r > 0.5) px(g, ax + 1, ay - 1, C.grassL);
+    if (r > 0.45) px(g, ax + 1, ay - 1, C.grassL);
   }
+  if (hash(x, y, 51) > 0.86) { const fx = dx + 3 + Math.floor(hash(x, y, 52) * 10), fy = dy + 3 + Math.floor(hash(x, y, 53) * 10); px(g, fx, fy, hash(x, y, 54) > 0.5 ? '#ffffff' : '#f8e070'); }
+}
+
+function cave(g, dx, dy, x, y) {
+  px(g, dx, dy, '#8a7058', 16, 16);
+  for (let i = 0; i < 6; i++) { const a = hash(x, y, i), b = hash(x, y, i + 20); px(g, dx + Math.floor(a * 14), dy + Math.floor(b * 14), i % 2 ? '#a08668' : '#725a44', i % 3 ? 1 : 2, 1); }
+  if (hash(x, y, 33) > 0.8) { px(g, dx + 5, dy + 9, '#5e4836', 4, 2); px(g, dx + 5, dy + 8, '#b49a7a', 3, 1); }
+}
+function rockWall(g, dx, dy, x, y, map) {
+  const below = map.at(x, y + 1), above = map.at(x, y - 1);
+  px(g, dx, dy, '#5a4636', 16, 16);
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 2; c++) {
+    const ox = dx + c * 8 + (r % 2 ? 4 : 0) - 2, oy = dy + r * 4;
+    px(g, ox, oy, '#6e5644', 7, 3); px(g, ox, oy, '#846a54', 7, 1);
+  }
+  if (above !== 'R' && above !== undefined) px(g, dx, dy, '#9a8068', 16, 2);
+  if (below !== 'R' && below !== undefined) { px(g, dx, dy + 13, '#3e3026', 16, 3); }
+}
+function cliff(g, dx, dy, x, y, map) {
+  grassBase(g, dx, dy, x, y);
+  const above = map.at(x, y - 1), below = map.at(x, y + 1);
+  px(g, dx, dy + (above === 'K' ? 0 : 4), '#9a8a6a', 16, 16 - (above === 'K' ? 0 : 4));
+  for (let r = 0; r < 4; r++) px(g, dx + (r % 2) * 5, dy + 5 + r * 3, '#7a6a4e', 10, 1);
+  if (above !== 'K') { px(g, dx, dy + 2, '#5aa046', 16, 2); px(g, dx, dy + 4, '#c0b090', 16, 1); }
+  if (below !== 'K') px(g, dx, dy + 14, '#5a4a36', 16, 2);
 }
 
 function tallGrass(g, dx, dy, x, y) {
@@ -91,7 +117,7 @@ function water(g, dx, dy, x, y, map, frame) {
     const wy = dy + 4 + i * 6 + (Math.floor(hash(x, y, i + 4) * 3));
     px(g, wx, wy, C.waterL, 3, 1); px(g, wx + 1, wy - 1, C.waterL, 1, 1);
   }
-  px(g, dx, dy, C.waterD, 16, 0);
+  if (hash(x, y, frame + 40) > 0.82) px(g, dx + Math.floor(hash(x, y, frame) * 13) + 1, dy + Math.floor(hash(x, y, frame + 9) * 12) + 2, '#ffffff');
   // Orillas: arena + espuma.
   const shore = (sx, sy, w, h) => px(g, sx, sy, C.sand, w, h);
   if (e.n) { shore(dx, dy, 16, 3); px(g, dx, dy + 3, C.foam, 16, 1); px(g, dx, dy + 4, C.waterD, 16, 1); }
@@ -124,18 +150,19 @@ function woodFloor(g, dx, dy, x, y) {
   }
 }
 
-function tileFloor(g, dx, dy, x, y) {
+function tileFloor(g, dx, dy, x, y, map) {
+  const [A, B, L] = (map && map.floorColors) || [C.tileA, C.tileB, C.tileL];
   for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) {
-    px(g, dx + i * 8, dy + j * 8, (i + j + x + y) % 2 ? C.tileB : C.tileA, 8, 8);
-    px(g, dx + i * 8, dy + j * 8 + 7, C.tileL, 8, 1);
-    px(g, dx + i * 8 + 7, dy + j * 8, C.tileL, 1, 8);
+    px(g, dx + i * 8, dy + j * 8, (i + j + x + y) % 2 ? B : A, 8, 8);
+    px(g, dx + i * 8, dy + j * 8 + 7, L, 8, 1);
+    px(g, dx + i * 8 + 7, dy + j * 8, L, 1, 8);
     px(g, dx + i * 8 + 1, dy + j * 8 + 1, '#ffffff', 2, 1);
   }
 }
 
 function wall(g, dx, dy, x, y, map) {
-  const lab = map.style === 'lab' || map.style === 'center';
-  const base = lab ? C.labWall : (map.wallColor || C.wall), dark = lab ? C.labWallD : C.wallD;
+  const lab = map.style === 'lab' || map.style === 'center' || map.style === 'gym' || map.style === 'league';
+  const base = map.wallColor || (lab ? C.labWall : C.wall), dark = map.wallDark || (lab ? C.labWallD : C.wallD);
   const below = map.at(x, y + 1), above = map.at(x, y - 1);
   px(g, dx, dy, base, 16, 16);
   for (let i = 0; i < 16; i += 4) px(g, dx + i, dy, dark, 1, 16);
@@ -144,7 +171,7 @@ function wall(g, dx, dy, x, y, map) {
 }
 
 function mat(g, dx, dy, x, y, map) {
-  (map.floor === 'k' ? tileFloor : woodFloor)(g, dx, dy, x, y);
+  (map.floor === 'k' ? tileFloor : woodFloor)(g, dx, dy, x, y, map);
   px(g, dx + 1, dy + 3, '#c84848', 14, 11);
   px(g, dx + 2, dy + 4, '#e86a5a', 12, 9);
   for (let i = 0; i < 3; i++) px(g, dx + 3, dy + 6 + i * 2, '#f8d8a0', 10, 1);
@@ -154,13 +181,13 @@ function rug(g, dx, dy, x, y, map) {
   woodFloor(g, dx, dy, x, y);
   const isR = t => t === 'r';
   const e = edges(map, x, y, isR);
-  px(g, dx, dy, '#5a8ad8', 16, 16);
-  px(g, dx, dy, '#5a8ad8', 16, 16);
+  const [rc, rl] = map.style === 'league' ? ['#b83a4a', '#d0505e'] : ['#5a8ad8', '#7aa6ee'];
+  px(g, dx, dy, rc, 16, 16);
   if (e.n) px(g, dx, dy, '#f0d070', 16, 2);
   if (e.s) px(g, dx, dy + 14, '#f0d070', 16, 2);
   if (e.w) px(g, dx, dy, '#f0d070', 2, 16);
   if (e.e) px(g, dx + 14, dy, '#f0d070', 2, 16);
-  if ((x + y) % 2) px(g, dx + 6, dy + 6, '#7aa6ee', 4, 4);
+  if ((x + y) % 2) px(g, dx + 6, dy + 6, rl, 4, 4);
 }
 
 function stairs(g, dx, dy, x, y, map, down) {
@@ -175,7 +202,9 @@ function stairs(g, dx, dy, x, y, map, down) {
 
 export function drawTile(g, code, x, y, map, frame, dx, dy) {
   switch (code) {
-    case '.': case 'T': case 'f': case 'B': return grassBase(g, dx, dy, x, y);
+    case '.': case 'T': case 'f': case 'B': case 'Y': return grassBase(g, dx, dy, x, y);
+    case 'J': return sand(g, dx, dy, x, y);
+    case 'O': return cave(g, dx, dy, x, y);
     case 'g': return tallGrass(g, dx, dy, x, y);
     case 'p': case 'D': return path(g, dx, dy, x, y, map);
     case 's': return sand(g, dx, dy, x, y);
@@ -183,7 +212,10 @@ export function drawTile(g, code, x, y, map, frame, dx, dy) {
     case 'F': return flowers(g, dx, dy, x, y, map, frame);
     case 'x': grassBase(g, dx, dy, x, y); return;
     case 'o': return woodFloor(g, dx, dy, x, y);
-    case 'k': case 'C': return tileFloor(g, dx, dy, x, y);
+    case 'k': case 'C': return tileFloor(g, dx, dy, x, y, map);
+    case 'c': return cave(g, dx, dy, x, y);
+    case 'R': return rockWall(g, dx, dy, x, y, map);
+    case 'K': return cliff(g, dx, dy, x, y, map);
     case 'W': return wall(g, dx, dy, x, y, map);
     case 'm': return mat(g, dx, dy, x, y, map);
     case 'r': return rug(g, dx, dy, x, y, map);

@@ -12,24 +12,29 @@ export class Menus {
   constructor(game) { this.game = game; }
   get st() { return this.game.state; }
 
-  // Panel de inicio que se ve mientras exploras.
+  // Menú principal (se abre con Esc o el botón MENÚ). Sin modal, simplemente se cierra el panel.
   home(modal = false) {
+    if (!modal) { if (!ui.panel || !ui.panel.modal) ui.closePanel(); return; }
     const st = this.st, map = this.game.ow?.map;
-    const goal = ['Baja a hablar con mamá', 'Ve a la casa de Nico (techo azul)', 'Ve al Lago Espejo (Sendero 1, al oeste)', 'Vuelve a casa', 'Ve al laboratorio de Villa Arenal', 'Etapa 1 completa: explora, entrena y atrapa'][Math.min(5, st.story)];
+    const goals = ['Baja a hablar con mamá', 'Ve a la casa de Nico (techo azul)', 'Ve al Lago Espejo (Sendero 1, al oeste)', 'Vuelve a casa', 'Ve al laboratorio de Villa Arenal',
+      'Sigue la Ruta 2 hacia Ciudad Corola', 'Gana la Medalla Hoja en el gimnasio de Corola', 'Cruza la Cueva Eco hasta Pueblo Cobre y gana la Medalla Roca', 'Baja por la Ruta 4 hasta Ciudad Marea y gana la Medalla Marea',
+      'Detén al Equipo Eclipse en su bodega de Ciudad Marea', 'Corre al Lago Espejo: el Equipo Eclipse va por la guardiana', 'Sube por la Ruta 5 (norte de Corola) hasta la Liga Alborada', 'Eres campeón. Explora y completa tu registro'];
+    const BADGES = [['hoja', '#5cb04c'], ['roca', '#b8a058'], ['marea', '#3e98dc']];
+    const dex = Object.values(st.dex || {});
     ui.setPanel(`<div class="home">
       <div class="home-head"><span>${esc(map ? map.name : '')}</span><span>$${st.money}</span></div>
-      <div class="goal"><small>OBJETIVO</small>${esc(goal)}</div>
+      <div class="goal"><small>OBJETIVO</small>${esc(goals[Math.min(goals.length - 1, st.story)])}</div>
+      <div class="badges">${BADGES.map(([b, c]) => `<i class="${(st.badges || []).includes(b) ? 'on' : ''}" style="--c:${c}" title="Medalla ${b}"></i>`).join('')}<span>Registro: ${dex.filter(v => v === 2).length} atrapadas · ${dex.length} vistas</span></div>
       <div class="home-grid">
         <button data-act="party" class="hb hb-party"><i></i>EQUIPO</button>
         <button data-act="bag" class="hb hb-bag"><i></i>MOCHILA</button>
         <button data-act="save" class="hb hb-save"><i></i>GUARDAR</button>
         <button data-act="options" class="hb hb-opt"><i></i>OPCIONES</button>
       </div>
-      ${modal ? '<button class="bt-back" data-back>CERRAR</button>' : ''}</div>`,
-    { modal, cls: 'home-panel', onAct: a => this.open(a), onBack: () => this.home(false) });
+      <button class="bt-back" data-back>CERRAR</button></div>`,
+    { modal: true, cls: 'home-panel', onAct: a => this.open(a), onBack: () => ui.closePanel() });
   }
   open(what) {
-    if (this.game.ow.locked && !ui.panel?.modal) return;
     ({ party: () => this.party(), bag: () => this.bag(), save: () => this.save(), options: () => this.options() })[what]();
   }
 
@@ -57,7 +62,7 @@ export class Menus {
   }
   useItem(id) {
     const it = ITEMS[id], st = this.st;
-    if (id === 'capsula') { ui.say(['Las Cápsulas se usan en combate contra criaturas salvajes.']).then(() => this.bag()); return; }
+    if (id === 'capsula' || id === 'supercapsula') { ui.say(['Las Cápsulas se usan en combate contra criaturas salvajes.']).then(() => this.bag()); return; }
     if (!st.party.length) { ui.say(['No tienes criaturas.']).then(() => this.bag()); return; }
     ui.setPanel(`<h3 class="ph">¿En quién usar ${esc(it.name)}?</h3><div class="plist">${st.party.map((c, i) => `<button data-act="${i}"><img src="${iconURL(c.sp)}" alt=""><span class="pn"><b>${esc(c.name)}</b><small>Nv${c.level}</small></span>${hpBar(c)}<em>${Math.ceil(c.hp)}/${c.stats.hp}</em></button>`).join('')}</div><button class="bt-back" data-back>VOLVER</button>`,
       { modal: true, cls: 'list-panel', onBack: () => this.bag(), onAct: async a => {
@@ -77,7 +82,7 @@ export class Menus {
       const ok = saveState(this.st);
       await ui.say([ok ? `${this.st.name} guardó la partida.` : 'No se pudo guardar (el navegador bloquea el almacenamiento).']);
     }
-    this.home(false);
+    ui.closePanel();
   }
 
   options() {
@@ -85,23 +90,27 @@ export class Menus {
     ui.setPanel(`<h3 class="ph">OPCIONES</h3><div class="opts">
       <button data-act="persp">Perspectiva DS: <b>${o.perspective ? 'SÍ' : 'NO'}</b></button>
       <button data-act="speed">Velocidad del texto: <b>${['LENTA', 'NORMAL', 'RÁPIDA', 'INSTANTÁNEA'][o.textSpeed]}</b></button>
+      <button data-act="hour">Hora del día: <b>${o.forceHour === undefined ? 'REAL' : o.forceHour === 12 ? 'SIEMPRE DÍA' : 'SIEMPRE NOCHE'}</b></button>
+      <button data-act="full">Pantalla completa del navegador</button>
       <button data-act="title">Volver al título</button></div>
       <p class="hint">Teclado: flechas/WASD mover · Z/E/Enter = A · X/Shift = B (correr) · Esc/M = menú</p>
       <button class="bt-back" data-back>VOLVER</button>`,
     { modal: true, cls: 'list-panel', onBack: () => this.home(true), onAct: async a => {
       if (a === 'persp') { o.perspective = !o.perspective; this.game.applyOptions(); }
       if (a === 'speed') { o.textSpeed = (o.textSpeed + 1) % 4; this.game.applyOptions(); }
+      if (a === 'hour') { o.forceHour = o.forceHour === undefined ? 12 : o.forceHour === 12 ? 22 : undefined; }
+      if (a === 'full') { try { if (document.fullscreenElement) await document.exitFullscreen(); else await document.documentElement.requestFullscreen(); } catch { /* no permitido */ } }
       if (a === 'title') { const i = await ui.ask('¿Volver al título? Lo que no hayas guardado se perderá.', ['Sí', 'No']); if (i === 0) return this.game.toTitle(); }
       this.options();
     } });
   }
 
   // ---------- Tienda ----------
-  shop() {
+  shop(tier = 1) {
     return new Promise(resolve => {
-      const st = this.st;
-      const list = () => ui.setPanel(`<h3 class="ph">TIENDA <small>Tienes $${st.money}</small></h3><div class="ilist">${SHOP_STOCK.map(id => `<button data-act="${id}"><b>${esc(ITEMS[id].name)}</b><span>$${ITEMS[id].price}</span><small>En mochila: ${st.bag[id] || 0}</small></button>`).join('')}</div><button class="bt-back" data-back>SALIR</button>`,
-        { modal: true, cls: 'list-panel', onAct: id => qty(id, 1), onBack: () => resolve() });
+      const st = this.st, stock = SHOP_STOCK[tier] || SHOP_STOCK[1];
+      const list = () => ui.setPanel(`<h3 class="ph">TIENDA <small>Tienes $${st.money}</small></h3><div class="ilist">${stock.map(id => `<button data-act="${id}"><b>${esc(ITEMS[id].name)}</b><span>$${ITEMS[id].price}</span><small>En mochila: ${st.bag[id] || 0}</small></button>`).join('')}</div><button class="bt-back" data-back>SALIR</button>`,
+        { modal: true, cls: 'list-panel', onAct: id => qty(id, 1), onBack: () => { ui.closePanel(); resolve(); } });
       const qty = (id, n) => {
         const it = ITEMS[id], max = Math.max(1, Math.min(99, Math.floor(st.money / it.price)));
         n = Math.max(1, Math.min(max, n));
@@ -122,6 +131,14 @@ export class Menus {
         } });
       };
       list();
+    });
+  }
+
+  // ---------- Viaje rápido ----------
+  travel(places) {
+    return new Promise(resolve => {
+      ui.setPanel(`<h3 class="ph">VIAJE RÁPIDO</h3><div class="ilist">${places.map((p, i) => `<button data-act="${i}"><b>${esc(p.name)}</b></button>`).join('')}</div><button class="bt-back" data-back>CANCELAR</button>`,
+        { modal: true, cls: 'list-panel', onAct: i => { ui.closePanel(); resolve(+i); }, onBack: () => { ui.closePanel(); resolve(-1); } });
     });
   }
 

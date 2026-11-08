@@ -1,5 +1,5 @@
 // Personajes de 16x24 en 4 direcciones x 3 cuadros, construidos píxel a píxel con contorno automático.
-import { canvas, px, outline, flipH, shadeHex } from '../core/pixel.js';
+import { canvas, px, outline, flipH, shadeHex, autoShade } from '../core/pixel.js';
 
 const EYE = '#2a2630';
 
@@ -15,7 +15,21 @@ export const LOOKS = {
   girl: { skin: '#f0c8a0', hair: '#2a2a3a', style: 'long', shirt: '#f0c040', accent: '#ffffff', pants: '#d84a7a', shoes: '#ffffff' },
   old: { skin: '#e8c0a0', hair: '#d8d8e0', style: 'bald', shirt: '#8a6a4a', accent: '#c8a878', pants: '#5a4a3a', shoes: '#3a3a44' },
   man: { skin: '#d8a880', hair: '#2a2020', style: 'short', shirt: '#6a7a8a', accent: '#ffffff', pants: '#2a3a5a', shoes: '#3a3a44' },
-  rivalMom: { skin: '#f8d0a8', hair: '#f0c040', style: 'bun', shirt: '#8ac0e8', accent: '#ffffff', pants: '#5a5a7a', shoes: '#8a5a30', apron: '#ffffff' }
+  rivalMom: { skin: '#f8d0a8', hair: '#f0c040', style: 'bun', shirt: '#8ac0e8', accent: '#ffffff', pants: '#5a5a7a', shoes: '#8a5a30', apron: '#ffffff' },
+  hiedra: { skin: '#f0c8a0', hair: '#3a8a3a', style: 'long', shirt: '#5cb04c', accent: '#f8e070', pants: '#2a5a2a', shoes: '#6a4a2a', scarf: '#f8e070' },
+  basalto: { skin: '#c89070', hair: '#5a5a62', style: 'cap', shirt: '#8a6a4a', accent: '#d8c8a8', pants: '#4a4a52', shoes: '#2a2a32', hat: '#d8a030', hatBand: '#8a6a20', helmet: true },
+  coral: { skin: '#f8d0a8', hair: '#f07a6a', style: 'bun', shirt: '#3e98dc', accent: '#ffffff', pants: '#f8f8f0', shoes: '#3e98dc' },
+  grunt: { skin: '#e8c0a0', hair: '#2a2232', style: 'hood', hood: '#3a2c4a', shirt: '#3a2c4a', accent: '#f0c040', pants: '#2a2232', shoes: '#1a1622' },
+  bruma: { skin: '#f0d0b8', hair: '#c8c8e0', style: 'long', shirt: '#5a3a7a', accent: '#f0c040', pants: '#2a2232', shoes: '#1a1622', scarf: '#f0c040' },
+  umbra: { skin: '#d8b8a0', hair: '#1a1622', style: 'spiky', shirt: '#1a1622', accent: '#f04848', pants: '#2a2232', shoes: '#1a1622', coat: '#3a2c4a' },
+  aurora: { skin: '#f8d8c0', hair: '#f8f0d0', style: 'long', shirt: '#f8f8ff', accent: '#7ad0f8', pants: '#7ad0f8', shoes: '#ffffff', scarf: '#7ad0f8' },
+  hiker: { skin: '#d8a880', hair: '#5a3a2a', style: 'short', shirt: '#c86a3a', accent: '#f0d070', pants: '#6a5a3a', shoes: '#3a2a1a', bag: '#8a6a3a' },
+  bugkid: { skin: '#f8d0a8', hair: '#3a2a20', style: 'cap', hat: '#5cb04c', hatBand: '#f8e070', shirt: '#f8f0d0', accent: '#5cb04c', pants: '#6a8ab8', shoes: '#f0f0f0' },
+  swimmer: { skin: '#e8b890', hair: '#2a2a3a', style: 'short', shirt: '#3e98dc', accent: '#ffffff', pants: '#3e98dc', shoes: '#e8b890' },
+  lass: { skin: '#f8d0a8', hair: '#d8803a', style: 'long', shirt: '#f08ab0', accent: '#ffffff', pants: '#5a6ab8', shoes: '#ffffff' },
+  sailor: { skin: '#d8a880', hair: '#2a2020', style: 'cap', hat: '#ffffff', hatBand: '#3a6ad8', shirt: '#ffffff', accent: '#3a6ad8', pants: '#2a3a6a', shoes: '#2a2a32' },
+  guard: { skin: '#e8b890', hair: '#2a2020', style: 'cap', hat: '#3a5a8a', hatBand: '#f0c040', shirt: '#3a5a8a', accent: '#f0c040', pants: '#2a3a5a', shoes: '#1a1a22' },
+  courier: { skin: '#f0c8a0', hair: '#8a4a2e', style: 'cap', hat: '#f0a020', hatBand: '#ffffff', shirt: '#f0a020', accent: '#ffffff', pants: '#3a5a8a', shoes: '#3a3a44' }
 };
 
 function head(g, L, dir) {
@@ -30,6 +44,7 @@ function head(g, L, dir) {
     else { px(g, 4, 5, hair, 8, 1); px(g, 4, 6, hair, 1, 2); px(g, 11, 6, hair, 1, 2); }
     if (L.style === 'cap') { px(g, 4, 1, L.hat, 8, 4); px(g, 3, 4, L.hat, 10, 1); px(g, 3, 5, shadeHex(L.hat, -0.25), 10, 1); px(g, 4, 2, L.hatBand, 8, 1); px(g, 7, 3, L.hatBand, 2, 1); px(g, 4, 6, hair, 1, 2); px(g, 11, 6, hair, 1, 2); }
     if (L.cap) { px(g, 5, 1, L.cap, 6, 2); px(g, 7, 1, '#f05a8a', 2, 2); }
+    if (L.style === 'hood') { px(g, 3, 1, L.hood, 10, 5); px(g, 3, 5, L.hood, 2, 7); px(g, 11, 5, L.hood, 2, 7); px(g, 7, 2, L.accent, 2, 2); }
     px(g, 6, 7, EYE, 1, 2); px(g, 9, 7, EYE, 1, 2);
     px(g, 5, 9, shadeHex(L.skin, -0.08), 1, 1); px(g, 10, 9, shadeHex(L.skin, -0.08), 1, 1);
   } else if (dir === 1) { // de espaldas
@@ -41,6 +56,7 @@ function head(g, L, dir) {
     if (L.style === 'bald') { px(g, 5, 1, L.skin, 6, 4); }
     if (L.style === 'cap') { px(g, 4, 1, L.hat, 8, 5); px(g, 4, 5, shadeHex(L.hat, -0.25), 8, 1); px(g, 6, 4, L.hatBand, 4, 1); }
     if (L.cap) px(g, 5, 1, L.cap, 6, 2);
+    if (L.style === 'hood') { px(g, 3, 1, L.hood, 10, 11); px(g, 6, 3, L.accent, 4, 1); }
   } else { // perfil izquierdo
     px(g, 5, 1, hair, 6, 1); px(g, 4, 2, hair, 8, 4);
     px(g, 4, 5, L.skin, 6, 6); px(g, 3, 7, L.skin, 1, 2);
@@ -51,6 +67,7 @@ function head(g, L, dir) {
     if (L.style === 'bald') { px(g, 5, 1, L.skin, 5, 4); px(g, 9, 4, hair, 3, 4); }
     if (L.style === 'cap') { px(g, 4, 1, L.hat, 8, 4); px(g, 2, 4, L.hat, 7, 1); px(g, 2, 5, shadeHex(L.hat, -0.25), 5, 1); px(g, 4, 2, L.hatBand, 8, 1); }
     if (L.cap) px(g, 5, 1, L.cap, 5, 2);
+    if (L.style === 'hood') { px(g, 4, 1, L.hood, 8, 4); px(g, 8, 4, L.hood, 4, 8); }
     px(g, 5, 7, EYE, 1, 2);
   }
 }
@@ -104,6 +121,7 @@ function frameSprite(L, dir, frame) {
   const [hc, hg] = canvas(16, 24);
   head(hg, L, dir);
   g.drawImage(hc, 0, bob ? 0 : 0);
+  autoShade(c, 0.12, [EYE]);
   if (bob) { const [t, tg] = canvas(16, 24); tg.drawImage(c, 0, 1); return outline(t, '#26222e'); }
   return outline(c, '#26222e');
 }
