@@ -12,7 +12,7 @@ export class Menus {
   constructor(game) { this.game = game; }
   get st() { return this.game.state; }
 
-  // Menú principal (se abre con Esc o el botón MENÚ). Sin modal, simplemente se cierra el panel.
+  // La pantalla inferior muestra los objetivos; Esc y MENÚ abren la versión modal.
   home(modal = false) {
     if (!modal) { if (!ui.panel || !ui.panel.modal) ui.closePanel(); return; }
     const st = this.st, map = this.game.ow?.map;
@@ -86,16 +86,20 @@ export class Menus {
   }
 
   options() {
-    const o = this.st.options;
+    const o = this.st.options, graphics = this.game.graphics;
     ui.setPanel(`<h3 class="ph">OPCIONES</h3><div class="opts">
-      <button data-act="persp">Perspectiva DS: <b>${o.perspective ? 'SÍ' : 'NO'}</b></button>
+      <button data-act="graphics">Gráficos: <b>${graphics.mode === 'premium' ? '3D' : 'PIXEL CLÁSICO'}</b></button>
+      <button data-act="quality">Calidad 3D: <b>${({low:'BAJA',medium:'MEDIA',high:'ALTA'})[graphics.quality]}</b></button>
+      <button data-act="persp">Perspectiva (pixel clásico): <b>${o.perspective ? 'SÍ' : 'NO'}</b></button>
       <button data-act="speed">Velocidad del texto: <b>${['LENTA', 'NORMAL', 'RÁPIDA', 'INSTANTÁNEA'][o.textSpeed]}</b></button>
       <button data-act="hour">Hora del día: <b>${o.forceHour === undefined ? 'REAL' : o.forceHour === 12 ? 'SIEMPRE DÍA' : 'SIEMPRE NOCHE'}</b></button>
       <button data-act="full">Pantalla completa del navegador</button>
       <button data-act="title">Volver al título</button></div>
       <p class="hint">Teclado: flechas/WASD mover · Z/E/Enter = A · X/Shift = B (correr) · Esc/M = menú</p>
       <button class="bt-back" data-back>VOLVER</button>`,
-    { modal: true, cls: 'list-panel', onBack: () => this.home(true), onAct: async a => {
+    { modal: true, cls: 'list-panel graphics-options', onBack: () => this.home(true), onAct: async a => {
+      if (a === 'graphics') { await graphics.setMode(graphics.mode === 'premium' ? 'classic' : 'premium'); }
+      if (a === 'quality') { const levels = ['low','medium','high']; graphics.setQuality(levels[(levels.indexOf(graphics.quality)+1)%3]); }
       if (a === 'persp') { o.perspective = !o.perspective; this.game.applyOptions(); }
       if (a === 'speed') { o.textSpeed = (o.textSpeed + 1) % 4; this.game.applyOptions(); }
       if (a === 'hour') { o.forceHour = o.forceHour === undefined ? 12 : o.forceHour === 12 ? 22 : undefined; }

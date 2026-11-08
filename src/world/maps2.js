@@ -80,7 +80,7 @@ function ruta2() {
 
 // ---------------------------------------------------------------- CIUDAD COROLA
 function corola() {
-  const b = new MapBuilder('corola', 32, 28).meta({ name: 'Ciudad Corola', outdoor: true, origin: [30, -80], battleBg: 'grass' });
+  const b = new MapBuilder('corola', 32, 28).meta({ name: 'Ciudad Corola', outdoor: true, paved: true, origin: [30, -80], battleBg: 'grass' });
   b.border('T', 2);
   b.rect(14, 26, 2, 2, 'p').rect(14, 0, 2, 2, 'p').rect(30, 10, 2, 2, 'p');
   b.rect(14, 2, 2, 24, 'p').rect(3, 17, 26, 2, 'p').rect(10, 10, 22, 2, 'p');
@@ -187,7 +187,7 @@ function ruta4() {
 
 // ---------------------------------------------------------------- CIUDAD MAREA
 function marea() {
-  const b = new MapBuilder('marea', 34, 26).meta({ name: 'Ciudad Marea', outdoor: true, origin: [96, -26], battleBg: 'beach' });
+  const b = new MapBuilder('marea', 34, 26).meta({ name: 'Ciudad Marea', outdoor: true, paved: true, origin: [96, -26], battleBg: 'beach' });
   b.border('T', 2);
   b.rect(16, 0, 2, 2, 'p');
   b.rect(0, 20, 34, 6, 'w').rect(2, 18, 30, 2, 's').rect(12, 20, 3, 4, 's');

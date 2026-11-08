@@ -14,7 +14,8 @@ const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
 
 const ROOT = path.resolve(__dirname, '..');
-const SHOTS = path.join(__dirname, 'screenshots');
+const GRAPHICS_MODE=process.env.GRAPHICS_MODE||'premium';
+const SHOTS = path.join(__dirname, 'screenshots',GRAPHICS_MODE);
 fs.mkdirSync(SHOTS, { recursive: true });
 for (const f of fs.readdirSync(SHOTS)) if (f.endsWith('.png')) fs.unlinkSync(path.join(SHOTS, f));
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png' };
@@ -31,9 +32,22 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const log = (...a) => console.log('  ·', ...a);
 let page, errors = [], shotN = 0;
 
-const st = () => page.evaluate(() => { const g = __game, s = g.state; return { map: s.map, x: s.x, y: s.y, dir: s.dir, story: s.story, scene: g.scene, money: s.money, badges: [...(s.badges || [])], bag: { ...s.bag }, party: s.party.map(c => ({ sp: c.sp, hp: c.hp, max: c.stats.hp, level: c.level })), dialog: !!__ui.dialog, keep: !!(__ui.dialog && __ui.dialog.keep), modal: !!(__ui.panel && __ui.panel.modal), locked: g.ow.locked, moving: !!g.ow.player.moving, flags: { ...s.flags } }; });
+const st = () => page.evaluate(() => { const g = __game, s = g.state; return { map: s.map, x: s.x, y: s.y, dir: g.ow.player.dir, story: s.story, scene: g.scene, money: s.money, badges: [...(s.badges || [])], bag: { ...s.bag }, party: s.party.map(c => ({ sp: c.sp, hp: c.hp, max: c.stats.hp, level: c.level })), dialog: !!__ui.dialog, keep: !!(__ui.dialog && __ui.dialog.keep), modal: !!(__ui.panel && __ui.panel.modal), locked: g.ow.locked, moving: !!g.ow.player.moving, flags: { ...s.flags } }; });
 async function shot(name) { await sleep(150); await page.screenshot({ path: path.join(SHOTS, `${String(++shotN).padStart(2, '0')}-${name}.png`) }); }
-async function tap(key, hold = 60) { await page.keyboard.down(key); await sleep(hold); await page.keyboard.up(key); await sleep(30); }
+// Wait for the simulation to observe input; SwiftShader may render slower than a short key tap.
+async function face(key) {
+  const dir={ArrowDown:0,ArrowUp:1,ArrowLeft:2,ArrowRight:3}[key];
+  await page.keyboard.down(key);
+  try { await page.waitForFunction(dir=>__game.ow.player.dir===dir,dir,{timeout:5000}); }
+  finally { await page.keyboard.up(key); }
+}
+async function tap(key, hold = 60) {
+  if(key.startsWith('Arrow')) return face(key);
+  await page.keyboard.down(key);
+  try { const frame=await page.evaluate(()=>__game.frame); await page.waitForFunction(frame=>__game.frame>frame,frame,{timeout:5000}); await sleep(hold); }
+  finally { await page.keyboard.up(key); }
+  await sleep(30);
+}
 
 // Resuelve lo que esté pendiente: diálogos, preguntas (elige la primera opción), combates y créditos.
 async function settle(maxMs = 120000, { answer = 0 } = {}) {
@@ -99,7 +113,7 @@ async function step(key) {
 const expect = (s, key) => ({ ArrowUp: [s.x, s.y - 1], ArrowDown: [s.x, s.y + 1], ArrowLeft: [s.x - 1, s.y], ArrowRight: [s.x + 1, s.y] })[key];
 async function walkTo(x, y, mapId, opts = {}) {
   mapId = mapId || (await st()).map;
-  for (let leg = 0; leg < 12; leg++) {
+  for (let leg = 0; leg < 40; leg++) {
     const r = await pathTo(x, y, mapId, opts);
     assert.ok(r, `no hay ruta hacia ${mapId} (${x},${y}) desde ${JSON.stringify(await st())}`);
     let replan = false;
@@ -119,7 +133,7 @@ async function walkTo(x, y, mapId, opts = {}) {
     const now = await st();
     if (now.map === mapId && now.x === x && now.y === y && !opts.adjacent) return now;
   }
-  return st();
+  assert.fail('No se llegó al destino: '+JSON.stringify(await st()));
 }
 async function refill() { await page.evaluate(() => { for (const c of __game.state.party) { c.hp = c.stats.hp; for (const m of c.moves) m.pp = 99; } }); }
 async function talk() { await tap('z'); await sleep(250); }
@@ -129,14 +143,14 @@ async function talkTo(x, y, mapId) { await walkTo(x, y, mapId, { adjacent: true 
 async function run() {
   await new Promise(r => server.listen(0, '127.0.0.1', r));
   const url = `http://127.0.0.1:${server.address().port}/`;
-  const browser = await chromium.launch({ args: ['--no-sandbox'] });
+  const browser = await chromium.launch({ args: ['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader'] });
   try {
     page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
     page.on('pageerror', e => errors.push(e.message));
     page.on('console', m => { if (m.type() === 'error' && !/fonts|ERR_FAILED|net::/.test(m.text())) errors.push(m.text()); });
     await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort());
     await page.goto(url);
-    await page.evaluate(() => localStorage.clear());
+    await page.evaluate(mode=>{localStorage.clear();localStorage.setItem('alborada-graphics-v1',JSON.stringify({mode,quality:'low'}));},GRAPHICS_MODE);
     await page.reload(); await sleep(700);
     await shot('titulo');
     await page.click('#panel [data-act="new"]');
@@ -146,6 +160,7 @@ async function run() {
     await page.evaluate(() => { __game.state.options.forceHour = 12; });
     await shot('cuarto-intro');
     await settle();
+    if(GRAPHICS_MODE==='premium'){await page.waitForFunction(()=>__game.graphics.status==='ready');assert.ok(await page.locator('#premium').isVisible());}
     let s = await st();
     assert.equal(s.map, 'cuarto'); assert.equal(s.story, 0);
 

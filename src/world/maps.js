@@ -90,7 +90,7 @@ function lago() {
 
 // ---------------------------------------------------------------- VILLA ARENAL
 function arenal() {
-  const b = new MapBuilder('arenal', 26, 24).meta({ name: 'Villa Arenal', outdoor: true, origin: [32, -22], battleBg: 'grass' });
+  const b = new MapBuilder('arenal', 26, 24).meta({ name: 'Villa Arenal', outdoor: true, paved: true, origin: [32, -22], battleBg: 'grass' });
   b.border('T', 2);
   b.rect(0, 13, 2, 2, 'p');                 // conexión oeste
   b.rect(2, 13, 21, 2, 'p');
