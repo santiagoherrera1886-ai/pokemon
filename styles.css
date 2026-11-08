@@ -12,6 +12,16 @@ body.landscape #app { flex-direction: row; }
 .hinge { height: 14px; display: flex; justify-content: center; align-items: center; gap: 120px; }
 .hinge span { width: 30px; height: 4px; border-radius: 2px; background: #3a3f52; }
 #top { width: 256px; height: 192px; image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
+#premium { position:absolute; inset:0; width:256px; height:192px; display:none; image-rendering:auto; pointer-events:none; }
+.graphics-options { gap:4px; }
+.graphics-options .opts { flex:1; min-height:0; gap:3px; }
+.graphics-options .opts button { font-size:9px; padding:3px 5px; flex-shrink:0; }
+.graphics-options .hint { font-size:7px; line-height:9px; margin:0; }
+.premium-active #bottomScreen { box-shadow:0 0 0 3px #152c32,0 0 0 5px #526c6a; }
+.premium-active .home-panel { background:linear-gradient(145deg,#f0eedc,#d9e6d8); }
+.premium-active .home-head { background:#385c59; }
+.premium-active .goal { border-color:#c6ac75;background:#fff5da; }
+.premium-active .hb { border-color:#6e8b7d;box-shadow:0 2px 0 #9aa998; }
 .ui { position: absolute; inset: 0; font-family: var(--font); color: var(--ink); }
 #topui { pointer-events: none; }
 #topui #msg { pointer-events: auto; }

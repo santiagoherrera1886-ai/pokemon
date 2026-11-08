@@ -81,14 +81,18 @@ export class Menus {
   }
 
   options() {
-    const o = this.st.options;
+    const o = this.st.options, graphics = this.game.graphics;
     ui.setPanel(`<h3 class="ph">OPCIONES</h3><div class="opts">
-      <button data-act="persp">Perspectiva DS: <b>${o.perspective ? 'SÍ' : 'NO'}</b></button>
+      <button data-act="graphics">Gráficos: <b>${graphics.mode === 'premium' ? '3D PREMIUM' : 'CLÁSICO'}</b></button>
+      <button data-act="quality">Calidad 3D: <b>${({low:'BAJA',medium:'MEDIA',high:'ALTA'})[graphics.quality]}</b></button>
+      <button data-act="persp">Perspectiva clásica: <b>${o.perspective ? 'SÍ' : 'NO'}</b></button>
       <button data-act="speed">Velocidad del texto: <b>${['LENTA', 'NORMAL', 'RÁPIDA', 'INSTANTÁNEA'][o.textSpeed]}</b></button>
       <button data-act="title">Volver al título</button></div>
       <p class="hint">Teclado: flechas/WASD mover · Z/E/Enter = A · X/Shift = B (correr) · Esc/M = menú</p>
       <button class="bt-back" data-back>VOLVER</button>`,
-    { modal: true, cls: 'list-panel', onBack: () => this.home(true), onAct: async a => {
+    { modal: true, cls: 'list-panel graphics-options', onBack: () => this.home(true), onAct: async a => {
+      if (a === 'graphics') { await graphics.setMode(graphics.mode === 'premium' ? 'classic' : 'premium'); }
+      if (a === 'quality') { const levels = ['low','medium','high']; graphics.setQuality(levels[(levels.indexOf(graphics.quality)+1)%3]); }
       if (a === 'persp') { o.perspective = !o.perspective; this.game.applyOptions(); }
       if (a === 'speed') { o.textSpeed = (o.textSpeed + 1) % 4; this.game.applyOptions(); }
       if (a === 'title') { const i = await ui.ask('¿Volver al título? Lo que no hayas guardado se perderá.', ['Sí', 'No']); if (i === 0) return this.game.toTitle(); }

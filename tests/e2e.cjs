@@ -11,7 +11,8 @@ const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
 
 const ROOT = path.resolve(__dirname, '..');
-const SHOTS = path.join(__dirname, 'screenshots');
+const GRAPHICS_MODE = process.env.GRAPHICS_MODE || 'premium';
+const SHOTS = path.join(__dirname, 'screenshots', GRAPHICS_MODE);
 fs.mkdirSync(SHOTS, { recursive: true });
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png' };
 const server = http.createServer((req, res) => {
@@ -122,7 +123,7 @@ async function fightUntilOver(moveIdx = 0, maxTurns = 30) {
 async function run() {
   await new Promise(r => server.listen(0, '127.0.0.1', r));
   const url = `http://127.0.0.1:${server.address().port}/`;
-  const browser = await chromium.launch({ args: ['--no-sandbox'] });
+  const browser = await chromium.launch({ args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
   try {
     // ---------------------------------------------------------- Escritorio, teclado
     page = await browser.newPage({ viewport: { width: 1000, height: 900 } });
@@ -130,7 +131,7 @@ async function run() {
     page.on('console', m => { if (m.type() === 'error' && !/fonts|ERR_FAILED|net::/.test(m.text())) errors.push(m.text()); });
     await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort());
     await page.goto(url);
-    await page.evaluate(() => localStorage.clear());
+    await page.evaluate(mode => { localStorage.clear(); localStorage.setItem('alborada-graphics-v1', JSON.stringify({mode, quality:'low'})); }, GRAPHICS_MODE);
     await page.reload(); await sleep(600);
     await shot('titulo');
     await page.click('#botui [data-act="new"]');
@@ -139,6 +140,7 @@ async function run() {
     await sleep(900);
     await shot('cuarto-intro');
     await advance();
+    if (GRAPHICS_MODE === 'premium') { await page.waitForFunction(() => __game.graphics.status === 'ready'); assert.ok(await page.locator('#premium').isVisible()); }
     let s = await st();
     assert.equal(s.map, 'cuarto'); assert.equal(s.story, 0);
     log('arranque en el cuarto OK');

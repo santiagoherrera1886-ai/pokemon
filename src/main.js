@@ -1,6 +1,7 @@
 // Punto de entrada: bucle a 60 Hz, gestión de escenas (título, exploración, combate) y servicios del juego.
 import { input } from './core/input.js';
 import { Renderer } from './core/renderer.js';
+import { Graphics } from './core/graphics.js';
 import { newState, loadState, hasSave } from './core/state.js';
 import { canvas, px, ellipse } from './core/pixel.js';
 import { World } from './world/world.js';
@@ -28,6 +29,7 @@ class Game {
     ui.restoreHook = () => this.restoreBottom();
     input.bindTouch(document);
     this.state = newState();
+    this.graphics = new Graphics(this);
     this.ow = new Overworld(this);
     window.__game = this; window.__ui = ui; // acceso para pruebas automatizadas
     this.loop();
@@ -59,6 +61,7 @@ class Game {
 
   render() {
     const r = this.renderer;
+    if (this.graphics.render()) return;
     if (this.scene === 'overworld') this.ow.render(r);
     else if (this.scene === 'battle' && this.battleObj) this.battleObj.render(r);
     else if (this.scene === 'title') this.renderTitle(r.g);
