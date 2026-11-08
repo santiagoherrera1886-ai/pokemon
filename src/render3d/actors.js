@@ -2,67 +2,12 @@ import * as T from 'three';
 import {LOOKS} from '../art/characters.js';
 import {actorPosition} from './policy.js';
 import {storyCreature,STORY_SPECIES} from './story-creatures.js';
+import {person,animatePerson} from './people.js';
 export const MODEL_SPECIES=['brotelo','brasin','charquin','pipiu','roedin','capullin',...STORY_SPECIES];
 
-export function character(r, look='player') {
-  const L=LOOKS[look] || LOOKS.player, root=new T.Group(), body=new T.Group();root.add(body);
-  const b=(p,c,x,y,z,w,h,d)=>r.box(p,c,x,y,z,w,h,d,true);
-  const ball=(p,c,x,y,z,w,h=w,d=w)=>r.ball(p,c,x,y,z,w,h,d);
-  b(body,L.shirt,0,.55,0,.4,.46,.28);b(body,L.accent,0,.76,.13,.3,.07,.03);
-  if(L.apron)b(body,L.apron,0,.5,.16,.29,.34,.025);
-  if(L.coat)for(const x of [-.13,.13])b(body,L.coat,x,.5,.12,.15,.53,.12);
-  if(L.bag){b(body,L.bag,0,.6,-.22,.33,.35,.19);b(body,'#cf8943',0,.53,-.33,.25,.15,.03);for(const x of [-.13,.13])b(body,L.bag,x,.58,.15,.05,.31,.025);}
-  if(L.scarf){b(body,L.scarf,0,.76,0,.43,.13,.35);b(body,L.scarf,-.14,.56,-.21,.13,.37,.07);}
-  r.batch(body);
-  const head=new T.Group();head.position.y=.96;head.scale.setScalar(1.18);root.add(head);
-  ball(head,L.skin,0,.08,0,.29,.29,.26);ball(head,L.hair,0,.19,-.035,.3,.23,.27);
-  b(head,L.skin,0,.04,.17,.43,.3,.16);
-  for(const x of [-.105,.105]){
-    ball(head,'#2c3441',x,.065,.264,.035,.052,.022);ball(head,'#fff9e9',x-.009,.086,.28,.012,.016,.007);
-    ball(head,'#e7a18d',x*1.5,-.01,.255,.04,.018,.012);
-    ball(head,L.skin,x*2.7,.035,0,.06,.09,.065);
-  }
-  b(head,'#ab7059',0,-.045,.269,.06,.012,.01);
-  if(L.style==='cap'){
-    ball(head,L.hat,0,.27,-.025,.32,.15,.285);b(head,L.hat,0,.22,.19,.46,.05,.26);
-    b(head,L.hatBand,0,.3,.23,.15,.075,.025);b(head,L.hatBand,0,.23,-.28,.3,.04,.025);
-  } else if(L.style==='spiky') {
-    for(let i=0;i<5;i++){const spike=r.mesh(head,'cone',L.hair,[-.2+i*.1,.38,0],[.085,.19+(i%2)*.08,.09]);spike.rotation.z=(2-i)*.2;}
-  } else if(L.style==='bun')ball(head,L.hair,0,.34,-.2,.16);
-  else if(L.style==='long'){b(head,L.hair,0,-.06,-.18,.51,.43,.14);for(const x of [-.24,.24])b(head,L.hair,x,.02,-.01,.1,.4,.17);}
-  if(L.cap){b(head,L.cap,0,.31,0,.43,.12,.35);b(head,L.accent,0,.31,.19,.08,.06,.025);}
-  if(L.style==='hood'){ball(head,L.hood,0,.17,-.05,.34,.32,.28);for(const x of [-.28,.28])b(head,L.hood,x,-.02,.04,.12,.4,.2);b(head,L.accent,0,.37,.18,.08,.06,.025);}
-  r.batch(head);
-  const limbs=[];
-  for(const side of [-1,1]) {
-    const arm=new T.Group();arm.position.set(side*.27,.69,0);root.add(arm);
-    b(arm,L.coat||L.shirt,0,-.08,0,.15,.22,.18);ball(arm,L.skin,0,-.235,0,.078,.09,.075);r.batch(arm);limbs.push(arm);
-  }
-  for(const side of [-1,1]) {
-    const leg=new T.Group();leg.position.set(side*.11,.34,0);root.add(leg);
-    b(leg,L.pants,0,-.1,0,.17,.26,.2);b(leg,L.shoes,0,-.25,.055,.2,.13,.3);r.batch(leg);limbs.push(leg);
-  }
-  const shadow=r.shadow(root,0,0,.95,.75);
-  return {root,body,head,limbs,shadow,phase:0,look};
-}
-
-const ANGLES=[0,Math.PI,-Math.PI/2,Math.PI/2];
-export function animateCharacter(rig, actor, map, time, dt, talking=false) {
-  const p=actorPosition(actor,map), walk=!!actor.moving, run=walk && actor.moving.dur <=10;
-  rig.root.position.set(p.x,0,p.z);
-  const target=ANGLES[actor.dir] || 0, delta=Math.atan2(Math.sin(target-rig.root.rotation.y),Math.cos(target-rig.root.rotation.y));
-  rig.root.rotation.y+=delta*Math.min(1,dt*20);
-  rig.phase += dt*(run?21:walk?13:0);
-  const swing=walk?Math.sin(rig.phase)*(run?.85:.55):0;
-  rig.limbs[0].rotation.x=swing;rig.limbs[1].rotation.x=-swing;
-  rig.limbs[2].rotation.x=-swing;rig.limbs[3].rotation.x=swing;
-  rig.body.position.y=walk?Math.abs(Math.sin(rig.phase))*.045:Math.sin(time*2.2)*.009;
-  rig.head.position.y=.96+rig.body.position.y;
-  // La cabeza se inclina hacia la cámara alta (más si mira hacia ella) para que la cara se lea desde arriba.
-  const facing=Math.cos(rig.root.rotation.y);
-  rig.head.rotation.x=-.42*Math.max(0,facing)+(talking?Math.sin(time*7)*.05:0);
-  if(talking&&!walk)rig.limbs[1].rotation.z=-.22-Math.sin(time*4)*.08;else rig.limbs[1].rotation.z=0;
-}
+// Personajes: ver people.js (diseño chibi). Se mantienen estos nombres para el resto del motor.
+export function character(r, look='player') { return person(r, look); }
+export function animateCharacter(rig, actor, map, time, dt, talking=false) { animatePerson(rig, actorPosition(actor,map), actor, time, dt, talking); }
 
 // Six original creatures, modeled from their existing palettes and species descriptions.
 export function creature(r,sp) {

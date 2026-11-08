@@ -1,0 +1,218 @@
+// Personajes 3D chibi de Alborada: cabeza grande y redonda, ojos expresivos con brillo, pelo con volumen,
+// ropa con forma (gorra con visera curva, chaqueta, bata, falda, bufanda, morral) y manos/zapatos redondeados.
+// Todo es geometría propia; los colores salen de LOOKS (art/characters.js).
+import * as T from 'three';
+import { LOOKS } from '../art/characters.js';
+
+// ---------- Geometrías compartidas (se clonan al fusionar, así que no se liberan por personaje) ----------
+const G = {};
+function geo(key, make) { return G[key] || (G[key] = make()); }
+const sphere = () => geo('sphere', () => new T.SphereGeometry(1, 28, 20));
+const capsule = (radius, len) => geo('capsule' + radius + ':' + len, () => new T.CapsuleGeometry(radius, len, 6, 16));
+const cap = (t) => geo('cap' + t, () => new T.SphereGeometry(1, 28, 16, 0, Math.PI * 2, 0, Math.PI * t));
+const torus = (arc = Math.PI * 2, tube = .28) => geo('torus' + arc.toFixed(2) + tube, () => new T.TorusGeometry(1, tube, 10, 28, arc));
+const halfDisc = () => geo('halfdisc', () => new T.CylinderGeometry(1, 1, 1, 24, 1, false, -Math.PI / 2, Math.PI));
+const disc = () => geo('disc', () => new T.CylinderGeometry(1, 1, 1, 20));
+const cone = () => geo('cone', () => new T.ConeGeometry(1, 1, 14));
+const lathe = (name, pts) => geo('lathe' + name, () => new T.LatheGeometry(pts.map(([x, y]) => new T.Vector2(x, y)), 28));
+const TORSO = [[.001, 0], [.17, 0], [.185, .05], [.18, .16], [.155, .27], [.11, .33], [.001, .335]];
+const COAT = [[.001, -.02], [.215, -.02], [.205, .1], [.19, .2], [.165, .29], [.115, .345], [.001, .35]];
+const SKIRT = [[.13, .14], [.25, 0], [.255, -.012], [.001, -.012], [.001, .14]];
+
+// Rasgos por personaje que no están en LOOKS (color de ojos y extras).
+const EYES = { player: '#3a5a9a', rival: '#3f8a52', mom: '#7a4a2e', prof: '#3e6a4a', nurse: '#c0507a', hiedra: '#2f7a3a', coral: '#2a7ac0', bruma: '#7a5ab0', umbra: '#b83a3a', aurora: '#3a9ad0', grunt: '#7a3a5a' };
+const SKIRT_LOOKS = new Set(['mom', 'girl', 'lass', 'nurse', 'coral', 'hiedra', 'aurora', 'bruma', 'rivalMom']);
+const GLASSES = new Set(['prof', 'old', 'clerk']);
+const LASHES = new Set(['mom', 'girl', 'lass', 'nurse', 'coral', 'hiedra', 'aurora', 'bruma', 'rivalMom', 'prof']);
+
+function shade(hex, f) { const c = new T.Color(hex); return '#' + (f > 0 ? c.lerp(new T.Color('#ffffff'), f) : c.multiplyScalar(1 + f)).getHexString(); }
+
+export function person(r, look = 'player') {
+  const L = LOOKS[look] || LOOKS.player;
+  const eyeColor = EYES[look] || shade(L.hair, -.15);
+  const skirt = SKIRT_LOOKS.has(look);
+  const root = new T.Group();
+
+  // Ayudante para crear mallas con geometría compartida.
+  const add = (parent, g, color, p, s, rot) => {
+    const m = new T.Mesh(g, r.mat(color));
+    m.position.set(...p); m.scale.set(...s); if (rot) m.rotation.set(...rot);
+    m.castShadow = true; m.receiveShadow = true; parent.add(m); return m;
+  };
+  const ball = (parent, color, p, s, rot) => add(parent, sphere(), color, p, s, rot);
+  const pill = (parent, color, p, radius, len, s = [1, 1, 1], rot) => add(parent, capsule(radius, len), color, p, s, rot);
+
+  // ---------------- Cuerpo ----------------
+  const body = new T.Group(); root.add(body);
+  const top = L.coat || L.shirt;
+  add(body, lathe('torso', TORSO), L.shirt, [0, .36, 0], [1, 1, .82]);
+  if (L.coat) {
+    add(body, lathe('coat', COAT), L.coat, [0, .33, -.005], [1, 1, .86]);
+    pill(body, L.shirt, [0, .53, .15], .045, .2, [1.3, 1, .5]);                       // camisa visible por delante
+    for (const x of [-1, 1]) add(body, cone(), shade(L.coat, -.08), [x * .07, .66, .135], [.05, .1, .02], [0, 0, x * .5]); // solapas
+  }
+  if (skirt) add(body, lathe('skirt', SKIRT), L.pants, [0, .28, 0], [1, 1, .85]);
+  // Cuello de la camisa y detalle del pecho
+  add(body, torus(), L.accent, [0, .695, 0], [.1, .1, .08], [Math.PI / 2, 0, 0]);
+  if (!L.coat && !L.apron) pill(body, L.accent, [0, .52, .148], .012, .22, [1, 1, 1]);   // cremallera / botones
+  if (!L.coat && !L.apron) add(body, torus(), shade(L.shirt, -.18), [0, .37, 0], [.172, .172, .14], [Math.PI / 2, 0, 0]); // dobladillo
+  if (L.apron) {
+    ball(body, L.apron, [0, .47, .1], [.15, .17, .06]);
+    add(body, torus(Math.PI), L.apron, [0, .66, .02], [.12, .12, .1], [0, 0, 0]);
+  }
+  if (L.scarf) {
+    add(body, torus(), L.scarf, [0, .7, 0], [.135, .135, .12], [Math.PI / 2, 0, 0]);
+    pill(body, L.scarf, [.08, .6, .13], .04, .14, [1, 1, .6], [0, 0, .25]);
+  }
+  if (L.bag) {
+    const pack = new T.Group(); pack.position.set(0, .54, -.17); body.add(pack);
+    ball(pack, L.bag, [0, 0, 0], [.16, .17, .1]);
+    ball(pack, shade(L.bag, -.2), [0, .07, -.03], [.15, .09, .09]);                     // solapa
+    ball(pack, shade(L.bag, .25), [0, -.06, -.08], [.06, .05, .03]);                    // bolsillo
+    for (const x of [-1, 1]) pill(body, shade(L.bag, -.25), [x * .1, .55, .1], .018, .26, [1, 1, .6], [-.25, 0, 0]); // correas
+  }
+  r.batch(body);
+
+  // ---------------- Cabeza ----------------
+  const head = new T.Group(); head.position.y = 1.0; root.add(head);
+  const skull = new T.Group(); head.add(skull);
+  ball(skull, L.skin, [0, 0, 0], [.31, .29, .285]);
+  pill(skull, L.skin, [0, -.28, -.02], .055, .06);                                     // cuello
+  for (const x of [-1, 1]) ball(skull, L.skin, [x * .3, -.01, -.01], [.05, .065, .04]); // orejas
+  ball(skull, shade(L.skin, -.06), [0, -.035, .282], [.022, .016, .016]);               // nariz
+  for (const x of [-1, 1]) ball(skull, '#f29a9a', [x * .16, -.07, .225], [.055, .03, .02], [0, x * .55, 0]); // cachetes
+  add(skull, torus(Math.PI), '#7a3a32', [0, -.1, .262], [.035, .025, .02], [0, 0, Math.PI]); // sonrisa
+  for (const x of [-1, 1]) pill(skull, shade(L.hair, -.25), [x * .1, .1, .262], .012, .07, [1, 1, .6], [0, x * .3, Math.PI / 2 + x * .12]); // cejas
+
+  // Ojos (grupo aparte para parpadear)
+  const eyes = new T.Group(); head.add(eyes);
+  for (const x of [-1, 1]) {
+    const e = new T.Group(); e.position.set(x * .105, -.005, .245); e.rotation.y = x * .38; eyes.add(e);
+    ball(e, '#ffffff', [0, 0, 0], [.058, .074, .03]);
+    ball(e, eyeColor, [0, -.008, .014], [.046, .062, .022]);
+    ball(e, shade(eyeColor, .35), [0, -.035, .026], [.03, .022, .012]);               // reflejo inferior del iris
+    ball(e, '#14121c', [0, -.004, .03], [.022, .032, .01]);                            // pupila
+    ball(e, '#ffffff', [-x * .016, .022, .036], [.015, .018, .008]);                   // brillo grande
+    ball(e, '#ffffff', [x * .014, -.03, .035], [.007, .007, .005]);                    // brillo pequeño
+    if (LASHES.has(look)) pill(e, '#1e1a24', [0, .07, .012], .01, .09, [1, 1, .8], [0, 0, Math.PI / 2 - x * .15]);
+  }
+  if (GLASSES.has(look)) { for (const x of [-1, 1]) add(head, torus(Math.PI * 2, .09), '#4a3a32', [x * .105, -.005, .285], [.07, .07, .05], [0, x * .3, 0]); add(head, torus(Math.PI, .12), '#4a3a32', [0, .005, .3], [.035, .02, .03]); }
+
+  // Pelo
+  const hair = L.hair, hairD = shade(hair, -.18), hairL = shade(hair, .22);
+  const hairCap = (radius = .33, t = .5, tilt = -.45) => add(skull, cap(t), hair, [0, .015, -.01], [radius, radius * .97, radius * .95], [tilt, 0, 0]);
+  // Flequillo: mechones en punta (conos aplanados) siguiendo la curva de la frente.
+  // Flequillo: mechones en punta de largo variable que caen sobre la frente.
+  const bangs = (n = 7, len = .13) => {
+    const LEN = [1, .7, .9, .62, 1, .75, .88, .66, .95];
+    for (let i = 0; i < n; i++) {
+      const k = (i / (n - 1)) * 2 - 1, a = k * 1.1;
+      const x = Math.sin(a) * .285, z = Math.cos(a) * .255, l = len * LEN[i % LEN.length] * (1 - Math.abs(k) * .2);
+      add(skull, cone(), hair, [x * .97, .19 - l * .5, z * .96], [.11, l, .035], [Math.PI - .62, a, -k * .3 + (i % 2 ? .1 : -.1)]);
+    }
+    add(skull, cap(.5), hair, [0, .13, .07], [.295, .11, .225], [.3, 0, 0]);               // base del flequillo
+    add(skull, cap(.5), hairD, [0, .128, .068], [.285, .1, .22], [.3, 0, 0]);
+  };
+  const style = L.style;
+  if (style === 'cap') {
+    const hc = L.hat || '#e04848', band = L.hatBand || '#ffffff';
+    bangs(5, .1);
+    add(skull, cap(.5), hc, [0, .1, -.02], [.33, .29, .32], [-.38, 0, 0]);                 // copa de la gorra
+    add(skull, cap(.5), shade(hc, .18), [-.06, .2, .05], [.12, .06, .1], [-.5, 0, .3]);   // brillo de la copa
+    add(skull, torus(Math.PI * 2, .1), band, [0, .135, -.005], [.315, .3, .3], [Math.PI / 2 - .38, 0, 0]); // banda delgada
+    add(skull, halfDisc(), hc, [0, .17, .24], [.17, .02, .15], [.12, 0, 0]);              // visera corta
+    add(skull, halfDisc(), shade(hc, -.25), [0, .158, .24], [.165, .01, .145], [.12, 0, 0]);
+    add(skull, disc(), band, [0, .3, .14], [.06, .012, .06], [.85, 0, 0]);               // emblema
+    add(skull, disc(), hc, [0, .305, .145], [.03, .014, .03], [.85, 0, 0]);
+    for (const x of [-1, 1]) ball(skull, hair, [x * .27, .03, .06], [.05, .08, .05], [0, 0, x * .3]); // patillas
+    for (let i = 0; i < 3; i++) ball(skull, i % 2 ? hairD : hair, [(i - 1) * .1, -.02, -.27], [.07, .09, .05], [.4, 0, (i - 1) * .3]); // nuca
+    ball(skull, hairD, [-.06, .12, .27], [.05, .07, .03], [-.3, 0, .3]);              // mechón bajo la visera
+  } else if (style === 'hood') {
+    const hc = L.hood || '#3a2c4a';
+    hairCap(.33); bangs(7, .12);
+    add(skull, cap(.62), hc, [0, .02, -.03], [.38, .37, .37], [-.85, 0, 0]);
+    add(skull, torus(), shade(hc, -.2), [0, .06, .13], [.29, .3, .3], [-.85 + Math.PI / 2 - .25, 0, 0]);
+    add(skull, disc(), L.accent, [0, .3, .1], [.05, .01, .05], [.7, 0, 0]);            // insignia
+    for (const x of [-1, 1]) ball(body, hc, [x * .12, .66, -.06], [.09, .07, .11]);     // capucha caída sobre los hombros
+  } else {
+    if (style !== 'bald') hairCap();
+    if (style === 'short') {
+      bangs(7, .12);
+      for (const x of [-1, 1]) ball(skull, hair, [x * .26, .03, .05], [.06, .1, .06], [0, 0, x * .25]);
+      ball(skull, hairL, [-.1, .23, .14], [.06, .025, .04], [-.6, 0, .4]);             // brillo del pelo
+    } else if (style === 'spiky') {
+      bangs(7, .14);
+      const spikes = [[0, .32, -.02, -.3, 0], [-.15, .28, .02, -.2, .55], [.15, .28, .02, -.2, -.55], [-.08, .26, -.18, -1, .3], [.08, .26, -.18, -1, -.3], [-.24, .14, -.1, -.6, 1.1], [.24, .14, -.1, -.6, -1.1], [0, .15, -.27, -1.6, 0]];
+      spikes.forEach(([x, y, z, rx, rz], i) => add(skull, cone(), i % 2 ? hair : hairD, [x, y, z], [.07, .2, .07], [rx, 0, rz]));
+      ball(skull, hairL, [-.08, .24, .15], [.05, .02, .035], [-.6, 0, .4]);
+    } else if (style === 'long') {
+      bangs(8, .14);
+      ball(skull, hair, [0, -.17, -.17], [.27, .3, .13]);                                // melena por detrás
+      for (const x of [-1, 1]) pill(skull, hair, [x * .25, -.14, .04], .065, .3, [1, 1, .8], [0, 0, -x * .08]); // mechones laterales
+      for (const x of [-1, 1]) ball(skull, hairD, [x * .22, -.33, -.06], [.07, .06, .07]); // puntas
+      ball(skull, hairL, [-.12, .22, .13], [.07, .025, .04], [-.6, 0, .4]);
+    } else if (style === 'bun') {
+      bangs(7, .12);
+      ball(skull, hair, [0, .29, -.13], [.12, .11, .12]);
+      add(skull, torus(), shade(L.accent, -.1), [0, .25, -.1], [.08, .08, .06], [-.9, 0, 0]); // moño con liga
+      for (const x of [-1, 1]) pill(skull, hair, [x * .26, -.06, .06], .04, .16, [1, 1, .8], [0, 0, -x * .1]);
+    } else if (style === 'bald') {
+      for (const x of [-1, 1]) ball(skull, hair, [x * .27, .02, -.08], [.07, .1, .12]);
+      ball(skull, hair, [0, .0, -.27], [.18, .1, .06]);
+      for (const x of [-1, 1]) ball(skull, hair, [x * .055, -.07, .265], [.06, .025, .02], [0, 0, x * .3]); // bigote
+      for (const x of [-1, 1]) pill(skull, hair, [x * .1, .11, .265], .018, .07, [1, 1, .6], [0, 0, Math.PI / 2]); // cejas pobladas
+    }
+  }
+  if (L.cap) { add(skull, cap(.35), L.cap, [0, .2, 0], [.25, .14, .22], [-.2, 0, 0]); add(skull, disc(), L.accent, [0, .3, .12], [.045, .01, .045], [.9, 0, 0]); }
+  r.batch(skull);
+  r.batch(eyes);
+
+  // ---------------- Brazos y piernas ----------------
+  const limbs = [];
+  for (const side of [-1, 1]) {
+    const arm = new T.Group(); arm.position.set(side * .2, .64, 0); root.add(arm);
+    pill(arm, top, [side * .02, -.08, 0], .06, .1, [1, 1, 1], [0, 0, side * .12]);
+    add(arm, torus(), shade(top, -.15), [side * .03, -.16, 0], [.058, .058, .058], [Math.PI / 2, 0, 0]); // puño de la manga
+    ball(arm, L.skin, [side * .035, -.215, .005], [.062, .066, .062]);
+    r.batch(arm); limbs.push(arm);
+  }
+  for (const side of [-1, 1]) {
+    const leg = new T.Group(); leg.position.set(side * .09, .32, 0); root.add(leg);
+    const legColor = skirt ? L.skin : L.pants;
+    pill(leg, legColor, [0, -.1, 0], .068, .11);
+    if (skirt) add(leg, torus(), '#ffffff', [0, -.19, 0], [.066, .066, .05], [Math.PI / 2, 0, 0]); // calcetas
+    ball(leg, L.shoes, [0, -.255, .035], [.085, .06, .12]);
+    ball(leg, '#f4f1ea', [0, -.29, .035], [.088, .022, .122]);                           // suela
+    r.batch(leg); limbs.push(leg);
+  }
+  const shadow = r.shadow(root, 0, 0, .8, .65);
+  return { root, body, head, eyes, limbs, shadow, phase: 0, look, headY: 1.0, blink: 2 + Math.random() * 3 };
+}
+
+const ANGLES = [0, Math.PI, -Math.PI / 2, Math.PI / 2];
+export function animatePerson(rig, p, actor, time, dt, talking = false) {
+  const walk = !!actor.moving, run = walk && actor.moving.dur <= 10;
+  rig.root.position.set(p.x, 0, p.z);
+  const target = ANGLES[actor.dir] || 0, delta = Math.atan2(Math.sin(target - rig.root.rotation.y), Math.cos(target - rig.root.rotation.y));
+  rig.root.rotation.y += delta * Math.min(1, dt * 18);
+  rig.phase += dt * (run ? 20 : walk ? 12 : 0);
+  const swing = walk ? Math.sin(rig.phase) * (run ? .9 : .6) : 0;
+  rig.limbs[0].rotation.x = swing; rig.limbs[1].rotation.x = -swing;
+  rig.limbs[2].rotation.x = -swing * .9; rig.limbs[3].rotation.x = swing * .9;
+  // Brazos un poco abiertos y respiración en reposo
+  rig.limbs[0].rotation.z = -.08 - (walk ? 0 : Math.sin(time * 2) * .02);
+  rig.limbs[1].rotation.z = .08 + (walk ? 0 : Math.sin(time * 2) * .02);
+  const bob = walk ? Math.abs(Math.sin(rig.phase)) * (run ? .06 : .04) : 0;
+  rig.body.position.y = bob;
+  rig.body.scale.y = walk ? 1 : 1 + Math.sin(time * 2.2) * .012;
+  rig.head.position.y = rig.headY + bob + (walk ? 0 : Math.sin(time * 2.2 - .4) * .006);
+  rig.head.rotation.z = walk ? Math.sin(rig.phase) * .04 : 0;
+  // La cabeza se inclina hacia la cámara alta para que la cara siempre se lea.
+  const facing = Math.cos(rig.root.rotation.y);
+  rig.head.rotation.x = -.36 * Math.max(0, facing) + (talking ? Math.sin(time * 7) * .05 : 0);
+  if (talking && !walk) rig.limbs[1].rotation.z = .3 + Math.sin(time * 4) * .12;
+  // Parpadeo
+  rig.blink -= dt;
+  rig.eyes.scale.y = rig.blink < .12 ? .12 : 1;
+  if (rig.blink < 0) rig.blink = 2.2 + Math.random() * 3;
+}
