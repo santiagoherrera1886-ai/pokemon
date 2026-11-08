@@ -61,8 +61,8 @@ export class Renderer {
     const g = this.g;
     if (outdoor) {
       let tint = null;
-      if (hour >= 17 && hour < 19) tint = 'rgba(255,140,60,0.13)';
-      else if (hour >= 19 || hour < 5) tint = 'rgba(30,40,110,0.30)';
+      if (hour >= 17 && hour < 19) tint = 'rgba(255,120,50,0.18)';
+      else if (hour >= 19 || hour < 5) tint = 'rgba(16,24,80,0.45)';
       else if (hour >= 5 && hour < 7) tint = 'rgba(255,180,200,0.10)';
       if (tint) { g.fillStyle = tint; g.fillRect(0, 0, this.w, this.h); }
     }

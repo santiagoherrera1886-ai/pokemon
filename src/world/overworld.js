@@ -316,6 +316,7 @@ export class Overworld {
     const sprites = [];
     const view = { x0: Math.floor(-ox / TS) - 2, y0: Math.floor(-oy / TS) - 2, x1: Math.ceil((BW - ox) / TS) + 2, y1: Math.ceil((BH - oy) / TS) + 3 };
 
+    const lights = [];
     const maps = m.outdoor ? this.world.outdoor : [m];
     for (const mm of maps) {
       const dx = m.outdoor ? (mm.origin[0] - m.origin[0]) * TS : 0, dy = m.outdoor ? (mm.origin[1] - m.origin[1]) * TS : 0;
@@ -325,6 +326,7 @@ export class Overworld {
       for (const s of mm.sprites(this.st)) {
         if (s.shadow) sprites.push({ shadow: [s.shadow[0] + dx, s.shadow[1] + dy, s.shadow[2], s.shadow[3]], base: -2000 });
         else if (s.shadowRect) sprites.push({ shadowRect: [s.shadowRect[0] + dx, s.shadowRect[1] + dy, s.shadowRect[2], s.shadowRect[3]], base: -2000 });
+        else if (s.light) lights.push([s.light[0] + dx, s.light[1] + dy, s.light[2]]);
         else sprites.push({ img: s.img, x: s.x + dx, y: s.y + dy, base: s.base === -1000 ? -1000 : s.base + dy });
       }
     }
@@ -348,6 +350,17 @@ export class Overworld {
       if (s.shadow || s.shadowRect) continue;
       if (s.actor) this.drawActor(g, s.actor, ox, oy);
       else g.drawImage(s.img, Math.round(s.x + ox), Math.round(s.y + oy));
+    }
+    const hr = this.game.hour();
+    if (m.outdoor && (hr >= 18 || hr < 6) && lights.length) {
+      g.save(); g.globalCompositeOperation = 'lighter';
+      for (const [lx, ly, rr] of lights) {
+        const X = lx + ox, Y = ly + oy; if (X < -rr || Y < -rr || X > BW + rr || Y > BH + rr) continue;
+        const gr = g.createRadialGradient(X, Y, 2, X, Y, rr);
+        gr.addColorStop(0, 'rgba(255,210,120,0.55)'); gr.addColorStop(1, 'rgba(255,180,80,0)');
+        g.fillStyle = gr; g.fillRect(X - rr, Y - rr, rr * 2, rr * 2);
+      }
+      g.restore();
     }
     for (const q of this.particles) { g.fillStyle = q.color; g.fillRect(Math.round(q.x + ox), Math.round(q.y + oy), q.s, q.s); }
     if (m.outdoor) {

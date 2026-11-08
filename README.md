@@ -35,7 +35,7 @@ El mundo, los personajes, las criaturas, los nombres y todo el pixel art son **o
 - Pantalla completa con resolución interna dinámica y escala entera: el pixel art se ve nítido en cualquier pantalla.
 - Perspectiva tipo portátil (desactivable en Opciones).
 - Sombras de árboles, edificios y personajes; nubes que cruzan el mapa; pétalos y hojas que caen; pasto que se mueve al pisarlo; polvo al correr.
-- Luz según la hora real (amanecer, tarde, noche), con opción de dejarla fija.
+- Luz según la hora real (amanecer, tarde, noche): de noche se encienden los faroles y las puertas de las casas. Se puede dejar fija en Opciones.
 - Cueva Eco oscura con luz alrededor del personaje.
 - Combates con fondo según el terreno (pasto, lago, cueva, playa, montaña, gimnasio, base Eclipse, Liga), criaturas que respiran, efectos por tipo de movimiento y sacudida de pantalla.
 - Escena de evolución animada.

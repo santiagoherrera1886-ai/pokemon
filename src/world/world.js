@@ -73,9 +73,9 @@ export class GameMap {
         case 'fence': push(fence(this.at(o.x - 1, o.y) === 'f', this.at(o.x + 1, o.y) === 'f'), X, Y - 4, Y + 16); break;
         case 'sign': push(sign(), X, Y - 4, Y + 16); sh(X + 8, Y + 15, 5, 1); break;
         case 'mailbox': push(mailbox(), X, Y - 4, Y + 16); sh(X + 8, Y + 15, 4, 1); break;
-        case 'lamp': push(lamp(), X, Y - 16, Y + 16); sh(X + 9, Y + 15, 4, 1); break;
+        case 'lamp': push(lamp(), X, Y - 16, Y + 16); sh(X + 9, Y + 15, 4, 1); out.push({ light: [X + 8, Y - 10, 34], base: 9e9 }); break;
         case 'briefcase': push(briefcase(), X, Y, Y + 15); break;
-        case 'house': push(house(o.w, o.h, o.opt), X - 1, Y - TS, Y + o.h * TS); rs(X + 3, Y + o.h * TS - 3, o.w * TS, 5); rs(X + o.w * TS, Y + 4, 4, o.h * TS - 2); break;
+        case 'house': out.push({ light: [X + o.w * 8, Y + o.h * TS - 10, 26 + o.w * 4], base: 9e9 }); push(house(o.w, o.h, o.opt), X - 1, Y - TS, Y + o.h * TS); rs(X + 3, Y + o.h * TS - 3, o.w * TS, 5); rs(X + o.w * TS, Y + 4, 4, o.h * TS - 2); break;
         case 'lab': push(lab(o.w, o.h), X - 1, Y - TS, Y + o.h * TS); rs(X + 3, Y + o.h * TS - 3, o.w * TS, 5); rs(X + o.w * TS, Y + 4, 4, o.h * TS - 2); break;
         case 'big': push(bigBuilding(o.w, o.h, o.opt), X - 1, Y - TS, Y + o.h * TS); rs(X + 3, Y + o.h * TS - 3, o.w * TS, 5); rs(X + o.w * TS, Y + 4, 4, o.h * TS - 2); break;
         case 'furniture': push(furniture(o.name, o.arg), X + (o.sx || 0), Y + (o.sy || 0), Y + o.h * TS); break;
