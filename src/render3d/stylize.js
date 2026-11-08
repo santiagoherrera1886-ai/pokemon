@@ -86,8 +86,9 @@ export class Stylizer {
   }
   setSize(w, h) {
     if (this.target && this.target.width === w && this.target.height === h) return;
+    this.w = w; this.h = h;
     this.target?.dispose(); this.bloomA?.dispose(); this.bloomB?.dispose();
-    this.target = new T.WebGLRenderTarget(w, h, { type: T.HalfFloatType, samples: 4 });
+    this.target = new T.WebGLRenderTarget(w, h, { type: T.HalfFloatType, samples: this.samples ?? 4 });
     this.target.depthTexture = new T.DepthTexture(w, h);
     this.target.depthTexture.type = T.UnsignedIntType;
     const bw = Math.max(1, w >> 2), bh = Math.max(1, h >> 2);
@@ -98,6 +99,7 @@ export class Stylizer {
   }
   draw(material, target) { this.quad.material = material; this.webgl.setRenderTarget(target); this.webgl.render(this.scene, this.cam); }
   render(scene, camera, opts) {
+    if (!this.target) { const w = this.w, h = this.h; this.w = 0; this.setSize(w, h); }
     const u = this.mat.uniforms;
     u.near.value = camera.near; u.far.value = camera.far;
     u.focusY.value = opts.focusY ?? .5; u.tilt.value = opts.tilt ?? .4; u.ink.value = opts.ink ?? 0;
@@ -105,6 +107,7 @@ export class Stylizer {
     if (opts.grade) u.grade.value.set(...opts.grade);
     this.webgl.setRenderTarget(this.target);
     this.webgl.render(scene, camera);
+    if (!(opts.bloom > 0)) { u.tColor.value = this.target.texture; u.tDepth.value = this.target.depthTexture; u.bloom.value = 0; u.tBloom.value = this.target.texture; this.draw(this.mat, null); return; }
     // Bloom: brillo a 1/4 de resolución + dos desenfoques separables.
     this.bright.uniforms.tColor.value = this.target.texture; this.draw(this.bright, this.bloomA);
     for (let i = 0; i < 2; i++) {

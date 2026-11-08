@@ -27,7 +27,7 @@ export class PremiumRenderer {
     this.onResize=()=>{this.sizeKey='';};addEventListener('resize',this.onResize);
   }
   setVisible(visible){this.canvas.style.display=visible?'block':'none';document.body.classList.toggle('premium-active',visible);}
-  setQuality(value){this.quality=normalizeQuality(value);this.settings=QUALITY[this.quality];this.webgl.shadowMap.enabled=this.settings.shadow>0;this.lights.quality(this.settings);this.sizeKey='';this.adaptive=1;this.slowFrames=0;}
+  setQuality(value){this.quality=normalizeQuality(value);this.settings=QUALITY[this.quality];this.webgl.shadowMap.enabled=this.settings.shadow>0;this.lights.quality(this.settings);this.sizeKey='';this.adaptive=1;this.slowTime=0;this.degrade=this.quality==='low'?2:0;this.style.samples=this.quality==='low'?0:4;this.style.target?.dispose();this.style.target=null;}
   resize(){
     // Pantalla completa: el lienzo ocupa toda la ventana; la resolución interna depende de la calidad.
     const vw=innerWidth,vh=innerHeight,dpr=Math.min(2,devicePixelRatio||1);
@@ -127,14 +127,15 @@ export class PremiumRenderer {
     if(f.flash>0){this.canvas.style.filter=`brightness(${1+f.flash*2})`;f.flash=Math.max(0,f.flash-.08);}else this.canvas.style.filter='';
   }
   render(){
-    const now=performance.now(),dt=Math.min(.1,(now-this.last)/1000);this.last=now;this.time.value=now/1000;
+    const now=performance.now(),raw=(now-this.last)/1000,dt=Math.min(.1,raw);this.last=now;this.time.value=now/1000;
     if(document.hidden)return;
     if(this.game.scene==='battle')this.battle(dt);else{this.canvas.style.filter='';this.world(dt);}
-    this.resize();this.style.render(this.scene,this.camera.camera,this.styleOpts||{});
+    this.resize();const so={...(this.styleOpts||{})};if(this.degrade>=1)so.tilt=0;if(this.degrade>=2)so.bloom=0;this.style.render(this.scene,this.camera.camera,so);
     if(++this.frameCount%120===0){this.stats={drawCalls:this.webgl.info.render.calls,triangles:this.webgl.info.render.triangles,textures:this.webgl.info.memory.textures,geometries:this.webgl.info.memory.geometries,maps:this.maps.size,resolution:this.canvas.width,quality:this.quality};}
     // Sustained slow frames reduce only pixel resolution; no simulation changes.
-    this.slowFrames=dt>.028?this.slowFrames+1:Math.max(0,this.slowFrames-1);
-    if(this.slowFrames>100&&this.adaptive>.6){this.adaptive=Math.max(.6,this.adaptive-.1);this.slowFrames=0;this.sizeKey='';}
+    // Si hay cuadros lentos sostenidos, baja la carga por escalones: 1 sin desenfoque, 2 sin bloom ni MSAA, 3+ menos resolución.
+    this.slowTime=raw>.04?this.slowTime+Math.min(raw,1):Math.max(0,this.slowTime-raw*.5);
+    if(this.slowTime>1.5&&this.degrade<5){this.degrade++;this.slowTime=0;if(this.degrade===2){this.style.samples=0;this.style.target?.dispose();this.style.target=null;}if(this.degrade>=3)this.adaptive=Math.max(.55,this.adaptive-.15);this.sizeKey='';}
   }
   dispose(){removeEventListener('resize',this.onResize);this.style.dispose();this.clearWorld();this.clearBattle();this.r.release(this.backdrop);this.particles.geometry.dispose();this.particles.material.dispose();this.environment.dispose();this.lights.dispose();this.r.dispose();this.webgl.dispose();this.canvas.remove();}
 }
