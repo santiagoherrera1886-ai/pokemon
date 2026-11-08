@@ -121,7 +121,11 @@ export function building(r,o) {
     const geometry=new T.BufferGeometry();
     const W=w/2+.22,D=d/2-.12,H=.95;
     const v=[-W,0,-D,W,0,-D,0,H,-D, -W,0,D,0,H,D,W,0,D, -W,0,-D,0,H,-D,0,H,D,-W,0,-D,0,H,D,-W,0,D, 0,H,-D,W,0,-D,W,0,D,0,H,-D,W,0,D,0,H,D];
-    geometry.setAttribute('position',new T.Float32BufferAttribute(v,3));geometry.setAttribute('uv',new T.Float32BufferAttribute(new Array(v.length/3*2).fill(0),2));geometry.computeVertexNormals();
+    geometry.setAttribute('position',new T.Float32BufferAttribute(v,3));
+    geometry.setAttribute('uv',new T.Float32BufferAttribute(new Array(v.length/3*2).fill(0),2));
+    // Outward winding keeps the slopes visible with front-face rendering.
+    geometry.setIndex(Array.from({length:6},(_,i)=>[i*3,i*3+2,i*3+1]).flat());
+    geometry.computeVertexNormals();
     // Ridge runs across the house; rotate roof axes so the front slope is readable.
     geometry.rotateY(Math.PI/2);
     const roofMesh=new T.Mesh(geometry,r.mat(roof));roofMesh.scale.set((w+.44)/(d-.24),1,(d-.24)/(w+.44));roofMesh.position.set(w/2,2.16,d/2-.3);roofMesh.castShadow=true;roofMesh.receiveShadow=true;roofMesh.userData.ownedGeometry=true;g.add(roofMesh);
