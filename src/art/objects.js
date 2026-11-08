@@ -12,6 +12,8 @@ const FONT = {
   N: ['101', '111', '111', '101', '101'], O: ['010', '101', '101', '101', '010'], P: ['110', '101', '110', '100', '100'],
   S: ['011', '100', '010', '001', '110'], T: ['111', '010', '010', '010', '010'], R: ['110', '101', '110', '101', '101'],
   C: ['011', '100', '100', '100', '011'], V: ['101', '101', '101', '101', '010'], M: ['101', '111', '101', '101', '101'],
+  G: ['011', '100', '101', '101', '011'], U: ['101', '101', '101', '101', '111'], H: ['101', '101', '111', '101', '101'], F: ['111', '100', '110', '100', '100'],
+  X: ['101', '101', '010', '101', '101'], '·': ['000', '000', '010', '000', '000'],
   ' ': ['000', '000', '000', '000', '000']
 };
 export function tinyText(g, text, x, y, color) {
@@ -106,6 +108,117 @@ export function lamp() {
     px(g, 7, 8, '#4a5a6a', 2, 22); px(g, 5, 29, '#4a5a6a', 6, 2);
     px(g, 4, 2, '#4a5a6a', 8, 2); px(g, 5, 4, '#fff2b0', 6, 5); px(g, 6, 5, '#ffffff', 2, 2);
     outline(c, OUT); return c;
+  });
+}
+
+export function palm() {
+  return memo('palm', () => {
+    const [c, g] = canvas(26, 36);
+    for (let y = 14; y < 34; y++) px(g, 12 + Math.round(Math.sin(y / 6) * 1.5), y, y % 3 ? '#a0703a' : '#86582c', 3, 1);
+    const fr = (x, y, w, dir) => { for (let i = 0; i < w; i++) px(g, x + i * dir, y + Math.floor(i * i / 14), '#3c9a3c', 2, 3); };
+    fr(13, 12, 12, 1); fr(13, 12, 12, -1); fr(13, 10, 9, 1); fr(13, 10, 9, -1);
+    ellipse(g, 13, 11, 5, 3, '#58b848'); ellipse(g, 12, 14, 2, 2, '#8a5a2a'); ellipse(g, 15, 15, 2, 2, '#8a5a2a');
+    outline(c, OUT); return c;
+  });
+}
+export function pine() {
+  return memo('pine', () => {
+    const [c, g] = canvas(20, 34);
+    px(g, 9, 27, '#6a4024', 3, 6);
+    for (let t = 0; t < 4; t++) { const y = 3 + t * 6, w = 4 + t * 2.4; for (let i = 0; i < 8; i++) px(g, 10 - Math.round(w * i / 8), y + i, t % 2 ? '#2a6a4a' : '#2f7a52', Math.round(w * i / 8) * 2 + 1, 1); }
+    px(g, 7, 10, '#5aa07a', 2, 1); px(g, 5, 17, '#5aa07a', 3, 1); px(g, 4, 23, '#5aa07a', 3, 1);
+    outline(c, OUT); return c;
+  });
+}
+export function boulder() {
+  return memo('boulder', () => {
+    const [c, g] = canvas(16, 18);
+    ellipse(g, 8, 10, 7, 7, '#7a6650'); ellipse(g, 7, 8, 5, 4, '#9a8468'); px(g, 5, 6, '#c0a888', 3, 1); px(g, 9, 13, '#5a4a3a', 4, 1);
+    outline(c, OUT); return c;
+  });
+}
+export function crystal() {
+  return memo('crystal', () => {
+    const [c, g] = canvas(16, 20);
+    for (let i = 0; i < 9; i++) px(g, 6 - Math.floor(i / 3), 4 + i, '#7ad0f8', 2 + Math.floor(i / 3) * 2, 1);
+    for (let i = 0; i < 6; i++) px(g, 11, 9 + i, '#b8a0f8', 3, 1);
+    px(g, 6, 5, '#ffffff', 1, 4); px(g, 2, 14, '#5a4636', 13, 4);
+    outline(c, OUT); return c;
+  });
+}
+export function statue() {
+  return memo('statue', () => {
+    const [c, g] = canvas(16, 30);
+    px(g, 2, 22, '#8a8a96', 12, 7); px(g, 3, 22, '#b0b0bc', 10, 2);
+    ellipse(g, 8, 14, 5, 7, '#c8c8d4'); ellipse(g, 8, 6, 4, 4, '#c8c8d4'); px(g, 4, 2, '#c8c8d4', 2, 4); px(g, 10, 2, '#c8c8d4', 2, 4);
+    px(g, 6, 6, '#6a6a76', 1, 1); px(g, 9, 6, '#6a6a76', 1, 1);
+    outline(c, OUT); return c;
+  });
+}
+export function fountain() {
+  return memo('fountain', () => {
+    const [c, g] = canvas(32, 32);
+    ellipse(g, 16, 22, 15, 8, '#b0b0bc'); ellipse(g, 16, 21, 12, 6, '#5ab0e8'); ellipse(g, 14, 20, 5, 2, '#a8dcfa');
+    px(g, 14, 6, '#b0b0bc', 4, 14); ellipse(g, 16, 7, 6, 3, '#b0b0bc'); ellipse(g, 16, 6, 4, 2, '#5ab0e8');
+    px(g, 15, 0, '#d8f0ff', 2, 5); px(g, 12, 3, '#d8f0ff', 1, 3); px(g, 19, 3, '#d8f0ff', 1, 3);
+    outline(c, OUT); return c;
+  });
+}
+export function bench() {
+  return memo('bench', () => {
+    const [c, g] = canvas(32, 16);
+    px(g, 1, 3, '#a8743e', 30, 3); px(g, 1, 8, '#c88a4a', 30, 3); px(g, 3, 11, '#4a4a54', 2, 4); px(g, 27, 11, '#4a4a54', 2, 4);
+    outline(c, OUT); return c;
+  });
+}
+export function caveMouth() {
+  return memo('cavemouth', () => {
+    const [c, g] = canvas(20, 20);
+    ellipse(g, 10, 12, 9, 9, '#5a4636'); ellipse(g, 10, 13, 7, 8, '#1a1210'); px(g, 3, 18, '#1a1210', 14, 2);
+    px(g, 4, 6, '#846a54', 3, 2); px(g, 13, 7, '#846a54', 3, 2);
+    return c;
+  });
+}
+export function boat() {
+  return memo('boat', () => {
+    const [c, g] = canvas(48, 22);
+    for (let y = 0; y < 8; y++) px(g, 2 + y, 10 + y, '#c84a3a', 44 - y * 2, 1);
+    px(g, 4, 8, '#f4f4f4', 40, 3); px(g, 22, 0, '#6a4a2a', 2, 10); px(g, 24, 1, '#f8f8f0', 10, 7);
+    outline(c, OUT); return c;
+  });
+}
+
+// Edificio grande con letrero (gimnasio, liga, base del Equipo Eclipse).
+export function bigBuilding(w, h, opt = {}) {
+  return memo('big' + w + h + JSON.stringify(opt), () => {
+    const W = w * 16, H = (h + 1) * 16;
+    const [c, g] = canvas(W + 2, H + 1);
+    const roof = opt.roof || '#8a5ad8', wall = opt.wall || '#f4f0e8', trim = opt.trim || '#3a3a4a';
+    const roofH = Math.round(H * 0.42);
+    // tejado a dos aguas con franja
+    for (let y = 0; y < roofH; y++) {
+      const inset = Math.max(0, 10 - Math.floor(y / 2));
+      px(g, 1 + inset, y, y % 6 === 5 ? shadeHex(roof, -0.25) : (y < 4 ? shadeHex(roof, 0.25) : roof), W - inset * 2, 1);
+    }
+    px(g, 0, roofH - 3, shadeHex(roof, -0.4), W + 2, 3);
+    if (opt.emblem) { ellipse(g, W / 2 + 1, roofH / 2, 7, 6, '#ffffff'); ellipse(g, W / 2 + 1, roofH / 2, 5, 4, opt.emblem); }
+    // muro con columnas
+    px(g, 2, roofH, wall, W - 2, H - roofH - 1);
+    for (let x = 6; x < W - 4; x += 16) { px(g, x, roofH + 2, shadeHex(wall, -0.12), 4, H - roofH - 6); px(g, x, roofH + 2, shadeHex(wall, 0.2), 1, H - roofH - 6); }
+    px(g, 2, roofH, trim, W - 2, 3);
+    px(g, 2, H - 4, shadeHex(wall, -0.35), W - 2, 3);
+    // puerta doble
+    const dx = (opt.doorCol ?? Math.floor(w / 2)) * 16;
+    px(g, dx - 1, H - 22, trim, 18, 21); px(g, dx + 1, H - 20, opt.door || '#a8dcf2', 14, 18); px(g, dx + 8, H - 20, trim, 1, 18);
+    // ventanales
+    for (let i = 0; i < w; i++) if (Math.abs(i - (opt.doorCol ?? Math.floor(w / 2))) > 1) windowAt(g, i * 16 + 3, roofH + 9, 10, 10, false);
+    if (opt.sign) {
+      const sw = opt.sign.length * 4 + 6;
+      px(g, Math.round(W / 2 - sw / 2), roofH + 2, '#ffffff', sw, 8); px(g, Math.round(W / 2 - sw / 2), roofH + 2, opt.signColor || trim, sw, 1);
+      tinyText(g, opt.sign, Math.round(W / 2 - sw / 2) + 3, roofH + 4, opt.signColor || trim);
+    }
+    outline(c, OUT);
+    return c;
   });
 }
 

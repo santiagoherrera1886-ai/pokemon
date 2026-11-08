@@ -2,26 +2,24 @@
 
 **Jugar:** https://pokemon-sa-ntiago.vercel.app/
 
-Aventura de criaturas para navegador con el estilo de los juegos de portátil de doble pantalla: vista 3/4 con perspectiva, movimiento por casillas, pantalla superior para el mundo y pantalla inferior táctil para los menús. Se abre desde `index.html`, no necesita ROM ni emulador y guarda la partida en el navegador.
+Aventura de criaturas en pixel art para el navegador, a pantalla completa. Vista 3/4 con perspectiva, movimiento por casillas, combates por turnos y una historia completa de principio a fin. Se abre desde `index.html`, no necesita ROM ni emulador y guarda la partida en el navegador.
 
 El mundo, los personajes, las criaturas, los nombres y todo el pixel art son **originales**. No usa gráficos, mapas, textos ni código de ningún juego comercial.
 
-## Estado actual: Etapa 1 completa
+## Historia completa
 
-| Escena | Estado |
-|---|---|
-| Cuarto del protagonista | Jugable |
-| Planta baja y escena con mamá | Jugable |
-| Pueblo Brisal (4 casas con interior) | Jugable |
-| Casa de Nico (1.º y 2.º piso) | Jugable |
-| Sendero 1 (pasto alto con criaturas salvajes) | Jugable |
-| Lago Espejo (escena de la profesora y el maletín) | Jugable |
-| Elección de inicial (Brotelo, Brasín, Charquín) | Jugable |
-| Primer combate contra Pipiú | Jugable |
-| Regreso a casa (zapatillas para correr) | Jugable |
-| Villa Arenal y Laboratorio Ceiba | Jugable |
-| Posada Vital (curación) y Tienda (compras) | Jugable |
-| Ruta 2, Ciudad Corola, entrenadores, gimnasios | **Pendiente (Etapa 2 en adelante)** |
+| Parte | Lugares | Qué pasa |
+|---|---|---|
+| Inicio | Cuarto, casa, Pueblo Brisal, casa de Nico | Mamá, Nico y el viaje al lago |
+| Lago Espejo | Sendero 1, Lago Espejo | La profesora, el maletín, el inicial y el primer combate |
+| Laboratorio | Villa Arenal, Laboratorio Ceiba, Posada, Tienda | Zapatillas para correr, Cápsulas |
+| Medalla Hoja | Ruta 2, Ciudad Corola, gimnasio | Primer combate con Nico, aparece el Equipo Eclipse, líder Hiedra (Planta) |
+| Medalla Roca | Ruta 3, Cueva Eco (oscura), Pueblo Cobre, gimnasio | Recluta Eclipse en la cueva, líder Basalto (Roca) |
+| Medalla Marea | Ruta 4, Ciudad Marea, gimnasio | Segundo combate con Nico, líder Coral (Agua) |
+| Equipo Eclipse | Bodega de Ciudad Marea, Lago Espejo | Admin. Bruma, Jefe Umbra y la guardiana Espejalba (se puede atrapar) |
+| Liga | Ruta 5, Liga Alborada | Combate final con Nico, Campeona Aurora, créditos y regreso a casa |
+
+**Contenido:** 28 especies con evoluciones, 10 tipos, 33 movimientos, más de 20 entrenadores con línea de visión, 3 gimnasios, viaje rápido con la Mensajera de las posadas, PC de almacenamiento, registro de criaturas vistas y atrapadas.
 
 ## Controles
 
@@ -30,30 +28,33 @@ El mundo, los personajes, las criaturas, los nombres y todo el pixel art son **o
 | Caminar / girar (toque corto = solo girar) | Flechas o WASD | Cruceta |
 | Hablar, investigar, aceptar | Z, E, Enter o Espacio | A |
 | Correr (después de recibir las zapatillas), cancelar | X o Shift | B |
-| Menú | Esc o M | START o tocar la pantalla inferior |
+| Menú | Esc o M | Botón ☰ |
+
+## Gráficos
+
+- Pantalla completa con resolución interna dinámica y escala entera: el pixel art se ve nítido en cualquier pantalla.
+- Perspectiva tipo portátil (desactivable en Opciones).
+- Sombras de árboles, edificios y personajes; nubes que cruzan el mapa; pétalos y hojas que caen; pasto que se mueve al pisarlo; polvo al correr.
+- Luz según la hora real (amanecer, tarde, noche), con opción de dejarla fija.
+- Cueva Eco oscura con luz alrededor del personaje.
+- Combates con fondo según el terreno (pasto, lago, cueva, playa, montaña, gimnasio, base Eclipse, Liga), criaturas que respiran, efectos por tipo de movimiento y sacudida de pantalla.
+- Escena de evolución animada.
 
 ## Arquitectura
 
 ```
-index.html            consola de doble pantalla (canvas superior + panel HTML inferior)
-styles.css            estilos de la consola, diálogos, HUD y menús
-src/main.js           bucle a 60 Hz, escenas (título, exploración, combate) y servicios del juego
-src/core/             renderizador con perspectiva, entrada teclado/táctil, estado y guardado, escala de pantalla, utilidades de pixel art
-src/art/              tiles con autotiling, objetos y edificios, personajes (4 direcciones × 3 cuadros), criaturas
-src/world/            constructor de mapas, definiciones de mapas, colisiones y exploración
-src/story/scripts.js  guiones de la historia
-src/battle/battle.js  combate por turnos, experiencia, niveles y captura
-src/ui/               diálogo, paneles táctiles, equipo, mochila, tienda, opciones, título
-src/data/creatures.js especies, movimientos, tipos, objetos y tablas de encuentros
-tests/e2e.cjs         prueba completa en Chromium real
+index.html            canvas a pantalla completa + interfaz superpuesta
+styles.css            diálogo, menús, HUD de combate, controles táctiles
+src/main.js           bucle a 60 Hz, escenas (título, exploración, combate, evolución, créditos) y servicios
+src/core/             renderizador con perspectiva y post-proceso, entrada, estado y guardado, utilidades de pixel art
+src/art/              tiles con autotiling, objetos y edificios, personajes, criaturas
+src/world/            constructor de mapas, mapas (maps.js inicio, maps2.js resto de la historia), colisiones y exploración
+src/story/scripts.js  guiones de toda la historia
+src/battle/battle.js  combate, entrenadores, experiencia, niveles, aprendizaje y captura
+src/ui/               diálogo, paneles, menú, equipo, mochila, tienda, opciones, viaje rápido, título
+src/data/creatures.js especies, movimientos, tipos, objetos y encuentros
+tests/e2e.cjs         prueba que juega toda la historia en Chromium real
 ```
-
-Detalles técnicos:
-
-- **Perspectiva tipo portátil:** el mundo se dibuja plano en un búfer y se proyecta fila por fila, más angosto arriba. Se puede apagar en Opciones; no cambia la geometría ni las colisiones.
-- **Mundo continuo:** los mapas exteriores comparten un plano global, así que se pasa de Pueblo Brisal al Sendero 1, al Lago Espejo y a Villa Arenal sin pantallas de carga. Fuera de los mapas se dibuja bosque.
-- **Profundidad:** árboles, edificios, muebles y personajes se ordenan por su línea de base; el pasto alto tapa los pies del personaje.
-- **Interiores:** cámara centrada en la habitación; puertas, tapetes de salida y escaleras con fundido.
 
 ## Pruebas
 
@@ -63,17 +64,18 @@ npx playwright install chromium
 npm test
 ```
 
-La prueba juega la Etapa 1 completa con teclas reales (sin teletransportes): colisiones con muebles y paredes, objetos, escaleras, bloqueos de historia, transición entre mapas, elección de inicial, primer combate, regreso a casa, correr, laboratorio, curación en la posada, compra en la tienda (dinero e inventario), encuentro salvaje con captura, menú de equipo, guardar y continuar tras recargar, opción de perspectiva y controles táctiles en un viewport móvil. Falla si aparece cualquier error de JavaScript. Las capturas quedan en `tests/screenshots/`.
+La prueba juega **la historia entera** con teclas reales: camina con una ruta calculada sobre las colisiones del juego (sin teletransportes), entra y sale de edificios, pelea con Nico, los entrenadores, los tres líderes, Bruma, Umbra, Espejalba, Nico en la Liga y la Campeona Aurora, usa la posada, la tienda y el viaje rápido, guarda y continúa tras recargar, prueba las opciones y los controles táctiles en un celular, y falla si aparece cualquier error de JavaScript. Las capturas quedan en `tests/screenshots/`.
+
+Para que la prueba sea rápida y no dependa del azar, después de elegir inicial sube su nivel y le recarga los PP en algunos puntos. Todo lo demás es entrada real.
 
 ## Pendiente
 
-- Etapa 2: Ruta 2, Ciudad Corola, combates contra entrenadores y el combate con Nico.
 - Música y efectos de sonido.
-- Almacenamiento de criaturas en el PC (hoy el equipo llega hasta 6).
-- Reemplazar movimientos cuando una criatura ya conoce cuatro.
+- Estados alterados (veneno, parálisis, sueño) y objetos equipables.
+- Más zonas opcionales después de la Liga.
 
 ## Sobre `original/pokediamond`
 
-El submódulo apunta a la decompilación pública `pret/pokediamond`. Se conserva como referencia, pero **el juego no lo usa**: esa decompilación no incluye gráficos, mapas ni textos (se extraen de una ROM que el proyecto no distribuye), y su código depende del hardware de Nintendo DS. Más detalle en [ORIGINAL-CODE.md](ORIGINAL-CODE.md).
+El submódulo apunta a la decompilación pública `pret/pokediamond` y se conserva como referencia, pero **el juego no lo usa**: esa decompilación no incluye gráficos, mapas ni textos (se extraen de una ROM que el proyecto no distribuye). Más detalle en [ORIGINAL-CODE.md](ORIGINAL-CODE.md).
 
-La versión anterior del prototipo quedó en la rama `respaldo/sinnoh-reborn-v2`.
+Versiones anteriores: `respaldo/sinnoh-reborn-v2` (primer prototipo) y `respaldo/etapa1-ds` (Etapa 1 con doble pantalla).
