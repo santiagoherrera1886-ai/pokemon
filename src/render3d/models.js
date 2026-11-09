@@ -393,6 +393,29 @@ export function smallProp(r,o) {
     r.mesh(g,'cylinder','#d1c7a4',[0,.7,0],[.17,.75,.17]);r.mesh(g,'cylinder','#d8d0b2',[0,1.05,0],[.42,.1,.42]);
     r.ball(g,'#c1e1e4',0,1.2,0,.15,.21,.15);
     for(let i=0;i<8;i++){const a=i*Math.PI/4;r.ball(g,'#b0dadd',Math.cos(a)*.38,.83,Math.sin(a)*.38,.04,.24,.04);}
+    // Ciudad Corola: a water-lily shrine in the middle of the fountain.
+    // The petals, basin ornament and rising water arc are genuine 3D meshes.
+    for(let i=0;i<10;i++){
+      const a=i*Math.PI*2/10,c=Math.cos(a),sn=Math.sin(a);
+      const rimFlower=r.mesh(g,'foliage',i%2?'#b6dfca':'#78b9ab',[c*.67,.39,sn*.67],[.14,.09,.12]);
+      rimFlower.rotation.y=a;
+      const pearl=r.mesh(g,'bloomFlower',i%3?'#f9dbaa':'#f0b5cb',[c*.65,.47,sn*.65],[.11,.07,.11]);
+      pearl.rotation.y=a;
+      const ripple=r.mesh(g,'ring','#c6f5eb',[c*.41,.37,sn*.41],[.18,.18,.18]);ripple.rotation.x=Math.PI/2;
+    }
+    for(let i=0;i<7;i++){
+      const a=i*2*Math.PI/7,petal=r.mesh(g,'foliage',i%2?'#9fe0c1':'#e8b8d2',
+        [Math.sin(a)*.26,1.32,Math.cos(a)*.26],[.20,.32,.18]);
+      petal.rotation.z=Math.sin(a)*.52;petal.rotation.x=Math.cos(a)*.46;
+    }
+    r.mesh(g,'crystal',r.mat('#94f4de',{emissive:'#43acbb',emissiveIntensity:.25}),
+      [0,1.60,0],[.19,.34,.19]);
+    const crown=r.mesh(g,'ring','#f7db99',[0,1.38,0],[.32,.32,.32]);crown.rotation.x=Math.PI/2;
+    for(let i=0;i<4;i++){
+      const a=i*Math.PI/2,x=Math.cos(a)*.48,z=Math.sin(a)*.48;
+      const arc=r.mesh(g,'ring',r.mat('#a8f6f1',{transparent:true,opacity:.80,depthWrite:false}),
+        [x,.91,z],[.27,.32,.24]);arc.rotation.y=a;arc.rotation.x=.55;
+    }
   }
   if(o.kind==='bench'){
     for(const x of [-.65,.65])b('#667972',x,.3,0,.12,.6,.55);
