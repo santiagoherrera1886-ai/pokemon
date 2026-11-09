@@ -303,3 +303,41 @@ body.premium-active #banner::before{display:none}
 @keyframes retroStarter{to{transform:translateY(-3px)}}
 @media(max-width:600px){#retro-starters{gap:8px;padding:5px 13px;margin-top:9px}#retro-starters i{width:48px;height:48px;background-size:384px 288px}#retro-starters .rs-water{background-position:-144px 0}#retro-starters .rs-grass{background-position:-288px 0}}
 @media(prefers-reduced-motion:reduce){#retro-starters i{animation:none}}
+
+
+/* Bestiario de los 43 dibujos reales de las diez láminas. */
+#panel.retro-gallery-panel,body.premium-active #panel.retro-gallery-panel{
+  position:absolute;top:50%;left:50%;right:auto;bottom:auto;
+  transform:translate(-50%,-50%);
+  width:min(920px,94vw);height:min(730px,92vh);max-height:92vh;
+  display:flex;flex-direction:column;gap:10px;
+  background:linear-gradient(170deg,#fff7e6,#e7e2f6);
+  border:4px solid #302448;box-shadow:inset 0 0 0 3px #cbb18f,0 12px 0 #18152a,0 18px 40px #100f2db3;
+}
+.retro-gallery-intro,.retro-gallery-note{font-size:.78em;line-height:1.3;color:#5a4b6c;margin:0}
+.retro-gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(94px,1fr));grid-auto-rows:100px;gap:8px;
+  min-height:0;overflow-y:auto;padding:8px 4px 15px;scrollbar-color:#9b82b6 #f2e8dd}
+#panel .retro-entry{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-height:96px;padding:4px 2px!important;background:#fff9ef!important;
+  border:2px solid #695679!important;border-radius:5px!important;
+}
+#panel .retro-entry.on,#panel .retro-entry:focus-visible{background:#e4d5f3!important;outline:3px solid #56bdbb!important}
+#panel .retro-entry small{font-size:.57em;color:#43315c;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.retro-art{display:block;flex:none;image-rendering:pixelated;image-rendering:crisp-edges;background-image:url("./src/art/retro-reference.png");background-repeat:no-repeat}
+.retro-detail{display:flex;align-items:center;justify-content:center;gap:20px;
+  background:linear-gradient(120deg,#241d44,#533774);border:3px solid #dfba80;border-radius:4px;
+  padding:10px;color:#fff5cd;min-height:156px}
+.retro-detail strong{font:700 clamp(17px,2vw,26px) 'Pixelify Sans',monospace}
+.retro-detail p{font-size:.73em;margin:5px 0;line-height:1.2;color:#ece3f9;max-width:330px}
+.retro-detail small{font-size:.63em;color:#f3cf8b}
+#panel.retro-gallery-panel .bt-back{width:100%;margin-top:auto}
+@media(max-width:600px){
+ #panel.retro-gallery-panel,body.premium-active #panel.retro-gallery-panel{
+   top:48%;height:min(76vh,680px);max-height:76vh;width:96vw;padding:.6em
+ }
+ .retro-gallery-grid{grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:95px;gap:5px}
+ .retro-detail{gap:8px;min-height:130px}
+ .retro-detail .retro-art{transform:scale(.8);margin:-13px;flex-shrink:0}
+ .retro-detail p{font-size:.65em}
+}
