@@ -156,6 +156,11 @@ async function run() {
     await page.click('#panel [data-act="new"]');
     await page.fill('#pname', 'Santi');
     await page.click('#panel [data-act="ok"]');
+    // Creador de personaje: chica con cola de caballo, chaqueta morada y sin gorra
+    await page.waitForSelector('#panel.avatar-panel');
+    for (const act of ['body:chica', 'hairStyle:tail', 'top:4', 'hat:0']) { await page.click(`#panel [data-act="${act}"]`); await sleep(120); }
+    await shot('avatar');
+    await page.click('#panel [data-act="start"]');
     await sleep(900);
     await page.evaluate(() => { __game.state.options.forceHour = 12; });
     await shot('cuarto-intro');
@@ -163,6 +168,8 @@ async function run() {
     if(GRAPHICS_MODE==='premium'){await page.waitForFunction(()=>__game.graphics.status==='ready');assert.ok(await page.locator('#premium').isVisible());}
     let s = await st();
     assert.equal(s.map, 'cuarto'); assert.equal(s.story, 0);
+    const av = await page.evaluate(() => ({ ...__game.state.avatar, slot: __game.state.slot }));
+    assert.deepEqual([av.body, av.hairStyle, av.top, av.hat, av.slot], ['chica', 'tail', 4, 0, 1]);
 
     // ------------------------------------------------ Etapa 1
     await walkTo(1, 3); await step('ArrowLeft');
@@ -376,6 +383,49 @@ async function run() {
     await m.screenshot({ path: path.join(SHOTS, `${String(++shotN).padStart(2, '0')}-movil.png`) });
     log('controles táctiles OK');
     await ctx.close();
+
+    // ------------------------------------------------ Ranuras y respaldo en GitHub (API simulada)
+    const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 720 }, storageState: await page.context().storageState() });
+    const q = await ctx2.newPage();
+    q.on('pageerror', e => errors.push('ranuras: ' + e.message));
+    const gist = { content: null, patches: 0 };
+    await q.route('https://api.github.com/**', async r => {
+      const u = new URL(r.request().url()), method = r.request().method();
+      const json = (body, status = 200) => r.fulfill({ status, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify(body) });
+      if (u.pathname === '/user') return json({ login: 'santi-prueba' });
+      if (u.pathname === '/gists' && method === 'GET') return json([]);
+      if (u.pathname === '/gists' && method === 'POST') { gist.content = JSON.parse(r.request().postData()).files['alborada-partidas.json'].content; return json({ id: 'g123' }, 201); }
+      if (u.pathname === '/gists/g123' && method === 'PATCH') { gist.patches++; gist.content = JSON.parse(r.request().postData()).files['alborada-partidas.json'].content; return json({ id: 'g123' }); }
+      if (u.pathname === '/gists/g123') return json({ id: 'g123', files: { 'alborada-partidas.json': { content: gist.content } } });
+      return json({ message: 'no' }, 404);
+    });
+    await q.goto(url); await sleep(700);
+    // Nueva partida en la ranura 2 sin tocar la 1
+    await q.click('#panel [data-act="new"]'); await q.waitForSelector('#panel.slot-panel');
+    await q.click('#panel [data-act="slot:2"]');
+    await q.fill('#pname', 'Vale'); await q.click('#panel [data-act="ok"]');
+    await q.waitForSelector('#panel.avatar-panel'); await q.click('#panel [data-act="random"]'); await q.click('#panel [data-act="start"]'); await sleep(900);
+    assert.deepEqual(await q.evaluate(() => [__game.state.slot, __game.state.name]), [2, 'Vale']);
+    for (let i = 0; i < 8 && await q.evaluate(() => !!__ui.dialog); i++) { await q.keyboard.press('z'); await sleep(120); }
+    // Conectar GitHub desde Opciones
+    await q.keyboard.press('Escape'); await sleep(200);
+    await q.click('#panel [data-act="options"]'); await sleep(150);
+    await q.click('#panel [data-act="files"]'); await sleep(150);
+    await q.fill('#ghToken', 'ghp_' + 'a'.repeat(36));
+    await q.click('#panel [data-act="link"]');
+    await q.waitForFunction(() => __ui.dialog && /santi-prueba/.test(document.getElementById('msgText').textContent), {}, { timeout: 10000 });
+    for (let i = 0; i < 6 && await q.evaluate(() => !!__ui.dialog); i++) { await q.keyboard.press('z'); await sleep(150); }
+    const backup = JSON.parse(gist.content);
+    assert.deepEqual(Object.keys(backup.slots).sort(), ['1', '2']);
+    assert.equal(backup.slots['2'].name, 'Vale');
+    // Volver al título: con dos partidas, CONTINUAR deja escoger; se elige la de Santi
+    await q.reload(); await sleep(700);
+    await q.click('#panel [data-act="continue"]'); await q.waitForSelector('#panel.slot-panel');
+    await q.click('#panel [data-act="slot:1"]'); await sleep(900);
+    assert.deepEqual(await q.evaluate(() => [__game.state.slot, __game.state.name, __game.state.avatar.body]), [1, 'Santi', 'chica']);
+    await q.screenshot({ path: path.join(SHOTS, `${String(++shotN).padStart(2, '0')}-ranuras.png`) });
+    await ctx2.close();
+    log('ranuras, avatar y respaldo en GitHub OK');
 
     assert.deepEqual(errors, [], 'no debe haber errores de JavaScript');
     console.log('\nTODAS LAS PRUEBAS PASARON: historia completa jugada de principio a fin');

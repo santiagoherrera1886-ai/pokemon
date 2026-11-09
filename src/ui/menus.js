@@ -5,7 +5,10 @@ import { iconURL } from '../art/creatures.js';
 import { itemIcon } from '../art/items.js';
 import { SPECIES, MOVES, TYPES, STARTERS, expForLevel } from '../data/creatures.js';
 import { ITEMS, POCKETS, POCKET_ORDER, SPECIAL, VENDING, STAT_NAMES, SEED_MAX, generalStock, lockedStock, shortDesc, sellPrice, pocketItems, canUseOn, useOnCreature, isCapsule } from '../data/items.js';
-import { saveState } from '../core/state.js';
+import { saveState, listSaves, SLOTS, loadState, storeState, parseState, playTimeText } from '../core/state.js';
+import { cloud, TOKEN_URL } from '../core/cloud.js';
+import { AVATAR_OPTIONS, defaultAvatar, cleanAvatar, avatarLook } from '../data/avatar.js';
+import { lookFrame } from '../art/characters.js';
 
 const hpBar = c => { const k = Math.max(0, c.hp / c.stats.hp); return `<div class="hp"><i style="width:${k * 100}%" class="${k > 0.5 ? 'g' : k > 0.2 ? 'y' : 'r'}"></i></div>`; };
 const typeTags = sp => SPECIES[sp].types.map(t => `<span class="type" style="--t:${TYPES[t].color}">${TYPES[t].name}</span>`).join('');
@@ -138,7 +141,9 @@ export class Menus {
     const i = await ui.ask('¿Quieres guardar la partida?', ['Sí', 'No']);
     if (i === 0) {
       const ok = saveState(this.st);
-      await ui.say([ok ? `${this.st.name} guardó la partida.` : 'No se pudo guardar (el navegador bloquea el almacenamiento).']);
+      let msg = ok ? `${this.st.name} guardó la partida en la ranura ${this.st.slot}.` : 'No se pudo guardar (el navegador bloquea el almacenamiento).';
+      if (ok && cloud.linked) { try { await cloud.push(); msg += ' También quedó en GitHub.'; } catch { msg += ' GitHub no respondió; se sube la próxima vez.'; } }
+      await ui.say([msg]);
     }
     ui.closePanel();
   }
@@ -151,6 +156,9 @@ export class Menus {
       <button data-act="persp">Perspectiva (pixel clásico): <b>${o.perspective ? 'SÍ' : 'NO'}</b></button>
       <button data-act="speed">Velocidad del texto: <b>${['LENTA', 'NORMAL', 'RÁPIDA', 'INSTANTÁNEA'][o.textSpeed]}</b></button>
       <button data-act="hour">Hora del día: <b>${o.forceHour === undefined ? 'REAL' : o.forceHour === 12 ? 'SIEMPRE DÍA' : 'SIEMPRE NOCHE'}</b></button>
+      <button data-act="avatar">Mi avatar</button>
+      <button data-act="autosave">Guardado automático: <b>${o.autosave === false ? 'NO' : 'SÍ'}</b></button>
+      <button data-act="files">Partidas y GitHub${cloud.linked ? ' ☁' : ''}</button>
       <button data-act="full">Pantalla completa del navegador</button>
       <button data-act="title">Volver al título</button></div>
       <p class="hint">Teclado: flechas/WASD mover · Z/E/Enter = A · X/Shift = B (correr) · Esc/M = menú</p>
@@ -161,6 +169,9 @@ export class Menus {
       if (a === 'persp') { o.perspective = !o.perspective; this.game.applyOptions(); }
       if (a === 'speed') { o.textSpeed = (o.textSpeed + 1) % 4; this.game.applyOptions(); }
       if (a === 'hour') { o.forceHour = o.forceHour === undefined ? 12 : o.forceHour === 12 ? 22 : undefined; }
+      if (a === 'avatar') { const av = await this.avatarEditor(this.st.avatar); if (av) { this.st.avatar = av; this.game.applyAvatar(); } }
+      if (a === 'autosave') o.autosave = o.autosave === false;
+      if (a === 'files') await this.saveFiles();
       if (a === 'full') { try { if (document.fullscreenElement) await document.exitFullscreen(); else await document.documentElement.requestFullscreen(); } catch { /* no permitido */ } }
       if (a === 'title') { const i = await ui.ask('¿Volver al título? Lo que no hayas guardado se perderá.', ['Sí', 'No']); if (i === 0) return this.game.toTitle(); }
       this.options();
@@ -260,21 +271,173 @@ export class Menus {
   }
 
   // ---------- Título ----------
-  title(hasSave) {
+  // Devuelve { type: 'continue', slot } o { type: 'new', slot, name, avatar }.
+  title() {
     return new Promise(resolve => {
-      ui.setPanel(`<div class="title-menu">
-        ${hasSave ? '<button data-act="continue" class="primary">CONTINUAR</button>' : ''}
-        <button data-act="new">NUEVA PARTIDA</button>
-        <p class="hint">Juego original sin ROM · guardado local en tu navegador</p></div>`,
-      { modal: true, cls: 'title-panel', onAct: a => {
-        if (a === 'continue') return resolve({ type: 'continue' });
-        ui.setPanel(`<div class="name-entry"><label for="pname">¿Cómo te llamas?</label><input id="pname" maxlength="10" value="Santi" autocomplete="off"><button data-act="ok" class="primary">EMPEZAR</button></div>`,
-          { modal: true, cls: 'title-panel', onAct: () => {
+      const main = () => {
+        const saves = listSaves();
+        ui.setPanel(`<div class="title-menu">
+          ${saves.length ? '<button data-act="continue" class="primary">CONTINUAR</button>' : ''}
+          <button data-act="new">NUEVA PARTIDA</button>
+          <button data-act="files" class="soft">PARTIDAS Y GITHUB${cloud.linked ? ' ☁' : ''}</button>
+          <p class="hint">Juego original sin ROM · guardado en tu navegador${cloud.linked ? ` y en GitHub (${esc(cloud.login)})` : ''}</p></div>`,
+        { modal: true, cls: 'title-panel', onAct: a => {
+          if (a === 'continue') return saves.length === 1 ? resolve({ type: 'continue', slot: saves[0].slot }) : pick('continue');
+          if (a === 'new') return saves.length ? pick('new') : nameStep(1);
+          if (a === 'files') return this.saveFiles({ fromTitle: true }).then(main);
+        } });
+      };
+      const pick = mode => this.slotPicker(mode).then(slot => slot ? (mode === 'continue' ? resolve({ type: 'continue', slot }) : nameStep(slot)) : main());
+      const nameStep = slot => {
+        ui.setPanel(`<div class="name-entry"><label for="pname">¿Cómo te llamas?</label><input id="pname" maxlength="10" value="Santi" autocomplete="off"><button data-act="ok" class="primary">SIGUIENTE</button><button data-back class="soft">VOLVER</button></div>`,
+          { modal: true, cls: 'title-panel', onBack: main, onAct: () => {
             const name = (document.getElementById('pname').value || 'Santi').trim().slice(0, 10) || 'Santi';
-            resolve({ type: 'new', name });
+            this.avatarEditor(defaultAvatar(), { start: true, name }).then(avatar => avatar ? resolve({ type: 'new', slot, name, avatar }) : nameStep(slot));
           } });
         setTimeout(() => { const el = document.getElementById('pname'); if (!el) return; el.focus(); el.select(); el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); ui.panel.els[0].click(); } }); }, 30);
-      } });
+      };
+      main();
     });
+  }
+
+  // Miniatura del avatar (pixel art ampliado, igual en los dos modos).
+  avatarThumb(avatar, scale = 3) {
+    const f = lookFrame(avatarLook(avatar)), c = document.createElement('canvas');
+    c.width = 16 * scale; c.height = 24 * scale; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(f, 0, 0, c.width, c.height);
+    return c.toDataURL();
+  }
+
+  // Ranuras de partida. mode 'continue': sólo las ocupadas; 'new': todas (las ocupadas piden confirmación).
+  slotPicker(mode, title = mode === 'new' ? 'NUEVA PARTIDA · ESCOGE RANURA' : 'CONTINUAR · ESCOGE PARTIDA') {
+    return new Promise(resolve => {
+      const saves = Object.fromEntries(listSaves().map(s => [s.slot, s]));
+      const row = n => {
+        const s = saves[n];
+        if (!s) return `<button data-act="slot:${n}" class="slot empty" ${mode === 'continue' ? 'disabled' : ''}><i class="av ph"></i><span><b>Ranura ${n}</b><small>Vacía</small></span><span class="sl-n">${n}</span></button>`;
+        const where = this.game.world?.get(s.map)?.name || '';
+        return `<button data-act="slot:${n}" class="slot"><img class="av" src="${this.avatarThumb(s.avatar)}" alt=""><span><b>${esc(s.name)}</b><small>${s.badges} medalla${s.badges === 1 ? '' : 's'} · ${playTimeText(s.playTime)}${where ? ' · ' + esc(where) : ''}</small></span><span class="sl-n">${n}</span></button>`;
+      };
+      ui.setPanel(`<h3 class="ph">${title}</h3><div class="slots">${SLOTS.map(row).join('')}</div><button class="bt-back" data-back>VOLVER</button>`,
+        { modal: true, cls: 'list-panel slot-panel', focus: mode === 'continue' ? 0 : Math.max(0, SLOTS.findIndex(n => !saves[n])), onBack: () => resolve(null), onAct: async a => {
+          const n = +a.split(':')[1];
+          if (mode === 'new' && saves[n]) {
+            const i = await ui.ask(`La ranura ${n} tiene la partida de ${saves[n].name}. ¿Empezar encima y borrarla?`, ['No', 'Sí, borrarla']);
+            ui.hideMsg(); if (i !== 1) return this.slotPicker(mode, title).then(resolve);
+          }
+          resolve(n);
+        } });
+    });
+  }
+
+  // Editor del avatar. Devuelve el avatar escogido o null si se cancela.
+  avatarEditor(initial, { start = false, name = '' } = {}) {
+    const game = this.game, before = initial;
+    let av = cleanAvatar(initial);
+    document.body.classList.add('editing-avatar');
+    return new Promise(res => {
+      const resolve = v => { document.body.classList.remove('editing-avatar'); res(v); };
+      const O = AVATAR_OPTIONS;
+      const sw = (key, list, none = false) => list.map((c, i) => c ? `<button data-act="${key}:${i}" class="sw${av[key] === i ? ' on' : ''}" style="--c:${c}" aria-label="${key} ${i + 1}"></button>` : `<button data-act="${key}:${i}" class="sw none${av[key] === i ? ' on' : ''}" aria-label="sin gorra">✕</button>`).join('');
+      const preview = () => { const p = game.graphics?.avatarPortrait?.(avatarLook(av)); return p ? `<img class="av3d" src="${p}" alt="">` : `<img class="av2d" src="${this.avatarThumb(av, 8)}" alt="">`; };
+      const draw = act => {
+        game.previewAvatar?.(av);
+        const chica = av.body === 'chica';
+        ui.setPanel(`<h3 class="ph">${start ? 'CREA TU PERSONAJE' : 'MI AVATAR'}${name ? ` <small>${esc(name)}</small>` : ''}</h3>
+          <div class="avatar-ed"><div class="av-prev">${preview()}</div><div class="av-rows">
+            <div class="av-row"><span>Soy</span><div class="av-opts">${O.body.map(([id, label]) => `<button data-act="body:${id}" class="opt${av.body === id ? ' on' : ''}">${label}</button>`).join('')}</div></div>
+            <div class="av-row"><span>Piel</span><div class="av-opts">${sw('skin', O.skin)}</div></div>
+            <div class="av-row"><span>Peinado</span><div class="av-opts">${O.hairStyle[av.body].map(([id, label]) => `<button data-act="hairStyle:${id}" class="opt${av.hairStyle === id ? ' on' : ''}">${label}</button>`).join('')}</div></div>
+            <div class="av-row"><span>Pelo</span><div class="av-opts">${sw('hairColor', O.hairColor)}</div></div>
+            <div class="av-row"><span>Gorra</span><div class="av-opts">${sw('hat', O.hat)}</div></div>
+            <div class="av-row"><span>Chaqueta</span><div class="av-opts">${sw('top', O.top)}</div></div>
+            <div class="av-row"><span>${chica ? 'Falda' : 'Pantalón'}</span><div class="av-opts">${sw('bottom', O.bottom)}</div></div>
+            <div class="av-row"><span>Morral</span><div class="av-opts">${sw('bag', O.bag)}</div></div>
+          </div></div>
+          <div class="av-actions"><button data-act="random" class="soft">AL AZAR</button><button data-act="start" class="primary">${start ? 'EMPEZAR' : 'LISTO'}</button></div>
+          <button class="bt-back" data-back>VOLVER</button>`,
+        { modal: true, cls: 'list-panel avatar-panel', onBack: () => { game.previewAvatar?.(before); resolve(null); }, onAct: a => {
+          if (a === 'start') return resolve(av);
+          if (a === 'random') {
+            const r = n => Math.floor(Math.random() * n), body = O.body[r(2)][0];
+            av = cleanAvatar({ body, skin: r(O.skin.length), hairColor: r(O.hairColor.length), hairStyle: O.hairStyle[body][r(4)][0], hat: r(O.hat.length), top: r(O.top.length), bottom: r(O.bottom.length), bag: r(O.bag.length) });
+          } else {
+            const [key, val] = a.split(':');
+            if (key === 'body') { if (val !== av.body) av = { ...defaultAvatar(val), skin: av.skin, hairColor: av.hairColor }; }
+            else av = cleanAvatar({ ...av, [key]: key === 'hairStyle' ? val : +val });
+          }
+          draw(a);
+        } });
+        if (act) ui.focusAct(act); else ui.focusAct('start');
+      };
+      draw();
+    });
+  }
+
+  // Partidas y respaldo: GitHub (gist privado) y archivo. Desde el título también se puede cargar un archivo.
+  saveFiles({ fromTitle = false } = {}) {
+    return new Promise(resolve => {
+      const done = () => { ui.hideMsg(); resolve(); };
+      const ago = t => { if (!t) return ''; const m = Math.round((Date.now() - t) / 60000); return m < 1 ? 'hace un momento' : m < 60 ? `hace ${m} min` : `hace ${Math.round(m / 60)} h`; };
+      const draw = () => {
+        const linked = cloud.linked;
+        ui.setPanel(`<h3 class="ph">PARTIDAS Y GITHUB</h3><div class="opts cloud">
+          ${linked ? `<p class="hint">☁ Conectado a GitHub como <b>${esc(cloud.login)}</b>${cloud.lastSync ? ` · último respaldo ${ago(cloud.lastSync)}` : ''}. Cada vez que guardas, la partida también se sube a un gist privado de tu cuenta.</p>
+            <button data-act="push">Subir mis partidas ahora</button>
+            <button data-act="pull">Traer partidas de GitHub</button>
+            <button data-act="unlink">Desconectar GitHub</button>`
+          : `<p class="hint">Guarda tus partidas en tu cuenta de GitHub (un gist privado) para no perderlas y seguir en otro celular o compu. GitHub pide un código de acceso con permiso de gist; queda guardado sólo en este navegador.</p>
+            <button data-act="token">1 · Crear el código en GitHub</button>
+            <input id="ghToken" placeholder="2 · Pega aquí el código (ghp_...)" autocomplete="off" spellcheck="false">
+            <button data-act="link">3 · CONECTAR</button>`}
+          <div class="sep"></div>
+          <button data-act="export">Descargar partida (archivo)</button>
+          ${fromTitle ? '<button data-act="import">Cargar partida desde un archivo</button><input type="file" id="importFile" accept=".json,application/json" hidden>' : ''}
+          </div><button class="bt-back" data-back>VOLVER</button>`,
+        { modal: true, cls: 'list-panel files-panel', onBack: done, onAct: async a => {
+          try {
+            if (a === 'token') { window.open(TOKEN_URL, '_blank', 'noopener'); ui.show('En GitHub baja hasta el final, dale "Generate token" y copia el código que empieza por ghp_.'); return; }
+            if (a === 'link') {
+              const token = document.getElementById('ghToken')?.value || '';
+              ui.show('Conectando con GitHub...');
+              const login = await cloud.connect(token);
+              const got = await cloud.pull();
+              await cloud.push();
+              await ui.say([`¡Listo! Conectado como ${login}.`, got.length ? `Se trajeron ${got.length} partida${got.length > 1 ? 's' : ''} de GitHub.` : 'Tus partidas ya quedaron respaldadas en GitHub.']);
+            }
+            if (a === 'push') { ui.show('Subiendo a GitHub...'); await cloud.push(); await ui.say(['Partidas subidas a GitHub.']); }
+            if (a === 'pull') {
+              if (!fromTitle) { await ui.say(['Para traer partidas de GitHub vuelve al título: así no se cruzan con la que estás jugando.']); return draw(); }
+              ui.show('Trayendo partidas de GitHub...'); const got = await cloud.pull();
+              await ui.say([got.length ? `Se trajeron ${got.length} partida${got.length > 1 ? 's' : ''} de GitHub.` : 'Tus partidas locales ya están al día.']);
+            }
+            if (a === 'unlink') { const i = await ui.ask('¿Desconectar GitHub? Tus partidas siguen en este navegador y en tu gist.', ['No', 'Sí']); if (i === 1) cloud.disconnect(); }
+            if (a === 'export') await this.exportSave(fromTitle);
+            if (a === 'import') { const input = document.getElementById('importFile'); input.onchange = () => this.importSave(input.files[0]).then(draw); input.click(); return; }
+          } catch (e) { await ui.say([e.message || 'No se pudo conectar con GitHub.']); }
+          draw();
+        } });
+      };
+      draw();
+    });
+  }
+  async exportSave(fromTitle) {
+    let st = this.st;
+    if (fromTitle) {
+      const saves = listSaves(); if (!saves.length) return ui.say(['Todavía no hay partidas guardadas.']);
+      const slot = saves.length === 1 ? saves[0].slot : await this.slotPicker('continue', 'DESCARGAR · ESCOGE PARTIDA'); if (!slot) return;
+      st = loadState(slot);
+    } else saveState(st);
+    const blob = new Blob([JSON.stringify(st, null, 1)], { type: 'application/json' }), a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = `alborada-${(st.name || 'partida').toLowerCase().replace(/[^a-z0-9ñ]+/g, '-')}.json`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    await ui.say([`Se descargó la partida de ${st.name}.`]);
+  }
+  async importSave(file) {
+    if (!file) return;
+    const st = parseState(await file.text());
+    if (!st) return ui.say(['Ese archivo no es una partida de Alborada.']);
+    const slot = await this.slotPicker('new', 'CARGAR ARCHIVO · ESCOGE RANURA'); if (!slot) return;
+    storeState(st, slot); cloud.pushSoon();
+    await ui.say([`La partida de ${st.name} quedó en la ranura ${slot}.`]);
   }
 }

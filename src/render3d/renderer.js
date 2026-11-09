@@ -98,6 +98,29 @@ export class PremiumRenderer {
     this.webgl.setViewport(prev);this.webgl.setRenderTarget(prevRT);this.r.release(rig.root);
     const url=out.toDataURL('image/png');this.portraits.set(sp,url);return url;
   }
+  // El avatar cambió: se rehace el muñeco del protagonista (en el mundo y en el título).
+  refreshPlayer(){
+    const rig=this.actors.get('player');if(rig){this.r.release(rig.root);this.actors.delete('player');}
+    this.titleScene?.setPlayer();this.avatarShots?.clear();
+  }
+  // Retrato 3D del avatar de cuerpo entero (editor de personaje). Igual que portrait(), en una esquina del lienzo.
+  avatarPortrait(look){
+    this.avatarShots=this.avatarShots||new Map();const key=JSON.stringify(look);
+    if(this.avatarShots.has(key))return this.avatarShots.get(key);
+    const size=Math.min(260,this.canvas.width,this.canvas.height),scene=new T.Scene();scene.background=new T.Color('#fff8ec');
+    scene.add(new T.HemisphereLight('#fff6ec','#a8b4a0',2.0));
+    const key1=new T.DirectionalLight('#fff0d8',2.6);key1.position.set(-2,4,5);scene.add(key1);
+    const rim=new T.DirectionalLight('#cfe6ff',1.2);rim.position.set(3,3,-4);scene.add(rim);
+    const rig=character(this.r,look);scene.add(rig.root);rig.root.rotation.y=.35;rig.head.rotation.x=-.08;
+    rig.root.traverse(o=>{if(o.material===this.r.shadowMat)o.visible=false;});
+    const cam=new T.PerspectiveCamera(26,1,.1,40);cam.position.set(0,.98,3.7);cam.lookAt(0,.76,0);
+    const prev=this.webgl.getViewport(new T.Vector4()),prevRT=this.webgl.getRenderTarget();
+    this.webgl.setRenderTarget(null);this.webgl.setViewport(0,0,size,size);this.webgl.render(scene,cam);
+    const out=document.createElement('canvas');out.width=out.height=size;
+    out.getContext('2d').drawImage(this.canvas,0,this.canvas.height-size,size,size,0,0,size,size);
+    this.webgl.setViewport(prev);this.webgl.setRenderTarget(prevRT);this.r.release(rig.root);
+    const url=out.toDataURL('image/png');if(this.avatarShots.size>40)this.avatarShots.clear();this.avatarShots.set(key,url);return url;
+  }
   clearBattle(){this.r.release(this.battleRoot);this.battleRoot=new T.Group();this.scene.add(this.battleRoot);this.battleKey=null;this.creatures=null;}
   world(dt){
     const g=this.game,ow=g.ow,m=ow.map;if(!m)return;

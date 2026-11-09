@@ -27,10 +27,11 @@ const LASHES = new Set(['mom', 'girl', 'lass', 'nurse', 'coral', 'hiedra', 'auro
 
 function shade(hex, f) { const c = new T.Color(hex); return '#' + (f > 0 ? c.lerp(new T.Color('#ffffff'), f) : c.multiplyScalar(1 + f)).getHexString(); }
 
+// look: nombre de LOOKS o un objeto con los mismos campos (el avatar trae skirt, lashes, eyes y wearCap).
 export function person(r, look = 'player') {
-  const L = LOOKS[look] || LOOKS.player;
-  const eyeColor = EYES[look] || shade(L.hair, -.15);
-  const skirt = SKIRT_LOOKS.has(look);
+  const L = typeof look === 'object' ? look : (LOOKS[look] || LOOKS.player);
+  const eyeColor = L.eyes || EYES[look] || shade(L.hair, -.15);
+  const skirt = L.skirt ?? SKIRT_LOOKS.has(look), lashes = L.lashes ?? LASHES.has(look);
   const root = new T.Group();
 
   // Ayudante para crear mallas con geometría compartida.
@@ -93,7 +94,7 @@ export function person(r, look = 'player') {
     ball(e, shade(eyeColor, -.05), [0, -.03, .012], [.028, .024, .014]);
     ball(e, '#ffffff', [-x * .012, .026, .02], [.014, .017, .008]);
     ball(e, '#ffffff', [x * .01, -.02, .022], [.005, .005, .004]);
-    if (LASHES.has(look)) pill(e, '#1e1a24', [x * .03, .052, .006], .007, .03, [1, 1, .8], [0, 0, Math.PI / 2 - x * .5]);
+    if (lashes) pill(e, '#1e1a24', [x * .03, .052, .006], .007, .03, [1, 1, .8], [0, 0, Math.PI / 2 - x * .5]);
   }
   if (GLASSES.has(look)) { for (const x of [-1, 1]) add(head, torus(Math.PI * 2, .09), '#4a3a32', [x * .105, -.005, .285], [.07, .07, .05], [0, x * .3, 0]); add(head, torus(Math.PI, .12), '#4a3a32', [0, .005, .3], [.035, .02, .03]); }
 
@@ -110,21 +111,8 @@ export function person(r, look = 'player') {
     }
     add(skull, cap(.5), hair, [0, .13, .07], [.295, .11, .225], [.3, 0, 0]);
   };
-  const style = L.style;
-  if (style === 'cap') {
-    const hc = L.hat || '#e04848', band = L.hatBand || '#ffffff';
-    bangs(5, .1);
-    add(skull, cap(.5), hc, [0, .1, -.02], [.33, .29, .32], [-.38, 0, 0]);                 // copa de la gorra
-    add(skull, cap(.5), shade(hc, .18), [-.06, .2, .05], [.12, .06, .1], [-.5, 0, .3]);   // brillo de la copa
-    add(skull, torus(Math.PI * 2, .1), band, [0, .135, -.005], [.315, .3, .3], [Math.PI / 2 - .38, 0, 0]); // banda delgada
-    add(skull, halfDisc(), hc, [0, .17, .24], [.17, .02, .15], [.12, 0, 0]);              // visera corta
-    add(skull, halfDisc(), shade(hc, -.25), [0, .158, .24], [.165, .01, .145], [.12, 0, 0]);
-    add(skull, disc(), band, [0, .3, .14], [.06, .012, .06], [.85, 0, 0]);               // emblema
-    add(skull, disc(), hc, [0, .305, .145], [.03, .014, .03], [.85, 0, 0]);
-    for (const x of [-1, 1]) ball(skull, hair, [x * .27, .03, .06], [.05, .08, .05], [0, 0, x * .3]); // patillas
-    for (let i = 0; i < 3; i++) ball(skull, i % 2 ? hairD : hair, [(i - 1) * .1, -.02, -.27], [.07, .09, .05], [.4, 0, (i - 1) * .3]); // nuca
-    ball(skull, hairD, [-.06, .12, .27], [.05, .07, .03], [-.3, 0, .3]);              // mechón bajo la visera
-  } else if (style === 'hood') {
+  const style = L.style, capOn = style === 'cap' || !!L.wearCap, hs = style === 'cap' ? 'capHair' : style;
+  if (hs === 'hood') {
     const hc = L.hood || '#3a2c4a';
     hairCap(.33); bangs(7, .12);
     add(skull, cap(.62), hc, [0, .02, -.03], [.38, .37, .37], [-.85, 0, 0]);
@@ -132,33 +120,68 @@ export function person(r, look = 'player') {
     add(skull, disc(), L.accent, [0, .3, .1], [.05, .01, .05], [.7, 0, 0]);            // insignia
     for (const x of [-1, 1]) ball(body, hc, [x * .12, .66, -.06], [.09, .07, .11]);     // capucha caída sobre los hombros
   } else {
-    if (style !== 'bald') hairCap();
-    if (style === 'short') {
+    if (hs !== 'bald' && hs !== 'capHair') hairCap(hs === 'buzz' ? .312 : capOn ? .318 : .33);
+    if (hs === 'capHair') {
+      bangs(5, .1);
+      for (const x of [-1, 1]) ball(skull, hair, [x * .27, .03, .06], [.05, .08, .05], [0, 0, x * .3]); // patillas
+      for (let i = 0; i < 3; i++) ball(skull, i % 2 ? hairD : hair, [(i - 1) * .1, -.02, -.27], [.07, .09, .05], [.4, 0, (i - 1) * .3]); // nuca
+      ball(skull, hairD, [-.06, .12, .27], [.05, .07, .03], [-.3, 0, .3]);              // mechón bajo la visera
+    } else if (hs === 'short') {
       bangs(7, .12);
       for (const x of [-1, 1]) ball(skull, hair, [x * .26, .03, .05], [.06, .1, .06], [0, 0, x * .25]);
-      ball(skull, hairL, [-.1, .23, .14], [.06, .025, .04], [-.6, 0, .4]);             // brillo del pelo
-    } else if (style === 'spiky') {
+      if (!capOn) ball(skull, hairL, [-.1, .23, .14], [.06, .025, .04], [-.6, 0, .4]);  // brillo del pelo
+    } else if (hs === 'buzz') {
+      for (const x of [-1, 1]) ball(skull, hair, [x * .25, .05, .06], [.04, .07, .04], [0, 0, x * .25]);
+      ball(skull, hair, [0, .2, .17], [.22, .05, .07], [.5, 0, 0]);                    // línea de la frente
+    } else if (hs === 'spiky') {
       bangs(7, .14);
       const spikes = [[0, .32, -.02, -.3, 0], [-.15, .28, .02, -.2, .55], [.15, .28, .02, -.2, -.55], [-.08, .26, -.18, -1, .3], [.08, .26, -.18, -1, -.3], [-.24, .14, -.1, -.6, 1.1], [.24, .14, -.1, -.6, -1.1], [0, .15, -.27, -1.6, 0]];
-      spikes.forEach(([x, y, z, rx, rz], i) => add(skull, cone(), hair, [x, y, z], [.1, .17, .09], [rx, 0, rz]));
-      ball(skull, hairL, [-.08, .24, .15], [.05, .02, .035], [-.6, 0, .4]);
-    } else if (style === 'long') {
+      spikes.forEach(([x, y, z, rx, rz]) => { if (capOn && y > .2) return; add(skull, cone(), hair, [x, y, z], [.1, .17, .09], [rx, 0, rz]); });
+      if (!capOn) ball(skull, hairL, [-.08, .24, .15], [.05, .02, .035], [-.6, 0, .4]);
+    } else if (hs === 'curly') {
+      bangs(5, .1);
+      const curls = [[0, .3, 0], [-.14, .28, .06], [.14, .28, .06], [-.2, .2, -.1], [.2, .2, -.1], [0, .24, -.17], [-.1, .12, -.25], [.1, .12, -.25], [-.26, .06, .02], [.26, .06, .02], [0, .02, -.3], [-.07, .3, -.1], [.07, .3, -.1]];
+      curls.forEach(([x, y, z], i) => { if (capOn && y > .18) return; ball(skull, i % 3 ? hair : hairD, [x, y, z], [.085, .08, .085]); });
+    } else if (hs === 'long') {
       bangs(8, .14);
       ball(skull, hair, [0, -.17, -.17], [.27, .3, .13]);                                // melena por detrás
       for (const x of [-1, 1]) pill(skull, hair, [x * .25, -.14, .04], .065, .3, [1, 1, .8], [0, 0, -x * .08]); // mechones laterales
       for (const x of [-1, 1]) ball(skull, hairD, [x * .22, -.33, -.06], [.07, .06, .07]); // puntas
-      ball(skull, hairL, [-.12, .22, .13], [.07, .025, .04], [-.6, 0, .4]);
-    } else if (style === 'bun') {
+      if (!capOn) ball(skull, hairL, [-.12, .22, .13], [.07, .025, .04], [-.6, 0, .4]);
+    } else if (hs === 'bob') {
+      bangs(8, .13);
+      ball(skull, hair, [0, -.06, -.16], [.3, .24, .16]);                                // volumen atrás
+      for (const x of [-1, 1]) ball(skull, hair, [x * .25, -.08, .03], [.09, .17, .12], [0, 0, -x * .12]); // laterales a la mandíbula
+      for (const x of [-1, 1]) ball(skull, hairD, [x * .23, -.22, .03], [.08, .04, .1]);  // puntas hacia adentro
+      if (!capOn) ball(skull, hairL, [-.12, .22, .13], [.07, .025, .04], [-.6, 0, .4]);
+    } else if (hs === 'tail') {
+      bangs(7, .12);
+      for (const x of [-1, 1]) pill(skull, hair, [x * .25, -.05, .05], .04, .14, [1, 1, .8], [0, 0, -x * .1]);
+      add(skull, torus(), L.accent, [0, .12, -.27], [.06, .06, .05], [-.4, 0, 0]);        // liga de la cola
+      pill(skull, hair, [0, -.08, -.36], .08, .3, [1, 1, .9], [-.35, 0, 0]);              // cola de caballo
+      ball(skull, hairD, [0, -.28, -.42], [.06, .06, .06]);
+      if (!capOn) ball(skull, hairL, [-.12, .22, .13], [.07, .025, .04], [-.6, 0, .4]);
+    } else if (hs === 'bun') {
       bangs(7, .12);
       ball(skull, hair, [0, .29, -.13], [.12, .11, .12]);
       add(skull, torus(), shade(L.accent, -.1), [0, .25, -.1], [.08, .08, .06], [-.9, 0, 0]); // moño con liga
       for (const x of [-1, 1]) pill(skull, hair, [x * .26, -.06, .06], .04, .16, [1, 1, .8], [0, 0, -x * .1]);
-    } else if (style === 'bald') {
+    } else if (hs === 'bald') {
       for (const x of [-1, 1]) ball(skull, hair, [x * .27, .02, -.08], [.07, .1, .12]);
       ball(skull, hair, [0, .0, -.27], [.18, .1, .06]);
       for (const x of [-1, 1]) ball(skull, hair, [x * .055, -.07, .265], [.06, .025, .02], [0, 0, x * .3]); // bigote
       for (const x of [-1, 1]) pill(skull, hair, [x * .1, .11, .265], .018, .07, [1, 1, .6], [0, 0, Math.PI / 2]); // cejas pobladas
     }
+  }
+  if (capOn) {
+    const hc = L.hat || '#e04848', band = L.hatBand || '#ffffff';
+    add(skull, cap(.5), hc, [0, .1, -.02], [.33, .29, .32], [-.38, 0, 0]);                 // copa de la gorra
+    add(skull, cap(.5), shade(hc, .18), [-.06, .2, .05], [.12, .06, .1], [-.5, 0, .3]);   // brillo de la copa
+    add(skull, torus(Math.PI * 2, .1), band, [0, .135, -.005], [.315, .3, .3], [Math.PI / 2 - .38, 0, 0]); // banda delgada
+    add(skull, halfDisc(), hc, [0, .17, .24], [.17, .02, .15], [.12, 0, 0]);              // visera corta
+    add(skull, halfDisc(), shade(hc, -.25), [0, .158, .24], [.165, .01, .145], [.12, 0, 0]);
+    add(skull, disc(), band, [0, .3, .14], [.06, .012, .06], [.85, 0, 0]);               // emblema
+    add(skull, disc(), hc, [0, .305, .145], [.03, .014, .03], [.85, 0, 0]);
   }
   if (L.cap) { ball(skull, L.cap, [0, .28, .07], [.15, .07, .09], [.35, 0, 0]); add(skull, disc(), L.accent, [0, .3, .15], [.035, .01, .035], [1.2, 0, 0]); } // cofia
   r.batch(skull);

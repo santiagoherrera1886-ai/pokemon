@@ -3,7 +3,9 @@ import { input } from './core/input.js';
 import { Renderer } from './core/renderer.js';
 import { Graphics } from './core/graphics.js';
 import { initLayout } from './core/layout.js';
-import { newState, loadState, hasSave } from './core/state.js';
+import { newState, loadState, saveState, listSaves } from './core/state.js';
+import { cloud } from './core/cloud.js';
+import { avatarLook, defaultAvatar } from './data/avatar.js';
 import { canvas, px, ellipse } from './core/pixel.js';
 import { World } from './world/world.js';
 import { Overworld } from './world/overworld.js';
@@ -13,7 +15,7 @@ import { ui } from './ui/ui.js';
 import { Menus } from './ui/menus.js';
 import { battleSprite, silhouette } from './art/creatures.js';
 import { tree, house } from './art/objects.js';
-import { sheet } from './art/characters.js';
+import { sheet, setPlayerLook } from './art/characters.js';
 import { ENCOUNTERS, SPECIES, MOVES, makeCreature, refreshStats } from './data/creatures.js';
 import { ITEMS, repelled } from './data/items.js';
 
@@ -56,7 +58,7 @@ class Game {
   update() {
     this.frame++;
     ui.update();
-    if (this.scene === 'overworld') { this.ow.update(); this.state.playTime++; }
+    if (this.scene === 'overworld') { this.ow.update(); this.state.playTime++; if (this.autosavePending) this.tryAutosave(); }
     const w = this.waiters; this.waiters = [];
     w.forEach(r => r());
     input.endFrame();
@@ -114,11 +116,17 @@ class Game {
     document.getElementById('menuBtn').classList.add('hidden');
     ui.hideMsg(); ui.closePanel();
     document.getElementById('fade').style.opacity = '0';
-    const choice = await this.menus.title(hasSave());
+    // En el título se ve el avatar de la última partida guardada.
+    const last = listSaves().sort((a, b) => b.savedAt - a.savedAt)[0];
+    this.previewAvatar(last ? last.avatar : defaultAvatar());
+    if (cloud.linked) cloud.pull().catch(e => console.warn('Alborada: GitHub no respondió', e.message));
+    const choice = await this.menus.title();
     ui.closePanel();
     document.body.classList.remove('at-title');
-    if (choice.type === 'continue') this.state = loadState() || newState();
-    else this.state = newState(choice.name);
+    if (choice.type === 'continue') this.state = loadState(choice.slot) || newState();
+    else { this.state = newState(choice.name, choice.avatar, choice.slot); saveState(this.state); cloud.pushSoon(); }
+    this.autosavePending = false;
+    this.applyAvatar();
     this.applyOptions();
     await this.fadeOut();
     this.scene = 'overworld';
@@ -132,6 +140,17 @@ class Game {
       await ui.say([`${this.state.name}, despierta... Hoy es un día especial en Pueblo Brisal.`, 'Usa las flechas o la cruceta para caminar y A (Z o Enter) para hablar e investigar.', 'Pulsa Esc o el botón MENÚ para ver tu equipo, la mochila y guardar.']);
       this.ow.scripts--;
     }
+  }
+
+  // Avatar del protagonista: pixel art y 3D usan el look 'player', que sale de state.avatar.
+  applyAvatar() { this.previewAvatar(this.state.avatar); }
+  previewAvatar(avatar) { setPlayerLook(avatarLook(avatar)); this.graphics?.engine?.refreshPlayer?.(); }
+  // Guardado automático al entrar a un lugar, cuando no hay diálogo ni escena en curso.
+  requestAutosave() { if (this.state.options?.autosave !== false && this.scene === 'overworld') this.autosavePending = true; }
+  tryAutosave() {
+    if (this.ow.scripts || this.ow.locked || ui.dialog || this.fading || this.ow.player.moving) return;
+    this.autosavePending = false;
+    if (saveState(this.state)) cloud.pushSoon();
   }
 
   applyOptions() {

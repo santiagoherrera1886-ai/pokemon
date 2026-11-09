@@ -42,8 +42,12 @@ function head(g, L, dir) {
     else if (L.style === 'bun') { px(g, 6, 0, hair, 4, 2); px(g, 4, 5, hair, 8, 1); px(g, 4, 6, hair, 1, 2); px(g, 11, 6, hair, 1, 2); }
     else if (L.style === 'spiky') { px(g, 3, 2, hair, 1, 3); px(g, 12, 2, hair, 1, 3); px(g, 5, 0, hair, 1, 1); px(g, 8, 0, hair, 1, 1); px(g, 10, 0, hair, 1, 1); px(g, 4, 5, hair, 8, 1); px(g, 5, 6, hair, 1, 1); px(g, 8, 6, hair, 1, 1); }
     else if (L.style === 'bald') { px(g, 5, 1, L.skin, 6, 3); px(g, 4, 3, hair, 1, 4); px(g, 11, 3, hair, 1, 4); px(g, 6, 5, hair, 4, 1); }
+    else if (L.style === 'buzz') { px(g, 4, 5, hair, 8, 1); }
+    else if (L.style === 'curly') { px(g, 3, 2, hair, 1, 4); px(g, 12, 2, hair, 1, 4); px(g, 5, 0, hair, 2, 1); px(g, 9, 0, hair, 2, 1); px(g, 4, 5, hair, 8, 1); px(g, 4, 6, hair, 1, 2); px(g, 11, 6, hair, 1, 2); px(g, 6, 2, dark, 1, 1); px(g, 9, 3, dark, 1, 1); px(g, 5, 4, dark, 1, 1); px(g, 10, 2, dark, 1, 1); }
+    else if (L.style === 'bob') { px(g, 3, 4, hair, 2, 6); px(g, 11, 4, hair, 2, 6); px(g, 4, 5, hair, 8, 1); }
+    else if (L.style === 'tail') { px(g, 4, 5, hair, 8, 1); px(g, 4, 6, hair, 1, 2); px(g, 11, 6, hair, 1, 2); px(g, 12, 5, hair, 1, 5); }
     else { px(g, 4, 5, hair, 8, 1); px(g, 4, 6, hair, 1, 2); px(g, 11, 6, hair, 1, 2); }
-    if (L.style === 'cap') { px(g, 4, 1, L.hat, 8, 4); px(g, 3, 4, L.hat, 10, 1); px(g, 3, 5, shadeHex(L.hat, -0.25), 10, 1); px(g, 4, 2, L.hatBand, 8, 1); px(g, 7, 3, L.hatBand, 2, 1); px(g, 4, 6, hair, 1, 2); px(g, 11, 6, hair, 1, 2); }
+    if (L.style === 'cap' || L.wearCap) { px(g, 4, 1, L.hat, 8, 4); px(g, 3, 4, L.hat, 10, 1); px(g, 3, 5, shadeHex(L.hat, -0.25), 10, 1); px(g, 4, 2, L.hatBand, 8, 1); px(g, 7, 3, L.hatBand, 2, 1); px(g, 4, 6, hair, 1, 2); px(g, 11, 6, hair, 1, 2); }
     if (L.cap) { px(g, 5, 1, L.cap, 6, 2); px(g, 7, 1, '#f05a8a', 2, 2); }
     if (L.style === 'hood') { px(g, 3, 1, L.hood, 10, 5); px(g, 3, 5, L.hood, 2, 7); px(g, 11, 5, L.hood, 2, 7); px(g, 7, 2, L.accent, 2, 2); }
     px(g, 6, 7, EYE, 1, 2); px(g, 9, 7, EYE, 1, 2);
@@ -55,7 +59,10 @@ function head(g, L, dir) {
     if (L.style === 'bun') px(g, 6, 0, hair, 4, 3);
     if (L.style === 'spiky') { px(g, 3, 2, hair, 1, 3); px(g, 12, 2, hair, 1, 3); px(g, 5, 0, hair, 1, 1); px(g, 10, 0, hair, 1, 1); }
     if (L.style === 'bald') { px(g, 5, 1, L.skin, 6, 4); }
-    if (L.style === 'cap') { px(g, 4, 1, L.hat, 8, 5); px(g, 4, 5, shadeHex(L.hat, -0.25), 8, 1); px(g, 6, 4, L.hatBand, 4, 1); }
+    if (L.style === 'bob') { px(g, 3, 4, hair, 10, 6); px(g, 4, 9, dark, 8, 1); }
+    if (L.style === 'tail') { px(g, 7, 9, hair, 2, 5); px(g, 7, 13, dark, 2, 1); px(g, 7, 9, L.accent, 2, 1); }
+    if (L.style === 'curly') { px(g, 3, 2, hair, 1, 4); px(g, 12, 2, hair, 1, 4); px(g, 5, 0, hair, 2, 1); px(g, 9, 0, hair, 2, 1); px(g, 6, 3, dark, 1, 1); px(g, 9, 5, dark, 1, 1); }
+    if (L.style === 'cap' || L.wearCap) { px(g, 4, 1, L.hat, 8, 5); px(g, 4, 5, shadeHex(L.hat, -0.25), 8, 1); px(g, 6, 4, L.hatBand, 4, 1); }
     if (L.cap) px(g, 5, 1, L.cap, 6, 2);
     if (L.style === 'hood') { px(g, 3, 1, L.hood, 10, 11); px(g, 6, 3, L.accent, 4, 1); }
   } else { // perfil izquierdo
@@ -66,7 +73,10 @@ function head(g, L, dir) {
     if (L.style === 'bun') { px(g, 9, 1, hair, 4, 3); }
     if (L.style === 'spiky') { px(g, 11, 2, hair, 2, 2); px(g, 6, 0, hair, 1, 1); px(g, 9, 0, hair, 1, 1); }
     if (L.style === 'bald') { px(g, 5, 1, L.skin, 5, 4); px(g, 9, 4, hair, 3, 4); }
-    if (L.style === 'cap') { px(g, 4, 1, L.hat, 8, 4); px(g, 2, 4, L.hat, 7, 1); px(g, 2, 5, shadeHex(L.hat, -0.25), 5, 1); px(g, 4, 2, L.hatBand, 8, 1); }
+    if (L.style === 'bob') { px(g, 9, 4, hair, 4, 6); }
+    if (L.style === 'tail') { px(g, 11, 5, hair, 2, 6); px(g, 11, 5, L.accent, 2, 1); }
+    if (L.style === 'curly') { px(g, 11, 2, hair, 2, 3); px(g, 6, 0, hair, 2, 1); px(g, 9, 0, hair, 2, 1); px(g, 7, 2, dark, 1, 1); }
+    if (L.style === 'cap' || L.wearCap) { px(g, 4, 1, L.hat, 8, 4); px(g, 2, 4, L.hat, 7, 1); px(g, 2, 5, shadeHex(L.hat, -0.25), 5, 1); px(g, 4, 2, L.hatBand, 8, 1); }
     if (L.cap) px(g, 5, 1, L.cap, 5, 2);
     if (L.style === 'hood') { px(g, 4, 1, L.hood, 8, 4); px(g, 8, 4, L.hood, 4, 8); }
     px(g, 5, 7, EYE, 1, 2);
@@ -92,9 +102,14 @@ function body(g, L, dir, frame) {
     const pd = shadeHex(L.pants, -0.2);
     px(g, 4, 16, pd, 8, 1);
     const lUp = step === -1 ? 1 : 0, rUp = step === 1 ? 1 : 0;
-    px(g, 5, 17, L.pants, 3, 3 - lUp); px(g, 8, 17, L.pants, 3, 3 - rUp);
+    if (L.skirt) {
+      px(g, 4, 16, L.pants, 8, 2); px(g, 3, 17, pd, 10, 1);
+      px(g, 5, 18, L.skin, 3, 2 - lUp); px(g, 8, 18, L.skin, 3, 2 - rUp);
+    } else {
+      px(g, 5, 17, L.pants, 3, 3 - lUp); px(g, 8, 17, L.pants, 3, 3 - rUp);
+      px(g, 8, 17, pd, 1, 3 - rUp);
+    }
     px(g, 5, 20 - lUp, L.shoes, 3, 2); px(g, 8, 20 - rUp, L.shoes, 3, 2);
-    px(g, 8, 17, pd, 1, 3 - rUp);
   } else {
     px(g, 5, 11, L.shirt, 6, 5); px(g, 5, 15, shirtD, 6, 1);
     if (L.scarf) px(g, 4, 11, L.scarf, 6, 2);
@@ -102,12 +117,14 @@ function body(g, L, dir, frame) {
     if (L.coat) px(g, 5, 11, L.coat, 6, 8);
     if (L.apron) px(g, 4, 13, L.apron, 2, 5);
     const pd = shadeHex(L.pants, -0.2);
+    if (L.skirt) { px(g, 5, 16, L.pants, 6, 2); px(g, 4, 17, pd, 8, 1); }
     if (step === 0) {
-      px(g, 6, 16, L.pants, 4, 4); px(g, 5, 20, L.shoes, 5, 2);
+      px(g, 6, 16 + (L.skirt ? 2 : 0), L.skirt ? L.skin : L.pants, 4, L.skirt ? 2 : 4); px(g, 5, 20, L.shoes, 5, 2);
       px(g, 7, 11, shirtD, 2, 4); px(g, 7, 15, L.skin, 2, 1);
     } else {
-      px(g, 4, 16, L.pants, 3, 4); px(g, 3, 20, L.shoes, 4, 2);
-      px(g, 8, 16, pd, 3, 3); px(g, 9, 19, shadeHex(L.shoes, -0.2), 3, 2);
+      const leg = L.skirt ? L.skin : L.pants, top = L.skirt ? 18 : 16;
+      px(g, 4, top, leg, 3, 20 - top); px(g, 3, 20, L.shoes, 4, 2);
+      px(g, 8, top, L.skirt ? shadeHex(L.skin, -0.12) : pd, 3, 19 - top); px(g, 9, 19, shadeHex(L.shoes, -0.2), 3, 2);
       const a = step === 1 ? 0 : 1;
       px(g, 5 + a * 3, 11, shirtD, 2, 3); px(g, 5 + a * 3, 14, L.skin, 2, 1);
     }
@@ -128,6 +145,8 @@ function frameSprite(L, dir, frame) {
 }
 
 const sheetCache = new Map();
+// El protagonista usa el avatar de la partida: se reemplaza su look y se borran sus cuadros en caché.
+export function setPlayerLook(look) { LOOKS.player = look; sheetCache.delete('player'); }
 // Devuelve frames[dir][frame]; dir: 0 abajo, 1 arriba, 2 izquierda, 3 derecha.
 export function sheet(lookName) {
   if (sheetCache.has(lookName)) return sheetCache.get(lookName);
@@ -137,6 +156,9 @@ export function sheet(lookName) {
   sheetCache.set(lookName, frames);
   return frames;
 }
+
+// Cuadro suelto de un look (sin caché): sirve para miniaturas del avatar en el título y el editor.
+export function lookFrame(L, dir = 0, frame = 0) { return dir === 3 ? flipH(frameSprite(L, 2, frame)) : frameSprite(L, dir, frame); }
 
 // Retrato grande para el cuadro de diálogo (cabeza ampliada x2 de frente).
 export function portrait(lookName) {

@@ -21,6 +21,14 @@ El mundo, los personajes, las criaturas, los nombres y todo el pixel art son **o
 
 **Contenido:** 28 especies con evoluciones, 10 tipos, 33 movimientos, más de 20 entrenadores con línea de visión, 3 gimnasios, viaje rápido con la Mensajera de las posadas, PC de almacenamiento, registro de criaturas vistas y atrapadas.
 
+## Personaje y partidas
+
+- **Creador de personaje:** al empezar escoges chico o chica, tono de piel, peinado (corto, puntas, rizos, rapado, largo, cola, moño o melena), color de pelo, gorra (o sin gorra), chaqueta, pantalón o falda y morral. Se ve igual en 3D y en pixel clásico, y se cambia cuando quieras en **Opciones → Mi avatar**.
+- **Tres ranuras:** varias personas pueden jugar en el mismo navegador sin borrarse la partida. Cada ranura muestra nombre, medallas, tiempo jugado y lugar.
+- **Guardado automático** al entrar a cada lugar (se apaga en Opciones), además del botón Guardar.
+- **Respaldo en GitHub (opcional):** en **Partidas y GitHub** se pega una vez un token con permiso `gist` (el juego abre el enlace para crearlo). Las partidas se suben a un gist privado de tu cuenta (`alborada-partidas.json`) cada vez que guardas y se pueden traer en otro equipo. El token queda sólo en ese navegador.
+- **Archivo:** descargar la partida como `.json` y cargarla en otra ranura desde el título.
+
 ## Tiendas y objetos
 
 Cada tienda tiene tres puestos:
@@ -83,6 +91,9 @@ src/battle/battle.js  combate, entrenadores, experiencia, niveles, aprendizaje y
 src/ui/               diálogo, paneles, menú, equipo, mochila por bolsillos, tienda, opciones, viaje rápido, título
 src/data/creatures.js especies, movimientos, tipos y encuentros
 src/data/items.js     objetos, bolsillos, inventario de cada tienda y efectos (combate y mapa)
+src/data/avatar.js    opciones del creador de personaje y conversión a look (pixel y 3D)
+src/core/state.js     estado de la partida y tres ranuras de guardado
+src/core/cloud.js     respaldo opcional de las partidas en un gist privado de GitHub
 tests/e2e.cjs         prueba que juega toda la historia en Chromium real
 fonts/                Pixelify Sans, Fredoka y Nunito (licencia SIL OFL, incluida), servidas localmente
 ```
@@ -95,7 +106,7 @@ npx playwright install chromium
 npm test
 ```
 
-La prueba juega **la historia entera** con teclas reales: camina con una ruta calculada sobre las colisiones del juego (sin teletransportes), entra y sale de edificios, pelea con Nico, los entrenadores, los tres líderes, Bruma, Umbra, Espejalba, Nico en la Liga y la Campeona Aurora, usa la posada, compra y vende en la tienda, compra en el mostrador especial y en la máquina, usa el viaje rápido, guarda y continúa tras recargar, prueba las opciones y los controles táctiles en un celular, y falla si aparece cualquier error de JavaScript. Las capturas quedan en `tests/screenshots/`.
+La prueba juega **la historia entera** con teclas reales: camina con una ruta calculada sobre las colisiones del juego (sin teletransportes), entra y sale de edificios, pelea con Nico, los entrenadores, los tres líderes, Bruma, Umbra, Espejalba, Nico en la Liga y la Campeona Aurora, usa la posada, compra y vende en la tienda, compra en el mostrador especial y en la máquina, usa el viaje rápido, guarda y continúa tras recargar, prueba las opciones y los controles táctiles en un celular, crea una chica en el editor de personaje, usa dos ranuras y conecta el respaldo de GitHub contra una API simulada, y falla si aparece cualquier error de JavaScript. Las capturas quedan en `tests/screenshots/`.
 
 Para que la prueba sea rápida y no dependa del azar, después de elegir inicial sube su nivel y le recarga los PP en algunos puntos. Todo lo demás es entrada real.
 

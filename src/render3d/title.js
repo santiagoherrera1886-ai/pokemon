@@ -61,6 +61,12 @@ export class TitleScene {
     this.legend = creature(r, 'espejalba'); R.add(this.legend.root); this.legend.root.scale.setScalar(1.5);
     this.layout(16 / 9);
   }
+  // Rehace al protagonista con el avatar actual (el editor lo llama en cada cambio).
+  setPlayer() {
+    const old = this.player; this.player = character(this.r, 'player'); this.root.add(this.player.root);
+    if (old) { this.player.root.visible = old.root.visible; this.r.release(old.root); }
+    if (this.aspect) { const a = this.aspect; this.aspect = 0; this.layout(a); }
+  }
   // Acomoda la escena según la forma de la pantalla (horizontal o vertical).
   layout(aspect) {
     if (this.aspect === aspect) return; this.aspect = aspect;

@@ -47,6 +47,10 @@ export class Graphics {
     if (this.mode !== 'premium' || this.status !== 'ready' || !this.engine || this.engine.lost) return null;
     try { return this.engine.portrait(sp); } catch (error) { console.warn('Alborada: retrato no disponible', error.message); return null; }
   }
+  avatarPortrait(look) {
+    if (this.mode !== 'premium' || this.status !== 'ready' || !this.engine || this.engine.lost) return null;
+    try { return this.engine.avatarPortrait(look); } catch (error) { console.warn('Alborada: retrato del avatar no disponible', error.message); return null; }
+  }
   render() {
     const supportedScene = this.game.scene === 'overworld' || this.game.scene === 'battle' || this.game.scene === 'title';
     if (this.mode !== 'premium' || !supportedScene || this.status === 'unavailable') {this.engine?.setVisible(false); return false;}

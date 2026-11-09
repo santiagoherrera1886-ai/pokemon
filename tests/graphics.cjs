@@ -15,6 +15,7 @@ async function run(){
   await page.route(/fonts\.(googleapis|gstatic)\.com/,r=>r.abort());
   await page.goto(`http://127.0.0.1:${server.address().port}/`);
   await page.click('[data-act="new"]');await page.click('[data-act="ok"]');
+  await page.waitForSelector('#panel.avatar-panel');await page.click('#panel [data-act="start"]');
   await page.waitForFunction(()=>window.__game?.graphics.status==='ready',{},{timeout:30000});
   await page.waitForFunction(()=>__ui.dialog && __game.ow.scripts>0);
   await page.evaluate(()=>{while(__ui.dialog)__ui.advance();__game.state.options.forceHour=12;});

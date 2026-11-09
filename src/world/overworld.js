@@ -76,6 +76,7 @@ export class Overworld {
     this.st.visited[mapId] = true;
     if (banner) ui.banner(this.map.name, this.map.dark ? 'cave' : !this.map.outdoor ? 'inside' : this.map.encounters ? 'route' : 'town');
     this.game.refreshHome?.();
+    this.game.requestAutosave?.();
   }
   refreshNpcs() {
     const keep = new Map((this.npcs || []).map(n => [n.id, n]));
