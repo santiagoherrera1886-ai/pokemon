@@ -2,19 +2,21 @@
 // ropa con forma (gorra con visera curva, chaqueta, bata, falda, bufanda, morral) y manos/zapatos redondeados.
 // Todo es geometría propia; los colores salen de LOOKS (art/characters.js).
 import * as T from 'three';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { LOOKS } from '../art/characters.js';
 
 // ---------- Geometrías compartidas (se clonan al fusionar, así que no se liberan por personaje) ----------
 const G = {};
 function geo(key, make) { return G[key] || (G[key] = make()); }
-const sphere = () => geo('sphere', () => new T.SphereGeometry(1, 28, 20));
-const capsule = (radius, len) => geo('capsule' + radius + ':' + len, () => new T.CapsuleGeometry(radius, len, 6, 16));
-const cap = (t) => geo('cap' + t, () => new T.SphereGeometry(1, 28, 16, 0, Math.PI * 2, 0, Math.PI * t));
-const torus = (arc = Math.PI * 2, tube = .28) => geo('torus' + arc.toFixed(2) + tube, () => new T.TorusGeometry(1, tube, 10, 28, arc));
-const halfDisc = () => geo('halfdisc', () => new T.CylinderGeometry(1, 1, 1, 24, 1, false, -Math.PI / 2, Math.PI));
-const disc = () => geo('disc', () => new T.CylinderGeometry(1, 1, 1, 20));
-const cone = () => geo('cone', () => new T.ConeGeometry(1, 1, 14));
-const lathe = (name, pts) => geo('lathe' + name, () => new T.LatheGeometry(pts.map(([x, y]) => new T.Vector2(x, y)), 28));
+const sphere = () => geo('sphere', () => new T.SphereGeometry(1, 9, 7));
+const retroHead = () => geo('retroHead', () => new RoundedBoxGeometry(2,2,2,2,.18));
+const capsule = (radius, len) => geo('capsule' + radius + ':' + len, () => new T.CapsuleGeometry(radius, len, 3, 8));
+const cap = (t) => geo('cap' + t, () => new T.SphereGeometry(1, 12, 7, 0, Math.PI * 2, 0, Math.PI * t));
+const torus = (arc = Math.PI * 2, tube = .28) => geo('torus' + arc.toFixed(2) + tube, () => new T.TorusGeometry(1, tube, 6, 12, arc));
+const halfDisc = () => geo('halfdisc', () => new T.CylinderGeometry(1, 1, 1, 10, 1, false, -Math.PI / 2, Math.PI));
+const disc = () => geo('disc', () => new T.CylinderGeometry(1, 1, 1, 10));
+const cone = () => geo('cone', () => new T.ConeGeometry(1, 1, 8));
+const lathe = (name, pts) => geo('lathe' + name, () => new T.LatheGeometry(pts.map(([x, y]) => new T.Vector2(x, y)), 10));
 const TORSO = [[.001, 0], [.17, 0], [.185, .05], [.18, .16], [.155, .27], [.11, .33], [.001, .335]];
 const COAT = [[.001, -.02], [.215, -.02], [.205, .1], [.19, .2], [.165, .29], [.115, .345], [.001, .35]];
 const SKIRT = [[.13, .14], [.25, 0], [.255, -.012], [.001, -.012], [.001, .14]];
@@ -77,7 +79,7 @@ export function person(r, look = 'player') {
   // ---------------- Cabeza ----------------
   const head = new T.Group(); head.position.y = .98; head.scale.setScalar(1.2); root.add(head);
   const skull = new T.Group(); head.add(skull);
-  ball(skull, L.skin, [0, 0, 0], [.31, .29, .285]);
+  add(skull, retroHead(), L.skin, [0, 0, 0], [.31, .29, .285]);
   pill(skull, L.skin, [0, -.28, -.02], .055, .06);                                     // cuello
   for (const x of [-1, 1]) ball(skull, L.skin, [x * .3, -.01, -.01], [.05, .065, .04]); // orejas
   ball(skull, shade(L.skin, -.04), [0, -.05, .28], [.014, .01, .01]);                    // nariz
