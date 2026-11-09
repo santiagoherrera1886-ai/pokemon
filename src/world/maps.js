@@ -85,6 +85,7 @@ function lago() {
   b.npc({ id: 'gruntLago2', look: 'grunt', x: 9, y: 11, dir: 3, when: st => S(st) === 10 });
   b.trigger({ x: 17, y: 3, w: 1, h: 14, when: st => S(st) === 10, script: 'eventoLago' });
   b.obj({ kind: 'shimmer', x: 8, y: 10, solid: true, when: st => S(st) >= 11 && !st.flags.espejalba, script: 'espejalbaOtraVez' });
+  b.obj({ kind: 'shimmer', x: 16, y: 9, solid: true, legend: 'dracalba', when: st => S(st) >= 12 && st.flags.brumalia && st.flags.fraguon && st.flags.glaciel && !st.flags.dracalba, script: 'leyenda' });
   return b.build();
 }
 

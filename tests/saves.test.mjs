@@ -51,3 +51,12 @@ test('play time reads in hours and minutes', () => {
   assert.equal(playTimeText(0), '0 min');
   assert.equal(playTimeText(60 * 60 * 125), '2 h 05 min');
 });
+
+test('saves from before Forma Alba get the band once they have a badge, and never keep a transformation', () => {
+  const old = newState('Vale'); old.badges = ['hoja']; old.party = [{ sp: 'brasin', alba: true }];
+  const st = parseState(JSON.stringify(old));
+  assert.equal(st.bag.brazaleteAlba, 1);
+  assert.equal(st.party[0].alba, undefined);
+  const fresh = parseState(JSON.stringify(newState('Nadia')));
+  assert.equal(fresh.bag.brazaleteAlba, undefined);
+});

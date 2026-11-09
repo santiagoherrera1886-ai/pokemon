@@ -16,7 +16,7 @@ import { Menus } from './ui/menus.js';
 import { battleSprite, silhouette } from './art/creatures.js';
 import { tree, house } from './art/objects.js';
 import { sheet, setPlayerLook } from './art/characters.js';
-import { ENCOUNTERS, SPECIES, MOVES, makeCreature, refreshStats } from './data/creatures.js';
+import { ENCOUNTERS, SPECIES, MOVES, makeCreature, refreshStats, encounterList } from './data/creatures.js';
 import { ITEMS, repelled } from './data/items.js';
 
 class Game {
@@ -228,8 +228,9 @@ class Game {
     const table = ENCOUNTERS[key];
     if (!table || !this.state.party.some(c => c.hp > 0) || this.state.story < 3) return;
     if (!force && Math.random() >= table.rate) return;
-    let roll = Math.random() * 100, pick = table.list[0];
-    for (const e of table.list) { if ((roll -= e[3]) < 0) { pick = e; break; } }
+    const list = encounterList(key, this.hour());
+    let roll = Math.random() * list.reduce((t, e) => t + e[3], 0), pick = list[0];
+    for (const e of list) { if ((roll -= e[3]) < 0) { pick = e; break; } }
     const [sp, lo, hi] = pick;
     const level = lo + Math.floor(Math.random() * (hi - lo + 1));
     if (!force && repelled(this.state, level)) return;

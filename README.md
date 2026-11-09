@@ -19,15 +19,37 @@ El mundo, los personajes, las criaturas, los nombres y todo el pixel art son **o
 | Equipo Eclipse | Bodega de Ciudad Marea, Lago Espejo | Admin. Bruma, Jefe Umbra y la guardiana Espejalba (se puede atrapar) |
 | Liga | Ruta 5, Liga Alborada | Combate final con Nico, Campeona Aurora, créditos y regreso a casa |
 
-**Contenido:** 28 especies con evoluciones, 18 tipos, 107 movimientos, 5 estados alterados, más de 20 entrenadores con línea de visión, 3 gimnasios, viaje rápido con la Mensajera de las posadas, PC de almacenamiento, registro de criaturas vistas y atrapadas.
+**Contenido:** 62 especies (diez familias nuevas y cinco leyendas), todas con Forma Alba, 18 tipos, 123 movimientos, 5 estados alterados, más de 20 entrenadores con línea de visión, 3 gimnasios, viaje rápido con la Mensajera de las posadas, PC de almacenamiento, registro de criaturas vistas y atrapadas.
 
 ## Combate
 
 - **18 tipos** (Normal, Fuego, Agua, Planta, Eléctrico, Hielo, Lucha, Veneno, Tierra, Volador, Psíquico, Bicho, Roca, Fantasma, Dragón, Siniestro, Acero y Hada) con su tabla completa de ventajas, desventajas e inmunidades (`src/data/types.js`).
-- **107 movimientos** (`src/data/moves.js`): ataques de varias potencias, golpes que van primero, de 2 a 5 golpes, retroceso, drenaje, curación, protección, críticos fáciles, subidas y bajadas de estadísticas y efectos secundarios.
+- **123 movimientos** (`src/data/moves.js`): ataques de varias potencias, golpes que van primero, de 2 a 5 golpes, retroceso, drenaje, curación, protección, críticos fáciles, subidas y bajadas de estadísticas y efectos secundarios.
 - **Estados:** quemado (resta PS y baja el ataque), envenenado, paralizado (más lento y a veces no se mueve), dormido y congelado, más la confusión durante el combate. Se quedan después del combate; se curan en la posada o con Antídoto, Pomada de Árnica, Tinto Cargado, Gel de Sábila, Panela Caliente y Remedio Casero. Cada tipo tiene inmunidades (el Fuego no se quema, el Eléctrico no se paraliza, etc.).
 - **Animaciones por movimiento:** en 3D (`src/render3d/movefx.js`) hay proyectiles, chorros, rayos, relámpagos, lluvias de rocas y pétalos, columnas, olas, terremotos con sacudida de cámara, remolinos, anillos psíquicos, sombras, mordiscos, zarpazos, drenajes, escudos, mejoras y efectos de cada estado. En pixel clásico, las mismas animaciones con partículas.
 - La IA de los rivales elige según la efectividad, usa estados y curaciones con criterio y no repite lo que no sirve.
+- **Forma Alba:** con la primera medalla recibes el **Brazalete Alba**. Una vez por combate, en LUCHAR, tocas **FORMA ALBA** antes de escoger el ataque: la criatura crece, le sale una corona de luz con adornos de su tipo, alas de luz y un brillo cálido, y sube su Ataque (+30 %), Defensa (+20 %) y Velocidad (+20 %) hasta que termina el combate. Funciona con todas las especies (`src/data/alba.js`, `src/render3d/alba.js`). Basalto, Coral, Nico, el Jefe Umbra y la Campeona Aurora también la usan con su última criatura.
+
+## Criaturas nuevas (bestiario de la Bruma)
+
+Diez familias de tres etapas, con diseños propios inspirados en las láminas de concepto del proyecto (`src/render3d/bestiary.js`):
+
+| Familia | Tipos | Dónde aparece |
+|---|---|---|
+| Nivalín → Nivalmar → Nivalord (ballena de hielo) | Agua/Hielo | Ruta 4 |
+| Michín → Mistigato → Orbelina (gata mística) | Psíquico → Psíquico/Hada | Lago Espejo, Ruta 5 |
+| Ferlum → Ferrox → Acerión (perro de acero) | Acero | Cueva Eco |
+| Magmol → Magmor → Magmatrón (gólem de magma) | Fuego/Roca | Cueva Eco |
+| Cuarcín → Cuarzón → Astrocuarzo (geoda de cristal) | Roca/Hada | Cueva Eco, Ruta 5 |
+| Verdílago → Foliatón → Arbórex (lagarto de hojas) | Planta → Planta/Dragón | Ruta 2, Ruta 5 |
+| Fatuín → Candelo → Velaria (farolero fantasma) | Fantasma/Fuego | De noche: Sendero 1, Lago, Ruta 4, Ruta 5 |
+| Sierpín → Serpentil → Cobrumbra (cobra) | Veneno → Veneno/Siniestro | Ruta 2, Ruta 5 |
+| Lanín → Carnerazo → Arietón (carnero boxeador) | Lucha → Lucha/Tierra | Ruta 3, Ruta 5 |
+| Truenín → Tormavis → Elestrix (ave de tormenta) | Eléctrico/Volador | Ruta 3, Ruta 4 |
+
+**Leyendas (después de ser campeón):** Brumalia (Fantasma/Hada, Ruta 2 de noche), Fraguón (Fuego/Acero, Cueva Eco) y Glaciel (Hielo/Volador, Ruta 5). Al atrapar las tres, Dracalba (Dragón/Psíquico) despierta en el Lago Espejo. Cada una tiene su movimiento propio.
+
+En pixel clásico, las especies nuevas usan sprites sacados de sus modelos 3D (`src/art/bruma-sprites.png`). Si cambias un modelo, se regeneran con `node scripts/sprites.cjs`.
 
 ## Personaje y partidas
 
@@ -97,7 +119,11 @@ src/world/            constructor de mapas, mapas (maps.js inicio, maps2.js rest
 src/story/scripts.js  guiones de toda la historia
 src/battle/battle.js  combate, entrenadores, experiencia, niveles, aprendizaje y captura
 src/ui/               diálogo, paneles, menú, equipo, mochila por bolsillos, tienda, opciones, viaje rápido, título
-src/data/creatures.js especies, movimientos, tipos y encuentros
+src/data/creatures.js especies, movimientos, tipos y encuentros (de día y de noche)
+src/data/alba.js      Forma Alba: brazalete, multiplicadores y limpieza al terminar el combate
+src/render3d/bestiary.js  modelos esculpidos de las familias nuevas y las leyendas
+src/render3d/alba.js  corona, alas de luz y brillo de la Forma Alba en 3D
+scripts/sprites.cjs   genera los sprites clásicos de las especies nuevas desde sus modelos 3D
 src/data/items.js     objetos, bolsillos, inventario de cada tienda y efectos (combate y mapa)
 src/data/avatar.js    opciones del creador de personaje y conversión a look (pixel y 3D)
 src/core/state.js     estado de la partida y tres ranuras de guardado
@@ -114,7 +140,7 @@ npx playwright install chromium
 npm test
 ```
 
-La prueba juega **la historia entera** con teclas reales: camina con una ruta calculada sobre las colisiones del juego (sin teletransportes), entra y sale de edificios, pelea con Nico, los entrenadores, los tres líderes, Bruma, Umbra, Espejalba, Nico en la Liga y la Campeona Aurora, usa la posada, compra y vende en la tienda, compra en el mostrador especial y en la máquina, usa el viaje rápido, guarda y continúa tras recargar, prueba las opciones y los controles táctiles en un celular, crea una chica en el editor de personaje, usa dos ranuras y conecta el respaldo de GitHub contra una API simulada, y falla si aparece cualquier error de JavaScript. Las capturas quedan en `tests/screenshots/`.
+La prueba juega **la historia entera** con teclas reales: camina con una ruta calculada sobre las colisiones del juego (sin teletransportes), entra y sale de edificios, pelea con Nico, los entrenadores, los tres líderes, Bruma, Umbra, Espejalba, Nico en la Liga y la Campeona Aurora (usando la Forma Alba en cada combate desde la primera medalla), encuentra a Fraguón en la Cueva Eco después de la Liga, usa la posada, compra y vende en la tienda, compra en el mostrador especial y en la máquina, usa el viaje rápido, guarda y continúa tras recargar, prueba las opciones y los controles táctiles en un celular, crea una chica en el editor de personaje, usa dos ranuras y conecta el respaldo de GitHub contra una API simulada, y falla si aparece cualquier error de JavaScript. Las capturas quedan en `tests/screenshots/`.
 
 Para que la prueba sea rápida y no dependa del azar, después de elegir inicial sube su nivel y le recarga los PP en algunos puntos. Todo lo demás es entrada real.
 
@@ -122,7 +148,7 @@ Para que la prueba sea rápida y no dependa del azar, después de elegir inicial
 
 - Música y efectos de sonido.
 - Objetos equipables.
-- Más zonas opcionales después de la Liga.
+- Más zonas opcionales después de la Liga (el mapa grande con ocho gimnasios está en diseño).
 
 ## Sobre `original/pokediamond`
 

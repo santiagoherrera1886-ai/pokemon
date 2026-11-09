@@ -3,10 +3,7 @@
 // finos (ojos con brillo que parpadean, llamas, alas, antenas, garras). Diseños propios de cada especie.
 import * as T from 'three';
 import { Sculpt } from './sculpt.js';
-
-export const ALL_SPECIES = ['brotelo', 'brotoso', 'bosqueron', 'brasin', 'brason', 'volcarbon', 'charquin', 'charcomar', 'mareon',
-  'pipiu', 'pipiolo', 'roedin', 'roedon', 'capullin', 'capullado', 'alasol', 'setin', 'seton', 'chispaz', 'voltaz',
-  'guijarrin', 'penon', 'medusin', 'meduson', 'sombrin', 'sombrador', 'mentelin', 'espejalba'];
+import { BRUMA } from './bestiary.js';
 
 // ---------- Geometrías compartidas de los detalles ----------
 const G = {};
@@ -16,6 +13,9 @@ const SPHERE_LO = () => geo('sl', () => new T.SphereGeometry(1, 14, 10));
 const CONE = () => geo('cone', () => new T.ConeGeometry(1, 1, 16));
 const CYL = () => geo('cyl', () => new T.CylinderGeometry(1, 1, 1, 14));
 const TORUS = (arc, tube) => geo('t' + arc.toFixed(3) + tube, () => new T.TorusGeometry(1, tube, 8, 24, arc));
+const OCTA = () => geo('octa', () => new T.OctahedronGeometry(1, 0));
+const PRISM = () => geo('prism', () => new T.CylinderGeometry(.62, 1, 1, 6).translate(0, .5, 0));
+const RING = tube => geo('ring' + tube, () => new T.TorusGeometry(1, tube, 10, 64));
 const BODY = new Map();   // malla esculpida por especie (cara de construir, se guarda)
 
 const sh = (hex, f) => { const c = new T.Color(hex); return '#' + (f > 0 ? c.lerp(new T.Color('#ffffff'), f) : c.multiplyScalar(1 + f)).getHexString(); };
@@ -48,6 +48,10 @@ function kit(r, g, S) {
     if (style === 'cat') {
       keep(add(SPHERE(), glow(iris, .4), [0, 0, 0], [s * 1.1, s * 1.25, s * .42], null, e));
       keep(add(SPHERE_LO(), M('#1a1420', { roughness: .2 }), [0, 0, s * .2], [s * .3, s * 1.0, s * .3], null, e));
+    } else if (style === 'led') {
+      // Ojo de máquina o de espíritu: óvalo de luz con borde oscuro, sin pupila.
+      keep(add(SPHERE(), M('#1c1a26', { roughness: .2 }), [0, 0, -s * .05], [s * 1.18, s * 1.02, s * .4], null, e));
+      keep(add(SPHERE(), glow(iris, .95), [0, 0, s * .1], [s * .96, s * .8, s * .36], null, e));
     } else {
       keep(add(SPHERE(), M(sh(iris, -.8), { roughness: .15 }), [0, 0, 0], [s, s * 1.38, s * .44], null, e));
       keep(add(SPHERE_LO(), M(sh(iris, .08), { roughness: .2 }), [0, -s * .46, s * .17], [s * .72, s * .56, s * .32], null, e));
@@ -58,7 +62,9 @@ function kit(r, g, S) {
     eyes.push(e); return e;
   };
   // Cara sobre la cabeza (c = punto dentro de la cabeza): ojos, cachetes pintados y boca.
+  const anchors = {};
   const face = o => {
+    anchors.head = { c: o.c, size: o.size || .075, top: S.surface(o.c, [0, 1, 0]).p };
     const { c, spread = .38, pitch = .05, size = .075, iris = '#3a5a9a', cheek = '#f4a3a8', mouth = 'smile', mouthPitch = -.3, mouthW = .045, lid = 0, lidColor = '#888888', style, angry = 0 } = o;
     for (const s of [-1, 1]) eyeAt(S.surface(c, dirOf(s * spread, pitch)), size, iris, { lid, lidColor, style, tilt: s * angry });
     if (cheek) for (const s of [-1, 1]) { const h = S.surface(c, dirOf(s * (spread + .34), pitch - .22)); S.paint(E([h.p.x, h.p.y, h.p.z], [size * 1.15, size * .72, size * 1.15]), cheek, size * .7); }
@@ -89,7 +95,44 @@ function kit(r, g, S) {
   const claws = (x, y, z, s = 1, color = '#fff6e6') => { for (let i = -1; i <= 1; i++) cone(color, [x + i * .055 * s, y, z], [.026 * s, .085 * s, .026 * s], [Math.PI / 2.4, 0, 0]); };
   const ember = (x, y, z, rz, len = .12) => ball(glow('#ff9a4a', .9), [x, y, z], [.026, len, .026], [0, 0, rz]);
   const gem = (p, color, s = .07) => ball(glow(color, .7), p, [s, s, s * .5]);
-  return { M, glow, ball, cone, cyl, stick, eyeAt, face, flame, antennae, claws, ember, gem, eyes, add, root: g };
+  // Pieza orientada de a (base) a b (punta): cuernos, púas, garras largas.
+  const along = (gm, c, a, b, rx, rz = rx, centered = true) => {
+    const A = new T.Vector3(...a), B = new T.Vector3(...b), len = A.distanceTo(B);
+    const at = centered ? A.clone().add(B).multiplyScalar(.5) : A;
+    const m = add(gm, c, [at.x, at.y, at.z], [rx, centered ? len / (gm === OCTA() ? 2 : 1) : len, rz]);
+    m.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), B.clone().sub(A).normalize()); return m;
+  };
+  const spike = (c, a, b, r) => along(CONE(), c, a, b, r);
+  // Cristal translúcido que brilla (hielo, gemas, cuarzo).
+  const ice = (c, k = .4, opacity = .9) => r.mat(c, { emissive: c, emissiveIntensity: k, roughness: .14, metalness: .08, transparent: opacity < 1, opacity });
+  const crystal = (c, a, b, rad, mat) => along(OCTA(), mat || ice(c), a, b, rad, rad * .8);
+  const prism = (c, a, b, rad, mat) => along(PRISM(), mat || ice(c), a, b, rad, rad, false);
+  // Hoja plana (crestas, colas, alas de hoja) entre dos puntos, con su nervio.
+  const leaf = (c, a, b, w, roll = 0, rib = true) => {
+    const m = along(SPHERE(), c, a, b, w, w * .16); m.scale.y *= .5; m.rotateY(roll);
+    if (rib) { const n = along(SPHERE_LO(), sh(typeof c === 'string' ? c : '#5aa040', .28), a, b, w * .07, w * .2); n.scale.y *= .48; n.rotateY(roll); }
+    return m;
+  };
+  // Grieta de lava o línea de energía pegada a la superficie del cuerpo esculpido.
+  const vein = (rot, from, dir, len, w = .03, color = '#ff8a2a', k = .9) => {
+    const h = S.surface(from, dir), m = add(SPHERE_LO(), glow(color, k), [h.p.x, h.p.y, h.p.z], [w, len, w * .45]);
+    m.quaternion.setFromUnitVectors(FWD, h.n); m.rotateZ(rot); m.position.addScaledVector(h.n, -w * .1); return m;
+  };
+  // Ala de plumas: abanico de plumas planas desde el hombro (side = -1 izquierda, 1 derecha).
+  const wing = ({ side, at, len = .9, width = .13, n = 6, spread = 1.1, lift = .35, sweep = .45, tilt = .1, colors = ['#8e5e3e'], tips, covert }) => {
+    const w = new T.Group(); w.position.set(...at); w.rotation.set(tilt, side * sweep, 0); g.add(w);
+    for (let i = 0; i < n; i++) {
+      const t = n > 1 ? i / (n - 1) : 0, a = lift - t * spread, L = len * (1 - t * .35), c = colors[i % colors.length];
+      const f = add(SPHERE(), c, [side * Math.cos(a) * L * .5, Math.sin(a) * L * .5, -t * .04], [L * .5, width, .035], [0, 0, side * a], w);
+      if (tips) add(SPHERE_LO(), tips, [side * Math.cos(a) * L * .86, Math.sin(a) * L * .86, -t * .04 + .006], [L * .16, width * .82, .03], [0, 0, side * a], w);
+      f.userData.feather = true;
+    }
+    if (covert) add(SPHERE(), covert, [side * len * .22, lift * len * .1, .03], [len * .3, len * .2, .05], [0, 0, side * .2], w);
+    return w;
+  };
+  // Anillo (órbitas, halos, cinturones) con centro, radio y giro.
+  const ring = (c, p, R, rot = [Math.PI / 2, 0, 0], tube = .04) => add(RING(tube), c, p, [R, R, R], rot);
+  return { M, glow, ball, cone, cyl, stick, eyeAt, face, flame, antennae, claws, ember, gem, eyes, add, root: g, anchors, spike, ice, crystal, prism, leaf, vein, wing, ring, sh, S };
 }
 
 // ---------- Especies ----------
@@ -468,8 +511,11 @@ const BUILD = {
     D.face({ c: [0, 1.6, .36], spread: .55, pitch: .05, size: .056, iris: '#3a5aa0', cheek: '#f4c0c8', mouth: 'none' });
   }
 };
-// Rugosidad del cuerpo por especie (las rocas son mate, la guardiana brilla más).
-const ROUGH = { guijarrin: .62, penon: .64, espejalba: .3, medusin: .28, meduson: .28 };
+Object.assign(BUILD, BRUMA);
+export const ALL_SPECIES = Object.keys(BUILD);
+// Rugosidad y brillo metálico del cuerpo por especie (las rocas son mate, el metal brilla).
+const ROUGH = { guijarrin: .62, penon: .64, espejalba: .3, medusin: .28, meduson: .28, magmol: .72, magmor: .72, magmatron: .7, cuarcin: .55, cuarzon: .55, astrocuarzo: .5, ferlum: .34, ferrox: .34, acerion: .32, fraguon: .36, nivalin: .3, nivalmar: .3, nivalord: .3 };
+const METAL = {};
 
 // Modelo de la especie: cuerpo esculpido (se construye una vez y se reutiliza) + detalles.
 export function creatureModel(r, sp) {
@@ -479,9 +525,11 @@ export function creatureModel(r, sp) {
   build(S, D);
   let body = BODY.get(sp);
   if (!body) { body = S.mesh(.026); BODY.set(sp, body); }
-  const mesh = new T.Mesh(body, r.mat('#ffffff', { vertexColors: true, roughness: ROUGH[sp] ?? .42 }));
+  const mesh = new T.Mesh(body, r.mat('#ffffff', { vertexColors: true, roughness: ROUGH[sp] ?? .42, ...(METAL[sp] ? { metalness: METAL[sp] } : {}) }));
   mesh.castShadow = true; mesh.receiveShadow = true; mesh.userData.keep = true; g.add(mesh);
   r.batch(g);
   g.userData.eyes = D.eyes;
+  g.userData.head = D.anchors.head;
+  g.userData.body = mesh;
   return g;
 }

@@ -1,0 +1,4 @@
+// Generado por scripts/sprites.cjs a partir de los modelos 3D: no editar a mano.
+// Cada especie ocupa dos celdas seguidas del atlas (frente y espalda), 16 celdas por fila de 64 px.
+export const ATLAS = { url: new URL('./bruma-sprites.png', import.meta.url).href, cols: 16, size: 64 };
+export const ATLAS_SPECIES = ["nivalin","nivalmar","nivalord","michin","mistigato","orbelina","ferlum","ferrox","acerion","magmol","magmor","magmatron","cuarcin","cuarzon","astrocuarzo","verdilago","foliaton","arborex","fatuin","candelo","velaria","sierpin","serpentil","cobrumbra","lanin","carnerazo","arieton","truenin","tormavis","elestrix","brumalia","fraguon","glaciel","dracalba"];

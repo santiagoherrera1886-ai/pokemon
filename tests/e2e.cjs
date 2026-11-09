@@ -60,6 +60,9 @@ async function settle(maxMs = 120000, { answer = 0 } = {}) {
     if (s.scene === 'battle') {
       // Escoge el ataque que más daño haría (potencia × efectividad × mismo tipo), como haría un jugador.
       const pickMove = async () => {
+        // Con el Brazalete Alba, la prueba despierta la Forma Alba antes de atacar (una vez por combate).
+        const alba = await page.$('#panel .bt-alba:not(.on)');
+        if (alba) { await alba.click(); await sleep(60); }
         const best = await page.evaluate(async () => {
           const b = __game.battleObj; if (!b || !b.ally || !b.foe) return null;
           const { MOVES, SPECIES, effectiveness } = await import('/src/data/creatures.js');
@@ -284,6 +287,7 @@ async function run() {
     await shot('gimnasio-corola');
     await talkTo(6, 3); await settle();
     s = await st(); assert.ok(s.badges.includes('hoja')); assert.equal(s.story, 7);
+    assert.equal(await page.evaluate(() => __game.state.bag.brazaleteAlba), 1, 'la primera medalla trae el Brazalete Alba');
     log('Ruta 2, Nico, Corola y Medalla Hoja OK');
     await walkTo(6, 15);
 
@@ -362,7 +366,18 @@ async function run() {
     s = await st(); assert.equal(s.story, 12, 'debe ser campeón');
     assert.equal(s.map, 'casa1');
     await shot('campeon-en-casa');
+    assert.ok(await page.evaluate(() => __game.state.party.every(c => !c.alba)), 'la Forma Alba se apaga al terminar cada combate');
     log('Liga Alborada, campeona y créditos OK');
+
+    // ------------------------------------------------ Leyenda después de la Liga: Fraguón en la Cueva Eco
+    const home = await st();
+    await page.evaluate(() => { __game.ow.load('cueva', 22, 12, 1, false); });
+    await sleep(600);
+    await talkTo(24, 12); await settle(180000);
+    assert.ok(await page.evaluate(() => (__game.state.dex || {}).fraguon >= 1), 'Fraguón debe aparecer en la Cueva Eco');
+    await page.evaluate(([m, x, y]) => { __game.ow.load(m, x, y, 0, false); }, [home.map, home.x, home.y]);
+    await sleep(600); await settle();
+    log('leyenda de la Bruma (Fraguón) OK');
 
     // Opción de perspectiva y hora del día
     await tap('Escape'); await page.click('#panel [data-act="options"]'); await page.click('#panel [data-act="persp"]'); await sleep(300);

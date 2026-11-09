@@ -18,7 +18,8 @@ const POCKET_HINTS = {
   medicinas: 'Medicinas: curan PS, reaniman y recuperan PP. Sirven en combate y fuera de él.',
   batalla: 'Batalla: Pócimas que ayudan a tu criatura durante un combate.',
   campo: 'Campo: objetos para explorar: repelentes, silbato y miel.',
-  cuidado: 'Cuidado: mejoras permanentes para tus criaturas.'
+  cuidado: 'Cuidado: mejoras permanentes para tus criaturas.',
+  clave: 'Clave: objetos importantes. No se gastan ni se venden.'
 };
 
 export class Menus {
@@ -91,6 +92,7 @@ export class Menus {
     const it = ITEMS[id], st = this.st, game = this.game;
     const back = () => this.bag(it.pocket);
     if (isCapsule(id)) { await ui.say(['Las Cápsulas se lanzan en combate contra criaturas salvajes.']); return back(); }
+    if (it.key) { await ui.say([it.desc, 'Funciona con todas las criaturas, una vez por combate. La transformación dura hasta que termina la pelea.']); return back(); }
     if (it.boost) { await ui.say(['Las Pócimas sólo sirven durante un combate.']); return back(); }
     if (it.repel) {
       if (st.repel > 0) { await ui.say([`Todavía queda efecto de ${ITEMS[st.repelItem || 'repelente'].name} (${st.repel} pasos).`]); return back(); }
@@ -184,7 +186,7 @@ export class Menus {
     return new Promise(resolve => {
       const st = this.st, sell = kind === 'sell', vending = kind === 'vending';
       const greeting = sell ? '¿Qué quieres vender? Te pago la mitad de lo que cuesta.' : vending ? 'Una máquina expendedora llena de bebidas frías.' : kind === 'special' ? `${SPECIAL[town].name}: cosas que no encuentras en otra tienda.` : '¡Mira todo lo que tenemos!';
-      const stock = () => sell ? POCKET_ORDER.flatMap(p => pocketItems(st.bag, p)) : vending ? VENDING : kind === 'special' ? SPECIAL[town].items : generalStock(st);
+      const stock = () => sell ? POCKET_ORDER.flatMap(p => pocketItems(st.bag, p)).filter(id => !ITEMS[id].key) : vending ? VENDING : kind === 'special' ? SPECIAL[town].items : generalStock(st);
       const unit = id => sell ? sellPrice(id) : ITEMS[id].price;
       const exit = () => { ui.closePanel(); ui.hideMsg(); resolve(); };
 

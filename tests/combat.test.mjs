@@ -67,3 +67,31 @@ test('status cure items only work on the matching status', () => {
   assert.equal(canUseOn('antidoto', c), false);
   for (const id of ['antidoto', 'arnica', 'tinto', 'sabila', 'panelaCaliente', 'remedioCasero']) assert.ok(ITEMS[id].cure, id);
 });
+
+test('Forma Alba boosts attack, defense and speed only while active and clears after battle', async () => {
+  const { albaStat, clearAlba, ALBA_MULT, hasAlbaBand } = await import('../src/data/alba.js');
+  const { makeCreature } = await import('../src/data/creatures.js');
+  const c = makeCreature('brasin', 20);
+  for (const k of ['atk', 'def', 'spe']) assert.equal(albaStat(c, k), c.stats[k]);
+  c.alba = true;
+  for (const k of ['atk', 'def', 'spe']) { assert.ok(albaStat(c, k) > c.stats[k]); assert.equal(albaStat(c, k), c.stats[k] * ALBA_MULT[k]); }
+  assert.equal(albaStat(c, 'hp'), c.stats.hp);
+  clearAlba([c]); assert.equal(c.alba, undefined);
+  assert.equal(hasAlbaBand({ bag: {} }), false); assert.equal(hasAlbaBand({ bag: { brazaleteAlba: 1 } }), true);
+  assert.ok(ITEMS.brazaleteAlba.key && ITEMS.brazaleteAlba.pocket === 'clave');
+});
+
+test('the 18 types all have wild or legendary species, learnsets use real moves and evolutions point forward', async () => {
+  const { ENCOUNTERS, encounterList } = await import('../src/data/creatures.js');
+  const types = new Set(Object.values(SPECIES).flatMap(s => s.types));
+  assert.equal(types.size, 18);
+  for (const [id, s] of Object.entries(SPECIES)) {
+    for (const [lv, mv] of s.learn) assert.ok(MOVES[mv] && lv >= 1, `${id}: ${mv}`);
+    if (s.evo) { assert.ok(SPECIES[s.evo[0]], `${id}: evo`); assert.ok(s.evo[1] > 1 && s.evo[1] <= 60, `${id}: nivel de evo`); }
+  }
+  for (const [k, t] of Object.entries(ENCOUNTERS)) for (const e of t.list) assert.ok(SPECIES[e[0]] && e[1] <= e[2] && e[3] > 0, `${k}: ${e[0]}`);
+  // Las criaturas nocturnas sólo salen de noche.
+  assert.ok(encounterList('lago', 23).some(e => e[0] === 'fatuin'));
+  assert.ok(!encounterList('lago', 12).some(e => e[0] === 'fatuin'));
+  assert.equal(Object.values(SPECIES).filter(s => s.legendary).length, 5);
+});

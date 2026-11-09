@@ -10,6 +10,7 @@ import { SPECIES, MOVES, TYPES, STATUS, effectiveness, expForLevel, refreshStats
 import { canGetStatus, TYPE_FX } from '../data/types.js';
 import { movePower, ANIM_FRAMES } from '../data/moves.js';
 import { ITEMS, POCKETS, BATTLE_POCKETS, pocketItems, isCapsule, canUseOn, useOnCreature, catchBonus } from '../data/items.js';
+import { albaStat, hasAlbaBand, clearAlba, ALBA_COLOR } from '../data/alba.js';
 
 const $ = id => document.getElementById(id);
 const STAGE = s => s >= 0 ? (2 + s) / 2 : 2 / (2 - s);
@@ -61,6 +62,7 @@ export class Battle {
     this.participants = new Set();
     this.allyStages = { atk: 0, def: 0, spe: 0 };
     this.volAlly = { conf: 0, prot: 0 }; this.volFoe = { conf: 0, prot: 0 };
+    this.albaUsed = false; this.foeAlbaUsed = false; this.albaArmed = false;   // Forma Alba: una vez por combate y por bando
     document.body.classList.add('in-battle');
   }
   get foe() { return this.foeParty[this.foeIdx]; }
@@ -94,15 +96,19 @@ export class Battle {
     }
     if (f.foeAlpha > 0 && !(f.foeBlink && (this.game.frame >> 2) % 2)) {
       g.globalAlpha = f.foeAlpha;
-      const s = f.foeScale, size = 64 * k * s;
+      const s = f.foeScale * (this.foe.alba ? 1.12 : 1), size = 64 * k * s;
       const img = f.foeWhite ? silhouette(this.foe.sp) : battleSprite(this.foe.sp);
-      g.drawImage(img, Math.round(L.foe[0] - size / 2 + f.foeX * L.w + sh), Math.round(L.foe[1] - size + 4 * k + f.foeY * k + (s === 1 ? bob : 0)), size, size);
+      const fx0 = Math.round(L.foe[0] - size / 2 + f.foeX * L.w + sh), fy0 = Math.round(L.foe[1] - size + 4 * k + f.foeY * k + (f.foeScale === 1 ? bob : 0));
+      if (this.foe.alba && !f.foeWhite) this.aura(g, this.foe.sp, false, fx0, fy0, size, k);
+      g.drawImage(img, fx0, fy0, size, size);
       g.globalAlpha = 1;
     }
     if (this.ally && f.allyAlpha > 0 && !(f.allyBlink && (this.game.frame >> 2) % 2)) {
       g.globalAlpha = f.allyAlpha;
-      const size = 80 * k;
-      g.drawImage(battleSprite(this.ally.sp, true), Math.round(L.ally[0] - size / 2 + f.allyX * L.w + sh), Math.round(L.ally[1] - size + 10 * k + f.allyY * k - bob), size, size);
+      const size = 80 * k * (this.ally.alba ? 1.12 : 1);
+      const ax0 = Math.round(L.ally[0] - size / 2 + f.allyX * L.w + sh), ay0 = Math.round(L.ally[1] - size + 10 * k + f.allyY * k - bob);
+      if (this.ally.alba) this.aura(g, this.ally.sp, true, ax0, ay0, size, k);
+      g.drawImage(battleSprite(this.ally.sp, true), ax0, ay0, size, size);
       g.globalAlpha = 1;
     }
     if (f.ball) this.drawCapsule(g, f.ball, L, k);
@@ -110,7 +116,7 @@ export class Battle {
       if (p.delay > 0) { p.delay--; continue; }
       p.x += p.vx; p.y += p.vy; p.vy += p.g || 0; p.life--;
       g.globalAlpha = Math.max(0, Math.min(1, p.life / 12));
-      if (p.ring) { g.strokeStyle = p.color; g.lineWidth = k; g.beginPath(); g.arc(p.x, p.y, (30 - p.life) * k * 1.4, 0, Math.PI * 2); g.stroke(); }
+      if (p.ring) { g.strokeStyle = p.color; g.lineWidth = k; g.beginPath(); g.arc(p.x, p.y, Math.max(0, 30 - p.life) * k * 1.4, 0, Math.PI * 2); g.stroke(); }
       else if (p.line) { g.strokeStyle = p.color; g.lineWidth = Math.max(1, p.s * k / 2); g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(p.line[0], p.line[1]); g.stroke(); }
       else if (p.text) { g.fillStyle = p.color; g.font = `bold ${p.s * k * 3}px monospace`; g.fillText(p.text, p.x, p.y); }
       else {
@@ -122,6 +128,18 @@ export class Battle {
     this.parts = this.parts.filter(p => p.life > 0);
     if (f.flash > 0) { g.fillStyle = `rgba(255,255,255,${f.flash})`; g.fillRect(0, 0, r.w, r.h); f.flash = Math.max(0, f.flash - 0.06); }
     this.L = L;
+  }
+
+  // Forma Alba en modo clásico: contorno dorado que late, rayos de amanecer detrás y chispas que suben.
+  aura(g, sp, back, x, y, size, k) {
+    const t = this.game.frame, pulse = .55 + .25 * Math.sin(t / 9), glow = silhouette(sp, ALBA_COLOR, back);
+    g.save(); g.globalAlpha = .28; g.fillStyle = ALBA_COLOR; g.translate(x + size / 2, y + size * .55);
+    for (let i = 0; i < 8; i++) { g.rotate(Math.PI / 4); g.fillRect(-k, 0, 2 * k, size * (.5 + .12 * Math.sin(t / 14 + i))); }
+    g.restore();
+    g.globalAlpha = pulse;
+    for (const [dx, dy] of [[-2, 0], [2, 0], [0, -2], [0, 2], [-1.5, -1.5], [1.5, -1.5], [-1.5, 1.5], [1.5, 1.5]]) g.drawImage(glow, x + dx * k, y + dy * k, size, size);
+    g.globalAlpha = 1;
+    if (t % 6 === 0) this.parts.push({ x: x + size * (.2 + rand() * .6), y: y + size * .8, vx: (rand() - .5) * .4, vy: -1 - rand(), life: 26, color: rand() < .5 ? '#fff4c8' : ALBA_COLOR, s: 2 });
   }
 
   // Cápsula alargada: mitad de color, mitad crema, unión oscura y gema; gira mientras vuela.
@@ -163,6 +181,7 @@ export class Battle {
       case 'powder': case 'sparkle': add(26, i => ({ x: cx + R(60 * k), y: cy - 40 * k + R(20 * k), vx: R(.8), vy: .6 + rand() * .6, life: 34, color: C[i % C.length], s: 2, delay: i })); break;
       case 'shield': add(5, i => ({ x: cx, y: cy, vx: 0, vy: 0, life: 26 - i * 3, color: C[0], ring: true, delay: i * 3 })); break;
       case 'status': if (ev.status === 'dor') add(3, i => ({ x: cx + 10 * k + i * 6 * k, y: cy - 10 * k, vx: .5, vy: -.8, life: 30, color: '#ffffff', s: 3 + i, delay: i * 8, text: 'z' })); else burst(18, 2, 24, 2); break;
+      case 'alba': this.fx.flash = .7; add(40, i => ({ x: tx0 + R(70 * k), y: ty0, vx: R(.4), vy: -2.2 - rand() * 2.4, life: 34, color: i % 3 ? ALBA_COLOR : '#ffffff', s: 2 + (i % 2), delay: i * .6 })); add(4, i => ({ x: cx, y: cy, vx: 0, vy: 0, life: 30 - i * 5, color: ALBA_COLOR, ring: true, delay: 10 + i * 5 })); break;
       case 'dragon': add(32, i => { const t = i / 32; return { x: sx + (cx - sx) * t + Math.sin(t * 12) * 14 * k, y: sy + (cy - sy) * t + Math.cos(t * 12) * 10 * k, vx: 0, vy: 0, life: 22, color: C[i % 2], s: 4, delay: i * .7 }; }); this.pendingBurst = { at: this.game.frame + 24, n: 20 }; break;
       default: burst(ev.anim === 'punch' || ev.anim === 'tackle' ? 16 : 12, 3.2, 18, 3); if (ev.anim === 'scratch' || ev.anim === 'slash') add(3, i => ({ x: cx - 18 * k + i * 12 * k, y: cy - 18 * k, vx: 0, vy: 0, life: 16, color: '#ffffff', s: 3, line: [cx - 6 * k + i * 12 * k, cy + 18 * k] }));
     }
@@ -174,10 +193,11 @@ export class Battle {
     const foe = this.foe, al = this.ally;
     const bar = (hp, max) => { const k = Math.max(0, hp / max); return `<div class="hp"><i style="width:${k * 100}%" class="${k > 0.5 ? 'g' : k > 0.2 ? 'y' : 'r'}"></i></div>`; };
     const caught = this.opts.wild && this.st.dex && this.st.dex[foe.sp] === 2 ? ' <span title="Ya atrapado">◉</span>' : '';
-    $('hudFoe').innerHTML = `<b>${esc(foe.name)}</b>${caught}${statusChip(foe)}<span>Nv${foe.level}</span>${bar(foe.hp, foe.stats.hp)}`;
+    const albaChip = c => c.alba ? '<i class="st alba">ALBA</i>' : '';
+    $('hudFoe').innerHTML = `<b>${esc(foe.name)}</b>${caught}${albaChip(foe)}${statusChip(foe)}<span>Nv${foe.level}</span>${bar(foe.hp, foe.stats.hp)}`;
     if (al) {
       const lo = expForLevel(al.level), hi = expForLevel(al.level + 1);
-      $('hudAlly').innerHTML = `<b>${esc(al.name)}</b>${statusChip(al)}<span>Nv${al.level}</span>${bar(al.hp, al.stats.hp)}<em>${Math.max(0, Math.ceil(al.hp))}/${al.stats.hp}</em><div class="xp"><i style="width:${Math.max(0, Math.min(100, (al.exp - lo) / (hi - lo) * 100))}%"></i></div>`;
+      $('hudAlly').innerHTML = `<b>${esc(al.name)}</b>${albaChip(al)}${statusChip(al)}<span>Nv${al.level}</span>${bar(al.hp, al.stats.hp)}<em>${Math.max(0, Math.ceil(al.hp))}/${al.stats.hp}</em><div class="xp"><i style="width:${Math.max(0, Math.min(100, (al.exp - lo) / (hi - lo) * 100))}%"></i></div>`;
     }
   }
   showHud(foe, ally) { $('hudFoe').classList.toggle('hidden', !foe); $('hudAlly').classList.toggle('hidden', !ally); }
@@ -243,6 +263,7 @@ export class Battle {
     await this.wait(16);
   }
   cleanup() {
+    clearAlba(this.st.party); clearAlba(this.foeParty);
     this.showHud(false, false);
     ui.hideMsg(); ui.closePanel();
     document.body.classList.remove('in-battle');
@@ -258,10 +279,11 @@ export class Battle {
       };
       const moves = () => {
         const al = this.ally;
-        if (al.moves.every(m => m.pp <= 0)) { ui.show(`¡A ${al.name} no le quedan PP! Usará Forcejeo.`); return resolve({ type: 'move', i: -1 }); }
-        ui.setPanel(`<div class="bt-moves">${al.moves.map((m, i) => { const M = MOVES[m.id]; const eff = M.power ? effectiveness(M.type, SPECIES[this.foe.sp].types) : 1; return `<button class="mv" style="--t:${TYPES[M.type].color}" data-act="${i}" ${m.pp <= 0 ? 'disabled' : ''}><b>${esc(M.name)}</b><small>${TYPES[M.type].name}${M.power ? ' · ' + M.power : ''}${this.st.dex?.[this.foe.sp] && eff !== 1 ? (eff > 1 ? ' · ¡eficaz!' : ' · poco eficaz') : ''}</small><em>PP ${m.pp}/${M.pp}</em></button>`; }).join('')}</div><button class="bt-back" data-back>VOLVER</button>`,
-          { modal: true, cls: 'battle-panel', onAct: a => resolve({ type: 'move', i: +a }), onBack: main,
-            onFocus: el => { const M = MOVES[al.moves[+el.dataset.act]?.id]; if (M) ui.show(`${M.name}: ${M.desc || ''}${M.power ? ` Potencia ${M.power}` : ''}${M.acc < 100 ? ` · Precisión ${M.acc}%` : ''}${M.prio ? ' · Va primero' : ''}`); } });
+        if (al.moves.every(m => m.pp <= 0)) { ui.show(`¡A ${al.name} no le quedan PP! Usará Forcejeo.`); return resolve({ type: 'move', i: -1, alba: this.albaArmed && this.canAlba() }); }
+        const alba = this.canAlba() ? `<button class="bt-alba${this.albaArmed ? ' on' : ''}" data-act="alba">${this.albaArmed ? '✦ FORMA ALBA LISTA' : '✦ FORMA ALBA'}</button>` : '';
+        ui.setPanel(`${alba}<div class="bt-moves">${al.moves.map((m, i) => { const M = MOVES[m.id]; const eff = M.power ? effectiveness(M.type, SPECIES[this.foe.sp].types) : 1; return `<button class="mv" style="--t:${TYPES[M.type].color}" data-act="${i}" ${m.pp <= 0 ? 'disabled' : ''}><b>${esc(M.name)}</b><small>${TYPES[M.type].name}${M.power ? ' · ' + M.power : ''}${this.st.dex?.[this.foe.sp] && eff !== 1 ? (eff > 1 ? ' · ¡eficaz!' : ' · poco eficaz') : ''}</small><em>PP ${m.pp}/${M.pp}</em></button>`; }).join('')}</div><button class="bt-back" data-back>VOLVER</button>`,
+          { modal: true, cls: 'battle-panel', focus: alba ? 1 : 0, onAct: a => { if (a === 'alba') { this.albaArmed = !this.albaArmed; return moves(); } resolve({ type: 'move', i: +a, alba: this.albaArmed && this.canAlba() }); }, onBack: () => { this.albaArmed = false; main(); },
+            onFocus: el => { if (el.dataset.act === 'alba') return ui.show(this.albaArmed ? `${al.name} despertará la Forma Alba antes de atacar. Escoge el ataque.` : `Forma Alba: ${al.name} crece y sube su Ataque, Defensa y Velocidad. Una vez por combate.`); const M = MOVES[al.moves[+el.dataset.act]?.id]; if (M) ui.show(`${M.name}: ${M.desc || ''}${M.power ? ` Potencia ${M.power}` : ''}${M.acc < 100 ? ` · Precisión ${M.acc}%` : ''}${M.prio ? ' · Va primero' : ''}`); } });
       };
       // Mochila de combate: bolsillos de Cápsulas, Medicinas y Batalla.
       const bag = pocket => {
@@ -319,7 +341,7 @@ export class Battle {
     const ok = usable.filter(m => score(m) > 0);
     return (ok.length ? ok : usable)[Math.floor(rand() * (ok.length || usable.length))];
   }
-  speed(c, stages) { return c.stats.spe * STAGE(stages.spe) * (c.status === 'par' ? .5 : 1); }
+  speed(c, stages) { return albaStat(c, 'spe') * STAGE(stages.spe) * (c.status === 'par' ? .5 : 1); }
 
   async turn(act) {
     ui.closePanel();
@@ -368,6 +390,8 @@ export class Battle {
     }
     if (act.type === 'catch') return this.throwCapsule(act.id);
 
+    if (act.alba && this.canAlba()) await this.transform(true);
+    await this.foeAlbaCheck();
     const mine = act.i < 0 ? { id: 'forcejeo', pp: 1 } : this.ally.moves[act.i];
     const theirs = this.foeMove();
     const pa = MOVES[mine.id].prio || 0, pf = MOVES[theirs.id].prio || 0;
@@ -379,7 +403,26 @@ export class Battle {
     }
     return this.endTurn();
   }
-  async foeTurn() { const e = await this.attack(false, this.foeMove()); return e === undefined ? this.endTurn() : e; }
+  async foeTurn() { await this.foeAlbaCheck(); const e = await this.attack(false, this.foeMove()); return e === undefined ? this.endTurn() : e; }
+
+  // ---------- Forma Alba ----------
+  canAlba() { return !this.albaUsed && hasAlbaBand(this.st) && !!this.ally && this.ally.hp > 0 && !this.ally.alba; }
+  // Los líderes, el rival y la Liga la despiertan con su última criatura (su as).
+  async foeAlbaCheck() {
+    const t = this.trainer, foe = this.foe;
+    if (t && t.alba && !this.foeAlbaUsed && foe && foe.hp > 0 && !foe.alba && this.foeIdx === this.foeParty.length - 1) await this.transform(false);
+  }
+  async transform(isAlly) {
+    const c = isAlly ? this.ally : this.foe, type = SPECIES[c.sp].types[0];
+    if (isAlly) { this.albaUsed = true; this.albaArmed = false; } else this.foeAlbaUsed = true;
+    await this.msg(isAlly ? `¡${this.st.name} alzó el Brazalete Alba!` : `¡${this.trainer.name} alzó su Brazalete Alba!`, 26);
+    const frames = this.play('alba', type, isAlly, { self: true });
+    await this.wait(Math.round(frames * .5));
+    c.alba = true; this.hud();
+    await this.wait(Math.round(frames * .5));
+    await this.msg(`¡${this.nameOf(c, isAlly)} despertó la Forma Alba!`);
+    await this.msg('Subieron su Ataque, su Defensa y su Velocidad.', 26);
+  }
 
   // ---------- Estados ----------
   nameOf(c, isAlly) { return isAlly ? c.name : (this.trainer ? `${c.name} rival` : (this.opts.legendary ? c.name : `El ${c.name} salvaje`)); }
@@ -464,8 +507,8 @@ export class Battle {
     const eff = M.type ? effectiveness(M.type, SPECIES[target.sp].types) : 1;
     const critRate = Math.min(.5, (M.crit ? 1 / 8 : 1 / 16) * (isAlly && this.allyCrit ? 4 : 1));
     const crit = M.type && rand() < critRate ? 1.5 : 1;
-    const A = user.stats.atk * (crit > 1 ? Math.max(1, STAGE(us.atk)) : STAGE(us.atk)) * (user.status === 'que' ? .5 : 1);
-    const D = target.stats.def * (crit > 1 ? Math.min(1, STAGE(ts.def)) : STAGE(ts.def));
+    const A = albaStat(user, 'atk') * (crit > 1 ? Math.max(1, STAGE(us.atk)) : STAGE(us.atk)) * (user.status === 'que' ? .5 : 1);
+    const D = albaStat(target, 'def') * (crit > 1 ? Math.min(1, STAGE(ts.def)) : STAGE(ts.def));
     const stab = M.type && SPECIES[user.sp].types.includes(M.type) ? 1.5 : 1;
     let dmg = Math.floor(Math.floor(Math.floor(2 * user.level / 5 + 2) * M.power * A / D) / 50) + 2;
     dmg = Math.max(1, Math.floor(dmg * stab * eff * crit * (0.85 + rand() * 0.15)));

@@ -1,10 +1,10 @@
 import * as T from 'three';
 import {LOOKS} from '../art/characters.js';
 import {actorPosition} from './policy.js';
-import {STORY_SPECIES} from './story-creatures.js';
-import {creatureModel} from './creatures3d.js';
+import {creatureModel,ALL_SPECIES} from './creatures3d.js';
 import {person,animatePerson} from './people.js';
-export const MODEL_SPECIES=['brotelo','brasin','charquin','pipiu','roedin','capullin',...STORY_SPECIES];
+// Todas las especies con modelo esculpido (las de la historia y el bestiario de la Bruma).
+export const MODEL_SPECIES=ALL_SPECIES;
 
 // Personajes: ver people.js (diseño chibi). Se mantienen estos nombres para el resto del motor.
 export function character(r, look='player') { return person(r, look); }

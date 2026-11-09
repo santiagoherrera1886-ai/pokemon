@@ -6,6 +6,14 @@ import { ITEMS } from '../data/items.js';
 const OUT = '#26222e', GLASS = '#e6f2f6', CREAM = '#fbf1da', WHITE = '#ffffff';
 
 const DRAW = {
+  // Brazalete Alba: aro dorado con una gema de amanecer.
+  band(g, c) {
+    const dark = shadeHex(c, -.38), light = shadeHex(c, .45);
+    ellipse(g, 8, 9, 6, 5, c);
+    g.globalCompositeOperation = 'destination-out'; ellipse(g, 8, 9, 4, 3, '#000'); g.globalCompositeOperation = 'source-over';
+    px(g, 2, 8, dark, 1, 3); px(g, 4, 5, light, 3, 1); px(g, 7, 13, dark, 3, 1);
+    ellipse(g, 8, 4, 3, 2, '#ff9a5a'); px(g, 7, 3, '#ffe8c8', 2, 1);
+  },
   capsule(g, c) {
     const dark = shadeHex(c, -.35);
     ellipse(g, 5, 8, 3, 3, c); px(g, 5, 5, c, 3, 7);           // mitad de color

@@ -32,7 +32,45 @@ export const SPECIES = {
   sombrin: sp('Sombrín', ['siniestro', 'fantasma'], [45, 58, 40, 62], 62, [[1, 'zarpazo'], [1, 'ceño'], [5, 'lamida'], [8, 'mordisco'], [12, 'susto'], [15, 'tinieblas'], [20, 'zancadilla'], [28, 'derribo']], 'Vive en las sombras de los rincones. El Equipo Eclipse los entrena.', ['sombrador', 20]),
   sombrador: sp('Sombrador', ['siniestro', 'fantasma'], [70, 84, 60, 88], 155, [[1, 'zarpazo'], [12, 'susto'], [15, 'tinieblas'], [20, 'zancadilla'], [24, 'bolaespectral'], [28, 'tarascada'], [34, 'planmacabro']], 'Se funde con la noche. Sus ojos son lo único que se ve.'),
   mentelin: sp('Mentelín', ['psiquico', 'bicho'], [42, 42, 48, 64], 64, [[1, 'ondamental'], [1, 'mirada'], [6, 'mareo'], [9, 'hipnosis'], [12, 'escudo'], [16, 'polendormilon'], [22, 'psicorayo'], [28, 'zumbido']], 'Una polilla que flota sin mover las alas. Sueña los sueños de los demás.'),
-  espejalba: sp('Espejalba', ['agua', 'psiquico'], [100, 100, 100, 92], 300, [[1, 'oleaje'], [1, 'psicorayo'], [1, 'barrera'], [1, 'tajoaereo']], 'La guardiana del Lago Espejo. Su reflejo muestra el cielo de otro mundo.', null, { legendary: true })
+  espejalba: sp('Espejalba', ['agua', 'psiquico'], [100, 100, 100, 92], 300, [[1, 'oleaje'], [1, 'psicorayo'], [1, 'barrera'], [1, 'tajoaereo']], 'La guardiana del Lago Espejo. Su reflejo muestra el cielo de otro mundo.', null, { legendary: true }),
+
+  // ---------------- Familias nuevas de la Bruma
+  nivalin: sp('Nivalín', ['agua', 'hielo'], [58, 45, 50, 40], 62, [[1, 'embestida'], [1, 'copito'], [4, 'chorro'], [8, 'mirada'], [12, 'mordiscohelado'], [16, 'burbujeo'], [20, 'carambano'], [24, 'escudo'], [28, 'rayogelido'], [34, 'oleaje'], [40, 'ventisca']], 'Ballenita que nada entre témpanos. Los cristalitos del lomo le crecen cuando está feliz.', ['nivalmar', 20]),
+  nivalmar: sp('Nivalmar', ['agua', 'hielo'], [80, 62, 70, 48], 145, [[1, 'chorro'], [1, 'copito'], [12, 'mordiscohelado'], [16, 'burbujeo'], [20, 'carambano'], [24, 'escudo'], [28, 'rayogelido'], [34, 'oleaje'], [40, 'ventisca'], [46, 'torrente']], 'Canta bajo el agua y el mar se congela en figuras de cristal.', ['nivalord', 36]),
+  nivalord: sp('Nivalord', ['agua', 'hielo'], [110, 88, 95, 60], 240, [[1, 'mordiscohelado'], [1, 'rayogelido'], [36, 'oleaje'], [40, 'ventisca'], [46, 'torrente']], 'Su lomo es un iceberg que no se derrite. Los barcos lo siguen para encontrar puerto.'),
+  michin: sp('Michín', ['psiquico'], [45, 48, 42, 64], 58, [[1, 'arañazo'], [1, 'ternura'], [5, 'mareo'], [9, 'brisahada'], [13, 'hipnosis'], [17, 'ondamental'], [22, 'besito'], [27, 'psicorayo'], [32, 'meditacion'], [38, 'orbitamental']], 'Gatita que sigue con la mirada cosas que nadie más ve. La punta de su cola brilla de noche.', ['mistigato', 18]),
+  mistigato: sp('Mistigato', ['psiquico', 'hada'], [62, 70, 58, 88], 140, [[1, 'mareo'], [1, 'brisahada'], [17, 'ondamental'], [22, 'besito'], [27, 'psicorayo'], [32, 'meditacion'], [38, 'orbitamental'], [44, 'destellohada']], 'El aro dorado de su cola guarda los sueños que se le escapan a la gente.', ['orbelina', 36]),
+  orbelina: sp('Orbelina', ['psiquico', 'hada'], [85, 96, 78, 112], 236, [[1, 'psicorayo'], [1, 'destellohada'], [36, 'orbitamental'], [40, 'luzdeluna'], [44, 'juegorudo'], [50, 'barrera']], 'Dos lunas pequeñas giran a su alrededor. Dicen que ve el futuro en ellas.'),
+  ferlum: sp('Ferlum', ['acero'], [52, 60, 66, 46], 62, [[1, 'embestida'], [1, 'mirada'], [5, 'garrametal'], [9, 'mordisco'], [13, 'corazahierro'], [18, 'cabezahierro'], [24, 'tarascada'], [30, 'destellometal'], [36, 'colazoacero']], 'Cachorro de acero que encontraron en un taller abandonado. Mueve la cola con un tic-tac.', ['ferrox', 22]),
+  ferrox: sp('Ferrox', ['acero'], [70, 84, 90, 60], 148, [[1, 'garrametal'], [1, 'mordisco'], [13, 'corazahierro'], [18, 'cabezahierro'], [24, 'tarascada'], [30, 'destellometal'], [36, 'colazoacero'], [42, 'derribo']], 'Patrulla las minas de noche. Sus ojos alumbran como linternas.', ['acerion', 40]),
+  acerion: sp('Acerión', ['acero'], [90, 112, 118, 78], 245, [[1, 'cabezahierro'], [1, 'tarascada'], [40, 'colazoacero'], [44, 'destellometal'], [50, 'terremoto']], 'Sus cuernos de oro se forjaron con el primer rayo de sol que tocó la mina.'),
+  magmol: sp('Magmol', ['fuego', 'roca'], [55, 58, 68, 30], 64, [[1, 'embestida'], [1, 'pulido'], [6, 'brasa'], [10, 'pedrada'], [14, 'ruedaignea'], [19, 'tranque'], [24, 'puñomagma'], [30, 'alud'], [36, 'erupcion']], 'Se calienta al sol sobre las piedras del volcán. Si lo abrazas, quema un poquito.', ['magmor', 24]),
+  magmor: sp('Magmor', ['fuego', 'roca'], [78, 86, 92, 38], 150, [[1, 'brasa'], [1, 'pedrada'], [14, 'ruedaignea'], [19, 'tranque'], [24, 'puñomagma'], [30, 'alud'], [36, 'erupcion'], [42, 'filodepiedra']], 'Por las grietas de su lomo corre lava. Duerme con la panza contra el suelo tibio.', ['magmatron', 40]),
+  magmatron: sp('Magmatrón', ['fuego', 'roca'], [105, 128, 110, 48], 245, [[1, 'puñomagma'], [1, 'alud'], [40, 'erupcion'], [44, 'filodepiedra'], [50, 'infierno'], [56, 'terremoto']], 'Golpea el suelo con los puños y abre ríos de lava. Es tranquilo hasta que lo despiertan.'),
+  cuarcin: sp('Cuarcín', ['roca', 'hada'], [50, 44, 72, 34], 60, [[1, 'embestida'], [1, 'ternura'], [5, 'pedrada'], [9, 'brisahada'], [13, 'pulido'], [17, 'tranque'], [22, 'besito'], [27, 'lluviadecuarzo'], [33, 'destellohada'], [40, 'filodepiedra']], 'Una geoda con patas. Por dentro guarda cristales que brillan cuando está contento.', ['cuarzon', 26]),
+  cuarzon: sp('Cuarzón', ['roca', 'hada'], [72, 66, 100, 42], 150, [[1, 'pedrada'], [1, 'brisahada'], [17, 'tranque'], [22, 'besito'], [27, 'lluviadecuarzo'], [33, 'destellohada'], [40, 'filodepiedra'], [46, 'juegorudo']], 'Los cristales del lomo le crecen una vez al año. Los mineros siguen sus huellas.', ['astrocuarzo', 42]),
+  astrocuarzo: sp('Astrocuarzo', ['roca', 'hada'], [100, 90, 130, 50], 245, [[1, 'lluviadecuarzo'], [1, 'destellohada'], [42, 'filodepiedra'], [46, 'juegorudo'], [50, 'luzdeluna'], [54, 'terremoto']], 'Un anillo de polvo de estrellas gira a su alrededor. Cayó del cielo hace mil años.'),
+  verdilago: sp('Verdílago', ['planta'], [46, 54, 42, 62], 60, [[1, 'arañazo'], [1, 'ceño'], [5, 'absorber'], [9, 'hojarasca'], [13, 'mordisco'], [17, 'hojanavaja'], [22, 'chupasavia'], [28, 'alientodragon'], [34, 'tormentafloral']], 'Lagartija que se esconde entre las hojas. Si la miras mucho, se pone colorada.', ['foliaton', 18]),
+  foliaton: sp('Foliatón', ['planta'], [64, 76, 60, 82], 142, [[1, 'hojarasca'], [1, 'mordisco'], [17, 'hojanavaja'], [22, 'chupasavia'], [28, 'alientodragon'], [34, 'tormentafloral'], [40, 'garradragon']], 'Las hojas de su cabeza giran hacia el sol. Corre en dos patas por el bosque.', ['arborex', 36]),
+  arborex: sp('Arbórex', ['planta', 'dragon'], [88, 108, 86, 98], 240, [[1, 'hojanavaja'], [1, 'alientodragon'], [36, 'garradragon'], [40, 'tormentafloral'], [46, 'rayoclorofila'], [52, 'cometa']], 'Bate sus hojas como alas y levanta tormentas de pétalos. Es el rey del bosque viejo.'),
+  fatuin: sp('Fatuín', ['fantasma', 'fuego'], [40, 56, 40, 58], 60, [[1, 'lamida'], [1, 'brasa'], [5, 'susto'], [9, 'fuegofatuo'], [13, 'zarpafantasma'], [18, 'farolfatuo'], [24, 'llamarada'], [30, 'bolaespectral'], [36, 'lanzallamas']], 'Llamita que flota en los caminos de noche. Si la sigues, te lleva a casa... casi siempre.', ['candelo', 22]),
+  candelo: sp('Candelo', ['fantasma', 'fuego'], [58, 76, 58, 74], 145, [[1, 'brasa'], [1, 'susto'], [13, 'zarpafantasma'], [18, 'farolfatuo'], [24, 'llamarada'], [30, 'bolaespectral'], [36, 'lanzallamas'], [42, 'velosombrio']], 'Camina con su farol buscando almas perdidas para guiarlas.', ['velaria', 38]),
+  velaria: sp('Velaria', ['fantasma', 'fuego'], [82, 108, 76, 96], 240, [[1, 'farolfatuo'], [1, 'bolaespectral'], [38, 'velosombrio'], [42, 'lanzallamas'], [48, 'infierno'], [54, 'tinieblas']], 'Sus faroles flotan solos. Cada uno guarda la luz de un viajero que ayudó.'),
+  sierpin: sp('Sierpín', ['veneno'], [44, 52, 44, 58], 58, [[1, 'pinchazo'], [1, 'mirada'], [5, 'acido'], [9, 'mordisco'], [13, 'colmillotoxico'], [18, 'toxina'], [24, 'tarascada'], [30, 'boladelodo']], 'Se enrosca en las ramas y se hace pasar por una enredadera.', ['serpentil', 20]),
+  serpentil: sp('Serpentil', ['veneno', 'siniestro'], [62, 76, 60, 78], 142, [[1, 'acido'], [1, 'mordisco'], [13, 'colmillotoxico'], [18, 'toxina'], [24, 'tarascada'], [30, 'boladelodo'], [36, 'tinieblas'], [42, 'planmacabro']], 'Hipnotiza a sus presas balanceando la cabeza despacio.', ['cobrumbra', 38]),
+  cobrumbra: sp('Cobrumbra', ['veneno', 'siniestro'], [84, 104, 80, 100], 240, [[1, 'colmillotoxico'], [1, 'tarascada'], [38, 'boladelodo'], [42, 'tinieblas'], [48, 'planmacabro'], [52, 'terremoto']], 'Los ojos de su capucha asustan a cualquiera. Nadie le ha visto los de verdad.'),
+  lanin: sp('Lanín', ['lucha'], [56, 62, 52, 44], 60, [[1, 'embestida'], [1, 'ceño'], [5, 'patadon'], [9, 'jab'], [13, 'calentamiento'], [17, 'doblepatada'], [22, 'topetazo'], [28, 'gancho'], [34, 'golpecuerpo']], 'Borreguito que entrena cabezazos contra las cercas. Su lana amortigua las caídas.', ['carnerazo', 18]),
+  carnerazo: sp('Carnerazo', ['lucha'], [74, 90, 68, 58], 145, [[1, 'patadon'], [1, 'jab'], [13, 'calentamiento'], [17, 'doblepatada'], [22, 'topetazo'], [28, 'gancho'], [34, 'golpecuerpo'], [40, 'combofinal']], 'Se para en dos patas para boxear. Nunca deja un reto sin responder.', ['arieton', 34]),
+  arieton: sp('Arietón', ['lucha', 'tierra'], [98, 124, 88, 74], 242, [[1, 'topetazo'], [1, 'gancho'], [34, 'terremoto'], [40, 'combofinal'], [46, 'danzaguerrera'], [50, 'tierraviva']], 'Campeón de los cerros. Su cinturón de oro es de una pelea que nadie recuerda haber ganado.'),
+  truenin: sp('Truenín', ['electrico', 'volador'], [42, 50, 38, 66], 58, [[1, 'picotazo'], [1, 'ceño'], [5, 'chispa'], [9, 'aleteo'], [13, 'corrientazo'], [17, 'picotrueno'], [22, 'tajoaereo'], [28, 'rayo'], [34, 'tornado']], 'Polluelo que nace en las nubes de tormenta. Su cresta suelta chispas cuando estornuda.', ['tormavis', 20]),
+  tormavis: sp('Tormavis', ['electrico', 'volador'], [62, 74, 56, 92], 145, [[1, 'chispa'], [1, 'aleteo'], [13, 'corrientazo'], [17, 'picotrueno'], [22, 'tajoaereo'], [28, 'rayo'], [34, 'tornado'], [40, 'clavado']], 'Vuela dentro de las nubes y sale con un trueno. Los pilotos lo saludan.', ['elestrix', 38]),
+  elestrix: sp('Elestrix', ['electrico', 'volador'], [84, 104, 74, 118], 240, [[1, 'picotrueno'], [1, 'tajoaereo'], [38, 'rayo'], [42, 'clavado'], [48, 'tronamenta'], [54, 'tornado']], 'Cuando abre las alas el cielo se oscurece. Sus plumas guardan rayos.'),
+
+  // ---------------- Leyendas de la Bruma (después de la Liga)
+  brumalia: sp('Brumalia', ['fantasma', 'hada'], [100, 96, 100, 104], 300, [[1, 'velodebruma'], [1, 'destellohada'], [1, 'luzdeluna'], [1, 'hipnosis']], 'La guardiana del Bosque Bruma. Donde camina, la niebla toma forma de flores.', null, { legendary: true }),
+  fraguon: sp('Fraguón', ['fuego', 'acero'], [110, 120, 110, 70], 300, [[1, 'martillofragua'], [1, 'lanzallamas'], [1, 'corazahierro'], [1, 'terremoto']], 'Duerme dentro del volcán. Con su lomo de yunque forjó las primeras herramientas de la región.', null, { legendary: true }),
+  glaciel: sp('Glaciel', ['hielo', 'volador'], [96, 104, 92, 112], 300, [[1, 'alaglaciar'], [1, 'ventisca'], [1, 'tajoaereo'], [1, 'posarse']], 'Cóndor de hielo que vuela sobre los nevados. Su sombra trae la primera nevada.', null, { legendary: true }),
+  dracalba: sp('Dracalba', ['dragon', 'psiquico'], [106, 112, 100, 104], 320, [[1, 'rayodelalba'], [1, 'psicorayo'], [1, 'danzadragon'], [1, 'respiro']], 'El dragón del amanecer. Dicen que cada mañana el sol sale porque él lo despierta.', null, { legendary: true })
 };
 
 export const STARTERS = ['brotelo', 'brasin', 'charquin'];
@@ -47,14 +85,20 @@ export function rivalForm(base, level) {
 // Los objetos y las tiendas viven en items.js.
 
 export const ENCOUNTERS = {
-  sendero1: { rate: 0.12, list: [['pipiu', 2, 4, 50], ['roedin', 2, 4, 40], ['capullin', 2, 3, 10]] },
-  lago: { rate: 0.12, list: [['pipiu', 2, 4, 40], ['capullin', 2, 4, 35], ['roedin', 3, 4, 25]] },
-  ruta2: { rate: 0.12, list: [['pipiu', 4, 6, 30], ['roedin', 4, 6, 25], ['setin', 4, 6, 25], ['capullin', 4, 5, 20]] },
-  ruta3: { rate: 0.12, list: [['chispaz', 8, 10, 35], ['roedin', 8, 10, 25], ['pipiu', 9, 11, 20], ['setin', 8, 10, 20]] },
-  cueva: { rate: 0.09, list: [['guijarrin', 9, 12, 50], ['sombrin', 10, 12, 30], ['mentelin', 10, 11, 20]] },
-  ruta4: { rate: 0.12, list: [['medusin', 14, 16, 30], ['chispaz', 14, 16, 25], ['pipiolo', 15, 17, 25], ['guijarrin', 14, 16, 20]] },
-  ruta5: { rate: 0.12, list: [['sombrin', 22, 25, 25], ['mentelin', 22, 24, 25], ['voltaz', 23, 25, 20], ['seton', 23, 25, 15], ['penon', 23, 25, 15]] }
+  sendero1: { rate: 0.12, list: [['pipiu', 2, 4, 50], ['roedin', 2, 4, 40], ['capullin', 2, 3, 10], ['fatuin', 3, 4, 14, 'noche']] },
+  lago: { rate: 0.12, list: [['pipiu', 2, 4, 40], ['capullin', 2, 4, 35], ['roedin', 3, 4, 25], ['michin', 3, 4, 12], ['fatuin', 3, 5, 18, 'noche']] },
+  ruta2: { rate: 0.12, list: [['pipiu', 4, 6, 30], ['roedin', 4, 6, 25], ['setin', 4, 6, 25], ['capullin', 4, 5, 20], ['verdilago', 4, 6, 16], ['sierpin', 4, 6, 14]] },
+  ruta3: { rate: 0.12, list: [['chispaz', 8, 10, 35], ['roedin', 8, 10, 25], ['pipiu', 9, 11, 20], ['setin', 8, 10, 20], ['lanin', 8, 10, 16], ['truenin', 8, 10, 12]] },
+  cueva: { rate: 0.09, list: [['guijarrin', 9, 12, 50], ['sombrin', 10, 12, 30], ['mentelin', 10, 11, 20], ['magmol', 10, 12, 18], ['ferlum', 10, 12, 15], ['cuarcin', 10, 12, 8]] },
+  ruta4: { rate: 0.12, list: [['medusin', 14, 16, 30], ['chispaz', 14, 16, 25], ['pipiolo', 15, 17, 25], ['guijarrin', 14, 16, 20], ['nivalin', 14, 16, 18], ['truenin', 14, 16, 10], ['fatuin', 15, 17, 20, 'noche']] },
+  ruta5: { rate: 0.12, list: [['sombrin', 22, 25, 25], ['mentelin', 22, 24, 25], ['voltaz', 23, 25, 20], ['seton', 23, 25, 15], ['penon', 23, 25, 15], ['foliaton', 22, 24, 10], ['carnerazo', 23, 25, 10], ['serpentil', 22, 24, 10], ['mistigato', 22, 24, 8], ['cuarcin', 22, 24, 8], ['candelo', 23, 25, 16, 'noche']] }
 };
+// De noche (19:00 a 4:59) salen las criaturas marcadas con 'noche'; de día, solo las demás.
+export const isNightHour = h => h >= 19 || h < 5;
+export function encounterList(key, hour) {
+  const night = isNightHour(hour);
+  return (ENCOUNTERS[key]?.list || []).filter(e => !e[4] || (e[4] === 'noche') === night);
+}
 
 // ---------- Fórmulas ----------
 // bonus: lo que han sumado las Semillas (permanente, por estadística).

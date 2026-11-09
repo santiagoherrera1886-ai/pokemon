@@ -1,5 +1,6 @@
 // Criaturas originales de Alborada: sprites de combate (frente/espalda) e íconos. 64x64 con sombreado automático.
 import { canvas, px, ellipse, outline, autoShade } from '../core/pixel.js';
+import { ATLAS, ATLAS_SPECIES } from './bruma-sprites.js';
 
 const K = '#1e1a24';
 function eyes(g, x1, x2, y, o = {}) {
@@ -286,34 +287,50 @@ const DRAW = {
   }
 };
 
+// Las especies del bestiario de la Bruma usan sprites sacados de sus modelos 3D (scripts/sprites.cjs).
+let atlasImg = null;
+export const spritesReady = typeof Image === 'undefined' ? Promise.resolve(false) : new Promise(res => {
+  const im = new Image(); im.onload = () => { atlasImg = im; cache.clear(); res(true); }; im.onerror = () => res(false); im.src = ATLAS.url;
+});
+function atlasSprite(g, id, back) {
+  const i = ATLAS_SPECIES.indexOf(id); if (i < 0 || !atlasImg) return false;
+  const n = i * 2 + (back ? 1 : 0), S = ATLAS.size;
+  g.drawImage(atlasImg, (n % ATLAS.cols) * S, Math.floor(n / ATLAS.cols) * S, S, S, 0, 0, 64, 64);
+  return true;
+}
+export const hasSprite = id => !!DRAW[id] || ATLAS_SPECIES.includes(id);
+
 const cache = new Map();
 export function battleSprite(id, back = false) {
   const k = id + back;
   if (cache.has(k)) return cache.get(k);
   const [c, g] = canvas(64, 64);
-  (DRAW[id] || DRAW.roedin)(g, back);
-  autoShade(c, 0.18, ['#1e1a24', '#ffffff']);
+  if (DRAW[id]) { DRAW[id](g, back); autoShade(c, 0.18, ['#1e1a24', '#ffffff']); }
+  else if (!atlasSprite(g, id, back)) {
+    // Mientras carga el atlas: una silueta suave que no se guarda en la caché.
+    ellipse(g, 32, 40, 18, 16, '#b8b4c8'); ellipse(g, 32, 24, 13, 12, '#c8c4d8'); outline(c, '#1e1a24'); c.temp = true; return c;
+  }
   outline(c, '#1e1a24');
   cache.set(k, c);
   return c;
 }
 // Silueta blanca (para evoluciones y capturas)
-export function silhouette(id, color = '#ffffff') {
-  const k = 'sil' + id + color;
+export function silhouette(id, color = '#ffffff', back = false) {
+  const k = 'sil' + id + color + back;
   if (cache.has(k)) return cache.get(k);
-  const [c, g] = canvas(64, 64);
-  g.drawImage(battleSprite(id), 0, 0);
+  const [c, g] = canvas(64, 64), base = battleSprite(id, back);
+  g.drawImage(base, 0, 0);
   g.globalCompositeOperation = 'source-in'; g.fillStyle = color; g.fillRect(0, 0, 64, 64);
-  cache.set(k, c);
+  if (!base.temp) cache.set(k, c);
   return c;
 }
 export function icon(id) {
   const k = 'icon' + id;
   if (cache.has(k)) return cache.get(k);
-  const [c, g] = canvas(32, 32);
-  g.drawImage(battleSprite(id), 0, 0, 64, 64, 0, 0, 32, 32);
-  cache.set(k, c);
+  const [c, g] = canvas(32, 32), base = battleSprite(id);
+  g.drawImage(base, 0, 0, 64, 64, 0, 0, 32, 32);
+  if (!base.temp) cache.set(k, c);
   return c;
 }
 export function iconURL(id) { return battleSprite(id).toDataURL(); }
-export const CREATURE_IDS = Object.keys(DRAW);
+export const CREATURE_IDS = [...Object.keys(DRAW), ...ATLAS_SPECIES];

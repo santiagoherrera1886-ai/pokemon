@@ -2,8 +2,10 @@
 import { MapBuilder } from './builder.js';
 
 const S = st => st.story;
+// De noche (19:00 a 4:59, o la hora fija de las opciones).
+const isNight = st => { const h = st.options?.forceHour ?? new Date().getHours(); return h >= 19 || h < 5; };
 const has = (st, b) => (st.badges || []).includes(b);
-const T = (name, look, party, money, intro, defeat, after) => ({ name, look, party, money, intro: [].concat(intro), defeat: [].concat(defeat), after: [].concat(after || defeat) });
+const T = (name, look, party, money, intro, defeat, after, extra = {}) => ({ name, look, party, money, intro: [].concat(intro), defeat: [].concat(defeat), after: [].concat(after || defeat), ...extra });
 
 // ---------------------------------------------------------------- Interiores reutilizables
 function interior(id, w, h, opt) {
@@ -78,6 +80,7 @@ function ruta2() {
   b.npc({ id: 'r2chica', look: 'lass', x: 17, y: 12, dir: 2, sight: 3, trainer: T('Chica Ana', 'lass', [['pipiu', 6], ['setin', 6]], 140, ['¡Ey! ¡Nuestras miradas se cruzaron! ¡A combatir!'], ['Uy... eres muy bueno.'], ['En Corola hay un gimnasio de tipo Planta.']) });
   b.npc({ id: 'nicoR2', look: 'rival', x: 9, y: 23, dir: 0, when: st => S(st) === 5 && !st.flags.nicoR2 });
   b.trigger({ x: 2, y: 25, w: 14, h: 1, when: st => S(st) === 5 && !st.flags.nicoR2, script: 'nicoRuta2' });
+  b.obj({ kind: 'shimmer', x: 12, y: 8, solid: true, legend: 'brumalia', when: st => S(st) >= 12 && !st.flags.brumalia && isNight(st), script: 'leyenda' });
   return b.build();
 }
 
@@ -142,6 +145,7 @@ function cueva() {
   b.npc({ id: 'cuevaMont', look: 'hiker', x: 8, y: 6, dir: 0, sight: 3, trainer: T('Montañero Iván', 'hiker', [['guijarrin', 11], ['guijarrin', 12]], 260, ['¡Eco, eco, eco! ¡Pelea, pelea, pelea!'], ['Ay... ay... ay...'], ['La salida está al este. Sigue el eco.']) });
   b.npc({ id: 'cuevaGrunt', look: 'grunt', x: 20, y: 9, dir: 2, sight: 4, trainer: T('Recluta Eclipse', 'grunt', [['sombrin', 11], ['roedin', 12]], 300, ['¡Alto ahí! El Equipo Eclipse está buscando cristales del lago en esta cueva.', '¡Nadie pasa!'], ['¡Bah! Igual ya tenemos lo que necesitábamos...'], ['El jefe Umbra dice que el Lago Espejo esconde un poder enorme.']), bg: 'cave' });
   b.npc({ id: 'cuevaBici', look: 'man', x: 14, y: 9, dir: 3, talk: ['Me perdí... ¿la salida a Pueblo Cobre? Creo que es por el este.'] });
+  b.obj({ kind: 'shimmer', x: 24, y: 12, solid: true, legend: 'fraguon', when: st => S(st) >= 12 && !st.flags.fraguon, script: 'leyenda' });
   return b.build();
 }
 
@@ -236,6 +240,7 @@ function ruta5() {
   b.npc({ id: 'r5as', look: 'aide', x: 3, y: 18, dir: 3, sight: 3, trainer: T('As Daniel', 'aide', [['voltaz', 26], ['seton', 26]], 900, ['Si llegaste aquí, eres bueno. Veamos qué tan bueno.'], ['Sí... eres muy bueno.'], ['La Campeona Aurora nunca ha perdido.']) });
   b.npc({ id: 'r5as2', look: 'lass', x: 12, y: 15, dir: 2, sight: 3, trainer: T('As Marina', 'lass', [['meduson', 27], ['pipiolo', 27]], 920, ['¡Último filtro antes de la Liga!'], ['¡Pasa, pasa! Te lo ganaste.'], ['Suerte allá adentro.']) });
   b.npc({ id: 'r5as3', look: 'hiker', x: 8, y: 10, dir: 2, sight: 2, trainer: T('As Bruno', 'hiker', [['penon', 28], ['sombrador', 27]], 950, ['¡Las puertas de la Liga no se abren solas!'], ['Ahí están. Abiertas.'], ['Demuéstrales quién manda.']) });
+  b.obj({ kind: 'shimmer', x: 12, y: 20, solid: true, legend: 'glaciel', when: st => S(st) >= 12 && !st.flags.glaciel, script: 'leyenda' });
   return b.build();
 }
 function liga() {
@@ -258,10 +263,10 @@ export function buildStoryMaps() {
     [{ look: 'lass', x: 2, y: 9, dir: 3, sight: 4, trainer: T('Jardinera Flor', 'lass', [['setin', 10], ['setin', 10]], 300, ['¡Hiedra me enseñó todo lo que sé!'], ['¡Se me marchitaron!'], ['Hiedra es muy fuerte...']) },
      { look: 'bugkid', x: 10, y: 6, dir: 2, sight: 3, trainer: T('Cazabichos Teo', 'bugkid', [['capullado', 10], ['alasol', 11]], 300, ['¡Mis bichos aman las flores!'], ['Volaron lejos...'], ['Alasol sólo vuela de día.']) }]);
   const g2 = gymGen('gym2', 'Gimnasio Cobre', 'roca', ['cobre', 13, 8],
-    { look: 'basalto', talk: 'lider', trainer: T('Líder Basalto', 'basalto', [['guijarrin', 15], ['roedon', 15], ['penon', 18]], 1800, ['¿Retador? Bien. Las rocas no se mueven, pero golpean duro.'], ['Hmm. Rompiste la roca. Toma la Medalla Roca.'], ['Sigue cavando, chico. Sigue cavando.']), badge: 'roca' },
+    { look: 'basalto', talk: 'lider', trainer: T('Líder Basalto', 'basalto', [['guijarrin', 15], ['roedon', 15], ['penon', 18]], 1800, ['¿Retador? Bien. Las rocas no se mueven, pero golpean duro.'], ['Hmm. Rompiste la roca. Toma la Medalla Roca.'], ['Sigue cavando, chico. Sigue cavando.'], { alba: true }), badge: 'roca' },
     [{ look: 'hiker', x: 1, y: 8, dir: 3, sight: 5, trainer: T('Minero Paco', 'hiker', [['guijarrin', 14], ['guijarrin', 14]], 400, ['¡Pura roca, compa!'], ['¡Derrumbe!'], ['Basalto es duro como el granito.']) }]);
   const g3 = gymGen('gym3', 'Gimnasio Marea', 'agua', ['marea', 8, 9],
-    { look: 'coral', talk: 'lider', trainer: T('Líder Coral', 'coral', [['medusin', 20], ['charcomar', 21], ['meduson', 23]], 2400, ['¡Hola! Soy Coral. ¿Sabes nadar contra la corriente?', '¡Porque eso es lo que vas a tener que hacer!'], ['¡Qué ola! Te ganaste la Medalla Marea.'], ['Ahora sí puedes entrar a esa bodega... ten cuidado.']), badge: 'marea' },
+    { look: 'coral', talk: 'lider', trainer: T('Líder Coral', 'coral', [['medusin', 20], ['charcomar', 21], ['meduson', 23]], 2400, ['¡Hola! Soy Coral. ¿Sabes nadar contra la corriente?', '¡Porque eso es lo que vas a tener que hacer!'], ['¡Qué ola! Te ganaste la Medalla Marea.'], ['Ahora sí puedes entrar a esa bodega... ten cuidado.'], { alba: true }), badge: 'marea' },
     [{ look: 'swimmer', x: 6, y: 9, dir: 0, sight: 2, trainer: T('Nadador Íker', 'swimmer', [['medusin', 19], ['medusin', 19]], 500, ['¡Splash! ¡Hora de pelear!'], ['Glub...'], ['Coral entrena a las 5 de la mañana.']) }]);
   const list = [
     ruta2(), corola(), ruta3(), cueva(), cobre(), ruta4(), marea(), bodega(), ruta5(), liga(), g1, g2, g3,

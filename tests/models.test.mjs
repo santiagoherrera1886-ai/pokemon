@@ -41,3 +41,36 @@ test('every full-story species has an explicit 3D model',()=>{
   for(const sp of STORY_SPECIES){const model=storyCreature(r,sp);assert.ok(model.children.some(m=>m.isMesh));const bounds=new T.Box3().setFromObject(model);assert.ok(bounds.max.y>1 && bounds.max.y<2.5,sp);r.release(model);}
   r.dispose();
 });
+
+test('every species of the Bruma bestiary has a sculpted model, a head anchor and classic sprites',async()=>{
+  const {creatureModel,ALL_SPECIES}=await import('../src/render3d/creatures3d.js');
+  const {BRUMA}=await import('../src/render3d/bestiary.js');
+  const {ATLAS_SPECIES}=await import('../src/art/bruma-sprites.js');
+  assert.deepEqual([...ATLAS_SPECIES].sort(),Object.keys(BRUMA).sort(),'el atlas de sprites está desactualizado: corre node scripts/sprites.cjs');
+  assert.deepEqual([...ALL_SPECIES].sort(),Object.keys(SPECIES).sort());
+  const r=new Resources();
+  for(const sp of Object.keys(BRUMA)){
+    const model=creatureModel(r,sp),bounds=new T.Box3().setFromObject(model);
+    assert.ok(model.userData.body?.isMesh,`${sp}: cuerpo`);
+    assert.ok(model.userData.head?.top,`${sp}: ancla de la cabeza`);
+    assert.ok(bounds.max.y>.6&&bounds.max.y<2.5,`${sp}: alto ${bounds.max.y.toFixed(2)}`);
+    r.release(model);
+  }
+  r.dispose();
+});
+
+test('Forma Alba overlay attaches to any creature and toggles its glow',async()=>{
+  const {creatureModel}=await import('../src/render3d/creatures3d.js');
+  const {setAlba}=await import('../src/render3d/alba.js');
+  const r=new Resources();
+  for(const sp of ['brotelo','espejalba','nivalord','dracalba']){
+    const model=creatureModel(r,sp),rig={model,root:model,sp},before=model.userData.body.material;
+    setAlba(r,rig,true,SPECIES[sp].types);
+    assert.ok(rig.albaFx.visible&&rig.albaFx.children.length>3,sp);
+    assert.notEqual(rig.model.userData.body.material,before);
+    setAlba(r,rig,false,SPECIES[sp].types);
+    assert.equal(rig.albaFx.visible,false);assert.equal(rig.model.userData.body.material,before);
+    r.release(rig.root);
+  }
+  r.dispose();
+});

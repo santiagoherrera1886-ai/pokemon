@@ -39,6 +39,10 @@ export function parseState(raw, slot) {
     st.avatar = cleanAvatar(s.avatar);
     st.options = Object.assign(newState().options, s.options || {});
     if (slot) st.slot = slot; else if (!SLOTS.includes(st.slot)) st.slot = 1;
+    // Partidas de antes de la Forma Alba: con una medalla o más ya tienen el Brazalete.
+    st.bag = st.bag || {};
+    if ((st.badges || []).length && !st.bag.brazaleteAlba) st.bag.brazaleteAlba = 1;
+    for (const c of st.party || []) if (c && c.alba) delete c.alba;
     return st;
   } catch { return null; }
 }

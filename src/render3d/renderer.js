@@ -7,6 +7,8 @@ import {character,animateCharacter,creature} from './actors.js';
 import {capsuleModel} from './models.js';
 import {TitleScene} from './title.js';
 import {MoveFX} from './movefx.js';
+import {setAlba,animateAlba} from './alba.js';
+import {SPECIES} from '../data/creatures.js';
 import {QUALITY,normalizeQuality,actorPosition,visibleMapIds} from './policy.js';
 import {ui} from '../ui/ui.js';
 import {hash} from '../core/pixel.js';
@@ -176,7 +178,11 @@ export class PremiumRenderer {
       rig.root.visible=f[side+'Alpha']>.05&&!blink;
       rig.root.position.set((ally?-2:2)+f[side+'X']*13,Math.max(-1,-f[side+'Y']/30),ally?1.5:-1.8);
       rig.root.rotation.y=ally?Math.PI+.3:.3;
-      const s=ally?1.35:(f.foeScale??1)*1.12;rig.root.scale.setScalar(s);
+      // Forma Alba: corona, alas de luz y brillo; la criatura crece un poco mientras dure el combate.
+      const cr=ally?b.ally:b.foe,albaOn=!!(cr&&cr.alba&&cr.sp===rig.sp);
+      if(!!rig.albaOn!==albaOn)setAlba(this.r,rig,albaOn,SPECIES[rig.sp].types);
+      rig.albaK=(rig.albaK??1)+((albaOn?1.14:1)-(rig.albaK??1))*Math.min(1,dt*5);animateAlba(rig,time);
+      const s=(ally?1.35:(f.foeScale??1)*1.12)*rig.albaK;rig.root.scale.setScalar(s);
       rig.model.position.y=Math.sin(time*3.8+(ally?0:1))*.045;
       rig.model.rotation.z=Math.sin(time*2.4)*.025;rig.baseScale??=rig.model.scale.x;rig.model.scale.setScalar(rig.baseScale);
       // Parpadeo de figura: cada 2 a 5 segundos los ojos se cierran un instante.

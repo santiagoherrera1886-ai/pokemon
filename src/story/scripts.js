@@ -259,6 +259,10 @@ const S = {
     await ui.say([`¡${st.name} recibió la ${names[badge]}!`]);
     st.bag[gift[0]] = (st.bag[gift[0]] || 0) + gift[1];
     await ui.say([`¡Y además ${gift[1]} ${ITEMS[gift[0]].name}!`]);
+    if (!st.bag.brazaleteAlba) {
+      st.bag.brazaleteAlba = 1;
+      await ui.say(['Y una cosa más: ¡un Brazalete Alba!', 'Con él, una vez por combate, tu criatura despierta la Forma Alba: crece, brilla y se vuelve más fuerte.', 'En LUCHAR toca FORMA ALBA antes de escoger el ataque.']);
+    }
     st.story = Math.max(st.story, { hoja: 7, roca: 8, marea: 9 }[badge]);
     game.toast({ hoja: 'Nuevo objetivo: Pueblo Cobre (Ruta 3 y Cueva Eco)', roca: 'Nuevo objetivo: Ciudad Marea (Ruta 4)', marea: 'Nuevo objetivo: la bodega del Equipo Eclipse' }[badge]);
   },
@@ -276,7 +280,7 @@ const S = {
     const st = game.state, nico = ow.npc('nicoR4');
     if (nico) { ow.emote(nico, '!'); await game.frames(30); await ow.approach(nico); }
     await say(N.nico, '¡Ey! ¡Dos medallas! Yo también tengo dos, ¿qué creías?', 'Oí que el Equipo Eclipse tiene una bodega en Ciudad Marea.', '¡Pero primero, revancha!');
-    const res = await game.trainerBattle({ name: 'Nico', look: 'rival', party: [['pipiolo', 17], ['setin', 16], [rivalForm(st.rivalStarter || 'brasin', 18), 18]], money: 800 }, 'beach');
+    const res = await game.trainerBattle({ name: 'Nico', look: 'rival', party: [['pipiolo', 17], ['setin', 16], [rivalForm(st.rivalStarter || 'brasin', 18), 18]], money: 800, alba: true }, 'beach');
     if (res !== 'win') return;
     st.flags.nicoR4 = true;
     await say(N.nico, '¡Otra vez! ¿Cómo haces?', 'Bueno, ¡me adelanto a Marea! ¡Nos vemos!');
@@ -300,7 +304,7 @@ const S = {
     const st = game.state, umbra = ow.npc('umbra');
     if (umbra) { umbra.dir = 3; ow.emote(umbra, '!'); await game.frames(30); }
     await say(N.umbra, 'Así que tú eres el niño que molestó a mis reclutas.', 'Mira el lago. En unos minutos, la guardiana despertará y obedecerá al Equipo Eclipse.', 'Y nadie, NADIE, nos va a detener.');
-    const res = await game.trainerBattle({ name: 'Jefe Umbra', look: 'umbra', party: [['sombrador', 26], ['mentelin', 25], ['penon', 26], ['voltaz', 26]], money: 3500 }, 'lake');
+    const res = await game.trainerBattle({ name: 'Jefe Umbra', look: 'umbra', party: [['sombrador', 26], ['mentelin', 25], ['penon', 26], ['voltaz', 26]], money: 3500, alba: true }, 'lake');
     if (res !== 'win') return;
     await say(N.umbra, '¡¿Cómo?! ¡¿Un niño?!', '...¡Esperen! ¡El lago está brillando!');
     await ui.say(['El agua del Lago Espejo se vuelve plata.', 'Del reflejo del cielo sale una criatura con alas como espejos...']);
@@ -325,11 +329,34 @@ const S = {
     else await ui.say(['Espejalba se sumergió en el lago... Un brillo se quedó en la orilla.', '(Puedes volver a buscarla cuando quieras.)']);
   },
 
+  // ---------- Leyendas de la Bruma (después de ser campeón) ----------
+  // Brumalia (Ruta 2 de noche), Fraguón (Cueva Eco) y Glaciel (Ruta 5). Con las tres, Dracalba despierta en el Lago Espejo.
+  async leyenda(ow, game, obj) {
+    const st = game.state, sp = obj.legend;
+    if (st.flags[sp]) return;
+    const L = {
+      brumalia: { lv: 45, bg: 'grass', intro: ['La niebla se junta entre los árboles... y toma forma de cierva.', '¡Brumalia, la guardiana del Bosque Bruma!'], gone: 'Brumalia se deshizo en la niebla...' },
+      fraguon: { lv: 45, bg: 'cave', intro: ['El suelo de la cueva está caliente. Algo golpea como un martillo...', '¡Fraguón despertó de su sueño de lava!'], gone: 'Fraguón volvió a hundirse en el calor de la roca...' },
+      glaciel: { lv: 45, bg: 'mountain', intro: ['Empieza a nevar en plena ruta. Una sombra enorme tapa el sol...', '¡Glaciel, el cóndor de hielo, bajó de los nevados!'], gone: 'Glaciel se fue volando entre la nieve...' },
+      dracalba: { lv: 50, bg: 'lake', intro: ['La niebla, el fuego y la nieve que encontraste se reúnen sobre el lago.', 'El cielo se pone color de amanecer...', '¡Dracalba, el dragón del alba, despertó!'], gone: 'Dracalba subió hacia el sol y se perdió de vista...' }
+    }[sp];
+    if (!L) return;
+    await ui.say(L.intro);
+    const foe = makeCreature(sp, L.lv);
+    const res = await game.battle({ foe, wild: true, legendary: true, canRun: true, canCatch: true, bg: L.bg });
+    if (res === 'caught') {
+      st.flags[sp] = true;
+      await ui.say([`¡${SPECIES[sp].name} ahora es parte de tu equipo!`]);
+      if (sp !== 'dracalba' && ['brumalia', 'fraguon', 'glaciel'].every(k => st.flags[k])) await ui.say(['Sientes un calor suave, como el primer rayo del día...', 'Algo te llama desde el Lago Espejo.']);
+    } else if (res === 'lose') await game.blackout();
+    else await ui.say([L.gone, '(Puedes volver a buscarlo cuando quieras.)']);
+  },
+
   // ---------- Liga ----------
   async nicoLiga(ow, game) {
     const st = game.state, nico = ow.npc('nicoLiga');
     await say(N.nico, `¡Sabía que llegarías, ${st.name}!`, 'Desde ese día en el lago supe que eras mi gran rival.', 'Antes de que llegues a la campeona... ¡tienes que pasar por mí! ¡Con todo!');
-    const res = await game.trainerBattle({ name: 'Nico', look: 'rival', party: [['pipiolo', 30], ['roedon', 29], ['voltaz', 30], [rivalForm(st.rivalStarter || 'brasin', 33), 33]], money: 4000 }, 'league');
+    const res = await game.trainerBattle({ name: 'Nico', look: 'rival', party: [['pipiolo', 30], ['roedon', 29], ['voltaz', 30], [rivalForm(st.rivalStarter || 'brasin', 33), 33]], money: 4000, alba: true }, 'league');
     if (res !== 'win') return;
     st.flags.nicoLiga = true;
     await say(N.nico, '...Ganaste. Otra vez.', '¿Sabes qué? Me alegra que seas tú. ¡Ve! ¡Aurora te espera!');
@@ -341,7 +368,7 @@ const S = {
     const aur = ow.npc('aurora');
     if (aur) aur.dir = 0;
     await say(N.aurora, 'Bienvenido. Soy Aurora, campeona de la Liga Alborada.', 'Supe lo que hiciste en el Lago Espejo. Gracias por proteger nuestra región.', 'Pero aquí no hay favores: muéstrame todo lo que aprendiste en tu viaje.');
-    const res = await game.trainerBattle({ name: 'Campeona Aurora', look: 'aurora', party: [['meduson', 33], ['voltaz', 33], ['seton', 34], ['penon', 34], ['sombrador', 35]], money: 10000 }, 'league');
+    const res = await game.trainerBattle({ name: 'Campeona Aurora', look: 'aurora', party: [['meduson', 33], ['voltaz', 33], ['seton', 34], ['penon', 34], ['sombrador', 35]], money: 10000, alba: true }, 'league');
     if (res !== 'win') return;
     st.story = 12;
     await say(N.aurora, '...Qué combate tan hermoso.', `Desde hoy, ${st.name}, eres el nuevo campeón de la Liga Alborada.`, 'Tu nombre y el de tus criaturas quedarán grabados en el Salón de la Fama.');

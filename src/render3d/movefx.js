@@ -286,6 +286,36 @@ export class MoveFX {
     impact(.55, 1.3);
   }
 
+  // ---------- Forma Alba ----------
+  // Columna de luz dorada, anillos que suben, rayos de amanecer detrás y chispas: la criatura despierta.
+  alba(fx, { to, feet, H }) {
+    fx.dur = 1.25;
+    const gold = '#ffd77a', warm = '#ffb060';
+    const col = this.mesh(fx, this.geo.cyl, this.mat(gold, .55)), core = this.mesh(fx, this.geo.cyl, this.mat('#ffffff', .7));
+    const h = Math.max(3, H * 2.6);
+    fx.parts.push(t => {
+      const grow = ease(Math.min(1, t / .3)), fade = t > .8 ? Math.max(0, 1 - (t - .8) / .4) : 1, w = (.7 + .1 * Math.sin(t * 30)) * (t < .5 ? 1 : 1.15);
+      col.scale.set(w * fade + .001, h * grow + .001, w * fade + .001); col.position.copy(feet).add(new T.Vector3(0, h * grow / 2, 0));
+      core.scale.set(w * .35 * fade + .001, h * grow + .001, w * .35 * fade + .001); core.position.copy(col.position);
+      col.visible = core.visible = fade > 0;
+    });
+    for (let i = 0; i < 3; i++) {
+      const ring = this.mesh(fx, this.geo.torus, this.mat(i % 2 ? warm : gold, .9)); ring.rotation.x = Math.PI / 2; const d0 = i * .18;
+      fx.parts.push(t => { const k = (t - d0) / .7; ring.visible = k > 0 && k < 1; ring.position.copy(feet).add(new T.Vector3(0, .1 + k * H * 1.3, 0)); ring.scale.setScalar(.9 + k * .5); ring.material.opacity = .9 * (1 - k); });
+    }
+    const rays = new T.Group(); fx.group.add(rays);
+    for (let i = 0; i < 10; i++) { const pivot = new T.Group(), ray = new T.Mesh(this.geo.plane, this.mat(i % 2 ? gold : '#fff4c8', .5)); ray.scale.set(.18, 2.6, 1); ray.position.y = 1.3; ray.renderOrder = 4; pivot.rotation.z = i / 10 * Math.PI * 2; pivot.add(ray); rays.add(pivot); }
+    fx.parts.push(t => {
+      const k = t / 1.25; rays.position.copy(to); rays.lookAt(this.cam()); rays.rotateZ(t * .8);
+      rays.scale.setScalar(Math.max(.01, ease(Math.min(1, t / .4)) * Math.max(1, H * .7)));
+      for (const p of rays.children) p.children[0].material.opacity = .5 * (1 - k);
+    });
+    const flash = this.sprite(fx, '#fff2c0', .1); flash.position.copy(to);
+    fx.parts.push(t => { const k = (t - .5) / .4; flash.visible = k > 0 && k < 1; flash.scale.setScalar(6 * bell(k)); });
+    fx.parts.push(this.cloud(fx, 70, [gold, '#ffffff', warm], .32, () => ({ x: feet.x + rnd(1.4), y: feet.y + Math.random() * .3, z: feet.z + rnd(1.2), vx: rnd(.4), vy: 2 + Math.random() * 3, vz: rnd(.4), delay: Math.random() * .7 }), { drag: .6 }));
+    fx.shake = .1; fx.shakeAt = .55;
+  }
+
   // ---------- Mejoras, curación y estados ----------
   buff(fx, { to, feet, C, H, ev }) {
     fx.dur = .9;

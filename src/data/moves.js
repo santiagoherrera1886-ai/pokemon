@@ -4,7 +4,7 @@
 // Campos opcionales: status [id, %], confuse %, stat [{stat, stages, target, chance}], prio, hits [mín, máx],
 // recoil (fracción del daño), drain (fracción del daño), heal (fracción de los PS), crit (golpe crítico fácil), protect.
 // Duración (cuadros a 60 por segundo) de cada animación; el combate espera eso antes de aplicar el daño.
-export const ANIM_FRAMES = { tackle: 26, scratch: 24, bite: 26, punch: 26, slash: 26, shot: 34, spray: 40, beam: 46, bolt: 36, rain: 50, pillar: 44, wave: 50, quake: 50, gust: 42, rings: 40, shadow: 44, sting: 30, drain: 50, heal: 44, buff: 40, debuff: 36, powder: 44, sparkle: 40, shield: 36, roar: 36, dragon: 48, status: 34 };
+export const ANIM_FRAMES = { tackle: 26, scratch: 24, bite: 26, punch: 26, slash: 26, shot: 34, spray: 40, beam: 46, bolt: 36, rain: 50, pillar: 44, wave: 50, quake: 50, gust: 42, rings: 40, shadow: 44, sting: 30, drain: 50, heal: 44, buff: 40, debuff: 36, powder: 44, sparkle: 40, shield: 36, roar: 36, dragon: 48, status: 34, alba: 72 };
 const s = (stat, stages, target = 'foe', chance = 100) => ({ stat, stages, target, chance });
 const m = (name, type, power, acc, pp, anim, extra = {}) => ({ name, type, power, acc, pp, anim, ...extra });
 
@@ -150,7 +150,25 @@ export const MOVES = {
   destellohada: m('Destello Hada', 'hada', 80, 100, 10, 'sparkle', { desc: 'Luz mágica que deslumbra.' }),
   juegorudo: m('Juego Rudo', 'hada', 90, 90, 10, 'punch', { stat: [s('atk', -1, 'foe', 10)], desc: 'Juega tan brusco que lastima.' }),
   ternura: m('Ternura', 'hada', 0, 100, 20, 'sparkle', { stat: [s('atk', -2)], desc: 'Tanta ternura le baja mucho el Ataque al rival.' }),
-  luzdeluna: m('Luz de Luna', 'hada', 0, 100, 10, 'heal', { heal: .5, desc: 'Se baña en luz de luna y recupera la mitad de sus PS.' })
+  luzdeluna: m('Luz de Luna', 'hada', 0, 100, 10, 'heal', { heal: .5, desc: 'Se baña en luz de luna y recupera la mitad de sus PS.' }),
+
+  // ---------------- Familias nuevas de la Bruma y firmas de las leyendas
+  puñohielo: m('Puño Hielo', 'hielo', 75, 100, 15, 'punch', { status: ['con', 10], desc: 'Puñetazo helado. Puede congelar.' }),
+  carambano: m('Carámbano', 'hielo', 25, 100, 20, 'shot', { hits: [2, 5], desc: 'Dispara de 2 a 5 carámbanos seguidos.' }),
+  topetazo: m('Topetazo', 'lucha', 85, 95, 10, 'tackle', { confuse: 10, desc: 'Cabezazo de carnero con todo. Puede confundir.' }),
+  jab: m('Jab', 'lucha', 40, 100, 30, 'punch', { prio: 1, desc: 'Golpe rápido que siempre sale primero.' }),
+  colmillotoxico: m('Colmillo Tóxico', 'veneno', 60, 100, 15, 'bite', { status: ['ven', 30], desc: 'Muerde con colmillos venenosos.' }),
+  farolfatuo: m('Farol Fatuo', 'fantasma', 80, 100, 15, 'shot', { status: ['que', 20], desc: 'Lanza la llama de su farol. Puede quemar.' }),
+  velosombrio: m('Velo Sombrío', 'fantasma', 95, 100, 10, 'shadow', { desc: 'Envuelve al rival en una sombra helada.' }),
+  lluviadecuarzo: m('Lluvia de Cuarzo', 'roca', 90, 95, 10, 'rain', { desc: 'Hace caer cristales de cuarzo sobre el rival.' }),
+  hojanavaja: m('Hoja Navaja', 'planta', 70, 95, 20, 'slash', { crit: true, desc: 'Hojas filudas. Da golpes críticos con facilidad.' }),
+  picotrueno: m('Pico Trueno', 'electrico', 80, 100, 15, 'sting', { status: ['par', 20], desc: 'Picotazo cargado de electricidad. Puede paralizar.' }),
+  puñomagma: m('Puño Magma', 'fuego', 85, 100, 15, 'punch', { status: ['que', 20], desc: 'Puñetazo de lava ardiente. Puede quemar.' }),
+  orbitamental: m('Órbita Mental', 'psiquico', 85, 100, 10, 'rings', { confuse: 20, desc: 'Anillos de energía giran alrededor del rival.' }),
+  velodebruma: m('Velo de Bruma', 'fantasma', 100, 95, 5, 'shadow', { stat: [s('atk', -1, 'foe', 50)], desc: 'Niebla del Bosque Bruma. Puede bajar el Ataque.' }),
+  martillofragua: m('Martillo de Fragua', 'acero', 110, 90, 5, 'punch', { status: ['que', 30], desc: 'Golpe de yunque al rojo vivo. Puede quemar.' }),
+  alaglaciar: m('Ala Glaciar', 'hielo', 100, 95, 5, 'gust', { status: ['con', 20], desc: 'Aletazo de viento helado. Puede congelar.' }),
+  rayodelalba: m('Rayo del Alba', 'dragon', 110, 95, 5, 'beam', { stat: [s('atk', 1, 'self', 30)], desc: 'La primera luz del día hecha rayo.' })
 };
 
 // Daño típico (para la IA y el menú): potencia por número medio de golpes.

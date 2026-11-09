@@ -30,7 +30,7 @@ test('indoor loading is isolated and outdoor loading is bounded by view distance
 });
 test('graphics switching never changes the game state or legacy save bytes',async()=>{
   const store=new Map();globalThis.localStorage={getItem:k=>store.get(k)??null,setItem:(k,v)=>store.set(k,v)};globalThis.matchMedia=()=>({matches:false});
-  const state=newState('Santi');state.story=12;state.map='liga';state.money=1900;state.bag.capsula=6;state.badges=['hoja','roca','marea'];state.flags.nicoLiga=true;state.visited.marea=true;state.dex.espejalba=2;saveState(state);
+  const state=newState('Santi');state.story=12;state.map='liga';state.money=1900;state.bag.capsula=6;state.bag.brazaleteAlba=1;state.badges=['hoja','roca','marea'];state.flags.nicoLiga=true;state.visited.marea=true;state.dex.espejalba=2;saveState(state);
   const saved=store.get('alborada-save-v1'),before=JSON.stringify(state),g=new Graphics({state});
   g.engine={lost:false,setVisible(){},setQuality(){}};
   for(let i=0;i<12;i++){await g.setMode(i%2?'premium':'classic');g.setQuality(['low','medium','high'][i%3]);}

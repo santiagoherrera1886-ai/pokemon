@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Generador de sprites</title>
+<script type="importmap">{"imports":{"three":"../vendor/three.module.js","three/addons/":"../vendor/addons/"}}</script>
+</head><body style="background:#333;color:#eee;font:14px sans-serif">
+<p>Genera los sprites del modo clásico a partir de los modelos 3D (lo usa scripts/sprites.cjs).</p>
+<canvas id="atlas"></canvas>
+<script type="module">
+// Renderiza cada especie de frente y de espaldas, la reduce a 64x64 con bordes nítidos y arma un atlas.
+import * as T from 'three';
+import { Resources } from '../src/render3d/resources.js';
+import { creatureModel } from '../src/render3d/creatures3d.js';
+import { BRUMA } from '../src/render3d/bestiary.js';
+
+const SIZE = 64, BIG = 256, COLS = 16;
+const list = Object.keys(BRUMA);
+const renderer = new T.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setSize(BIG, BIG); renderer.setClearColor(0x000000, 0); renderer.outputColorSpace = T.SRGBColorSpace;
+const r = new Resources(), scene = new T.Scene();
+scene.add(new T.HemisphereLight('#f8f8f0', '#7a8a86', 2.1));
+const sun = new T.DirectionalLight('#fff3d6', 2.8); sun.position.set(-3, 6, 5); scene.add(sun);
+const rim = new T.DirectionalLight('#b8d8ff', .9); rim.position.set(4, 3, -5); scene.add(rim);
+const cam = new T.OrthographicCamera(-1, 1, 1, -1, .1, 50);
+const atlas = document.getElementById('atlas'); atlas.width = COLS * SIZE; atlas.height = Math.ceil(list.length * 2 / COLS) * SIZE;
+const ax = atlas.getContext('2d');
+const small = document.createElement('canvas'); small.width = small.height = SIZE;
+const sx = small.getContext('2d', { willReadFrequently: true });
+
+function shot(model, back) {
+  const box = new T.Box3().setFromObject(model), c = box.getCenter(new T.Vector3()), s = box.getSize(new T.Vector3());
+  const yaw = back ? Math.PI + .5 : .45, dist = 10;
+  cam.position.set(c.x + Math.sin(yaw) * dist, c.y + dist * .2, c.z + Math.cos(yaw) * dist); cam.lookAt(c);
+  const half = Math.max(s.y * .56, Math.hypot(s.x, s.z) * .5) * 1.04;
+  cam.left = -half; cam.right = half; cam.top = half + (half - s.y * .5) * 0; cam.bottom = -half; cam.updateProjectionMatrix();
+  renderer.render(scene, cam);
+  sx.clearRect(0, 0, SIZE, SIZE); sx.imageSmoothingEnabled = true; sx.imageSmoothingQuality = 'high';
+  sx.drawImage(renderer.domElement, 0, 0, SIZE, SIZE);
+  // Borde nítido (alfa todo o nada) y colores en escalones, como el pixel art del juego.
+  const img = sx.getImageData(0, 0, SIZE, SIZE), d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i + 3] < 110) { d[i + 3] = 0; continue; }
+    const a = d[i + 3] / 255; for (let k = 0; k < 3; k++) { const v = Math.min(255, d[i + k] / a); d[i + k] = Math.round(v / 12) * 12; }
+    d[i + 3] = 255;
+  }
+  sx.putImageData(img, 0, 0);
+  return small;
+}
+
+list.forEach((sp, i) => {
+  const model = creatureModel(r, sp); scene.add(model); model.updateMatrixWorld(true);
+  for (const back of [false, true]) {
+    const n = i * 2 + (back ? 1 : 0);
+    ax.drawImage(shot(model, back), (n % COLS) * SIZE, Math.floor(n / COLS) * SIZE);
+  }
+  scene.remove(model);
+});
+window.__atlas = { list, url: atlas.toDataURL('image/png'), cols: COLS, size: SIZE };
+</script></body></html>

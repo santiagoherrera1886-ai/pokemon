@@ -6,7 +6,7 @@ import { buildMaps } from '../src/world/maps.js';
 
 test('every item is complete and every shop sells real items', () => {
   for (const [id, it] of Object.entries(ITEMS)) {
-    assert.ok(it.name && it.desc && it.price > 0 && it.color && it.icon, id);
+    assert.ok(it.name && it.desc && (it.key ? it.price === 0 : it.price > 0) && it.color && it.icon, id);
     assert.ok(POCKETS[it.pocket], `${id} pocket`);
   }
   const sold = new Set([...generalStock({ badges: ['hoja', 'roca', 'marea'] }), ...Object.values(SPECIAL).flatMap(s => s.items), ...VENDING]);

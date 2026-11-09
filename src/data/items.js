@@ -8,9 +8,10 @@ export const POCKETS = {
   medicinas: { name: 'Medicinas', color: '#3f9e62' },
   batalla: { name: 'Batalla', color: '#d68a14' },
   campo: { name: 'Campo', color: '#3f7fc8' },
-  cuidado: { name: 'Cuidado', color: '#9a5cc0' }
+  cuidado: { name: 'Cuidado', color: '#9a5cc0' },
+  clave: { name: 'Clave', color: '#c89a2a' }
 };
-export const POCKET_ORDER = ['capsulas', 'medicinas', 'batalla', 'campo', 'cuidado'];
+export const POCKET_ORDER = ['capsulas', 'medicinas', 'batalla', 'campo', 'cuidado', 'clave'];
 // En combate sólo se abren estos bolsillos.
 export const BATTLE_POCKETS = ['capsulas', 'medicinas', 'batalla'];
 
@@ -71,10 +72,15 @@ export const ITEMS = {
   semillaFuerza: seed('Semilla Fuerza', 3000, 'Sube para siempre el Ataque de una criatura.', '#e0883a', { seed: 'atk' }),
   semillaCoraza: seed('Semilla Coraza', 3000, 'Sube para siempre la Defensa de una criatura.', '#b89a48', { seed: 'def' }),
   semillaViento: seed('Semilla Viento', 3000, 'Sube para siempre la Velocidad de una criatura.', '#48a8d8', { seed: 'spe' }),
-  dulce: item('cuidado', 'candy')('Dulce de Arequipe', 4800, 'Un dulce delicioso: la criatura que lo come sube un nivel.', '#b8743a', { levelUp: true })
+  dulce: item('cuidado', 'candy')('Dulce de Arequipe', 4800, 'Un dulce delicioso: la criatura que lo come sube un nivel.', '#b8743a', { levelUp: true }),
+
+  // Clave: no se gastan ni se venden.
+  brazaleteAlba: item('clave', 'band')('Brazalete Alba', 0, 'Despierta la Forma Alba una vez por combate. En LUCHAR, toca FORMA ALBA antes de escoger el ataque.', '#f0c040', { key: true })
 };
 export const isCapsule = id => ITEMS[id]?.pocket === 'capsulas';
 export const sellPrice = id => Math.floor((ITEMS[id]?.price || 0) / 2);
+// Los objetos clave no se venden ni se gastan.
+export const isKeyItem = id => !!ITEMS[id]?.key;
 
 // ---------- Qué vende cada tienda ----------
 // Mostrador general: crece con las medallas, como en la portátil.
