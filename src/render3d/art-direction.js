@@ -197,6 +197,11 @@ export function dressCharacter(r,{root,body,head},look,L){
   default:
     medal(r,torso,PALETTE.gold,[0,.53,.16],.055);
  }
+ // Even supporting roles have an unmistakable 3D hairpin/insignia.
+ if(!face.children.length){
+  gem(r,face,accent,[.27,.20,.14],.046);
+  ornament(r,face,'crystal',PALETTE.cream,[.22,.235,.16],[.024,.055,.018]);
+ }
  // Batch only these decorative attachments; never flatten the animated rig.
  r.batch(torso);r.batch(face);
  return role;
