@@ -298,7 +298,7 @@ export function building(r,o) {
     const p=r.mesh(silhouette,shape,color,[x,y,z],[sx,sy,sz]);
     if(rotation.length)p.rotation.set(...rotation);return p;
   };
-  const gableDark=shade(roof,-.30),gableBright=shade(roof,.21);
+  const gableDark=shade(roof,-.30),gableBright=shade(roof,.055);
   if(!lab){
     const run=d/2-.12,rise=.95,angle=Math.atan2(rise,run);
     // Individual roof shingles alternate in short staggered courses. Shingle
@@ -306,11 +306,11 @@ export function building(r,o) {
     for(const side of [-1,1])for(let row=0;row<5;row++){
       const t=(row+.48)/5;
       const y=2.16+rise*(1-t)+.105,zz=zc+side*(run*t);
-      const count=Math.max(4,Math.min(14,Math.floor(w/.55)));
+      const count=Math.max(4,Math.min(10,Math.floor(w/.68)));
       for(let i=0;i<count;i++){
         const x=(i+.5+(row%2)*.12)*w/count;
-        const color=(i+row)%5===0?gableBright:(i+row)%3===0?shade(roof,-.12):roof;
-        form('soft',color,x,y,zz,w/count*.86,.035,run*.135,[side*angle,0,0]);
+        const color=(i+row)%7===0?shade(roof,-.16):(i+row)%3===0?gableBright:shade(roof,-.035);
+        form('soft',color,x,y,zz,w/count*.96,.035,run*.15,[side*angle,0,0]);
       }
     }
     // Roofline changes in geometry: framed dormers projecting from both
