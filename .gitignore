@@ -5,3 +5,6 @@ tests/screenshots/**
 vendor/
 dist/
 .vercel/
+
+# Se genera en cada build desde src/art/retro-raw/*.b64
+src/art/retro-reference.png
