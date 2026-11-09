@@ -229,7 +229,7 @@ async function run() {
     // Acelerador de la prueba: sube el nivel del inicial para ganar sin depender del azar.
     await page.evaluate(() => { const c = __game.state.party[0]; c.level = 70; c.exp = 70 ** 3; c.stats = { hp: 220, atk: 190, def: 170, spe: 160 }; c.hp = 220; c.moves = [{ id: 'oleaje', pp: 99 }, { id: 'rayo', pp: 99 }, { id: 'psicorayo', pp: 99 }, { id: 'derribo', pp: 99 }]; });
 
-    await walkTo(5, 7, 'brisal'); await settle();
+    await walkTo(6, 7, 'brisal'); await settle();                     // la puerta de la casa está en (6,7)
     s = await st(); assert.equal(s.story, 4, 'mamá debe dar las zapatillas');
     await walkTo(5, 7);
     await page.keyboard.down('Shift');
