@@ -524,7 +524,7 @@ export function creatureModel(r, sp) {
   const g = new T.Group(), S = new Sculpt(), D = kit(r, g, S);
   build(S, D);
   let body = BODY.get(sp);
-  if (!body) { body = voxelSculptGeometry(S, .11); BODY.set(sp, body); }
+  if (!body) { body = voxelSculptGeometry(S, sp === 'guijarrin' ? .075 : .11); BODY.set(sp, body); }
   const mesh = new T.Mesh(body, r.mat('#ffffff', { vertexColors: true, roughness: .94, metalness: 0, flatShading: true }));
   mesh.castShadow = true; mesh.receiveShadow = true; mesh.userData.keep = true; g.add(mesh);
   r.batch(g);
