@@ -197,13 +197,17 @@ export function building(r,o) {
     geometry.computeVertexNormals();
     geometry.rotateY(Math.PI/2);
     const roofMesh=new T.Mesh(geometry,r.mat(shade(roof,-.35)));roofMesh.scale.set((w+.44)/(d-.24),1,(d-.24)/(w+.44));roofMesh.position.set(w/2,2.16,zc);roofMesh.castShadow=true;roofMesh.receiveShadow=true;roofMesh.userData.ownedGeometry=true;g.add(roofMesh);
-    // Tejas en franjas gruesas y redondeadas, con una ranura oscura entre franja y franja.
-    const run=D,rise=H,L=Math.hypot(run,rise),theta=Math.atan2(rise,run),N=5,len=L/N;
-    const nx=0,ny=Math.cos(theta),nz=Math.sin(theta);
-    for(const side of [1,-1])for(let j=0;j<N;j++){
-      const k=(j+.55)/N,y=2.16+rise*(1-k)+ny*.06,z=zc+side*(run*k+nz*.06);
-      const strip=r.mesh(g,'soft',gloss(j%2?roof:shade(roof,.07)),[w/2,y,z],[w+.52,.09,len*.9]);strip.rotation.x=side*theta;
-      if(side===1){const lip=r.mesh(g,'soft',gloss(shade(roof,-.12)),[w/2,y-Math.sin(theta)*len*.45-.035,z+Math.cos(theta)*len*.45],[w+.5,.06,.07]);lip.rotation.x=theta;}
+    // Sloped ceramic roof under the individual tiles, instead of five giant
+    // smooth toy-like stripes. The small scalloped shingles are modeled above.
+    const run=D,rise=H,L=Math.hypot(run,rise),theta=Math.atan2(rise,run);
+    for(const side of [1,-1]){
+      const enamel=r.mesh(g,'box',shade(roof,-.08),[w/2,2.16+rise*.5,zc+side*run*.5],[w+.5,.055,L*1.02]);
+      enamel.rotation.x=side*theta;
+      // Decorative timber ribs define a genuine raised storybook roof edge.
+      for(const x of [.12,w-.12]){
+        const beam=r.mesh(g,'cylinder',shade(trim,-.24),[x,2.16+rise*.5+.07,zc+side*run*.5],[.065,L*1.03,.065]);
+        beam.rotation.x=-side*Math.atan2(run,rise);
+      }
     }
     // Canal del alero, cumbrera y remates
     for(const side of [1,-1])b(shade(roof,-.3),w/2,2.13,zc+side*(D+.07),w+.62,.16,.18);
