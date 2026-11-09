@@ -26,12 +26,14 @@ const BLUR = `uniform sampler2D tColor; uniform vec2 dir; varying vec2 vUv;
 const FRAG = `
   uniform sampler2D tColor; uniform sampler2D tDepth; uniform sampler2D tBloom; uniform vec2 texel;
   uniform float focusY; uniform float tilt; uniform float ink; uniform vec3 grade; uniform float night; uniform float sat;
-  uniform float bloom; uniform float lift; uniform float near; uniform float far;
+  uniform float bloom; uniform float lift; uniform float near; uniform float far; uniform float retro;
   varying vec2 vUv;
   float lin(float d){ float z = d * 2. - 1.; return 2. * near * far / (far + near - z * (far - near)); }
   float lum(vec3 c){ return dot(c, vec3(.299,.587,.114)); }
   void main(){
-    vec3 col = texture2D(tColor, vUv).rgb;
+    vec2 sampledUV = vUv;
+    if(retro > .5){ vec2 cell = texel * 2.0; sampledUV = (floor(vUv / cell) + .5) * cell; }
+    vec3 col = texture2D(tColor, sampledUV).rgb;
     float d = abs(vUv.y - focusY);
     float blur = smoothstep(.26, .7, d) * tilt;
     if (blur > .01) {
@@ -57,7 +59,11 @@ const FRAG = `
     col = mix(vec3(L), col, sat);
     col *= grade;
     col = mix(col, col * vec3(.55, .62, .95) + vec3(.0, .01, .04), night);
-    vec2 v = vUv - .5; col *= 1. - dot(v, v) * .42;
+    if(retro > .5){
+      float bayer = mod(floor(vUv.x / texel.x) + 2.0 * floor(vUv.y / texel.y), 4.0);
+      col = clamp(floor(clamp(col, 0., 1.) * 26.0 + bayer * .16) / 26.0, 0., 1.);
+    }
+    vec2 v = vUv - .5; col *= 1. - dot(v, v) * .36;
     gl_FragColor = vec4(col, 1.);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
@@ -75,7 +81,7 @@ export class Stylizer {
     this.mat = pass(FRAG, {
       tColor: { value: null }, tDepth: { value: null }, tBloom: { value: null }, texel: { value: new T.Vector2() },
       near: { value: .5 }, far: { value: 160 }, focusY: { value: .5 }, tilt: { value: .4 }, ink: { value: 0 },
-      grade: { value: new T.Vector3(1.04, 1.0, .95) }, night: { value: 0 }, sat: { value: 1.1 }, bloom: { value: .55 }, lift: { value: .25 }
+      grade: { value: new T.Vector3(1.04, 1.0, .95) }, night: { value: 0 }, sat: { value: 1.1 }, bloom: { value: .55 }, lift: { value: .25 }, retro: {value: 1}
     }, true);
     this.bright = pass(BRIGHT, { tColor: { value: null }, threshold: { value: 1.05 } });
     this.blur = pass(BLUR, { tColor: { value: null }, dir: { value: new T.Vector2() } });
@@ -102,8 +108,9 @@ export class Stylizer {
     if (!this.target) { const w = this.w, h = this.h; this.w = 0; this.setSize(w, h); }
     const u = this.mat.uniforms;
     u.near.value = camera.near; u.far.value = camera.far;
-    u.focusY.value = opts.focusY ?? .5; u.tilt.value = opts.tilt ?? .4; u.ink.value = opts.ink ?? 0;
+    u.focusY.value = opts.focusY ?? .5; u.tilt.value = (opts.tilt ?? .4) * .48; u.ink.value = opts.ink ?? .26;
     u.night.value = opts.night ?? 0; u.sat.value = opts.sat ?? 1.1; u.bloom.value = opts.bloom ?? .55; u.lift.value = opts.lift ?? .25;
+    u.retro.value = opts.retro ?? 1;
     if (opts.grade) u.grade.value.set(...opts.grade);
     this.webgl.setRenderTarget(this.target);
     this.webgl.render(scene, camera);
