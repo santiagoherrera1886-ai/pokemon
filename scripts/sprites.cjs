@@ -1,4 +1,4 @@
-// Genera los sprites del modo clásico de las especies del bestiario de la Bruma a partir de sus modelos 3D.
+// Genera los sprites del modo clásico de todas las especies a partir de sus modelos 3D esculpidos.
 // Uso: node scripts/sprites.cjs   (necesita Playwright; escribe src/art/bruma-sprites.png y src/art/bruma-sprites.js)
 const http = require('node:http'), fs = require('node:fs'), path = require('node:path');
 const { chromium } = require('playwright');

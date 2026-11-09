@@ -3,7 +3,8 @@
 import { ui, esc, money, statusChip } from './ui.js';
 import { iconURL } from '../art/creatures.js';
 import { itemIcon } from '../art/items.js';
-import { SPECIES, MOVES, TYPES, STARTERS, expForLevel } from '../data/creatures.js';
+import { SPECIES, MOVES, TYPES, STARTERS, expForLevel, ENCOUNTERS } from '../data/creatures.js';
+import { isHeld, giveHeld, takeHeld } from '../data/held.js';
 import { ITEMS, POCKETS, POCKET_ORDER, SPECIAL, VENDING, STAT_NAMES, SEED_MAX, generalStock, lockedStock, shortDesc, sellPrice, pocketItems, canUseOn, useOnCreature, isCapsule } from '../data/items.js';
 import { saveState, listSaves, SLOTS, loadState, storeState, parseState, playTimeText } from '../core/state.js';
 import { cloud, TOKEN_URL } from '../core/cloud.js';
@@ -13,12 +14,44 @@ import { lookFrame } from '../art/characters.js';
 const hpBar = c => { const k = Math.max(0, c.hp / c.stats.hp); return `<div class="hp"><i style="width:${k * 100}%" class="${k > 0.5 ? 'g' : k > 0.2 ? 'y' : 'r'}"></i></div>`; };
 const typeTags = sp => SPECIES[sp].types.map(t => `<span class="type" style="--t:${TYPES[t].color}">${TYPES[t].name}</span>`).join('');
 const ico = (id, cls = 'ico') => `<img class="${cls}" src="${itemIcon(id)}" alt="">`;
+// Íconos del menú principal (SVG en línea, se pintan con el color del botón).
+const SVG = {
+  party: '<svg viewBox="0 0 24 24"><rect x="2.5" y="7" width="19" height="10" rx="5" fill="#e65a4a"/><path d="M12 7h4.5a5 5 0 0 1 0 10H12z" fill="#fbf1da"/><rect x="11.2" y="7" width="1.6" height="10" fill="#26222e"/><circle cx="12" cy="12" r="2" fill="#fff" stroke="#26222e" stroke-width="1.2"/></svg>',
+  bag: '<svg viewBox="0 0 24 24"><path d="M8 7V5.5a4 4 0 0 1 8 0V7" fill="none" stroke="#7a4a1a" stroke-width="2"/><rect x="4" y="7" width="16" height="14" rx="4" fill="#f0a838"/><rect x="7" y="13" width="10" height="6" rx="2" fill="#d4861c"/><rect x="11" y="12" width="2" height="3" rx="1" fill="#7a4a1a"/></svg>',
+  dex: '<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="3" fill="#3e8ad8"/><rect x="7" y="6" width="10" height="7" rx="2" fill="#dff0ff"/><circle cx="12" cy="9.5" r="2.2" fill="#3e8ad8"/><rect x="7" y="15.5" width="10" height="1.6" rx=".8" fill="#dff0ff"/><rect x="7" y="18" width="6" height="1.6" rx=".8" fill="#dff0ff"/></svg>',
+  card: '<svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="3" fill="#3faa70"/><circle cx="8" cy="11" r="2.6" fill="#fff4d8"/><path d="M4.5 17a3.5 3.5 0 0 1 7 0" fill="#fff4d8"/><rect x="13" y="9" width="6" height="1.6" rx=".8" fill="#fff"/><rect x="13" y="12.5" width="5" height="1.6" rx=".8" fill="#fff"/></svg>',
+  save: '<svg viewBox="0 0 24 24"><path d="M5 3h11l4 4v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="#4a6ad8"/><rect x="7" y="3" width="8" height="6" rx="1" fill="#dfe8ff"/><rect x="6" y="13" width="12" height="6" rx="1.4" fill="#dfe8ff"/></svg>',
+  options: '<svg viewBox="0 0 24 24"><path d="M12 2.5l2 2.6 3.2-.6.6 3.2 2.6 2-1.6 2.8 1.6 2.8-2.6 2-.6 3.2-3.2-.6-2 2.6-2-2.6-3.2.6-.6-3.2-2.6-2 1.6-2.8L3.6 9.7l2.6-2 .6-3.2 3.2.6z" fill="#7a7f98"/><circle cx="12" cy="12" r="3.4" fill="#eef0f6"/></svg>'
+};
+// Dónde vive cada especie (encuentros de las rutas, de día o de noche) y las leyendas.
+const PLACE = { sendero1: 'Sendero 1', lago: 'Lago Espejo', ruta2: 'Ruta 2', ruta3: 'Ruta 3', cueva: 'Cueva Eco', ruta4: 'Ruta 4', ruta5: 'Ruta 5' };
+const LEGEND_PLACE = { espejalba: 'Lago Espejo (historia)', brumalia: 'Ruta 2 de noche, después de la Liga', fraguon: 'Cueva Eco, después de la Liga', glaciel: 'Ruta 5, después de la Liga', dracalba: 'Lago Espejo, con las tres leyendas atrapadas' };
+function habitat(sp) {
+  if (LEGEND_PLACE[sp]) return LEGEND_PLACE[sp];
+  const out = [];
+  for (const [k, t] of Object.entries(ENCOUNTERS)) for (const e of t.list) if (e[0] === sp) out.push(`${PLACE[k] || k}${e[4] === 'noche' ? ' (de noche)' : ''}`);
+  return out.length ? [...new Set(out)].join(' · ') : 'Evoluciona de otra criatura o te la dan en la historia.';
+}
+// Línea evolutiva completa (desde la primera etapa) con el nivel de cada salto.
+function evoLine(sp) {
+  let first = sp, guard = 0;
+  while (guard++ < 5) { const prev = Object.keys(SPECIES).find(k => SPECIES[k].evo?.[0] === first); if (!prev) break; first = prev; }
+  const line = [[first, null]];
+  let cur = first; guard = 0;
+  while (SPECIES[cur].evo && guard++ < 5) { line.push([SPECIES[cur].evo[0], SPECIES[cur].evo[1]]); cur = SPECIES[cur].evo[0]; }
+  return line;
+}
+const DEX_ORDER = Object.keys(SPECIES);
+const STAT_ROWS = [['hp', 'PS', '#5ac85a'], ['atk', 'ATQ', '#e8743a'], ['def', 'DEF', '#e8c040'], ['spe', 'VEL', '#4aa8e8']];
+const statBars = (vals, max = 200) => `<div class="sbars">${STAT_ROWS.map(([k, n, col]) => `<div class="sbar"><span>${n}</span><b>${vals[k]}</b><i><u style="width:${Math.min(100, vals[k] / max * 100)}%;background:${col}"></u></i></div>`).join('')}</div>`;
+
 const POCKET_HINTS = {
   capsulas: 'Cápsulas: se lanzan en combate para atrapar criaturas salvajes.',
   medicinas: 'Medicinas: curan PS, reaniman y recuperan PP. Sirven en combate y fuera de él.',
   batalla: 'Batalla: Pócimas que ayudan a tu criatura durante un combate.',
   campo: 'Campo: objetos para explorar: repelentes, silbato y miel.',
   cuidado: 'Cuidado: mejoras permanentes para tus criaturas.',
+  equipo: 'Equipables: se le dan a una criatura y actúan solos en combate (uno por criatura).',
   clave: 'Clave: objetos importantes. No se gastan ni se venden.'
 };
 
@@ -34,41 +67,105 @@ export class Menus {
     const st = this.st, map = this.game.ow?.map;
     const goals = ['Baja a hablar con mamá', 'Ve a la casa de Nico (techo azul)', 'Ve al Lago Espejo (Sendero 1, al oeste)', 'Vuelve a casa', 'Ve al laboratorio de Villa Arenal',
       'Sigue la Ruta 2 hacia Ciudad Corola', 'Gana la Medalla Hoja en el gimnasio de Corola', 'Cruza la Cueva Eco hasta Pueblo Cobre y gana la Medalla Roca', 'Baja por la Ruta 4 hasta Ciudad Marea y gana la Medalla Marea',
-      'Detén al Equipo Eclipse en su bodega de Ciudad Marea', 'Corre al Lago Espejo: el Equipo Eclipse va por la guardiana', 'Sube por la Ruta 5 (norte de Corola) hasta la Liga Alborada', 'Eres campeón. Explora y completa tu registro'];
+      'Detén al Equipo Eclipse en su bodega de Ciudad Marea', 'Corre al Lago Espejo: el Equipo Eclipse va por la guardiana', 'Sube por la Ruta 5 (norte de Corola) hasta la Liga Alborada', 'Eres campeón. Busca a las leyendas de la Bruma y completa tu registro'];
     const BADGES = [['hoja', '#5cb04c'], ['roca', '#b8a058'], ['marea', '#3e98dc']];
-    const dex = Object.values(st.dex || {});
+    const dex = Object.values(st.dex || {}), caught = dex.filter(v => v === 2).length;
+    const items = Object.values(st.bag || {}).reduce((a, n) => a + (n > 0 ? n : 0), 0);
     ui.setPanel(`<div class="home">
-      <div class="home-head"><span>${esc(map ? map.name : '')}</span><span>${money(st.money)}</span></div>
+      <div class="home-top"><img class="home-av" src="${this.avatarThumb(st.avatar, 4)}" alt=""><div class="home-id"><b>${esc(st.name)}</b><small>${esc(map ? map.name : '')} · ${playTimeText(st.playTime)}</small></div><div class="home-money">${money(st.money)}</div></div>
       <div class="goal"><small>OBJETIVO</small>${esc(goals[Math.min(goals.length - 1, st.story)])}</div>
-      <div class="badges">${BADGES.map(([b, c]) => `<i class="${(st.badges || []).includes(b) ? 'on' : ''}" style="--c:${c}" title="Medalla ${b}"></i>`).join('')}<span>Registro: ${dex.filter(v => v === 2).length} atrapadas · ${dex.length} vistas</span></div>
+      <div class="badges">${BADGES.map(([b, c]) => `<i class="${(st.badges || []).includes(b) ? 'on' : ''}" style="--c:${c}" title="Medalla ${b}"></i>`).join('')}<span>Registro: ${caught} atrapadas · ${dex.length} vistas</span></div>
       <div class="home-grid">
-        <button data-act="party" class="hb hb-party"><i></i>EQUIPO</button>
-        <button data-act="bag" class="hb hb-bag"><i></i>MOCHILA</button>
-        <button data-act="save" class="hb hb-save"><i></i>GUARDAR</button>
-        <button data-act="options" class="hb hb-opt"><i></i>OPCIONES</button>
+        <button data-act="party" class="hb hb-party">${SVG.party}<b>EQUIPO</b><small>${st.party.length}/6</small></button>
+        <button data-act="bag" class="hb hb-bag">${SVG.bag}<b>MOCHILA</b><small>${items} objetos</small></button>
+        <button data-act="dex" class="hb hb-dex">${SVG.dex}<b>REGISTRO</b><small>${caught}/${DEX_ORDER.length}</small></button>
+        <button data-act="card" class="hb hb-card">${SVG.card}<b>TARJETA</b><small>${(st.badges || []).length} medallas</small></button>
+        <button data-act="save" class="hb hb-save">${SVG.save}<b>GUARDAR</b><small>Ranura ${st.slot || 1}</small></button>
+        <button data-act="options" class="hb hb-opt">${SVG.options}<b>OPCIONES</b><small>Gráficos y más</small></button>
       </div>
       <button class="bt-back" data-back>CERRAR</button></div>`,
     { modal: true, cls: 'home-panel', onAct: a => this.open(a), onBack: () => ui.closePanel() });
   }
   open(what) {
-    ({ party: () => this.party(), bag: () => this.bag(), save: () => this.save(), options: () => this.options() })[what]();
+    ({ party: () => this.party(), bag: () => this.bag(), dex: () => this.dex(), card: () => this.card(), save: () => this.save(), options: () => this.options() })[what]();
   }
 
+  // ---------- Equipo ----------
   party() {
     const st = this.st;
-    ui.setPanel(`<h3 class="ph">EQUIPO</h3><div class="plist">${st.party.length ? st.party.map((c, i) => `<button data-act="${i}">${this.pic(c.sp)}<span class="pn"><b>${esc(c.name)}</b><small>Nv${c.level} ${statusChip(c)}</small></span>${hpBar(c)}<em>${Math.ceil(c.hp)}/${c.stats.hp}</em></button>`).join('') : '<p class="empty">Todavía no tienes criaturas.</p>'}</div><button class="bt-back" data-back>VOLVER</button>`,
-      { modal: true, cls: 'list-panel', onAct: i => this.creature(+i), onBack: () => this.home(true) });
+    const row = (c, i) => `<button data-act="${i}" class="pc${c.hp <= 0 ? ' ko' : ''}">${this.pic(c.sp)}<span class="pn"><b>${esc(c.name)}</b><small>Nv${c.level} ${statusChip(c)}${c.item ? ico(c.item, 'ico held') : ''}</small><span class="tt">${typeTags(c.sp)}</span></span><span class="php">${hpBar(c)}<em>${Math.ceil(c.hp)}/${c.stats.hp}</em></span></button>`;
+    ui.setPanel(`<h3 class="ph">EQUIPO <small>${st.party.length}/6</small></h3><div class="plist party-cards">${st.party.length ? st.party.map(row).join('') : '<p class="empty">Todavía no tienes criaturas.</p>'}</div><button class="bt-back" data-back>VOLVER</button>`,
+      { modal: true, cls: 'list-panel wide-panel', onAct: i => this.creature(+i), onBack: () => this.home(true) });
   }
   creature(i) {
-    const c = this.st.party[i], s = SPECIES[c.sp];
-    const toNext = expForLevel(c.level + 1) - c.exp;
+    const st = this.st, c = st.party[i], s = SPECIES[c.sp];
+    const lo = expForLevel(c.level), hi = expForLevel(c.level + 1), toNext = hi - c.exp;
     const bonus = Object.entries(c.bonus || {}).filter(([, v]) => v > 0).map(([k, v]) => `${k.toUpperCase()} +${v}`).join(' · ');
-    ui.setPanel(`<div class="detail">${this.pic(c.sp)}<div><b>${esc(c.name)}</b> <small>Nv${c.level}</small> ${statusChip(c)}<div>${typeTags(c.sp)}</div></div></div>
-      <p class="desc">${esc(s.desc)}</p>
-      <div class="stats"><span>PS ${Math.ceil(c.hp)}/${c.stats.hp}</span><span>ATQ ${c.stats.atk}</span><span>DEF ${c.stats.def}</span><span>VEL ${c.stats.spe}</span><span>Sig. nivel: ${toNext} exp</span>${bonus ? `<span>Semillas: ${bonus}</span>` : ''}</div>
-      <div class="moves">${c.moves.map(m => `<span style="--t:${TYPES[MOVES[m.id].type].color}">${esc(MOVES[m.id].name)} <small>PP ${m.pp}/${MOVES[m.id].pp}</small></span>`).join('')}</div>
-      <div class="row2">${i > 0 ? `<button data-act="lead">PONER PRIMERO</button>` : ''}<button class="bt-back" data-back>VOLVER</button></div>`,
-    { modal: true, cls: 'list-panel', onAct: a => { if (a === 'lead') { const [x] = this.st.party.splice(i, 1); this.st.party.unshift(x); this.party(); } }, onBack: () => this.party() });
+    const gear = Object.keys(st.bag).filter(id => st.bag[id] > 0 && isHeld(id));
+    const held = c.item ? `<div class="heldbox">${ico(c.item)}<span><b>${esc(ITEMS[c.item].name)}</b><small>${esc(ITEMS[c.item].desc.replace(/^Equipad[oa]: /, ''))}</small></span></div>` : '<div class="heldbox empty">Sin objeto equipado</div>';
+    ui.setPanel(`<div class="sum">
+      <div class="sum-l">${this.pic(c.sp)}<b class="sum-n">${esc(c.name)} <small>Nv${c.level}</small></b><div>${typeTags(c.sp)} ${statusChip(c)}</div><p class="desc">${esc(s.desc)}</p></div>
+      <div class="sum-r">${statBars({ hp: c.stats.hp, atk: c.stats.atk, def: c.stats.def, spe: c.stats.spe }, 220)}
+        <div class="xpline"><span>PS ${Math.ceil(c.hp)}/${c.stats.hp}</span><span>Sig. nivel: ${toNext} exp</span></div><div class="xp"><i style="width:${Math.max(0, Math.min(100, (c.exp - lo) / (hi - lo) * 100))}%"></i></div>
+        ${bonus ? `<p class="hint">Semillas: ${bonus}</p>` : ''}
+        <div class="moves">${c.moves.map(m => { const M = MOVES[m.id]; return `<span style="--t:${TYPES[M.type].color}"><b>${esc(M.name)}</b><small>${TYPES[M.type].name}${M.power ? ' · ' + M.power : ''} · PP ${m.pp}/${M.pp}</small></span>`; }).join('')}</div>
+        ${held}</div></div>
+      <div class="row2">${i > 0 ? '<button data-act="lead">PONER PRIMERO</button>' : ''}${gear.length ? `<button data-act="give">${c.item ? 'CAMBIAR OBJETO' : 'DAR OBJETO'}</button>` : ''}${c.item ? '<button data-act="take">QUITAR OBJETO</button>' : ''}<button class="bt-back" data-back>VOLVER</button></div>`,
+    { modal: true, cls: 'list-panel wide-panel sum-panel', onAct: async a => {
+      if (a === 'lead') { const [x] = st.party.splice(i, 1); st.party.unshift(x); return this.party(); }
+      if (a === 'take') { const r = takeHeld(st, c); await ui.say([r.msg]); return this.creature(i); }
+      if (a === 'give') return this.pickHeld(i);
+    }, onBack: () => this.party() });
+  }
+  // Lista de equipables de la mochila para dárselo a la criatura i.
+  pickHeld(i) {
+    const st = this.st, c = st.party[i], ids = Object.keys(st.bag).filter(id => st.bag[id] > 0 && isHeld(id));
+    ui.show(`¿Qué le das a ${c.name}?`);
+    ui.setPanel(`<h3 class="ph">EQUIPAR A ${esc(c.name.toUpperCase())}</h3><div class="ilist items">${ids.map(id => `<button data-act="${id}" class="it">${ico(id)}<span class="it-n"><b>${esc(ITEMS[id].name)}</b><small>${esc(shortDesc(id))}</small></span><span class="it-q">x${st.bag[id]}</span></button>`).join('')}</div><button class="bt-back" data-back>VOLVER</button>`,
+      { modal: true, cls: 'list-panel', onFocus: el => { const it = ITEMS[el.dataset.act]; if (it) ui.show(`${it.name}: ${it.desc}`); }, onAct: async id => { const r = giveHeld(st, c, id); ui.hideMsg(); await ui.say([r.msg]); this.creature(i); }, onBack: () => { ui.hideMsg(); this.creature(i); } });
+  }
+
+  // ---------- Registro (todas las especies) ----------
+  dex(focus = 0) {
+    const st = this.st, seen = st.dex || {}, caught = Object.values(seen).filter(v => v === 2).length;
+    const cell = (sp, n) => {
+      const k = seen[sp] || 0, num = String(n + 1).padStart(3, '0');
+      return `<button data-act="${sp}" class="dx${k ? '' : ' unseen'}${k === 2 ? ' got' : ''}"><small>${num}</small>${k ? `<img src="${iconURL(sp)}" alt="">` : '<i>?</i>'}<span>${k ? esc(SPECIES[sp].name) : '???'}</span></button>`;
+    };
+    ui.setPanel(`<h3 class="ph">REGISTRO <small>${caught} atrapadas · ${Object.keys(seen).length} vistas · ${DEX_ORDER.length} especies</small></h3><div class="dex-grid">${DEX_ORDER.map(cell).join('')}</div><button class="bt-back" data-back>VOLVER</button>`,
+      { modal: true, cls: 'list-panel wide-panel dex-panel', focus, onAct: sp => this.dexEntry(sp), onBack: () => this.home(true),
+        onFocus: el => { const sp = el.dataset.act; if (SPECIES[sp]) ui.show(seen[sp] ? `${SPECIES[sp].name}: ${seen[sp] === 2 ? 'atrapada' : 'vista'}.` : 'Todavía no la has visto.'); } });
+  }
+  dexEntry(sp) {
+    const st = this.st, k = (st.dex || {})[sp] || 0, s = SPECIES[sp], n = DEX_ORDER.indexOf(sp);
+    if (!k) { ui.show('Todavía no la has visto. Búscala en el pasto, las cuevas y de noche.'); return; }
+    const line = evoLine(sp).map(([id, lv]) => { const known = (st.dex || {})[id]; return `${lv ? `<em>Nv${lv} →</em>` : ''}<span class="${id === sp ? 'cur' : ''}">${known ? `<img src="${iconURL(id)}" alt="">` : '<i>?</i>'}${known ? esc(SPECIES[id].name) : '???'}</span>`; }).join('');
+    ui.hideMsg();
+    ui.setPanel(`<div class="sum">
+      <div class="sum-l">${this.pic(sp)}<b class="sum-n"><small>N.º ${String(n + 1).padStart(3, '0')}</small> ${esc(s.name)}</b><div>${typeTags(sp)}${s.legendary ? '<span class="type leg">LEYENDA</span>' : ''}</div><p class="desc">${esc(s.desc)}</p></div>
+      <div class="sum-r"><h4>Estadísticas base</h4>${statBars(s.base, 130)}
+        <h4>Dónde vive</h4><p class="hint">${esc(habitat(sp))}</p>
+        <h4>Evolución</h4><div class="evo">${line}</div>
+        <p class="hint">${k === 2 ? 'Atrapada · tiene Forma Alba' : 'Vista, todavía no atrapada'}</p></div></div>
+      <button class="bt-back" data-back>VOLVER</button>`,
+    { modal: true, cls: 'list-panel wide-panel sum-panel', onBack: () => this.dex(DEX_ORDER.indexOf(sp)) });
+  }
+
+  // ---------- Tarjeta de entrenador ----------
+  card() {
+    const st = this.st, dex = Object.values(st.dex || {});
+    const BADGES = [['hoja', 'Hoja', '#5cb04c'], ['roca', 'Roca', '#b8a058'], ['marea', 'Marea', '#3e98dc']];
+    const portrait = this.game.graphics?.avatarPortrait?.(avatarLook(st.avatar));
+    ui.setPanel(`<div class="tcard">
+      <div class="tc-head"><span>TARJETA DE ENTRENADOR</span><span>ALBORADA</span></div>
+      <div class="tc-body">${portrait ? `<img class="tc-av3d" src="${portrait}" alt="">` : `<img class="tc-av" src="${this.avatarThumb(st.avatar, 6)}" alt="">`}
+        <div class="tc-data"><b>${esc(st.name)}</b>
+          <span>Dinero <em>${money(st.money)}</em></span><span>Tiempo de juego <em>${playTimeText(st.playTime)}</em></span>
+          <span>Registro <em>${dex.filter(v => v === 2).length} atrapadas · ${dex.length} vistas</em></span>
+          <span>Equipo <em>${st.party.map(c => esc(c.name)).join(', ') || '—'}</em></span></div></div>
+      <div class="tc-badges">${BADGES.map(([b, n, c]) => `<div class="${(st.badges || []).includes(b) ? 'on' : ''}" style="--c:${c}"><i></i><small>${n}</small></div>`).join('')}${st.story >= 12 ? '<div class="on champ" style="--c:#f0c040"><i></i><small>Campeón</small></div>' : ''}</div>
+      </div><button class="bt-back" data-back>VOLVER</button>`,
+    { modal: true, cls: 'list-panel wide-panel', onBack: () => this.home(true) });
   }
 
   // ---------- Mochila ----------
@@ -118,11 +215,12 @@ export class Menus {
   target(id) {
     const it = ITEMS[id], st = this.st;
     const extra = c => it.pp ? ` · PP ${c.moves.reduce((a, m) => a + m.pp, 0)}/${c.moves.reduce((a, m) => a + MOVES[m.id].pp, 0)}`
-      : it.seed ? ` · ${it.seed.toUpperCase()} +${c.bonus?.[it.seed] || 0}/${SEED_MAX}` : '';
-    ui.show(`¿En quién vas a usar ${it.name}?`);
-    ui.setPanel(`<h3 class="ph">${ico(id, 'ico sm')} ${esc(it.name)} <small>x${st.bag[id] || 0}</small></h3><div class="plist">${st.party.map((c, i) => `<button data-act="${i}" class="${canUseOn(id, c) ? '' : 'dim'}">${this.pic(c.sp)}<span class="pn"><b>${esc(c.name)}</b><small>Nv${c.level} ${statusChip(c)}${extra(c)}</small></span>${hpBar(c)}<em>${Math.ceil(c.hp)}/${c.stats.hp}</em></button>`).join('')}</div><button class="bt-back" data-back>VOLVER</button>`,
+      : it.seed ? ` · ${it.seed.toUpperCase()} +${c.bonus?.[it.seed] || 0}/${SEED_MAX}` : it.held ? ` · ${c.item ? 'lleva ' + ITEMS[c.item].name : 'sin objeto'}` : '';
+    ui.show(it.held ? `¿A quién le das ${it.name}?` : `¿En quién vas a usar ${it.name}?`);
+    ui.setPanel(`<h3 class="ph">${ico(id, 'ico sm')} ${esc(it.name)} <small>x${st.bag[id] || 0}</small></h3><div class="plist">${st.party.map((c, i) => `<button data-act="${i}" class="${it.held || canUseOn(id, c) ? '' : 'dim'}">${this.pic(c.sp)}<span class="pn"><b>${esc(c.name)}</b><small>Nv${c.level} ${statusChip(c)}${extra(c)}</small></span>${hpBar(c)}<em>${Math.ceil(c.hp)}/${c.stats.hp}</em></button>`).join('')}</div><button class="bt-back" data-back>VOLVER</button>`,
       { modal: true, cls: 'list-panel', onBack: () => this.bag(it.pocket), onAct: async a => {
         const c = st.party[+a];
+        if (it.held) { const r = giveHeld(st, c, id); await ui.say([r.msg]); return st.bag[id] > 0 ? this.target(id) : this.bag(it.pocket); }
         const res = useOnCreature(id, c);
         if (!res.ok) { await ui.say([res.msg]); return this.target(id); }
         st.bag[id]--;

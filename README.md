@@ -49,7 +49,7 @@ Diez familias de tres etapas, con diseños propios inspirados en las láminas de
 
 **Leyendas (después de ser campeón):** Brumalia (Fantasma/Hada, Ruta 2 de noche), Fraguón (Fuego/Acero, Cueva Eco) y Glaciel (Hielo/Volador, Ruta 5). Al atrapar las tres, Dracalba (Dragón/Psíquico) despierta en el Lago Espejo. Cada una tiene su movimiento propio.
 
-En pixel clásico, las especies nuevas usan sprites sacados de sus modelos 3D (`src/art/bruma-sprites.png`). Si cambias un modelo, se regeneran con `node scripts/sprites.cjs`.
+En pixel clásico, todas las especies usan sprites sacados de sus modelos 3D (`src/art/bruma-sprites.png`), así se ven igual en los dos modos; el pixel art original queda de respaldo mientras carga el atlas. Si cambias un modelo, se regeneran con `node scripts/sprites.cjs`.
 
 ## Personaje y partidas
 
@@ -59,15 +59,22 @@ En pixel clásico, las especies nuevas usan sprites sacados de sus modelos 3D (`
 - **Respaldo en GitHub (opcional):** en **Partidas y GitHub** se pega una vez un token con permiso `gist` (el juego abre el enlace para crearlo). Las partidas se suben a un gist privado de tu cuenta (`alborada-partidas.json`) cada vez que guardas y se pueden traer en otro equipo. El token queda sólo en ese navegador.
 - **Archivo:** descargar la partida como `.json` y cargarla en otra ranura desde el título.
 
+## Menús
+
+- **Inicio:** tu personaje, el lugar, el tiempo jugado, el dinero, el objetivo y las medallas, con botones grandes para Equipo, Mochila, Registro, Tarjeta, Guardar y Opciones.
+- **Equipo y ficha:** tarjetas con retrato, tipos, estado y PS; la ficha muestra barras de estadísticas, experiencia, movimientos con tipo y potencia, y el objeto equipado (dar, cambiar o quitar).
+- **Registro:** las 62 especies numeradas; las que no has visto salen como «???». Cada ficha trae estadísticas base, dónde vive (de día o de noche) y la línea evolutiva.
+- **Tarjeta de entrenador:** retrato, dinero, tiempo, registro, equipo y medallas.
+
 ## Tiendas y objetos
 
 Cada tienda tiene tres puestos:
 
 - **Dependiente (mostrador general):** comprar y vender (te pagan la mitad). Lo que vende crece con las medallas y lo que todavía no llega se ve bloqueado.
-- **Vendedora (mostrador especial):** cosas propias de cada ciudad. Arenal: Miel Silvestre y Pócimas. Corola: Semillas que suben estadísticas para siempre. Cobre: cápsulas especiales. Marea: todas las Pócimas y el Dulce de Arequipe.
+- **Vendedora (mostrador especial):** cosas propias de cada ciudad. Arenal: Miel Silvestre, Pócimas, Guayaba y Cinta de Fuerza. Corola: Semillas que suben estadísticas para siempre, Brote Vivo y Arepa de Reserva. Cobre: cápsulas especiales, Bobina de Cobre, Pañuelo Veloz y Chaleco Acolchado. Marea: todas las Pócimas, el Dulce de Arequipe, Perla de Río, Escarcha Eterna y Brasa Eterna.
 - **Máquina expendedora:** Agua de Panela, Jugo de Lulo y Avena (curan más barato).
 
-Son 32 objetos originales en 5 bolsillos de la mochila:
+Son 53 objetos originales en 7 bolsillos de la mochila:
 
 | Bolsillo | Objetos |
 |---|---|
@@ -76,6 +83,8 @@ Son 32 objetos originales en 5 bolsillos de la mochila:
 | Batalla | Pócimas Fuerza, Coraza, Viento (suben dos etapas) y Certera (más críticos) |
 | Campo | Repelente (100, 200 o 250 pasos; avisa y ofrece otro al acabarse), Silbato de Regreso (te lleva a la última Posada), Miel Silvestre (atrae una criatura) |
 | Cuidado | Semillas Vital, Fuerza, Coraza y Viento (+3 permanentes, hasta +15), Dulce de Arequipe (sube un nivel, aprende movimientos y puede evolucionar) |
+| Equipables | Una por criatura, actúan solas en combate: Cinta de Fuerza (+10% de daño), Pañuelo Veloz (+20% de Velocidad), Chaleco Acolchado (-12% de daño recibido), Arepa de Reserva (recupera PS cada turno), Guayaba Madura (se cura con pocos PS y se gasta) y nueve amuletos de tipo (+20%): Brasa Eterna, Perla de Río, Brote Vivo, Bobina de Cobre, Escarcha Eterna, Venda de Campeón, Cristal Mental, Escama Antigua y Vela de Niebla |
+| Clave | Brazalete Alba (Forma Alba, una vez por combate) |
 
 La tienda muestra íconos en pixel art, descripción de cada objeto, cantidad x1/x10 y total con lo que te queda.
 
@@ -147,7 +156,6 @@ Para que la prueba sea rápida y no dependa del azar, después de elegir inicial
 ## Pendiente
 
 - Música y efectos de sonido.
-- Objetos equipables.
 - Más zonas opcionales después de la Liga (el mapa grande con ocho gimnasios está en diseño).
 
 ## Sobre `original/pokediamond`

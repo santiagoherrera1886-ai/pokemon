@@ -287,7 +287,7 @@ const DRAW = {
   }
 };
 
-// Las especies del bestiario de la Bruma usan sprites sacados de sus modelos 3D (scripts/sprites.cjs).
+// Sprites del modo clásico sacados de los modelos 3D (scripts/sprites.cjs); DRAW queda como respaldo.
 let atlasImg = null;
 export const spritesReady = typeof Image === 'undefined' ? Promise.resolve(false) : new Promise(res => {
   const im = new Image(); im.onload = () => { atlasImg = im; cache.clear(); res(true); }; im.onerror = () => res(false); im.src = ATLAS.url;
@@ -301,14 +301,16 @@ function atlasSprite(g, id, back) {
 export const hasSprite = id => !!DRAW[id] || ATLAS_SPECIES.includes(id);
 
 const cache = new Map();
+// Todas las especies salen del atlas generado con sus modelos 3D, así el modo clásico se ve igual que el 3D.
+// Mientras el atlas carga se usa el pixel art original (DRAW) o una silueta suave, sin guardarlos en la caché.
 export function battleSprite(id, back = false) {
   const k = id + back;
   if (cache.has(k)) return cache.get(k);
   const [c, g] = canvas(64, 64);
-  if (DRAW[id]) { DRAW[id](g, back); autoShade(c, 0.18, ['#1e1a24', '#ffffff']); }
-  else if (!atlasSprite(g, id, back)) {
-    // Mientras carga el atlas: una silueta suave que no se guarda en la caché.
-    ellipse(g, 32, 40, 18, 16, '#b8b4c8'); ellipse(g, 32, 24, 13, 12, '#c8c4d8'); outline(c, '#1e1a24'); c.temp = true; return c;
+  if (!atlasSprite(g, id, back)) {
+    if (DRAW[id]) { DRAW[id](g, back); autoShade(c, 0.18, ['#1e1a24', '#ffffff']); }
+    else { ellipse(g, 32, 40, 18, 16, '#b8b4c8'); ellipse(g, 32, 24, 13, 12, '#c8c4d8'); }
+    outline(c, '#1e1a24'); c.temp = true; return c;
   }
   outline(c, '#1e1a24');
   cache.set(k, c);
@@ -333,4 +335,4 @@ export function icon(id) {
   return c;
 }
 export function iconURL(id) { return battleSprite(id).toDataURL(); }
-export const CREATURE_IDS = [...Object.keys(DRAW), ...ATLAS_SPECIES];
+export const CREATURE_IDS = [...new Set([...Object.keys(DRAW), ...ATLAS_SPECIES])];

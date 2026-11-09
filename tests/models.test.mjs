@@ -42,11 +42,11 @@ test('every full-story species has an explicit 3D model',()=>{
   r.dispose();
 });
 
-test('every species of the Bruma bestiary has a sculpted model, a head anchor and classic sprites',async()=>{
+test('every species has classic sprites and the Bruma bestiary has sculpted models with a head anchor',async()=>{
   const {creatureModel,ALL_SPECIES}=await import('../src/render3d/creatures3d.js');
   const {BRUMA}=await import('../src/render3d/bestiary.js');
   const {ATLAS_SPECIES}=await import('../src/art/bruma-sprites.js');
-  assert.deepEqual([...ATLAS_SPECIES].sort(),Object.keys(BRUMA).sort(),'el atlas de sprites está desactualizado: corre node scripts/sprites.cjs');
+  assert.deepEqual([...ATLAS_SPECIES].sort(),Object.keys(SPECIES).sort(),'el atlas de sprites está desactualizado: corre node scripts/sprites.cjs');
   assert.deepEqual([...ALL_SPECIES].sort(),Object.keys(SPECIES).sort());
   const r=new Resources();
   for(const sp of Object.keys(BRUMA)){

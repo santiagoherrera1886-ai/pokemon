@@ -8,11 +8,10 @@
 // Renderiza cada especie de frente y de espaldas, la reduce a 64x64 con bordes nítidos y arma un atlas.
 import * as T from 'three';
 import { Resources } from '../src/render3d/resources.js';
-import { creatureModel } from '../src/render3d/creatures3d.js';
-import { BRUMA } from '../src/render3d/bestiary.js';
+import { creatureModel, ALL_SPECIES } from '../src/render3d/creatures3d.js';
 
 const SIZE = 64, BIG = 256, COLS = 16;
-const list = Object.keys(BRUMA);
+const list = [...ALL_SPECIES];
 const renderer = new T.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
 renderer.setSize(BIG, BIG); renderer.setClearColor(0x000000, 0); renderer.outputColorSpace = T.SRGBColorSpace;
 const r = new Resources(), scene = new T.Scene();

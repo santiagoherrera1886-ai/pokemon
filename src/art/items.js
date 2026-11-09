@@ -14,6 +14,38 @@ const DRAW = {
     px(g, 2, 8, dark, 1, 3); px(g, 4, 5, light, 3, 1); px(g, 7, 13, dark, 3, 1);
     ellipse(g, 8, 4, 3, 2, '#ff9a5a'); px(g, 7, 3, '#ffe8c8', 2, 1);
   },
+  // Equipables
+  ribbon(g, c) {
+    const dark = shadeHex(c, -.38), light = shadeHex(c, .4);
+    px(g, 2, 4, c, 12, 4); px(g, 2, 4, light, 12, 1); px(g, 2, 7, dark, 12, 1);
+    px(g, 5, 8, c, 3, 6); px(g, 9, 8, c, 3, 6); px(g, 5, 13, dark, 1, 1); px(g, 11, 13, dark, 1, 1);
+    ellipse(g, 8, 6, 2, 2, '#f6c860'); px(g, 7, 5, '#fff4c8', 1, 1);
+  },
+  scarf(g, c) {
+    const dark = shadeHex(c, -.38), light = shadeHex(c, .45);
+    ellipse(g, 8, 5, 6, 3, c); g.globalCompositeOperation = 'destination-out'; ellipse(g, 8, 5, 4, 1, '#000'); g.globalCompositeOperation = 'source-over';
+    px(g, 9, 7, c, 3, 8); px(g, 12, 9, c, 2, 5); px(g, 9, 14, dark, 3, 1); px(g, 3, 3, light, 4, 1); px(g, 10, 9, light, 1, 4);
+  },
+  vest(g, c) {
+    const dark = shadeHex(c, -.38), light = shadeHex(c, .35);
+    px(g, 3, 3, c, 3, 12); px(g, 10, 3, c, 3, 12); px(g, 2, 6, c, 12, 9); px(g, 6, 3, dark, 1, 3); px(g, 9, 3, dark, 1, 3);
+    px(g, 7, 7, '#f3e6c6', 2, 8); for (const y of [8, 11, 14]) px(g, 2, y, dark, 12, 1); px(g, 3, 4, light, 1, 8);
+  },
+  arepa(g, c) {
+    ellipse(g, 8, 9, 7, 5, c); ellipse(g, 8, 8, 6, 3, shadeHex(c, .25));
+    for (const [x, y] of [[5, 7], [9, 6], [11, 9], [6, 10], [9, 10]]) px(g, x, y, '#c88a3a', 2, 1);
+    px(g, 3, 12, shadeHex(c, -.35), 10, 1);
+  },
+  fruit(g, c) {
+    ellipse(g, 8, 10, 6, 5, c); ellipse(g, 8, 10, 3, 2, '#f8c8b8'); px(g, 4, 8, shadeHex(c, .4), 2, 2);
+    px(g, 8, 2, '#6a4a2a', 1, 4); ellipse(g, 11, 4, 3, 1, '#5cb04c');
+  },
+  charm(g, c) {
+    const dark = shadeHex(c, -.4), light = shadeHex(c, .5);
+    px(g, 7, 1, '#c8a050', 2, 3); ellipse(g, 8, 4, 2, 1, '#c8a050');
+    for (let y = 0; y < 9; y++) { const w = y < 4 ? y + 2 : 10 - y; px(g, 8 - w, 6 + y, c, w * 2, 1); }
+    px(g, 6, 8, light, 2, 2); px(g, 7, 13, dark, 2, 1);
+  },
   capsule(g, c) {
     const dark = shadeHex(c, -.35);
     ellipse(g, 5, 8, 3, 3, c); px(g, 5, 5, c, 3, 7);           // mitad de color

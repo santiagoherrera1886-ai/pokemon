@@ -11,6 +11,7 @@ import { canGetStatus, TYPE_FX } from '../data/types.js';
 import { movePower, ANIM_FRAMES } from '../data/moves.js';
 import { ITEMS, POCKETS, BATTLE_POCKETS, pocketItems, isCapsule, canUseOn, useOnCreature, catchBonus } from '../data/items.js';
 import { albaStat, hasAlbaBand, clearAlba, ALBA_COLOR } from '../data/alba.js';
+import { heldPower, heldGuard, heldSpeed, heldRegen, berryReady, berryHeal } from '../data/held.js';
 
 const $ = id => document.getElementById(id);
 const STAGE = s => s >= 0 ? (2 + s) / 2 : 2 / (2 - s);
@@ -341,7 +342,7 @@ export class Battle {
     const ok = usable.filter(m => score(m) > 0);
     return (ok.length ? ok : usable)[Math.floor(rand() * (ok.length || usable.length))];
   }
-  speed(c, stages) { return albaStat(c, 'spe') * STAGE(stages.spe) * (c.status === 'par' ? .5 : 1); }
+  speed(c, stages) { return albaStat(c, 'spe') * STAGE(stages.spe) * (c.status === 'par' ? .5 : 1) * heldSpeed(c); }
 
   async turn(act) {
     ui.closePanel();
@@ -493,14 +494,28 @@ export class Battle {
   async endTurn() {
     for (const isAlly of [true, false]) {
       const c = isAlly ? this.ally : this.foe;
-      if (!c || c.hp <= 0 || (c.status !== 'que' && c.status !== 'ven')) continue;
-      const dmg = Math.max(1, Math.floor(c.stats.hp / (c.status === 'que' ? 16 : 8)));
-      await this.wait(this.play('status', c.status, isAlly, { self: true, status: c.status }) >> 1);
-      await this.msg(c.status === 'que' ? `¡${this.nameOf(c, isAlly)} sufre por la quemadura!` : `¡El veneno le resta PS a ${this.nameOf(c, isAlly)}!`, 26);
-      await this.hit(c, isAlly, dmg, 4);
-      if (c.hp <= 0) { const end = await this.faint(isAlly); if (end !== undefined) return end; }
+      if (!c || c.hp <= 0) continue;
+      if (c.status === 'que' || c.status === 'ven') {
+        const dmg = Math.max(1, Math.floor(c.stats.hp / (c.status === 'que' ? 16 : 8)));
+        await this.wait(this.play('status', c.status, isAlly, { self: true, status: c.status }) >> 1);
+        await this.msg(c.status === 'que' ? `¡${this.nameOf(c, isAlly)} sufre por la quemadura!` : `¡El veneno le resta PS a ${this.nameOf(c, isAlly)}!`, 26);
+        await this.hit(c, isAlly, dmg, 4);
+        if (c.hp <= 0) { const end = await this.faint(isAlly); if (end !== undefined) return end; continue; }
+        await this.berry(c, isAlly);
+      }
+      const regen = heldRegen(c);
+      if (regen) { await this.tween(c, 'hp', Math.min(c.stats.hp, c.hp + regen), 12); c.hp = Math.round(c.hp); this.hud(); await this.msg(`${this.nameOf(c, isAlly)} recuperó un poco de PS con su ${ITEMS[c.item].name}.`, 24); }
     }
     return null;
+  }
+  // Guayaba Madura: con la mitad de PS o menos se la come, se cura y se gasta.
+  async berry(c, isAlly) {
+    if (!berryReady(c)) return;
+    const name = ITEMS[c.item].name, heal = berryHeal(c);
+    delete c.item;
+    this.play('heal', 'planta', isAlly, { self: true });
+    await this.tween(c, 'hp', Math.min(c.stats.hp, c.hp + heal), 16); c.hp = Math.round(c.hp); this.hud();
+    await this.msg(`¡${this.nameOf(c, isAlly)} se comió su ${name} y recuperó PS!`, 26);
   }
   // Daño con la fórmula de siempre: ataque, defensa, etapas, quemadura, mismo tipo, efectividad y crítico.
   damage(user, target, M, us, ts, isAlly) {
@@ -511,7 +526,7 @@ export class Battle {
     const D = albaStat(target, 'def') * (crit > 1 ? Math.min(1, STAGE(ts.def)) : STAGE(ts.def));
     const stab = M.type && SPECIES[user.sp].types.includes(M.type) ? 1.5 : 1;
     let dmg = Math.floor(Math.floor(Math.floor(2 * user.level / 5 + 2) * M.power * A / D) / 50) + 2;
-    dmg = Math.max(1, Math.floor(dmg * stab * eff * crit * (0.85 + rand() * 0.15)));
+    dmg = Math.max(1, Math.floor(dmg * stab * eff * crit * heldPower(user, M) * heldGuard(target) * (0.85 + rand() * 0.15)));
     return { dmg, eff, crit };
   }
   // Aplica daño con parpadeo, sacudida y barra de PS animada.
@@ -563,6 +578,8 @@ export class Battle {
       if (eff0 < 1) await this.msg('No es muy eficaz...', 30);
       if (M.drain && user.hp > 0 && user.hp < user.stats.hp) { const heal = Math.max(1, Math.floor(total * M.drain)); await this.tween(user, 'hp', Math.min(user.stats.hp, user.hp + heal), 16); user.hp = Math.round(user.hp); this.hud(); await this.msg(`¡${tname} perdió energía!`, 26); }
       if (M.recoil) { const back = Math.max(1, Math.floor(total * M.recoil)); await this.hit(user, isAlly, back, 4); await this.msg(`¡${name} también se hizo daño!`, 26); }
+      if (target.hp > 0) await this.berry(target, !isAlly);
+      if (user.hp > 0 && M.recoil) await this.berry(user, isAlly);
       if (target.hp <= 0) { const end = await this.faint(!isAlly); if (end === 'win' || end === 'lose' || user.hp > 0) return end; return this.faint(isAlly); }
       if (M.status && rand() * 100 < M.status[1]) await this.applyStatus(target, M.status[0], !isAlly, false);
       if (M.confuse && rand() * 100 < M.confuse) await this.confuse(target, !isAlly, false);

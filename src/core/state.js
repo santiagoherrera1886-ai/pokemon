@@ -1,5 +1,6 @@
 // Estado de la partida y guardado local (localStorage), con tres ranuras. El respaldo opcional en GitHub
 // está en cloud.js; si no se conecta, nada sale del navegador.
+import { ITEMS } from '../data/items.js';
 import { defaultAvatar, cleanAvatar } from '../data/avatar.js';
 
 export const SLOTS = [1, 2, 3];
@@ -42,7 +43,7 @@ export function parseState(raw, slot) {
     // Partidas de antes de la Forma Alba: con una medalla o más ya tienen el Brazalete.
     st.bag = st.bag || {};
     if ((st.badges || []).length && !st.bag.brazaleteAlba) st.bag.brazaleteAlba = 1;
-    for (const c of st.party || []) if (c && c.alba) delete c.alba;
+    for (const c of [...(st.party || []), ...(st.box || [])]) { if (!c) continue; if (c.alba) delete c.alba; if (c.item && !ITEMS[c.item]?.held) delete c.item; }
     return st;
   } catch { return null; }
 }

@@ -1,6 +1,7 @@
 // Objetos de Alborada (contenido original): catálogo, bolsillos de la mochila, qué vende cada tienda
 // y los efectos que comparten el combate y el menú de la mochila.
 import { SPECIES, MOVES, STATUS, expForLevel, refreshStats } from './creatures.js';
+import { TYPES } from './types.js';
 
 // ---------- Bolsillos de la mochila ----------
 export const POCKETS = {
@@ -9,14 +10,18 @@ export const POCKETS = {
   batalla: { name: 'Batalla', color: '#d68a14' },
   campo: { name: 'Campo', color: '#3f7fc8' },
   cuidado: { name: 'Cuidado', color: '#9a5cc0' },
+  equipo: { name: 'Equipables', color: '#d0603a' },
   clave: { name: 'Clave', color: '#c89a2a' }
 };
-export const POCKET_ORDER = ['capsulas', 'medicinas', 'batalla', 'campo', 'cuidado', 'clave'];
+export const POCKET_ORDER = ['capsulas', 'medicinas', 'batalla', 'campo', 'cuidado', 'equipo', 'clave'];
 // En combate sólo se abren estos bolsillos.
 export const BATTLE_POCKETS = ['capsulas', 'medicinas', 'batalla'];
 
 const item = (pocket, icon) => (name, price, desc, color, extra = {}) => ({ name, price, desc, pocket, icon, color, ...extra });
 const cap = item('capsulas', 'capsule');
+const gear = icon => item('equipo', icon);
+// Amuleto de tipo: +20% de daño a los ataques de ese tipo.
+const charm = (name, type, desc) => gear('charm')(name, 2500, `Equipado: sus ataques de tipo ${TYPES[type].name.charAt(0) + TYPES[type].name.slice(1).toLowerCase()} hacen 20% más de daño. ${desc}`, TYPES[type].color, { held: { kind: 'type', type, mult: 1.2 } });
 const spray = item('medicinas', 'spray');
 const drink = item('medicinas', 'drink');
 const drop = item('medicinas', 'drop');
@@ -74,6 +79,22 @@ export const ITEMS = {
   semillaViento: seed('Semilla Viento', 3000, 'Sube para siempre la Velocidad de una criatura.', '#48a8d8', { seed: 'spe' }),
   dulce: item('cuidado', 'candy')('Dulce de Arequipe', 4800, 'Un dulce delicioso: la criatura que lo come sube un nivel.', '#b8743a', { levelUp: true }),
 
+  // Equipables: cada criatura lleva uno; se da desde el Equipo o la Mochila y actúa solo en combate.
+  cintaFuerza: gear('ribbon')('Cinta de Fuerza', 3000, 'Equipada: todos sus ataques hacen 10% más de daño.', '#e04a3a', { held: { kind: 'power', mult: 1.1 } }),
+  panueloVeloz: gear('scarf')('Pañuelo Veloz', 3000, 'Equipado: su Velocidad sube 20% en combate.', '#3ab0e0', { held: { kind: 'speed', mult: 1.2 } }),
+  chalecoAcolchado: gear('vest')('Chaleco Acolchado', 3000, 'Equipado: recibe 12% menos daño de los ataques.', '#a07850', { held: { kind: 'guard', mult: .88 } }),
+  arepaReserva: gear('arepa')('Arepa de Reserva', 4000, 'Equipada: al final de cada turno recupera un poquito de PS.', '#f0d890', { held: { kind: 'regen', frac: 1 / 16 } }),
+  guayaba: gear('fruit')('Guayaba Madura', 400, 'Equipada: cuando le quedan pocos PS se la come y recupera la cuarta parte. Se gasta.', '#f08aa0', { held: { kind: 'berry', at: .5, heal: .25 } }),
+  brasaEterna: charm('Brasa Eterna', 'fuego', 'Un carbón que nunca se apaga.'),
+  perlaDeRio: charm('Perla de Río', 'agua', 'Brilla como el agua en la mañana.'),
+  broteVivo: charm('Brote Vivo', 'planta', 'Sigue creciendo dentro de su frasquito.'),
+  bobinaDeCobre: charm('Bobina de Cobre', 'electrico', 'Hecha en los talleres de Pueblo Cobre.'),
+  escarchaEterna: charm('Escarcha Eterna', 'hielo', 'Hielo de los nevados que no se derrite.'),
+  vendaDeCampeon: charm('Venda de Campeón', 'lucha', 'La usaron los mejores boxeadores de los cerros.'),
+  cristalMental: charm('Cristal Mental', 'psiquico', 'Zumba suavecito cuando alguien piensa cerca.'),
+  escamaAntigua: charm('Escama Antigua', 'dragon', 'De un dragón que nadie ha vuelto a ver.'),
+  velaDeNiebla: charm('Vela de Niebla', 'fantasma', 'Su llama es morada y no da calor.'),
+
   // Clave: no se gastan ni se venden.
   brazaleteAlba: item('clave', 'band')('Brazalete Alba', 0, 'Despierta la Forma Alba una vez por combate. En LUCHAR, toca FORMA ALBA antes de escoger el ataque.', '#f0c040', { key: true })
 };
@@ -88,14 +109,14 @@ const GENERAL = [
   ['capsula', 0], ['supercapsula', 0], ['tonico', 0], ['supertonico', 0], ['despertar', 0], ['antidoto', 0], ['tinto', 0], ['arnica', 0], ['rocio', 0], ['repelente', 0], ['silbato', 0],
   ['hipertonico', 1], ['sabila', 1], ['panelaCaliente', 1], ['repelenteFuerte', 1],
   ['hipercapsula', 2], ['tonicoMax', 2], ['remedioCasero', 2], ['repelenteTotal', 2],
-  ['rocioPuro', 3]
+  ['rocioPuro', 3], ['guayaba', 1], ['vendaDeCampeon', 3], ['cristalMental', 3], ['escamaAntigua', 3], ['velaDeNiebla', 3]
 ];
 // Mostrador especial de cada ciudad (lo atiende la vendedora del delantal).
 export const SPECIAL = {
-  arenal: { name: 'Rincón del Explorador', items: ['miel', 'pocimaFuerza', 'pocimaViento'] },
-  corola: { name: 'Vivero de Corola', items: ['semillaVital', 'semillaFuerza', 'semillaCoraza', 'semillaViento', 'miel'] },
-  cobre: { name: 'Taller de Cápsulas', items: ['capsulaVeloz', 'capsulaOcaso', 'capsulaReloj', 'capsulaMalla'] },
-  marea: { name: 'Botica del Puerto', items: ['pocimaFuerza', 'pocimaCoraza', 'pocimaViento', 'pocimaCertera', 'dulce'] }
+  arenal: { name: 'Rincón del Explorador', items: ['miel', 'pocimaFuerza', 'pocimaViento', 'guayaba', 'cintaFuerza'] },
+  corola: { name: 'Vivero de Corola', items: ['semillaVital', 'semillaFuerza', 'semillaCoraza', 'semillaViento', 'miel', 'broteVivo', 'arepaReserva'] },
+  cobre: { name: 'Taller de Cápsulas', items: ['capsulaVeloz', 'capsulaOcaso', 'capsulaReloj', 'capsulaMalla', 'bobinaDeCobre', 'panueloVeloz', 'chalecoAcolchado'] },
+  marea: { name: 'Botica del Puerto', items: ['pocimaFuerza', 'pocimaCoraza', 'pocimaViento', 'pocimaCertera', 'dulce', 'perlaDeRio', 'escarchaEterna', 'brasaEterna'] }
 };
 export const VENDING = ['aguaPanela', 'jugoLulo', 'avena'];
 export const TOWN_NAMES = { arenal: 'Villa Arenal', corola: 'Ciudad Corola', cobre: 'Pueblo Cobre', marea: 'Ciudad Marea' };
@@ -134,6 +155,8 @@ export function shortDesc(id) {
   if (it.lure) return 'Atrae a una criatura salvaje';
   if (it.seed) return `+${SEED_STEP} de ${STAT_SHORT[it.seed]} para siempre`;
   if (it.levelUp) return 'Sube un nivel';
+  if (it.held) { const h = it.held; return { power: 'Equipable · +10% de daño', speed: 'Equipable · +20% de Velocidad', guard: 'Equipable · -12% de daño recibido', regen: 'Equipable · recupera PS cada turno', berry: 'Equipable · se cura con pocos PS', type: `Equipable · +20% ${TYPES[h.type]?.name || ''}` }[h.kind] || 'Equipable'; }
+  if (it.key) return 'Objeto clave';
   return '';
 }
 

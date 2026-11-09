@@ -87,3 +87,26 @@ test('repellent keeps away only weaker wild creatures while it lasts', () => {
   assert.deepEqual(pocketItems({ capsula: 2, tonico: 0, miel: 1 }, 'capsulas'), ['capsula']);
   assert.deepEqual(POCKET_ORDER.filter(p => pocketItems({ miel: 1 }, p).length), ['campo']);
 });
+
+test('equipable items change damage, speed and healing only while held', async () => {
+  const { heldPower, heldGuard, heldSpeed, heldRegen, berryReady, berryHeal, giveHeld, takeHeld, isHeld } = await import('../src/data/held.js');
+  const { makeCreature, MOVES } = await import('../src/data/creatures.js');
+  const c = makeCreature('brasin', 20), fire = MOVES.lanzallamas, water = MOVES.oleaje;
+  assert.equal(heldPower(c, fire), 1); assert.equal(heldSpeed(c), 1); assert.equal(heldGuard(c), 1); assert.equal(heldRegen(c), 0);
+  const st = { bag: { brasaEterna: 1, cintaFuerza: 1, guayaba: 2, arepaReserva: 1 } };
+  assert.ok(giveHeld(st, c, 'brasaEterna').ok);
+  assert.equal(c.item, 'brasaEterna'); assert.equal(st.bag.brasaEterna, 0);
+  assert.equal(heldPower(c, fire), 1.2); assert.equal(heldPower(c, water), 1);
+  const r = giveHeld(st, c, 'cintaFuerza');
+  assert.ok(r.ok && r.old === 'brasaEterna' && st.bag.brasaEterna === 1, 'el objeto anterior vuelve a la mochila');
+  assert.equal(heldPower(c, water), 1.1); assert.equal(heldPower(c, MOVES.escudo), 1, 'los movimientos de estado no cambian');
+  giveHeld(st, c, 'arepaReserva'); c.hp = c.stats.hp - 10;
+  assert.equal(heldRegen(c), Math.max(1, Math.floor(c.stats.hp / 16)));
+  c.hp = c.stats.hp; assert.equal(heldRegen(c), 0, 'con la vida llena no cura');
+  giveHeld(st, c, 'guayaba'); c.hp = Math.floor(c.stats.hp * .6); assert.equal(berryReady(c), false);
+  c.hp = Math.floor(c.stats.hp * .4); assert.equal(berryReady(c), true); assert.equal(berryHeal(c), Math.floor(c.stats.hp / 4));
+  assert.ok(takeHeld(st, c).ok); assert.equal(c.item, undefined); assert.equal(st.bag.guayaba, 2);
+  assert.equal(giveHeld(st, c, 'capsula').ok, false, 'lo que no es equipable no se equipa');
+  assert.ok(isHeld('panueloVeloz') && !isHeld('pocion'));
+  for (const [id, it] of Object.entries(ITEMS)) if (it.held) assert.equal(it.pocket, 'equipo', id);
+});
