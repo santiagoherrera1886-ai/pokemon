@@ -2,7 +2,7 @@
 import { ui } from '../ui/ui.js';
 import { SPECIES, RIVAL_PICK, makeCreature, rivalForm } from '../data/creatures.js';
 import { ITEMS, SPECIAL } from '../data/items.js';
-import { gymOf, hasBadge, badgeCount, nextGym, LEAGUE_BADGES } from '../data/gyms.js';
+import { gymOf, hasBadge, badgeCount, nextGym, leagueOpen, LEAGUE_BADGES } from '../data/gyms.js';
 
 const N = { mom: 'Mamá', nico: 'Nico', prof: 'Prof. Ceiba', aide: 'Ayudante', kid: 'Niño', nurse: 'Enfermera Malva', clerk: 'Dependiente', vendor: 'Vendedora', rivalMom: 'Mamá de Nico', guard: 'Guardia', grunt: 'Recluta Eclipse', bruma: 'Bruma', umbra: 'Umbra', aurora: 'Campeona Aurora', courier: 'Mensajera' };
 
@@ -405,6 +405,9 @@ const S = {
   async aurora(ow, game) {
     const st = game.state;
     if (st.story >= 12) return say(N.aurora, `¡${st.name}, campeón de Alborada!`, 'Vuelve cuando quieras. Las puertas de la Liga siempre estarán abiertas para ti.');
+    // Partidas guardadas dentro de la Liga antes de que hubiera ocho gimnasios: primero las medallas.
+    if (!leagueOpen(st)) return say(N.aurora, 'Bienvenido a la Liga Alborada. Soy Aurora, la campeona.', `Para retarme necesitas las ${LEAGUE_BADGES} medallas de la región. Llevas ${badgeCount(st)}.`, 'Los gimnasios que te faltan están al este de Ciudad Marea, por la Ruta 6. Te espero.');
+    if (!st.flags.nicoLiga) return say(N.aurora, 'Nico te estaba buscando a la entrada. Ve a hablar con él primero.');
     const aur = ow.npc('aurora');
     if (aur) aur.dir = 0;
     await say(N.aurora, 'Bienvenido. Soy Aurora, campeona de la Liga Alborada.', 'Supe lo que hiciste en el Lago Espejo. Gracias por proteger nuestra región.', 'Pero aquí no hay favores: muéstrame todo lo que aprendiste en tu viaje.');

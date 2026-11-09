@@ -275,7 +275,7 @@ function liga() {
   b.npc({ id: 'nicoLiga', look: 'rival', x: 7, y: 9, dir: 0, when: st => S(st) === 11 && !st.flags.nicoLiga });
   b.npc({ id: 'nicoLiga2', look: 'rival', x: 4, y: 9, dir: 3, when: st => S(st) >= 11 && st.flags.nicoLiga, talk: ['¡Ve! ¡Aurora te espera!', 'Y si ganas... ¡la próxima vez te gano yo!'] });
   b.npc({ id: 'aurora', look: 'aurora', x: 7, y: 3, dir: 0, talk: 'aurora' });
-  b.trigger({ x: 1, y: 11, w: 13, h: 1, when: st => S(st) === 11 && !st.flags.nicoLiga, script: 'nicoLiga' });
+  b.trigger({ x: 1, y: 11, w: 13, h: 1, when: st => S(st) === 11 && leagueOpen(st) && !st.flags.nicoLiga, script: 'nicoLiga' });
   b.trigger({ x: 1, y: 5, w: 13, h: 1, when: st => S(st) === 11 && st.flags.nicoLiga, script: 'aurora' });
   return b.build();
 }
