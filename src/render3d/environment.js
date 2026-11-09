@@ -2,6 +2,7 @@ import * as T from 'three';
 import {hash} from '../core/pixel.js';
 import {furniture,wallDecoration,building,smallProp} from './models.js';
 import {toonMaterial} from './stylize.js';
+import { dressWorld } from './art-direction.js';
 
 const dummy=new T.Object3D();
 function instances(parent,geometry,material,items,shadow=true) {
@@ -140,6 +141,7 @@ export class Environment {
       const light=r.texture((g,s)=>{const gr=g.createLinearGradient(0,0,s,s);gr.addColorStop(0,'rgba(255,232,167,.32)');gr.addColorStop(1,'rgba(255,232,167,0)');g.fillStyle=gr;g.fillRect(0,0,s,s);});
       const patch=new T.Mesh(r.geometries.plane,new T.MeshBasicMaterial({map:light,transparent:true,depthWrite:false}));patch.userData.ownedMaterial=true;patch.rotation.x=-Math.PI/2;patch.position.set(3.2,.014,4.5);patch.scale.set(3.8,4,1);root.add(patch);
     }
+    dressWorld(r,staticProps,map);
     r.batch(staticProps);root.add(staticProps);
     const mats={grass:r.mat('#ffffff'),path:r.mat('#ffffff'),cave:r.mat('#ffffff'),water:this.water,wood:this.floorMat,tile:r.mat(map.floorColors?'#ffffff':'#dce3d5'),grout:r.mat('#b6c6bb'),rug:r.mat(map.style==='league'?'#af6977':'#789faa'),mat:r.mat('#cc8e74'),trim:r.mat('#edd4a2'),curb:r.mat('#e4e6ea'),sidewalk:r.mat('#ffffff'),inlay:r.mat('#d4b56a'),shore:r.mat('#e8d5a5'),foam:r.mat('#b9dcd2')};
     const lods=[];
