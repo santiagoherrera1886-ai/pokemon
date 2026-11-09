@@ -16,7 +16,8 @@ const TORUS = (arc, tube) => geo('t' + arc.toFixed(3) + tube, () => new T.TorusG
 const OCTA = () => geo('octa', () => new T.OctahedronGeometry(1, 0));
 const PRISM = () => geo('prism', () => new T.CylinderGeometry(.62, 1, 1, 6).translate(0, .5, 0));
 const RING = tube => geo('ring' + tube, () => new T.TorusGeometry(1, tube, 10, 64));
-const BODY = new Map();   // malla esculpida por especie (cara de construir, se guarda)
+const BODY = new Map();
+const PIXEL_INK = new T.MeshBasicMaterial({color:'#241638',side:T.BackSide,depthWrite:true});   // malla esculpida por especie (cara de construir, se guarda)
 
 const sh = (hex, f) => { const c = new T.Color(hex); return '#' + (f > 0 ? c.lerp(new T.Color('#ffffff'), f) : c.multiplyScalar(1 + f)).getHexString(); };
 const FWD = new T.Vector3(0, 0, 1);
@@ -527,6 +528,12 @@ export function creatureModel(r, sp) {
   if (!body) { body = voxelSculptGeometry(S, sp === 'guijarrin' ? .075 : .11); BODY.set(sp, body); }
   const mesh = new T.Mesh(body, r.mat('#ffffff', { vertexColors: true, roughness: .94, metalness: 0, flatShading: true }));
   mesh.castShadow = true; mesh.receiveShadow = true; mesh.userData.keep = true; g.add(mesh);
+  // Inverted-hull outline is itself real 3D geometry. Keeps the inky silhouette
+  // from the approved 16-bit character sheets at every camera angle.
+  const contour=new T.Mesh(body,PIXEL_INK);
+  contour.scale.setScalar(1.045);
+  contour.castShadow=false;contour.receiveShadow=false;contour.userData.keep=true;
+  g.add(contour);
   r.batch(g);
   g.userData.eyes = D.eyes;
   g.userData.head = D.anchors.head;
