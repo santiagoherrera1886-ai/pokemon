@@ -1,6 +1,7 @@
 // Criaturas originales de Alborada: sprites de combate (frente/espalda) e íconos. 64x64 con sombreado automático.
 import { canvas, px, ellipse, outline, autoShade } from '../core/pixel.js';
 import { ATLAS, ATLAS_SPECIES } from './bruma-sprites.js';
+import {RETRO_ATLAS,RETRO_INDEX} from './retro-reference.js';
 
 const K = '#1e1a24';
 function eyes(g, x1, x2, y, o = {}) {
@@ -288,17 +289,67 @@ const DRAW = {
 };
 
 // Sprites del modo clásico sacados de los modelos 3D (scripts/sprites.cjs); DRAW queda como respaldo.
-let atlasImg = null;
-export const spritesReady = typeof Image === 'undefined' ? Promise.resolve(false) : new Promise(res => {
-  const im = new Image(); im.onload = () => { atlasImg = im; cache.clear(); res(true); }; im.onerror = () => res(false); im.src = ATLAS.url;
+let atlasImg = null, retroImg = null;
+const loadAtlas = url => new Promise(resolve=>{
+  const im = new Image();
+  im.onload = () => resolve(im);
+  im.onerror = () => resolve(null);
+  im.src = url;
 });
+export const spritesReady = typeof Image === 'undefined' ? Promise.resolve(false) :
+  Promise.all([loadAtlas(ATLAS.url),loadAtlas(RETRO_ATLAS.url)]).then(([classic,retro])=>{
+    atlasImg = classic; retroImg = retro;
+    cache.clear();
+    return !!(classic||retro);
+  });
 function atlasSprite(g, id, back) {
+  // Ilustraciones originales del paquete visual aprobado. Los retratos frontales,
+  // los iconos de equipo y el Registro utilizan exactamente este atlas.
+  // La espalda conserva el render previo hasta tener vistas traseras revisadas.
+  const ri=RETRO_INDEX.get(id);
+  if (!back && retroImg && ri!==undefined) {
+    const S=RETRO_ATLAS.size,cols=RETRO_ATLAS.cols,prev=g.imageSmoothingEnabled;
+    g.imageSmoothingEnabled=false;
+    g.drawImage(retroImg,(ri%cols)*S,Math.floor(ri/cols)*S,S,S,0,0,64,64);
+    g.imageSmoothingEnabled=prev;
+    return true;
+  }
   const i = ATLAS_SPECIES.indexOf(id); if (i < 0 || !atlasImg) return false;
   const n = i * 2 + (back ? 1 : 0), S = ATLAS.size;
   g.drawImage(atlasImg, (n % ATLAS.cols) * S, Math.floor(n / ATLAS.cols) * S, S, S, 0, 0, 64, 64);
   return true;
 }
 export const hasSprite = id => !!DRAW[id] || ATLAS_SPECIES.includes(id);
+
+// Dirección artística Bruma 16-bit: convertir cada sprite del atlas 3D
+// en un sprite de paleta limitada, con matices compactos como el dossier retro.
+// Se ejecuta UNA vez por especie y orientación; no toca datos ni combates.
+const BAYER4 = [
+  0, 8, 2, 10,
+  12, 4, 14, 6,
+  3, 11, 1, 9,
+  15, 7, 13, 5
+];
+function finishRetroSprite(c) {
+  const g=c.getContext('2d',{willReadFrequently:true});
+  let pixels;
+  try{pixels=g.getImageData(0,0,c.width,c.height);}catch{return;}
+  const d=pixels.data,w=c.width,h=c.height;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const i=(y*w+x)*4,alpha=d[i+3];
+    if(alpha<24){d[i+3]=0;continue;}
+    // Asegura un borde limpio, sin el halo semitransparente de render 3D.
+    d[i+3]=255;
+    const R=d[i],G=d[i+1],B=d[i+2];
+    const gray=(R*.24+G*.66+B*.10),shade=((BAYER4[(y&3)*4+(x&3)]-7.5)/15)*14;
+    // Paleta 5-bit aproximada, saturación ligeramente superior y sombra tinta.
+    const q=v=>Math.max(0,Math.min(255,Math.round(v/17)*17));
+    d[i]=q(gray+(R-gray)*1.19+shade);
+    d[i+1]=q(gray+(G-gray)*1.15+shade);
+    d[i+2]=q(gray+(B-gray)*1.23+shade);
+  }
+  g.putImageData(pixels,0,0);
+}
 
 const cache = new Map();
 // Todas las especies salen del atlas generado con sus modelos 3D, así el modo clásico se ve igual que el 3D.
@@ -310,9 +361,11 @@ export function battleSprite(id, back = false) {
   if (!atlasSprite(g, id, back)) {
     if (DRAW[id]) { DRAW[id](g, back); autoShade(c, 0.18, ['#1e1a24', '#ffffff']); }
     else { ellipse(g, 32, 40, 18, 16, '#b8b4c8'); ellipse(g, 32, 24, 13, 12, '#c8c4d8'); }
-    outline(c, '#1e1a24'); c.temp = true; return c;
+    outline(c, '#1e1a24'); finishRetroSprite(c); c.temp = true; return c;
   }
   outline(c, '#1e1a24');
+  // Los recortes ya tienen su paleta original de 30 colores; no reprocesarlos.
+  if (!(retroImg && !back && RETRO_INDEX.has(id))) finishRetroSprite(c);
   cache.set(k, c);
   return c;
 }

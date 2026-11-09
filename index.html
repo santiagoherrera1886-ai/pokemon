@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#14161e">
+<meta name="theme-color" content="#17142e">
 <meta name="description" content="Alborada — aventura original de criaturas en pixel art. Se juega en el navegador a pantalla completa, sin ROM.">
 <title>Alborada · Edición Bruma</title>
 <link rel="preload" href="./fonts/fredoka-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -11,6 +11,7 @@
 <link rel="preload" href="./fonts/pixelify-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/addons/"}}</script>
 <link rel="stylesheet" href="./styles.css">
+<link rel="stylesheet" href="./retro-bruma.css">
 </head>
 <body class="at-title">
 <main id="app">
@@ -20,7 +21,7 @@
     <button id="menuBtn" class="hidden" aria-label="Abrir menú">☰ <span>MENÚ</span></button>
     <div id="hudFoe" class="hud foe hidden"></div>
     <div id="hudAlly" class="hud ally hidden"></div>
-    <div id="logo"><h1 data-text="ALBORADA"><span>ALBORADA</span></h1><p>EDICIÓN BRUMA</p></div>
+    <div id="logo"><h1 data-text="ALBORADA"><span>ALBORADA</span></h1><p>EDICIÓN BRUMA</p><div id="retro-starters" aria-hidden="true"><i class="rs-fire"></i><i class="rs-water"></i><i class="rs-grass"></i></div></div>
     <div id="msg" class="hidden"><span id="msgName" class="hidden"></span><p id="msgText"></p><i id="msgArrow" class="hidden">▼</i></div>
     <div id="panel" class="hidden"></div>
     <div id="toast" class="hidden"></div>
