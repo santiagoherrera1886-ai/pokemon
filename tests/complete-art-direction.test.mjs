@@ -5,6 +5,7 @@ import {Resources} from '../src/render3d/resources.js';
 import {person} from '../src/render3d/people.js';
 import {LOOKS} from '../src/art/characters.js';
 import {buildMaps} from '../src/world/maps.js';
+import {GameMap} from '../src/world/world.js';
 import {dressWorld,dressBattle,VISUAL_ROLE_IDS,BRUMA_ART_PALETTE} from '../src/render3d/art-direction.js';
 
 test('all named human characters have unique 3D dimensional costume geometry',()=>{
@@ -30,7 +31,8 @@ test('every existing map has a matching original 3D art treatment without mutati
  const maps=buildMaps();const entries=Object.values(maps),r=new Resources();
  assert.ok(entries.length>=30,'all existing towns, routes and interiors should be present');
  let outdoor=0,interior=0;
- for(const map of entries){
+ for(const def of entries){
+  const map=new GameMap(def);
   const before=JSON.stringify({tiles:map.tiles,objects:map.objects,warps:map.warps});
   const root=new T.Group(),meta=dressWorld(r,root,map);
   assert.equal(meta.outdoor,!!map.outdoor,map.id+' biome mismatch');
