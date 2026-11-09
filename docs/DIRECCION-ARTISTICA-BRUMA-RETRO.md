@@ -37,7 +37,21 @@ La estética que debe mantenerse para el mundo, las criaturas, las transformacio
 4. \`src/art/creatures.js\` — postproceso por sprite (reducir colores, sombreado y tramado tenue) para las 62 especies; no altera datos, nombres ni niveles.
 5. \`src/render3d/stylize.js\` — cuantización de color y muestreo pixelado del postproceso 3D; la geometría y la interacción no cambian.
 
-**Esta primera entrega no incluye 62 nuevos dibujos manuales ni 62 nuevas mallas 3D.** Mantiene los modelos ya existentes y cambia su presentación. El siguiente paso artístico es construir sprites y modelos autorales **individuales** a partir de las diez láminas, no pegar la lámina completa en la pantalla.
+## Integración de arte de las láminas (segunda etapa)
+
+**43 especies del bestiario tienen ahora un retrato pixel-art individual** tomado de los diseños originales de las láminas, recortado a fondo transparente y adaptado a una paleta de 30 colores. Están conectadas a los IDs reales de `src/data/creatures.js`; no se crearon nuevas especies ni se alteraron las partidas.
+
+- `src/art/retro-raw/{0,1,2,3}.b64`: fuente del atlas original, dividida en cuatro partes de texto para versionarse en Git.
+- `scripts/build.cjs`: recompone automáticamente `src/art/retro-reference.png` (PNG de 256×192, celdas 32×32) **tanto en desarrollo como al desplegar en Vercel**. Comprueba SHA-256 para detectar archivos corruptos.
+- `src/art/retro-reference.js`: registra el orden y las 43 claves del bestiario.
+- `src/art/creatures.js`: pone estos dibujos en las vistas frontales del modo clásico, el Registro, los iconos, las evoluciones y el menú de equipo. La vista trasera conserva el sprite anterior hasta que se produzca una ilustración específica.
+- `src/core/graphics.js`: muestra estos retratos 16-bit en la interfaz incluso cuando está activo el modo 3D.
+- `index.html` y `retro-bruma.css`: muestran los tres retratos originales de los iniciales en la portada para que el cambio visual sea evidente desde el inicio.
+- `tests/retro-art.test.mjs`: protege las 43 asociaciones de especies, dimensiones y hash de la imagen.
+
+**Alcance honesto:** son recortes de arte conceptual, no 43 hojas de animación completas ni sprites producidos manualmente de cero. Quedan 19 especies en el atlas previo; sus colores y pixelado siguen la guía visual, pero no tienen ilustración nueva de las láminas. Falta redibujar las vistas traseras, corregir algunos bordes de recorte, producir los sprites de los personajes y crear siluetas nuevas para cada Forma Alba. El mundo 3D mantiene los modelos de Claude con el nuevo tratamiento retro; no se rehizo su geometría.
+
+El paso de integración al build fue verificado reconstruyendo el PNG, comparando su hash y abriendo la aplicación en Chromium con los 43 iconos disponibles, sin errores JS.
 
 ## Contrato para Claude/Astra: implementación de las imágenes sin perder el juego
 
