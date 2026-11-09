@@ -41,7 +41,7 @@ test('Forma Alba alters the 3D silhouette with crystal spines instead of only a 
 });
 
 test('Human characters use real cuboid head geometry',()=>{
- const r=new Resources(),m=person(r,'player');
+ const r=new Resources();r.shadow=(root)=>{const shadow=new T.Group();root.add(shadow);return shadow;};const m=person(r,'player');
  const parts=[];m.root.traverse(o=>{if(o.isMesh)parts.push(o)});
  assert.ok(parts.length>0);
  assert.ok(parts.some(o=>o.geometry.type==='BufferGeometry' && o.geometry.attributes.position.count>=20));
