@@ -26,7 +26,9 @@ test('the general counter grows with badges', () => {
 
 test('every shop has a general clerk, a specialty clerk and a vending machine', () => {
   const maps = buildMaps();
-  for (const id of ['tienda', 'tiendaCorola', 'tiendaCobre', 'tiendaMarea']) {
+  const shops = Object.keys(maps).filter(id => /^tienda/.test(id));
+  assert.equal(shops.length, 9, 'una tienda en Arenal y en cada una de las ocho ciudades con gimnasio');
+  for (const id of shops) {
     const m = maps[id];
     const clerk = m.npcs.find(n => n.talk === 'tienda'), vendor = m.npcs.find(n => n.talk === 'tiendaEspecial');
     assert.ok(clerk && vendor && SPECIAL[vendor.town], id);

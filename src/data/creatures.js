@@ -91,7 +91,14 @@ export const ENCOUNTERS = {
   ruta3: { rate: 0.12, list: [['chispaz', 8, 10, 35], ['roedin', 8, 10, 25], ['pipiu', 9, 11, 20], ['setin', 8, 10, 20], ['lanin', 8, 10, 16], ['truenin', 8, 10, 12]] },
   cueva: { rate: 0.09, list: [['guijarrin', 9, 12, 50], ['sombrin', 10, 12, 30], ['mentelin', 10, 11, 20], ['magmol', 10, 12, 18], ['ferlum', 10, 12, 15], ['cuarcin', 10, 12, 8]] },
   ruta4: { rate: 0.12, list: [['medusin', 14, 16, 30], ['chispaz', 14, 16, 25], ['pipiolo', 15, 17, 25], ['guijarrin', 14, 16, 20], ['nivalin', 14, 16, 18], ['truenin', 14, 16, 10], ['fatuin', 15, 17, 20, 'noche']] },
-  ruta5: { rate: 0.12, list: [['sombrin', 22, 25, 25], ['mentelin', 22, 24, 25], ['voltaz', 23, 25, 20], ['seton', 23, 25, 15], ['penon', 23, 25, 15], ['foliaton', 22, 24, 10], ['carnerazo', 23, 25, 10], ['serpentil', 22, 24, 10], ['mistigato', 22, 24, 8], ['cuarcin', 22, 24, 8], ['candelo', 23, 25, 16, 'noche']] }
+  ruta5: { rate: 0.12, list: [['sombrador', 44, 47, 25], ['mentelin', 44, 46, 20], ['voltaz', 45, 47, 20], ['seton', 45, 47, 15], ['penon', 45, 47, 15], ['arborex', 44, 46, 10], ['arieton', 45, 47, 10], ['cobrumbra', 44, 46, 10], ['orbelina', 44, 46, 8], ['astrocuarzo', 44, 46, 8], ['velaria', 45, 47, 16, 'noche']] },
+  // La región del este y del norte: Ruta 6 a Ruta 11.
+  ruta6: { rate: 0.12, list: [['meduson', 26, 29, 30], ['nivalmar', 26, 29, 22], ['pipiolo', 26, 28, 20], ['voltaz', 26, 28, 18], ['tormavis', 27, 29, 12], ['roedon', 26, 28, 12], ['candelo', 27, 29, 16, 'noche']] },
+  ruta7: { rate: 0.12, list: [['sombrador', 30, 32, 25], ['mentelin', 30, 33, 22], ['serpentil', 30, 32, 18], ['foliaton', 30, 32, 16], ['mistigato', 30, 32, 12], ['alasol', 30, 32, 12], ['candelo', 30, 33, 22, 'noche']] },
+  ruta8: { rate: 0.12, list: [['carnerazo', 33, 35, 28], ['roedon', 33, 35, 20], ['pipiolo', 33, 35, 18], ['seton', 33, 35, 16], ['magmor', 33, 35, 12], ['arieton', 34, 36, 6], ['sombrador', 33, 35, 14, 'noche']] },
+  ruta9: { rate: 0.12, list: [['nivalmar', 36, 38, 30], ['ferrox', 36, 39, 22], ['cuarzon', 36, 39, 20], ['arieton', 37, 39, 14], ['meduson', 36, 38, 10], ['nivalord', 38, 40, 4], ['velaria', 38, 40, 10, 'noche']] },
+  ruta10: { rate: 0.12, list: [['arborex', 40, 42, 18], ['cuarzon', 40, 41, 18], ['orbelina', 40, 42, 16], ['cobrumbra', 40, 42, 16], ['acerion', 41, 43, 12], ['magmatron', 41, 43, 12], ['astrocuarzo', 42, 43, 6], ['velaria', 40, 43, 14, 'noche']] },
+  ruta11: { rate: 0.12, list: [['elestrix', 43, 45, 18], ['cobrumbra', 43, 46, 16], ['astrocuarzo', 43, 45, 14], ['arieton', 43, 46, 16], ['acerion', 44, 46, 12], ['nivalord', 44, 46, 10], ['magmatron', 44, 46, 10], ['velaria', 43, 45, 18, 'noche']] }
 };
 // De noche (19:00 a 4:59) salen las criaturas marcadas con 'noche'; de día, solo las demás.
 export const isNightHour = h => h >= 19 || h < 5;

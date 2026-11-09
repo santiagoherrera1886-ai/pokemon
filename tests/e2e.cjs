@@ -366,15 +366,68 @@ async function run() {
     log('guardar y continuar OK');
     await page.evaluate(() => { __game.state.options.forceHour = 12; });
 
-    // ------------------------------------------------ Liga
+    // ------------------------------------------------ La Liga sigue cerrada con tres medallas
     await refill();
     await walkTo(18, 7, 'arenal');
     await talkTo(10, 5);
     for (let i = 0; i < 20 && !(await page.$('#panel .ilist')); i++) { await tap('z', 40); await sleep(120); }
-    const opts = await page.$$eval('#panel .ilist button', bs => bs.map(b => b.textContent));
+    let opts = await page.$$eval('#panel .ilist button', bs => bs.map(b => b.textContent));
     await page.click(`#panel .ilist [data-act="${opts.indexOf('Ciudad Corola')}"]`);
     await settle();
     s = await st(); assert.equal(s.map, 'corola');
+    await walkTo(14, 2, 'corola');
+    await step('ArrowUp');                                                // el guardia frena: faltan cinco medallas
+    s = await st(); assert.equal(s.map, 'corola'); assert.equal(s.y, 2, 'sin las ocho medallas no se entra a la Ruta 5');
+    log('la Liga pide las ocho medallas OK');
+
+    // ------------------------------------------------ Región del este: los cinco gimnasios que faltan
+    // Entrenamiento exprés: el equipo sube de nivel, evoluciona y aprende lo de su nivel, como si hubiera
+    // entrenado en el pasto. Los entrenadores de ruta y de gimnasio ya se probaron antes: aquí van los líderes.
+    const train = lv => page.evaluate(async lv => {
+      const { SPECIES, MOVES, expForLevel, refreshStats, movesFor } = await import('/src/data/creatures.js');
+      for (const c of __game.state.party) {
+        if (c.level >= lv) continue;
+        let sp = c.sp; while (SPECIES[sp].evo && lv >= SPECIES[sp].evo[1]) sp = SPECIES[sp].evo[0];
+        if (sp !== c.sp) { if (c.name === SPECIES[c.sp].name) c.name = SPECIES[sp].name; c.sp = sp; (__game.state.dex ||= {})[sp] = 2; }
+        c.level = lv; c.exp = expForLevel(lv); refreshStats(c); c.hp = c.stats.hp;
+        c.moves = movesFor(sp, lv).map(m => ({ id: m, pp: MOVES[m].pp }));
+      }
+    }, lv);
+    await page.evaluate(() => { for (const id of ['ruta6', 'ruta7', 'ruta8', 'ruta9', 'ruta10', 'ruta11', 'gym4', 'gym5', 'gym6', 'gym7', 'gym8']) for (const n of __game.world.get(id).npcs) if (n.trainer && !n.badge) __game.state.flags['t_' + n.id] = true; });
+    await walkTo(6, 15, 'corola');                                         // posada de Corola: la Mensajera lleva a Marea
+    await talkTo(10, 5);
+    for (let i = 0; i < 20 && !(await page.$('#panel .ilist')); i++) { await tap('z', 40); await sleep(120); }
+    opts = await page.$$eval('#panel .ilist button', bs => bs.map(b => b.textContent));
+    await page.click(`#panel .ilist [data-act="${opts.indexOf('Ciudad Marea')}"]`);
+    await settle();
+    s = await st(); assert.equal(s.map, 'marea');
+    const gyms = [
+      { map: 'voltio', door: [25, 9], gym: 'gym4', badge: 'chispa', lv: 38 },
+      { map: 'niebla', door: [20, 9], gym: 'gym5', badge: 'sombra', lv: 42 },
+      { map: 'cafetal', door: [24, 10], gym: 'gym6', badge: 'puno', lv: 45 },
+      { map: 'escarcha', door: [18, 9], gym: 'gym7', badge: 'escarcha', lv: 49 },
+      { map: 'albor', door: [24, 18], gym: 'gym8', badge: 'escama', lv: 53 }
+    ];
+    for (const g of gyms) {
+      await train(g.lv); await refill();
+      await walkTo(g.door[0], g.door[1], g.map);
+      s = await st(); assert.equal(s.map, g.gym, `entrar al gimnasio de ${g.map}`);
+      if (g.badge === 'chispa' || g.badge === 'escama') await shot(`gimnasio-${g.map}`);
+      await talkTo(6, 3); await settle(600000);
+      s = await st(); assert.ok(s.badges.includes(g.badge), `Medalla ${g.badge}`);
+      await walkTo(6, 15);
+      s = await st(); assert.equal(s.map, g.map, `de vuelta en ${g.map}`);
+      if (g.badge === 'chispa') {
+        assert.equal(s.badges.length, 4);
+        await shot('ciudad-voltio');
+      }
+    }
+    s = await st(); assert.equal(s.badges.length, 8, 'las ocho medallas');
+    assert.equal(s.story, 11);
+    log('Ruta 6 a Ruta 10, cinco gimnasios nuevos y las ocho medallas OK');
+
+    // ------------------------------------------------ Liga (por la Ruta 11)
+    await train(59); await refill();
     await walkTo(7, 6, 'ruta5');
     s = await st(); assert.equal(s.map, 'liga');
     await shot('liga');

@@ -239,13 +239,15 @@ export function smallProp(r,o) {
   if(o.kind==='pine'){
     r.mesh(g,'cylinder','#8b7559',[0,.55,0],[.13,1.1,.13]);
     for(let i=0;i<3;i++)r.mesh(g,'cone',['#467b68','#558b72','#639b7b'][i],[0,1.1+i*.46,0],[.72-i*.14,1.1,.72-i*.14]);
+    // En los mapas nevados cada piso del pino lleva su capa de nieve.
+    if(o.snow)for(let i=0;i<3;i++)r.mesh(g,'cone','#f4f8fb',[0,1.32+i*.46,0],[.44-i*.09,.6,.44-i*.09]);
   }
   if(o.kind==='palm'){
     const trunk=r.mesh(g,'cylinder','#b18c62',[0,.95,0],[.14,1.9,.14]);trunk.rotation.z=.1;
     for(let i=0;i<6;i++){const a=i*Math.PI/3;const leaf=r.ball(g,'#6b9c68',Math.cos(a)*.45,1.94,Math.sin(a)*.45,.7,.08,.18);leaf.rotation.y=-a;leaf.rotation.z=Math.cos(a)*-.18;}
     for(const x of [-.15,.12])r.ball(g,'#94754f',x,1.85,.13,.13);
   }
-  if(o.kind==='boulder')r.mesh(g,'leaf','#969b98',[0,.45,0],[.5,.52,.47]);
+  if(o.kind==='boulder'){r.mesh(g,'leaf','#969b98',[0,.45,0],[.5,.52,.47]);if(o.snow)r.mesh(g,'leaf','#f4f8fb',[0,.78,0],[.36,.18,.34]);}
   if(o.kind==='crystal'||o.kind==='shimmer')for(let i=0;i<3;i++){
     const crystal=r.mesh(g,'cone',r.mat(i===1?'#b1e1ed':'#85b4d3',{emissive:'#5b90b7',emissiveIntensity:.3,roughness:.3}),[(i-1)*.18,.4+(i===1?.15:0),0],[.17,i===1?1:.65,.17]);crystal.rotation.z=(i-1)*-.2;
   }

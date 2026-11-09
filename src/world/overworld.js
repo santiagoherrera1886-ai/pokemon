@@ -13,7 +13,7 @@ const WALK = 16, RUN = 8, NPC_WALK = 18;
 
 export const NAMES = {
   mom: 'Mamá', rival: 'Nico', prof: 'Prof. Ceiba', nurse: 'Enfermera Malva', clerk: 'Dependiente', vendor: 'Vendedora', rivalMom: 'Mamá de Nico', aide: 'Ayudante',
-  hiedra: 'Hiedra', basalto: 'Basalto', coral: 'Coral', grunt: 'Recluta Eclipse', bruma: 'Bruma', umbra: 'Umbra', aurora: 'Campeona Aurora', courier: 'Mensajera', guard: 'Guardia'
+  hiedra: 'Hiedra', basalto: 'Basalto', coral: 'Coral', centella: 'Centella', velia: 'Velia', tinto: 'Don Tinto', nevada: 'Nevada', sabino: 'Maestro Sabino', grunt: 'Recluta Eclipse', bruma: 'Bruma', umbra: 'Umbra', aurora: 'Campeona Aurora', courier: 'Mensajera', guard: 'Guardia'
 };
 
 class Actor {

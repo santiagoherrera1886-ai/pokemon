@@ -20,10 +20,10 @@ const COAT = [[.001, -.02], [.215, -.02], [.205, .1], [.19, .2], [.165, .29], [.
 const SKIRT = [[.13, .14], [.25, 0], [.255, -.012], [.001, -.012], [.001, .14]];
 
 // Rasgos por personaje que no están en LOOKS (color de ojos y extras).
-const EYES = { vendor: '#6a4a2a', player: '#3a5a9a', rival: '#3f8a52', mom: '#7a4a2e', prof: '#3e6a4a', nurse: '#c0507a', hiedra: '#2f7a3a', coral: '#2a7ac0', bruma: '#7a5ab0', umbra: '#b83a3a', aurora: '#3a9ad0', grunt: '#7a3a5a' };
-const SKIRT_LOOKS = new Set(['mom', 'girl', 'lass', 'nurse', 'coral', 'hiedra', 'aurora', 'bruma', 'rivalMom', 'vendor']);
+const EYES = { vendor: '#6a4a2a', player: '#3a5a9a', rival: '#3f8a52', mom: '#7a4a2e', prof: '#3e6a4a', nurse: '#c0507a', hiedra: '#2f7a3a', coral: '#2a7ac0', bruma: '#7a5ab0', umbra: '#b83a3a', aurora: '#3a9ad0', grunt: '#7a3a5a', centella: '#c89a18', velia: '#8a6ad0', tinto: '#5a3a1e', nevada: '#2f8ac8', sabino: '#8a6a2a' };
+const SKIRT_LOOKS = new Set(['mom', 'girl', 'lass', 'nurse', 'coral', 'hiedra', 'aurora', 'bruma', 'rivalMom', 'vendor', 'velia', 'nevada']);
 const GLASSES = new Set(['prof', 'old', 'clerk']);
-const LASHES = new Set(['mom', 'girl', 'lass', 'nurse', 'coral', 'hiedra', 'aurora', 'bruma', 'rivalMom', 'prof', 'vendor']);
+const LASHES = new Set(['mom', 'girl', 'lass', 'nurse', 'coral', 'hiedra', 'aurora', 'bruma', 'rivalMom', 'prof', 'vendor', 'centella', 'velia', 'nevada']);
 
 function shade(hex, f) { const c = new T.Color(hex); return '#' + (f > 0 ? c.lerp(new T.Color('#ffffff'), f) : c.multiplyScalar(1 + f)).getHexString(); }
 
@@ -173,7 +173,16 @@ export function person(r, look = 'player') {
       for (const x of [-1, 1]) pill(skull, hair, [x * .1, .11, .265], .018, .07, [1, 1, .6], [0, 0, Math.PI / 2]); // cejas pobladas
     }
   }
-  if (capOn) {
+  if (L.mustache) for (const x of [-1, 1]) ball(skull, L.mustache, [x * .055, -.07, .265], [.065, .028, .022], [0, 0, x * .32]); // bigote
+  if (capOn && L.brim) {   // sombrero de ala ancha (el de los caficultores): copa, cinta oscura y ala
+    const hc = L.hat || '#f4efe2', band = L.hatBand || '#1a1a1a';
+    add(skull, cap(.5), hc, [0, .15, -.01], [.29, .27, .29], [-.12, 0, 0]);
+    add(skull, cap(.5), shade(hc, .1), [-.05, .27, .02], [.11, .05, .1], [-.3, 0, .3]);
+    add(skull, torus(Math.PI * 2, .14), band, [0, .17, -.008], [.288, .288, .25], [Math.PI / 2 - .12, 0, 0]);
+    add(skull, disc(), hc, [0, .16, .01], [.5, .016, .48], [-.12, 0, 0]);
+    add(skull, disc(), shade(hc, -.2), [0, .15, .01], [.49, .008, .47], [-.12, 0, 0]);
+    add(skull, torus(Math.PI * 2, .08), shade(hc, -.08), [0, .162, .01], [.5, .48, .2], [Math.PI / 2 - .12, 0, 0]); // borde del ala
+  } else if (capOn) {
     const hc = L.hat || '#e04848', band = L.hatBand || '#ffffff';
     add(skull, cap(.5), hc, [0, .1, -.02], [.33, .29, .32], [-.38, 0, 0]);                 // copa de la gorra
     add(skull, cap(.5), shade(hc, .18), [-.06, .2, .05], [.12, .06, .1], [-.5, 0, .3]);   // brillo de la copa

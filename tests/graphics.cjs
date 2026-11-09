@@ -34,7 +34,7 @@ async function run(){
     report.scenes.push({id,...await page.evaluate(()=>{const e=__game.graphics.engine;return {calls:e.webgl.info.render.calls,triangles:e.webgl.info.render.triangles,geometries:e.webgl.info.memory.geometries,textures:e.webgl.info.memory.textures,maps:e.maps.size};})});
     console.log('Rendered both modes:',id);
   }
-  assert.equal(maps.length,report.scenes.length);report.checks.push('37 maps captured in both modes; state equality verified');
+  assert.equal(maps.length,report.scenes.length);report.checks.push(`${maps.length} maps captured in both modes; state equality verified`);
   // The screen swaps while a movement is in progress; simulation remains continuous.
   await page.evaluate(()=>{const g=__game;g.ow.load('cuarto',2,4,3,false);g.ow.scripts=0;g.menus.home(false);g.ow.player.startMove(3,16);});
   await page.evaluate(()=>__game.graphics.setMode('classic'));await sleep(350);await page.evaluate(()=>__game.graphics.setMode('premium'));

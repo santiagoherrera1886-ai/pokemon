@@ -24,6 +24,12 @@ export const LOOKS = {
   bruma: { skin: '#f0d0b8', hair: '#c8c8e0', style: 'long', shirt: '#5a3a7a', accent: '#f0c040', pants: '#2a2232', shoes: '#1a1622', scarf: '#f0c040' },
   umbra: { skin: '#d8b8a0', hair: '#1a1622', style: 'spiky', shirt: '#1a1622', accent: '#f04848', pants: '#2a2232', shoes: '#1a1622', coat: '#3a2c4a' },
   aurora: { skin: '#f8d8c0', hair: '#f8f0d0', style: 'long', shirt: '#f8f8ff', accent: '#7ad0f8', pants: '#7ad0f8', shoes: '#ffffff', scarf: '#7ad0f8' },
+  // Líderes de la región del este y del norte.
+  centella: { skin: '#f0c8a0', hair: '#f8d838', style: 'tail', shirt: '#2a2a3a', accent: '#f0c820', pants: '#2a2a3a', shoes: '#f0c820', coat: '#f0c820' },
+  velia: { skin: '#f4e4e8', hair: '#4a2e6a', style: 'long', shirt: '#4a3a6a', accent: '#c8b0f0', pants: '#2a2232', shoes: '#1a1622', scarf: '#8a6ad0' },
+  tinto: { skin: '#c89070', hair: '#3a2a20', style: 'cap', brim: true, mustache: '#2a1e16', hat: '#f4efe2', hatBand: '#1a1a1a', shirt: '#f4efe2', accent: '#c8402a', pants: '#5a4030', shoes: '#3a2a1a', scarf: '#c8402a', bag: '#7a5030' },
+  nevada: { skin: '#f8e4dc', hair: '#e2f2fc', style: 'bob', shirt: '#8ad8f0', accent: '#ffffff', pants: '#2f8ac8', shoes: '#ffffff', scarf: '#ffffff' },
+  sabino: { skin: '#d8b090', hair: '#f0f0f4', style: 'bald', shirt: '#a83a3a', accent: '#f0c040', pants: '#5a3a2a', shoes: '#3a2a1a', coat: '#efe2c6' },
   hiker: { skin: '#d8a880', hair: '#5a3a2a', style: 'short', shirt: '#c86a3a', accent: '#f0d070', pants: '#6a5a3a', shoes: '#3a2a1a', bag: '#8a6a3a' },
   bugkid: { skin: '#f8d0a8', hair: '#3a2a20', style: 'cap', hat: '#5cb04c', hatBand: '#f8e070', shirt: '#f8f0d0', accent: '#5cb04c', pants: '#6a8ab8', shoes: '#f0f0f0' },
   swimmer: { skin: '#e8b890', hair: '#2a2a3a', style: 'short', shirt: '#3e98dc', accent: '#ffffff', pants: '#3e98dc', shoes: '#e8b890' },
@@ -48,10 +54,12 @@ function head(g, L, dir) {
     else if (L.style === 'tail') { px(g, 4, 5, hair, 8, 1); px(g, 4, 6, hair, 1, 2); px(g, 11, 6, hair, 1, 2); px(g, 12, 5, hair, 1, 5); }
     else { px(g, 4, 5, hair, 8, 1); px(g, 4, 6, hair, 1, 2); px(g, 11, 6, hair, 1, 2); }
     if (L.style === 'cap' || L.wearCap) { px(g, 4, 1, L.hat, 8, 4); px(g, 3, 4, L.hat, 10, 1); px(g, 3, 5, shadeHex(L.hat, -0.25), 10, 1); px(g, 4, 2, L.hatBand, 8, 1); px(g, 7, 3, L.hatBand, 2, 1); px(g, 4, 6, hair, 1, 2); px(g, 11, 6, hair, 1, 2); }
+    if (L.brim) { px(g, 2, 4, L.hat, 12, 1); px(g, 2, 5, shadeHex(L.hat, -0.25), 12, 1); } // sombrero de ala ancha
     if (L.cap) { px(g, 5, 1, L.cap, 6, 2); px(g, 7, 1, '#f05a8a', 2, 2); }
     if (L.style === 'hood') { px(g, 3, 1, L.hood, 10, 5); px(g, 3, 5, L.hood, 2, 7); px(g, 11, 5, L.hood, 2, 7); px(g, 7, 2, L.accent, 2, 2); }
     px(g, 6, 7, EYE, 1, 2); px(g, 9, 7, EYE, 1, 2);
     px(g, 5, 9, shadeHex(L.skin, -0.08), 1, 1); px(g, 10, 9, shadeHex(L.skin, -0.08), 1, 1);
+    if (L.mustache) px(g, 6, 9, L.mustache, 4, 1);
   } else if (dir === 1) { // de espaldas
     px(g, 5, 1, hair, 6, 1); px(g, 4, 2, hair, 8, 8); px(g, 5, 10, hair, 6, 1);
     px(g, 4, 9, dark, 8, 1);

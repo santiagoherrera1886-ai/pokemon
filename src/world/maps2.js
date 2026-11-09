@@ -1,5 +1,6 @@
 // Mapas de la historia completa: Ruta 2 a la Liga Alborada.
 import { MapBuilder } from './builder.js';
+import { leagueOpen } from '../data/gyms.js';
 
 const S = st => st.story;
 // De noche (19:00 a 4:59, o la hora fija de las opciones).
@@ -42,7 +43,7 @@ export function tiendaGen(id, name, back, town) {
   b.npc({ id: id + 'Esp', look: 'vendor', x: 4, y: 2, dir: 0, talk: 'tiendaEspecial', town });
   return b.build();
 }
-function casaGen(id, name, look, lines, back, wallColor = '#f2e8d2') {
+export function casaGen(id, name, look, lines, back, wallColor = '#f2e8d2') {
   const b = interior(id, 9, 7, { name, wallColor });
   exitMat(b, 4, 6, 9, back);
   b.furniture('table', 3, 3, 2, 1, { sy: -8 }).furniture('shelf', 6, 2, 2, 1, { sy: -16 });
@@ -51,19 +52,33 @@ function casaGen(id, name, look, lines, back, wallColor = '#f2e8d2') {
   b.npc({ id: id + 'npc', look, x: 6, y: 4, dir: 2, talk: lines });
   return b.build();
 }
-function gymGen(id, name, theme, back, leader, trainers) {
-  const T2 = { planta: { floorColors: ['#dcefcf', '#cde6bd', '#b4d4a0'], wallColor: '#e8f4dc', wallDark: '#c4dcb0', bg: 'gym' },
-    roca: { floorColors: ['#e6dccb', '#d6c9b2', '#bfae92'], wallColor: '#ece2d0', wallDark: '#cfc0a4', bg: 'mountain' },
-    agua: { floorColors: ['#d6ecf8', '#c4e0f4', '#a8cce8'], wallColor: '#e2f0fa', wallDark: '#bcd6ea', bg: 'beach' } }[theme];
+// Interior de cada gimnasio: piso, paredes, fondo de combate, obstáculos y el consejo del guía según el tipo.
+const GYM_ROOMS = {
+  planta: { floorColors: ['#dcefcf', '#cde6bd', '#b4d4a0'], wallColor: '#e8f4dc', wallDark: '#c4dcb0', bg: 'gym', tip: 'Fuego y Volador funcionan muy bien aquí.' },
+  roca: { floorColors: ['#e6dccb', '#d6c9b2', '#bfae92'], wallColor: '#ece2d0', wallDark: '#cfc0a4', bg: 'mountain', tip: 'Agua y Planta son tus mejores aliados aquí.' },
+  agua: { floorColors: ['#d6ecf8', '#c4e0f4', '#a8cce8'], wallColor: '#e2f0fa', wallDark: '#bcd6ea', bg: 'beach', tip: 'Planta y Eléctrico le hacen mucho daño al Agua.' },
+  electrico: { floorColors: ['#f2ecd2', '#e6dcb6', '#d2c494'], wallColor: '#f6f0dc', wallDark: '#d8cca8', bg: 'gym', tip: 'Tierra no recibe daño eléctrico. ¡Úsala!' },
+  fantasma: { floorColors: ['#5a4a6a', '#4e4060', '#423652'], wallColor: '#4a3a5a', wallDark: '#2e2440', bg: 'eclipse', tip: 'Siniestro y Fantasma le pegan duro a Fantasma. Lo Normal ni le hace cosquillas.' },
+  lucha: { floorColors: ['#e8d4b4', '#dcc49e', '#c8ac82'], wallColor: '#f2e2c4', wallDark: '#d4bc94', bg: 'mountain', tip: 'Volador, Psíquico y Hada aguantan bien los golpes de Lucha.' },
+  hielo: { floorColors: ['#eaf6fc', '#d8eef8', '#c2e2f2'], wallColor: '#eef8fc', wallDark: '#c8e2ee', bg: 'mountain', tip: 'Fuego, Lucha, Roca y Acero rompen el hielo.' },
+  dragon: { floorColors: ['#f0e2c0', '#e6d4aa', '#d4bf8e'], wallColor: '#e8d4b0', wallDark: '#c8ae80', bg: 'league', tip: 'Hielo, Hada y Dragón son la debilidad de los dragones.' }
+};
+export function gymGen(id, name, theme, back, leader, trainers) {
+  const T2 = GYM_ROOMS[theme];
   const b = interior(id, 13, 16, { name, floor: 'k', style: 'gym', ...T2, battleBg: T2.bg });
   exitMat(b, 6, 15, 13, back);
   b.obj({ kind: 'statue', x: 4, y: 13, text: [`${name.toUpperCase()}`, `Líder: ${leader.trainer.name}.`] }).obj({ kind: 'statue', x: 8, y: 13, text: ['Entrenadores que ganaron aquí:', '...todavía no está tu nombre.'] });
   if (theme === 'planta') { b.rect(1, 7, 4, 1, 'B').rect(8, 7, 4, 1, 'B').rect(1, 10, 3, 1, 'B').rect(9, 10, 3, 1, 'B').rect(4, 4, 2, 1, 'B').rect(7, 4, 2, 1, 'B'); }
   if (theme === 'roca') { b.rect(1, 6, 4, 1, 'O').rect(8, 6, 4, 1, 'O').rect(2, 9, 3, 2, 'O').rect(8, 10, 3, 1, 'O'); }
   if (theme === 'agua') { b.rect(1, 5, 4, 3, 'w').rect(8, 5, 4, 3, 'w').rect(1, 9, 3, 2, 'w').rect(9, 9, 3, 2, 'w'); }
+  if (theme === 'electrico') for (const [x, y] of [[1, 6], [10, 6], [1, 10], [10, 10]]) b.furniture('machine', x, y, 2, 1, { sy: -24, text: ['Un generador zumba con fuerza. Huele a ozono.'] });
+  if (theme === 'fantasma') for (const [x, y] of [[2, 6], [10, 6], [2, 10], [10, 10], [4, 8], [8, 8]]) b.obj({ kind: 'statue', x, y, text: ['Una estatua cubierta de telarañas. Parece que te mira.'] });
+  if (theme === 'lucha') for (const [x, y] of [[1, 6], [2, 6], [10, 6], [11, 6], [1, 10], [11, 10]]) b.furniture('boxes', x, y, 1, 1, { sy: -2, text: ['Un bulto de café de la hacienda. ¡Pesa una tonelada!'] });
+  if (theme === 'hielo') for (const [x, y] of [[2, 5], [10, 5], [3, 9], [9, 9], [1, 11], [11, 11]]) b.obj({ kind: 'crystal', x, y });
+  if (theme === 'dragon') { b.rect(6, 4, 1, 11, 'r'); for (const [x, y] of [[2, 5], [10, 5], [2, 9], [10, 9]]) b.obj({ kind: 'statue', x, y, text: ['Un dragón de piedra antiguo. Tiene los ojos de oro.'] }); }
   b.npc({ id: id + 'Lider', x: 6, y: 3, dir: 0, ...leader });
   trainers.forEach((t, i) => b.npc({ id: id + 'T' + i, ...t }));
-  b.npc({ id: id + 'Guia', look: 'man', x: 10, y: 13, dir: 2, talk: [`¡Hola, retador! El gimnasio de tipo ${theme.toUpperCase()} es duro.`, theme === 'planta' ? 'Fuego y Volador funcionan muy bien aquí.' : theme === 'roca' ? 'Agua y Planta son tus mejores aliados aquí.' : 'Planta y Eléctrico le hacen mucho daño al Agua.'] });
+  b.npc({ id: id + 'Guia', look: 'man', x: 10, y: 13, dir: 2, talk: [`¡Hola, retador! El gimnasio de tipo ${{ electrico: 'ELÉCTRICO', dragon: 'DRAGÓN' }[theme] || theme.toUpperCase()} es duro.`, T2.tip] });
   return b.build();
 }
 
@@ -92,7 +107,8 @@ function corola() {
   b.rect(14, 2, 2, 24, 'p').rect(3, 17, 26, 2, 'p').rect(10, 10, 22, 2, 'p');
   b.rect(22, 8, 1, 2, 'p').rect(6, 16, 1, 1, 'p').rect(25, 16, 1, 1, 'p').rect(6, 23, 1, 1, 'p').rect(25, 24, 1, 1, 'p').rect(3, 24, 26, 1, 'p');
   b.rect(10, 13, 3, 3, 'F').rect(18, 14, 2, 2, 'F').rect(3, 10, 5, 1, 'F').rect(24, 9, 5, 1, 'F').rect(9, 20, 4, 2, 'F');
-  b.building('big', 18, 3, 8, 5, { roof: '#4a9a4a', sign: 'GIMNASIO', signColor: '#2a6a2a', emblem: '#5cb04c', doorCol: 4 }, 'gym1', 6, 14)
+  b.rect(18, 1, 10, 1, '.');
+  b.gym('planta', 18, 1, 'gym1', 6, 14, { roof: '#4a9a4a', signColor: '#2a6a2a', emblem: '#5cb04c' })
     .building('house', 3, 12, 6, 4, { roof: '#e05050', wall: '#fff6f0', sign: 'POSADA', signColor: '#d83a4a', doorCol: 3, flowers: false }, 'posadaCorola', 6, 7)
     .building('house', 23, 12, 5, 4, { roof: '#3a6ad8', wall: '#f0f6ff', sign: 'TIENDA', signColor: '#2a5ac8', doorCol: 2, flowers: false }, 'tiendaCorola', 5, 6)
     .building('house', 3, 20, 6, 3, { roof: '#c87ab8', doorCol: 3 }, 'casaCorola1', 4, 5)
@@ -100,7 +116,7 @@ function corola() {
   b.obj({ kind: 'fountain', x: 16, y: 20, w: 2, h: 2 });
   b.obj({ kind: 'bench', x: 19, y: 22, w: 2, h: 1 }).obj({ kind: 'lamp', x: 13, y: 21 }).obj({ kind: 'lamp', x: 17, y: 9 });
   b.obj({ kind: 'sign', x: 16, y: 24, text: ['CIUDAD COROLA', 'La ciudad que florece todo el año.'] });
-  b.obj({ kind: 'sign', x: 17, y: 2, text: ['RUTA 5 → LIGA ALBORADA', 'Sólo para entrenadores con 3 medallas.'] });
+  b.obj({ kind: 'sign', x: 17, y: 2, text: ['RUTA 5 → LIGA ALBORADA', 'Sólo para entrenadores con las 8 medallas.'] });
   b.obj({ kind: 'sign', x: 28, y: 9, text: ['RUTA 3 → CUEVA ECO', 'Pueblo Cobre al otro lado de la montaña.'] });
   b.npc({ id: 'corolaVieja', look: 'old', x: 9, y: 18, dir: 0, wander: 2, talk: ['Hiedra, la líder del gimnasio, cuida cada flor de esta ciudad.', 'Si quieres ganarle, lleva criaturas de Fuego o Volador.'] });
   b.npc({ id: 'corolaNino', look: 'kid', x: 22, y: 18, dir: 2, wander: 2, talk: ['¿Viste a esos tipos de capucha morada?', 'Dicen que son del Equipo Eclipse y que buscan algo en los lagos.'] });
@@ -110,7 +126,7 @@ function corola() {
   b.npc({ id: 'gruntB', look: 'grunt', x: 23, y: 9, dir: 1, when: st => S(st) === 5 && !st.flags.eclipseCorola });
   b.trigger({ x: 2, y: 25, w: 28, h: 1, when: st => S(st) === 5 && !st.flags.eclipseCorola, script: 'eclipseCorola' });
   b.trigger({ x: 30, y: 10, w: 1, h: 2, when: st => !has(st, 'hoja'), script: 'bloqueoCorola' });
-  b.trigger({ x: 14, y: 1, w: 2, h: 1, when: st => S(st) < 11, script: 'bloqueoLiga' });
+  b.trigger({ x: 14, y: 1, w: 2, h: 1, when: st => st.dir === 1 && !leagueOpen(st), script: 'bloqueoLiga' });
   return b.build();
 }
 
@@ -160,7 +176,8 @@ function cobre() {
   b.warp(1, 12, 'cueva', 26, 8, { face: 2, needDir: 2 });
   b.rect(12, 22, 2, 2, 'p');
   b.rect(2, 12, 22, 2, 'p').rect(12, 8, 2, 14, 'p').rect(6, 17, 1, 1, 'p').rect(20, 17, 1, 1, 'p').rect(3, 18, 20, 1, 'p').rect(20, 7, 1, 5, 'p');
-  b.building('big', 9, 3, 8, 5, { roof: '#9a7a4a', sign: 'GIMNASIO', signColor: '#6a4a2a', emblem: '#b8a058', doorCol: 4 }, 'gym2', 6, 14)
+  b.rect(8, 1, 10, 1, '.');
+  b.gym('roca', 8, 1, 'gym2', 6, 14, { roof: '#9a7a4a', signColor: '#6a4a2a', emblem: '#b8a058' })
     .building('house', 3, 14, 6, 3, { roof: '#e05050', wall: '#fff6f0', sign: 'POSADA', signColor: '#d83a4a', doorCol: 3, flowers: false }, 'posadaCobre', 6, 7)
     .building('house', 18, 14, 5, 3, { roof: '#3a6ad8', wall: '#f0f6ff', sign: 'TIENDA', signColor: '#2a5ac8', doorCol: 2, flowers: false }, 'tiendaCobre', 5, 6)
     .building('house', 18, 4, 5, 3, { roof: '#7a6a5a', doorCol: 2 }, 'casaCobre', 4, 5);
@@ -180,6 +197,7 @@ function ruta4() {
   b.border('T', 2);
   b.rect(14, 0, 2, 2, 'p').rect(14, 28, 2, 2, 'p');
   b.rect(20, 2, 10, 28, 's').rect(24, 2, 6, 28, 'w').rect(28, 0, 2, 30, 'w');
+  b.rect(20, 28, 4, 2, 'T');                // la playa termina en árboles, como el borde de Ciudad Marea
   b.rect(14, 2, 2, 8, 'p').rect(6, 8, 10, 2, 'p').rect(6, 8, 2, 12, 'p').rect(6, 18, 10, 2, 'p').rect(14, 18, 2, 10, 'p');
   b.rect(2, 3, 4, 4, 'g').rect(9, 11, 5, 6, 'g').rect(16, 22, 4, 5, 'g').rect(3, 22, 8, 5, 'g');
   for (const [x, y] of [[21, 5], [22, 11], [21, 17], [22, 23]]) b.set(x, y, 'J');
@@ -199,7 +217,8 @@ function marea() {
   b.rect(16, 0, 2, 2, 'p');
   b.rect(0, 20, 34, 6, 'w').rect(2, 18, 30, 2, 's').rect(12, 20, 3, 4, 's');
   b.rect(16, 2, 2, 16, 'p').rect(3, 10, 28, 2, 'p').rect(8, 9, 1, 1, 'p').rect(22, 8, 1, 2, 'p').rect(28, 8, 1, 2, 'p').rect(26, 17, 1, 1, 'p').rect(6, 17, 1, 1, 'p').rect(3, 17, 28, 1, 'p');
-  b.building('big', 4, 4, 8, 5, { roof: '#3a7ad8', sign: 'GIMNASIO', signColor: '#2a5aa8', emblem: '#3e98dc', doorCol: 4 }, 'gym3', 6, 14)
+  b.rect(31, 10, 3, 2, 'p');                // salida este: Ruta 6 hacia Ciudad Voltio
+  b.gym('agua', 4, 2, 'gym3', 6, 14, { roof: '#3a7ad8', signColor: '#2a5aa8', emblem: '#3e98dc' })
     .building('house', 19, 4, 6, 4, { roof: '#e05050', wall: '#fff6f0', sign: 'POSADA', signColor: '#d83a4a', doorCol: 3, flowers: false }, 'posadaMarea', 6, 7)
     .building('house', 26, 4, 5, 4, { roof: '#3a6ad8', wall: '#f0f6ff', sign: 'TIENDA', signColor: '#2a5ac8', doorCol: 2, flowers: false }, 'tiendaMarea', 5, 6)
     .building('big', 22, 12, 8, 5, { roof: '#4a3a5a', wall: '#d8d0c8', trim: '#2a2232', sign: 'BODEGA', signColor: '#3a2c4a', doorCol: 4, door: '#5a4a6a', flowers: false }, 'bodega', 8, 11)
@@ -210,6 +229,9 @@ function marea() {
   b.obj({ kind: 'sign', x: 18, y: 15, text: ['CIUDAD MAREA', 'El puerto donde el mar canta de noche.'] });
   b.npc({ id: 'mareaMarino', look: 'sailor', x: 13, y: 21, dir: 0, talk: ['¿Ves esa bodega de techo morado?', 'Desde que llegó esa gente de capucha, nadie entra ni sale de día.'] });
   b.npc({ id: 'mareaChica', look: 'girl', x: 20, y: 12, dir: 2, wander: 2, talk: ['La líder Coral siempre dice: "el agua apaga el fuego y gasta la roca".'] });
+  b.obj({ kind: 'sign', x: 31, y: 9, text: ['RUTA 6 → CIUDAD VOLTIO', 'Los otros cinco gimnasios de Alborada están al este.'] });
+  b.npc({ id: 'guardiaMareaEste', look: 'guard', x: 31, y: 12, dir: 1, talk: 'guardiaMareaEste' });
+  b.trigger({ x: 33, y: 10, w: 1, h: 2, when: st => st.dir === 3 && S(st) < 11, script: 'bloqueoMareaEste' });
   b.npc({ id: 'gruntPuerta', look: 'grunt', x: 26, y: 17, dir: 0, when: st => !has(st, 'marea'), talk: ['¡Fuera de aquí! Esta bodega es propiedad privada.', '...¿Qué? ¿Medallas? Bah, sin la de Marea ni me molestes.'] });
   return b.build();
 }
@@ -234,12 +256,13 @@ function ruta5() {
   b.rect(2, 1, 12, 27, '.');
   b.rect(6, 28, 2, 2, 'p');
   b.rect(6, 8, 2, 20, 'p').rect(6, 18, 6, 2, 'p').rect(10, 12, 2, 7, 'p').rect(6, 12, 6, 2, 'p');
+  b.rect(12, 18, 4, 2, 'p');                // salida este: Ruta 11 hacia Ciudad Albor
   b.rect(2, 20, 4, 5, 'g').rect(8, 22, 5, 4, 'g').rect(2, 10, 3, 6, 'g').rect(12, 8, 2, 4, 'g');
   b.building('big', 2, 2, 12, 5, { roof: '#c83a4a', wall: '#f8f0e0', trim: '#8a6a20', sign: 'LIGA ALBORADA', signColor: '#8a2a3a', emblem: '#f0c040', doorCol: 5 }, 'liga', 7, 14);
   b.obj({ kind: 'statue', x: 4, y: 8 }).obj({ kind: 'statue', x: 9, y: 8 });
-  b.npc({ id: 'r5as', look: 'aide', x: 3, y: 18, dir: 3, sight: 3, trainer: T('As Daniel', 'aide', [['voltaz', 26], ['seton', 26]], 900, ['Si llegaste aquí, eres bueno. Veamos qué tan bueno.'], ['Sí... eres muy bueno.'], ['La Campeona Aurora nunca ha perdido.']) });
-  b.npc({ id: 'r5as2', look: 'lass', x: 12, y: 15, dir: 2, sight: 3, trainer: T('As Marina', 'lass', [['meduson', 27], ['pipiolo', 27]], 920, ['¡Último filtro antes de la Liga!'], ['¡Pasa, pasa! Te lo ganaste.'], ['Suerte allá adentro.']) });
-  b.npc({ id: 'r5as3', look: 'hiker', x: 8, y: 10, dir: 2, sight: 2, trainer: T('As Bruno', 'hiker', [['penon', 28], ['sombrador', 27]], 950, ['¡Las puertas de la Liga no se abren solas!'], ['Ahí están. Abiertas.'], ['Demuéstrales quién manda.']) });
+  b.npc({ id: 'r5as', look: 'aide', x: 3, y: 18, dir: 3, sight: 3, trainer: T('As Daniel', 'aide', [['voltaz', 46], ['seton', 46]], 1800, ['Si llegaste aquí, eres bueno. Veamos qué tan bueno.'], ['Sí... eres muy bueno.'], ['La Campeona Aurora nunca ha perdido.']) });
+  b.npc({ id: 'r5as2', look: 'lass', x: 12, y: 15, dir: 2, sight: 3, trainer: T('As Marina', 'lass', [['meduson', 47], ['pipiolo', 47]], 1840, ['¡Último filtro antes de la Liga!'], ['¡Pasa, pasa! Te lo ganaste.'], ['Suerte allá adentro.']) });
+  b.npc({ id: 'r5as3', look: 'hiker', x: 8, y: 10, dir: 2, sight: 2, trainer: T('As Bruno', 'hiker', [['penon', 48], ['sombrador', 47]], 1900, ['¡Las puertas de la Liga no se abren solas!'], ['Ahí están. Abiertas.'], ['Demuéstrales quién manda.']) });
   b.obj({ kind: 'shimmer', x: 12, y: 20, solid: true, legend: 'glaciel', when: st => S(st) >= 12 && !st.flags.glaciel, script: 'leyenda' });
   return b.build();
 }

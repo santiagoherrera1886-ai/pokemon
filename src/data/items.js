@@ -116,10 +116,15 @@ export const SPECIAL = {
   arenal: { name: 'Rincón del Explorador', items: ['miel', 'pocimaFuerza', 'pocimaViento', 'guayaba', 'cintaFuerza'] },
   corola: { name: 'Vivero de Corola', items: ['semillaVital', 'semillaFuerza', 'semillaCoraza', 'semillaViento', 'miel', 'broteVivo', 'arepaReserva'] },
   cobre: { name: 'Taller de Cápsulas', items: ['capsulaVeloz', 'capsulaOcaso', 'capsulaReloj', 'capsulaMalla', 'bobinaDeCobre', 'panueloVeloz', 'chalecoAcolchado'] },
-  marea: { name: 'Botica del Puerto', items: ['pocimaFuerza', 'pocimaCoraza', 'pocimaViento', 'pocimaCertera', 'dulce', 'perlaDeRio', 'escarchaEterna', 'brasaEterna'] }
+  marea: { name: 'Botica del Puerto', items: ['pocimaFuerza', 'pocimaCoraza', 'pocimaViento', 'pocimaCertera', 'dulce', 'perlaDeRio', 'escarchaEterna', 'brasaEterna'] },
+  voltio: { name: 'Taller del Viento', items: ['bobinaDeCobre', 'panueloVeloz', 'capsulaVeloz', 'pocimaViento', 'repelenteTotal', 'rocio'] },
+  niebla: { name: 'Velería de la Bruma', items: ['velaDeNiebla', 'capsulaOcaso', 'cristalMental', 'remedioCasero', 'despertar', 'miel'] },
+  cafetal: { name: 'Tienda de la Hacienda', items: ['tinto', 'arepaReserva', 'vendaDeCampeon', 'cintaFuerza', 'pocimaFuerza', 'dulce', 'guayaba'] },
+  escarcha: { name: 'Refugio del Nevado', items: ['escarchaEterna', 'panelaCaliente', 'chalecoAcolchado', 'pocimaCoraza', 'tonicoMax', 'capsulaMalla'] },
+  albor: { name: 'Bazar del Templo', items: ['escamaAntigua', 'semillaVital', 'semillaFuerza', 'semillaCoraza', 'semillaViento', 'rocioPuro', 'dulce', 'capsulaReloj'] }
 };
 export const VENDING = ['aguaPanela', 'jugoLulo', 'avena'];
-export const TOWN_NAMES = { arenal: 'Villa Arenal', corola: 'Ciudad Corola', cobre: 'Pueblo Cobre', marea: 'Ciudad Marea' };
+export const TOWN_NAMES = { arenal: 'Villa Arenal', corola: 'Ciudad Corola', cobre: 'Pueblo Cobre', marea: 'Ciudad Marea', voltio: 'Ciudad Voltio', niebla: 'Pueblo Niebla', cafetal: 'Villa Cafetal', escarcha: 'Ciudad Escarcha', albor: 'Ciudad Albor' };
 
 export function generalStock(st) {
   const n = (st.badges || []).length;

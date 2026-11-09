@@ -14,9 +14,9 @@ export class GameMap {
       if (t === 'T') this.objects.push({ kind: 'tree', x, y, solid: true, variant: (x * 3 + y) % 3 });
       if (t === 'f') this.objects.push({ kind: 'fence', x, y, solid: true });
       if (t === 'B') this.objects.push({ kind: 'bush', x, y, solid: true });
-      if (t === 'Y') this.objects.push({ kind: 'pine', x, y, solid: true });
+      if (t === 'Y') this.objects.push({ kind: 'pine', x, y, solid: true, snow: !!this.snow });
       if (t === 'J') this.objects.push({ kind: 'palm', x, y, solid: true });
-      if (t === 'O') this.objects.push({ kind: 'boulder', x, y, solid: true });
+      if (t === 'O') this.objects.push({ kind: 'boulder', x, y, solid: true, snow: !!this.snow });
     }
     for (const o of this.objects) {
       o.w = o.w || 1; o.h = o.h || 1;
@@ -33,7 +33,7 @@ export class GameMap {
     const t = this.at(x, y);
     if (t === undefined || SOLID.has(t)) return true;
     const o = this.objectAt(x, y, st);
-    if (o && o.solid && !(o.door && o.door[0] === x && o.door[1] === y)) return true;
+    if (o && o.solid && !(o.door && o.door[0] === x && o.door[1] === y) && !(o.doors && o.doors.some(d => d[0] === x && d[1] === y))) return true;
     return false;
   }
   warpAt(x, y) { return this.warps.find(w => w.x === x && w.y === y); }
@@ -78,6 +78,7 @@ export class GameMap {
         case 'house': out.push({ light: [X + o.w * 8, Y + o.h * TS - 10, 26 + o.w * 4], base: 9e9 }); push(house(o.w, o.h, o.opt), X - 1, Y - TS, Y + o.h * TS); rs(X + 3, Y + o.h * TS - 3, o.w * TS, 5); rs(X + o.w * TS, Y + 4, 4, o.h * TS - 2); break;
         case 'lab': push(lab(o.w, o.h), X - 1, Y - TS, Y + o.h * TS); rs(X + 3, Y + o.h * TS - 3, o.w * TS, 5); rs(X + o.w * TS, Y + 4, 4, o.h * TS - 2); break;
         case 'big': push(bigBuilding(o.w, o.h, o.opt), X - 1, Y - TS, Y + o.h * TS); rs(X + 3, Y + o.h * TS - 3, o.w * TS, 5); rs(X + o.w * TS, Y + 4, 4, o.h * TS - 2); break;
+        case 'gym': push(bigBuilding(o.w, o.h, o.opt), X - 1, Y - TS, Y + o.h * TS); rs(X + 3, Y + o.h * TS - 3, o.w * TS, 5); rs(X + o.w * TS, Y + 4, 4, o.h * TS - 2); break;
         case 'furniture': push(furniture(o.name, o.arg), X + (o.sx || 0), Y + (o.sy || 0), Y + o.h * TS); break;
         case 'deco': out.push({ img: furniture(o.name), x: o.px, y: o.py, base: -1000 }); break;
       }

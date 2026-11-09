@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {hash} from '../core/pixel.js';
 import {furniture,wallDecoration,building,smallProp} from './models.js';
+import {gymBuilding} from './gyms.js';
 import {toonMaterial} from './stylize.js';
 
 const dummy=new T.Object3D();
@@ -67,7 +68,7 @@ export class Environment {
     for(let z=0;z<map.h;z++)for(let x=0;x<map.w;x++){
       const code=map.at(x,z);if(code===' '||code==='W')continue;
       const C=getChunk(x,z),n=hash(x,z),ground=map.outdoor?'grass':map.dark?'cave':map.floor==='k'?'tile':'wood';
-      let key=ground,height=-.035,color=ground==='grass'?new T.Color('#9dbd74').multiplyScalar(.96+n*.07):null;
+      let key=ground,height=-.035,color=ground==='grass'?new T.Color(map.snow?'#eaf1f6':'#9dbd74').multiplyScalar(map.snow?.97+n*.04:.96+n*.07):null;
       if(ground==='tile'&&map.floorColors)color=map.floorColors[(x+z)%map.floorColors.length];
       if(code==='p'||code==='s'){key='path';color=code==='s'?'#eddbac':'#dfcda3';height=-.005;}
       if(map.paved&&code==='p'){
@@ -82,12 +83,12 @@ export class Environment {
           if(hash(x,z,61)>.55)tile(x,z,'inlay',{p:[x+.5,.062,z+.5],s:[.42,.006,.42]});}
       }
       if(code==='w'){key='water';height=-.045;}
-      if(code==='g'){color='#79a761';}
+      if(code==='g'){color=map.snow?'#cfdee8':'#79a761';}
       if(code==='c'){key='cave';color=new T.Color('#9d9b8e').multiplyScalar(.78+n*.2);}
       if(code==='K'||code==='R'){
         key=map.dark?'cave':'grass';
-        r.box(staticProps,code==='K'?'#9e9c86':'#777d7a',x+.5,.55,z+.5,.99,1.12,.99,true);
-        r.box(staticProps,code==='K'?'#b2b09b':'#949990',x+.5,1.13,z+.5,.95,.11,.95,true);
+        r.box(staticProps,code==='K'?(map.snow?'#a9b3bd':'#9e9c86'):'#777d7a',x+.5,.55,z+.5,.99,1.12,.99,true);
+        r.box(staticProps,code==='K'?(map.snow?'#f2f6f9':'#b2b09b'):'#949990',x+.5,1.13,z+.5,.95,.11,.95,true);
       }
       tile(x,z,key,{p:[x+.5,height,z+.5],s:[1,.08,1],c:color});
       if(ground==='tile'){
@@ -122,6 +123,7 @@ export class Environment {
       if(o.kind==='deco')model=wallDecoration(r,o);
       else if(o.kind==='furniture'){model=furniture(r,o);model.position.set(o.x+o.w/2,0,o.y+o.h/2);}
       else if(o.kind==='house'||o.kind==='lab'||o.kind==='big'){model=building(r,o);model.position.set(o.x,0,o.y);}
+      else if(o.kind==='gym'){model=gymBuilding(r,o.theme);model.position.set(o.x,0,o.y);}
       else {model=smallProp(r,o);model.position.set(o.x+o.w/2,0,o.y+o.h/2);}
       if(o.when){r.batch(model);root.add(model);dynamic.push({model,when:o.when});model.visible=!!o.when(state);}
       else staticProps.add(model);
@@ -146,7 +148,7 @@ export class Environment {
     for(const C of chunks.values()){
       const chunk=new T.Group();root.add(chunk);
       for(const [key,items] of Object.entries(C.tiles))instances(chunk,r.geometries.box,mats[key],items,false);
-      instances(chunk,this.blade,this.windMat('#759952'),C.grass,false);
+      instances(chunk,this.blade,this.windMat(map.snow?'#c4d4df':'#759952'),C.grass,false);
       instances(chunk,r.geometries.ball,r.mat('#ffffff'),C.flowers,false);
       instances(chunk,r.geometries.leaf,r.mat('#b6b49c'),C.pebbles,false);
       if(C.trees.length){
@@ -155,8 +157,9 @@ export class Environment {
         for(const o of C.trees){
           const h=1.65+hash(o.x,o.y)*.3,x=o.x+.5,z=o.y+.5;
           trunks.push({p:[x,.6,z],s:[.12,1.2,.12]});
-          for(let k=0;k<3;k++)leaves.push({p:[x+(k===1?-.2:k===2?.2:0),h+(k===0?.35:0),z+(k===0?-.1:.05)],s:[k===0?.5:.57,k===0?.63:.52,.56],c:['#56885c','#679b62','#78a96c'][o.variant||0]});
-          simple.push({p:[x,h,z],s:[.74,1.1,.73],c:['#56885c','#679b62','#78a96c'][o.variant||0]});
+          const tint=map.snow?['#d6e4ea','#e6eff3','#f2f7f9']:['#56885c','#679b62','#78a96c'];
+          for(let k=0;k<3;k++)leaves.push({p:[x+(k===1?-.2:k===2?.2:0),h+(k===0?.35:0),z+(k===0?-.1:.05)],s:[k===0?.5:.57,k===0?.63:.52,.56],c:tint[o.variant||0]});
+          simple.push({p:[x,h,z],s:[.74,1.1,.73],c:tint[o.variant||0]});
         }
         instances(chunk,r.geometries.cylinder,r.mat('#847351'),trunks,true);
         instances(near,r.geometries.leaf,this.windMat('#ffffff'),leaves,true);

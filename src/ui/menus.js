@@ -4,6 +4,8 @@ import { ui, esc, money, statusChip } from './ui.js';
 import { iconURL } from '../art/creatures.js';
 import { itemIcon } from '../art/items.js';
 import { SPECIES, MOVES, TYPES, STARTERS, expForLevel, ENCOUNTERS } from '../data/creatures.js';
+import { GYMS, nextGym, badgeCount, LEAGUE_BADGES } from '../data/gyms.js';
+import { regionMapHTML, drawRegionMap } from './regionmap.js';
 import { isHeld, giveHeld, takeHeld } from '../data/held.js';
 import { CHEATS, tryCode, spend, cheatOn } from '../data/cheats.js';
 import { ITEMS, POCKETS, POCKET_ORDER, SPECIAL, VENDING, STAT_NAMES, SEED_MAX, generalStock, lockedStock, shortDesc, sellPrice, pocketItems, canUseOn, useOnCreature, isCapsule } from '../data/items.js';
@@ -25,8 +27,15 @@ const SVG = {
   options: '<svg viewBox="0 0 24 24"><path d="M12 2.5l2 2.6 3.2-.6.6 3.2 2.6 2-1.6 2.8 1.6 2.8-2.6 2-.6 3.2-3.2-.6-2 2.6-2-2.6-3.2.6-.6-3.2-2.6-2 1.6-2.8L3.6 9.7l2.6-2 .6-3.2 3.2.6z" fill="#7a7f98"/><circle cx="12" cy="12" r="3.4" fill="#eef0f6"/></svg>'
 };
 // Dónde vive cada especie (encuentros de las rutas, de día o de noche) y las leyendas.
-const PLACE = { sendero1: 'Sendero 1', lago: 'Lago Espejo', ruta2: 'Ruta 2', ruta3: 'Ruta 3', cueva: 'Cueva Eco', ruta4: 'Ruta 4', ruta5: 'Ruta 5' };
+const PLACE = { sendero1: 'Sendero 1', lago: 'Lago Espejo', ruta2: 'Ruta 2', ruta3: 'Ruta 3', cueva: 'Cueva Eco', ruta4: 'Ruta 4', ruta5: 'Ruta 5', ruta6: 'Ruta 6', ruta7: 'Ruta 7', ruta8: 'Ruta 8', ruta9: 'Ruta 9', ruta10: 'Ruta 10', ruta11: 'Ruta 11' };
 const LEGEND_PLACE = { espejalba: 'Lago Espejo (historia)', brumalia: 'Ruta 2 de noche, después de la Liga', fraguon: 'Cueva Eco, después de la Liga', glaciel: 'Ruta 5, después de la Liga', dracalba: 'Lago Espejo, con las tres leyendas atrapadas' };
+// Objetivo después del Lago Espejo: el siguiente de los ocho gimnasios, o la Liga cuando ya están todas.
+function goalAfterLake(st) {
+  const g = nextGym(st), n = badgeCount(st);
+  if (!g) return 'Tienes las ocho medallas: baja por la Ruta 11 (o sube por la Ruta 5, al norte de Corola) hasta la Liga Alborada';
+  const way = { chispa: 'sal de Ciudad Marea por la Ruta 6, al este', sombra: 'sube por la Ruta 7 hasta Pueblo Niebla', puno: 'sube por los cafetales de la Ruta 8', escarcha: 'cruza el paso nevado de la Ruta 9, al oeste de Cafetal', escama: 'baja por el camino antiguo de la Ruta 10' }[g.badge];
+  return `Medalla ${n + 1} de ${LEAGUE_BADGES}: ${way ? way + ' y gana' : 'gana'} la Medalla ${g.name} en ${g.city}`;
+}
 function habitat(sp) {
   if (LEGEND_PLACE[sp]) return LEGEND_PLACE[sp];
   const out = [];
@@ -68,14 +77,13 @@ export class Menus {
     const st = this.st, map = this.game.ow?.map;
     const goals = ['Baja a hablar con mamá', 'Ve a la casa de Nico (techo azul)', 'Ve al Lago Espejo (Sendero 1, al oeste)', 'Vuelve a casa', 'Ve al laboratorio de Villa Arenal',
       'Sigue la Ruta 2 hacia Ciudad Corola', 'Gana la Medalla Hoja en el gimnasio de Corola', 'Cruza la Cueva Eco hasta Pueblo Cobre y gana la Medalla Roca', 'Baja por la Ruta 4 hasta Ciudad Marea y gana la Medalla Marea',
-      'Detén al Equipo Eclipse en su bodega de Ciudad Marea', 'Corre al Lago Espejo: el Equipo Eclipse va por la guardiana', 'Sube por la Ruta 5 (norte de Corola) hasta la Liga Alborada', 'Eres campeón. Busca a las leyendas de la Bruma y completa tu registro'];
-    const BADGES = [['hoja', '#5cb04c'], ['roca', '#b8a058'], ['marea', '#3e98dc']];
+      'Detén al Equipo Eclipse en su bodega de Ciudad Marea', 'Corre al Lago Espejo: el Equipo Eclipse va por la guardiana', goalAfterLake(st), 'Eres campeón. Busca a las leyendas de la Bruma y completa tu registro'];
     const dex = Object.values(st.dex || {}), caught = dex.filter(v => v === 2).length;
     const items = Object.values(st.bag || {}).reduce((a, n) => a + (n > 0 ? n : 0), 0);
     ui.setPanel(`<div class="home">
       <div class="home-top"><img class="home-av" src="${this.avatarThumb(st.avatar, 4)}" alt=""><div class="home-id"><b>${esc(st.name)}</b><small>${esc(map ? map.name : '')} · ${playTimeText(st.playTime)}</small></div><div class="home-money">${money(st.money)}</div></div>
-      <div class="goal"><small>OBJETIVO</small>${esc(goals[Math.min(goals.length - 1, st.story)])}</div>
-      <div class="badges">${BADGES.map(([b, c]) => `<i class="${(st.badges || []).includes(b) ? 'on' : ''}" style="--c:${c}" title="Medalla ${b}"></i>`).join('')}<span>Registro: ${caught} atrapadas · ${dex.length} vistas</span></div>
+      <div class="goal"><button data-act="map" class="goal-map">VER MAPA</button><small>OBJETIVO</small>${esc(goals[Math.min(goals.length - 1, st.story)])}</div>
+      <div class="badges">${GYMS.map(g => `<i class="${(st.badges || []).includes(g.badge) ? 'on' : ''}" style="--c:${g.color}" title="Medalla ${esc(g.name)}"></i>`).join('')}<span>Registro: ${caught} atrapadas · ${dex.length} vistas</span></div>
       <div class="home-grid">
         <button data-act="party" class="hb hb-party">${SVG.party}<b>EQUIPO</b><small>${st.party.length}/6</small></button>
         <button data-act="bag" class="hb hb-bag">${SVG.bag}<b>MOCHILA</b><small>${items} objetos</small></button>
@@ -85,10 +93,17 @@ export class Menus {
         <button data-act="options" class="hb hb-opt">${SVG.options}<b>OPCIONES</b><small>Gráficos y más</small></button>
       </div>
       <button class="bt-back" data-back>CERRAR</button></div>`,
-    { modal: true, cls: 'home-panel', onAct: a => this.open(a), onBack: () => ui.closePanel() });
+    { modal: true, cls: 'home-panel', focus: 1, onAct: a => this.open(a), onBack: () => ui.closePanel() });   // el cursor arranca en EQUIPO
   }
   open(what) {
-    ({ party: () => this.party(), bag: () => this.bag(), dex: () => this.dex(), card: () => this.card(), save: () => this.save(), options: () => this.options() })[what]();
+    ({ party: () => this.party(), bag: () => this.bag(), dex: () => this.dex(), card: () => this.card(), save: () => this.save(), options: () => this.options(), map: () => this.regionMap() })[what]();
+  }
+
+  // ---------- Mapa de la región ----------
+  regionMap() {
+    const world = this.game.world;
+    ui.setPanel(`${regionMapHTML(world, this.st)}<button class="bt-back" data-back>VOLVER</button>`, { modal: true, cls: 'list-panel wide-panel map-panel', onBack: () => this.home(true) });
+    drawRegionMap(document.getElementById('rmCanvas'), world, this.st);
   }
 
   // ---------- Equipo ----------
@@ -157,7 +172,6 @@ export class Menus {
   // ---------- Tarjeta de entrenador ----------
   card() {
     const st = this.st, dex = Object.values(st.dex || {});
-    const BADGES = [['hoja', 'Hoja', '#5cb04c'], ['roca', 'Roca', '#b8a058'], ['marea', 'Marea', '#3e98dc']];
     const portrait = this.game.graphics?.avatarPortrait?.(avatarLook(st.avatar));
     ui.setPanel(`<div class="tcard">
       <div class="tc-head"><span>TARJETA DE ENTRENADOR</span><span>ALBORADA</span></div>
@@ -166,7 +180,7 @@ export class Menus {
           <span>Dinero <em>${money(st.money)}</em></span><span>Tiempo de juego <em>${playTimeText(st.playTime)}</em></span>
           <span>Registro <em>${dex.filter(v => v === 2).length} atrapadas · ${dex.length} vistas</em></span>
           <span>Equipo <em>${st.party.map(c => esc(c.name)).join(', ') || '—'}</em></span></div></div>
-      <div class="tc-badges">${BADGES.map(([b, n, c]) => `<div class="${(st.badges || []).includes(b) ? 'on' : ''}" style="--c:${c}"><i></i><small>${n}</small></div>`).join('')}${st.story >= 12 ? '<div class="on champ" style="--c:#f0c040"><i></i><small>Campeón</small></div>' : ''}</div>
+      <div class="tc-badges">${GYMS.map(g => `<div class="${(st.badges || []).includes(g.badge) ? 'on' : ''}" style="--c:${g.color}"><i></i><small>${esc(g.name)}</small></div>`).join('')}${st.story >= 12 ? '<div class="on champ" style="--c:#f0c040"><i></i><small>Campeón</small></div>' : ''}</div>
       </div><button class="bt-back" data-back>VOLVER</button>`,
     { modal: true, cls: 'list-panel wide-panel', onBack: () => this.home(true) });
   }

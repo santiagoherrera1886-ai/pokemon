@@ -2,6 +2,7 @@
 // Los mapas exteriores comparten un plano global (origin) para que se conecten sin cortes.
 import { MapBuilder } from './builder.js';
 import { buildStoryMaps } from './maps2.js';
+import { buildRegionMaps } from './maps3.js';
 
 const S = st => st.story;
 
@@ -138,7 +139,7 @@ function casa1() {
   const b = interior('casa1', 11, 8, { name: 'Tu casa' });
   b.set(9, 2, 'U').set(5, 7, 'm').rect(0, 7, 5, 1, ' ').rect(6, 7, 5, 1, ' ');
   b.warp(9, 2, 'cuarto', 8, 3, { face: 0 });
-  b.warp(5, 7, 'brisal', 5, 8, { face: 0, needDir: 0 });
+  b.warp(5, 7, 'brisal', 6, 8, { face: 0, needDir: 0 });   // sale justo frente a la puerta (6,7)
   b.furniture('kitchen', 0, 2, 2, 1, { sy: -12, text: ['La cocina. Huele a pan recién hecho.'] });
   b.furniture('fridge', 2, 2, 1, 1, { sy: -16, text: ['El refrigerador. Lleno de jugo de mora.'] });
   b.furniture('tv', 6, 2, 1, 1, { sy: -4, text: ['Noticias: "Una profesora regresa a Villa Arenal tras estudiar el Lago Espejo".'] });
@@ -246,6 +247,6 @@ export function buildMaps() {
     vecino('vecino2', 'Casa de los Ocampo', 'man', ['¿Sabías que las criaturas suben de nivel ganando combates?', 'Y al subir aprenden movimientos nuevos.'], ['brisal', 18, 16]),
     vecino('vecino3', 'Casa de la playa', 'girl', ['Mi abuela dice que el mar trae criaturas raras en invierno.'], ['arenal', 6, 20])
   ];
-  list.push(...buildStoryMaps());
+  list.push(...buildStoryMaps(), ...buildRegionMaps());
   return Object.fromEntries(list.map(m => [m.id, m]));
 }

@@ -25,6 +25,14 @@ export class MapBuilder {
     this.warp(x + doorCol, y + h - 1, to, tx, ty, { face: 1, needDir: 1 });
     return this;
   }
+  // Gimnasio de 10 × 7 casillas (el edificio 3D de su tipo) con puerta doble al centro de la fachada:
+  // columnas 4 y 5 de la última fila; las dos llevan al interior. Debajo queda una fila de antejardín.
+  gym(theme, x, y, to, tx, ty, opt = {}) {
+    const doors = [[x + 4, y + 6], [x + 5, y + 6]];
+    this.obj({ kind: 'gym', theme, x, y, w: 10, h: 7, solid: true, doors, opt: { sign: 'GIMNASIO', doorCol: 4, ...opt } });
+    for (const [dx, dy] of doors) this.warp(dx, dy, to, tx, ty, { face: 1, needDir: 1 });
+    return this;
+  }
   furniture(name, x, y, w, h, opt = {}) { this.obj({ kind: 'furniture', name, x, y, w, h, solid: opt.solid !== false, ...opt }); return this; }
   deco(name, px, py) { this.obj({ kind: 'deco', name, px, py }); return this; }
 

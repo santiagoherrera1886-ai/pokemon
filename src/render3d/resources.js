@@ -10,7 +10,12 @@ export class Resources {
       box: new T.BoxGeometry(1,1,1), soft: new RoundedBoxGeometry(1,1,1,2,0.09),
       ball: new T.SphereGeometry(1,20,14), leaf: new T.IcosahedronGeometry(1,1),
       cylinder: new T.CylinderGeometry(1,1,1,12), cone: new T.ConeGeometry(1,1,8),
-      plane: new T.PlaneGeometry(1,1), ring: new T.TorusGeometry(1,.06,6,32)
+      plane: new T.PlaneGeometry(1,1), ring: new T.TorusGeometry(1,.06,6,32),
+      // Formas más finas para edificios grandes (gimnasios): conos y cilindros lisos, cúpulas y cristales.
+      cone24: new T.ConeGeometry(1,1,24), cyl32: new T.CylinderGeometry(1,1,1,32), ballHi: new T.SphereGeometry(1,32,20),
+      dome: new T.SphereGeometry(1,32,12,0,Math.PI*2,0,Math.PI/2), octa: new T.OctahedronGeometry(1,0),
+      vault: new T.CylinderGeometry(1,1,1,28,1,true,0,Math.PI).rotateZ(Math.PI/2),
+      halfDisc: new T.CircleGeometry(1,28,0,Math.PI)
     };
     this.merged = new Set();
   }
