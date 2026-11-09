@@ -267,6 +267,8 @@ async function run() {
     await walkTo(4, 4); await tap('ArrowUp'); await talk(); await choose(0);
     await choose('miel'); await choose('buy');
     for (let i = 0; i < 20 && !(await page.$('#panel .ilist')); i++) { await tap('z', 40); await sleep(120); }
+    await choose('guayaba'); await choose('buy');                        // un equipable
+    for (let i = 0; i < 20 && !(await page.$('#panel .ilist')); i++) { await tap('z', 40); await sleep(120); }
     await page.click('#panel [data-back]'); await choose(1); await settle();
     await walkTo(9, 2); await tap('ArrowRight'); await talk();
     await choose('jugoLulo'); await choose('buy');
@@ -274,8 +276,24 @@ async function run() {
     await shot('maquina');
     await page.click('#panel [data-back]'); await settle();
     s = await st();
-    assert.equal(s.bag.miel, 1); assert.equal(s.bag.jugoLulo, 1); assert.equal(s.money, before.money - 300 - 300 - 300);
+    assert.equal(s.bag.miel, 1); assert.equal(s.bag.jugoLulo, 1); assert.equal(s.bag.guayaba, 1); assert.equal(s.money, before.money - 300 - 300 - 300 - 400);
     log('posada, tienda (comprar, vender, especial y máquina) OK');
+
+    // Menús: equipar la Guayaba, ver el Registro y la Tarjeta de entrenador
+    await tap('Escape'); await sleep(200);
+    await choose('party'); await choose('0'); await shot('ficha');
+    await choose('give'); await choose('guayaba');
+    for (let i = 0; i < 20 && !(await page.$('#panel [data-act="take"]')); i++) { await tap('z', 40); await sleep(120); }
+    assert.equal(await page.evaluate(() => __game.state.party[0].item), 'guayaba', 'la criatura debe llevar la Guayaba');
+    await page.click('#panel [data-back]'); await sleep(150); await page.click('#panel [data-back]'); await sleep(150);
+    await choose('dex');
+    assert.equal(await page.$$eval('#panel .dx', b => b.length), 62, 'el Registro muestra las 62 especies');
+    const seen = await page.$('#panel .dx:not(.unseen)'); await seen.click(); await sleep(250); await shot('registro');
+    assert.ok(await page.$('#panel .sbars'), 'la ficha del Registro trae estadísticas');
+    await page.click('#panel [data-back]'); await sleep(150); await page.click('#panel [data-back]'); await sleep(150);
+    await choose('card'); assert.ok(await page.$('#panel .tcard')); await page.click('#panel [data-back]'); await sleep(150);
+    await page.click('#panel [data-back]'); await settle();
+    log('menús: equipables, Registro y Tarjeta OK');
     await walkTo(5, 7);
 
     // ------------------------------------------------ Ruta 2 y Corola
