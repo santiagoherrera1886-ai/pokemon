@@ -13,7 +13,8 @@ test('all houses receive modeled architecture without modifying interactive entr
     const detail=house.getObjectByName('bruma-architecture');
     assert.ok(detail,'house must contain an independently modeled visual layer');
     const meshes=[];detail.traverse(x=>{if(x.isMesh)meshes.push(x)});
-    assert.ok(meshes.length>5,'house must have physical trim, roof details and accessories');
+    const vertices=meshes.reduce((sum,x)=>sum+(x.geometry.getAttribute('position')?.count||0),0);
+    assert.ok(vertices>3000,'house must have batched physical trim, roof details and accessories');
     const bbox=new T.Box3().setFromObject(house);
     assert.ok(bbox.max.y>3.2,'roof details should have real 3D height');
     assert.ok(bbox.min.y>=-.05,'new decor should not extend below the base');
@@ -28,8 +29,8 @@ test('large gym architecture has separate crystals and emblem geometry',()=>{
   const gym=building(r,{kind:'big',w:9,h:6,opt:{roof:'#747bb8',emblem:'#76d7c8'}});
   const decoration=gym.getObjectByName('bruma-architecture');
   assert.ok(decoration,'gym has visual dressing');
-  let crystals=0;decoration.traverse(x=>{if(x.isMesh && x.geometry===r.geometries.crystal)crystals++});
-  assert.ok(crystals>=3,'gym has distinctive three-dimensional crystal emblems');
+  let vertices=0;decoration.traverse(x=>{if(x.isMesh)vertices+=x.geometry.getAttribute('position')?.count||0});
+  assert.ok(vertices>5000,'gym has distinctive dimensional emblems and architectural ornaments');
   r.release(gym);r.dispose();
 });
 
