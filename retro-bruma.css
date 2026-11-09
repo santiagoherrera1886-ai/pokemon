@@ -377,3 +377,21 @@ body.at-title.premium-active #starter-stages{
  #logo::after{display:none}
 }
 @media(prefers-reduced-motion:reduce){#starter-stages button{transition:none}}
+
+
+/* 3D presentation composition: put menu aside so the true volumetric
+   leaf / flame / water starter families remain visible at full size. */
+@media(min-width:900px){
+ body.at-title.premium-active #panel.title-panel{
+   left:auto!important;right:clamp(22px,3.6vw,75px)!important;
+   transform:none!important;bottom:clamp(15px,4vh,45px)!important;
+   width:min(375px,28vw)!important;
+ }
+ body.at-title.premium-active #panel.title-panel .hint{
+   font-size:.58em;line-height:1.25
+ }
+ body.at-title.premium-active #panel.title-panel button{min-height:42px}
+}
+@media(max-width:899px) and (min-width:601px){
+ body.at-title.premium-active #panel.title-panel{bottom:3vh!important}
+}
