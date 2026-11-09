@@ -108,7 +108,7 @@ export class Stylizer {
     if (!this.target) { const w = this.w, h = this.h; this.w = 0; this.setSize(w, h); }
     const u = this.mat.uniforms;
     u.near.value = camera.near; u.far.value = camera.far;
-    u.focusY.value = opts.focusY ?? .5; u.tilt.value = opts.tilt ?? .4; u.ink.value = opts.ink ?? 0;
+    u.focusY.value = opts.focusY ?? .5; u.tilt.value = (opts.tilt ?? .4) * .48; u.ink.value = opts.ink ?? .26;
     u.night.value = opts.night ?? 0; u.sat.value = opts.sat ?? 1.1; u.bloom.value = opts.bloom ?? .55; u.lift.value = opts.lift ?? .25;
     u.retro.value = opts.retro ?? 1;
     if (opts.grade) u.grade.value.set(...opts.grade);
