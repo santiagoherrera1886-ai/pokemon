@@ -5,8 +5,8 @@ import * as T from 'three';
 
 // Material satinado: color limpio, brillo suave. Acepta las mismas opciones que MeshStandardMaterial.
 export function softMaterial(options = {}) {
-  const { roughness = .62, metalness = 0, ...rest } = options;
-  return new T.MeshStandardMaterial({ roughness, metalness, ...rest });
+  const { roughness = .94, metalness = 0, flatShading = true, ...rest } = options;
+  return new T.MeshStandardMaterial({ roughness, metalness, flatShading, ...rest });
 }
 export const toonMaterial = softMaterial; // nombre anterior, para no romper importaciones
 
