@@ -6,10 +6,10 @@ import { TYPE_FX } from '../data/types.js';
 
 const G = {};
 const geo = (k, make) => G[k] || (G[k] = make());
-const RING = () => geo('ring', () => new T.TorusGeometry(1, .075, 8, 48));
-const CONE = () => geo('cone', () => new T.ConeGeometry(1, 1, 10));
+const RING = () => geo('ring', () => new T.TorusGeometry(1, .075, 5, 20));
+const CONE = () => geo('cone', () => new T.ConeGeometry(1, 1, 6));
 const OCTA = () => geo('octa', () => new T.OctahedronGeometry(1, 0));
-const SPHERE = () => geo('sphere', () => new T.SphereGeometry(1, 14, 10));
+const SPHERE = () => geo('sphere', () => new T.IcosahedronGeometry(1, 0));
 
 // Qué adorno lleva la corona según el tipo principal.
 const CROWN = {
@@ -60,6 +60,20 @@ export function albaOverlay(r, rig, types = ['normal']) {
     w.userData.side = side; w.userData.base = w.rotation.y; wings.push(w);
   }
 
+  // La Forma Alba ahora modifica la silueta tridimensional: seis prismas
+  // visibles que nacen de los hombros y la espalda, no solo un filtro luminoso.
+  const crest=new T.Group();crest.name='alba-retro-spines';g.add(crest);
+  for(let i=0;i<6;i++){
+    const side=i%2===0?-1:1,row=Math.floor(i/2);
+    const shard=new T.Mesh(OCTA(),i%3===0?gold:glow(i%2?c1:c2));
+    const h=(.21+row*.10)*Math.min(1.7,Math.max(.6,H));
+    shard.position.set(side*(W*.22+row*.10),H*(.48+row*.12),zc-(bb.max.z-bb.min.z)*(.15+row*.10));
+    shard.scale.set(.065+row*.025,h,.09+row*.01);
+    shard.rotation.z=side*(.45+row*.12);
+    shard.rotation.y=side*.25;
+    shard.userData.keep=true;
+    crest.add(shard);
+  }
   // Motas que orbitan alrededor del cuerpo.
   const orbit = new T.Group(); orbit.position.set(0, H * .5, zc); g.add(orbit);
   for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2, rr = clamp(W * .75, .5, 1.3); const m = new T.Mesh(SPHERE(), i % 2 ? gold : glow(c1)); m.scale.setScalar(.035 + (i % 3) * .01); m.position.set(Math.cos(a) * rr, Math.sin(a * 2) * H * .25, Math.sin(a) * rr * .8); orbit.add(m); }
