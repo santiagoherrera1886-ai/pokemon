@@ -75,9 +75,39 @@ export class TitleScene {
     r.batch(this.house); R.add(this.house);
     // Protagonista, las tres iniciales y Espejalba
     this.player = character(r, 'player'); R.add(this.player.root);
-    this.starters = ['brotelo', 'charquin', 'brasin'].map(sp => { const c = creature(r, sp); R.add(c.root); return c; });
+    // Nine native 3D models: the three approved families × three stages.
+    // Only the selected stage is instantiated, keeping title startup responsive.
+    this.families = [['brotelo','brotoso','bosqueron'],['brasin','brason','volcarbon'],['charquin','charcomar','mareon']];
+    this.starterStage = 0;
+    this.starters = this.families.map(f => { const c = creature(r, f[0]); R.add(c.root); return c; });
+    this.podiums = this.families.map((_,i) => {
+      const group=new T.Group(),color=['#73ca73','#ee8851','#62c7ee'][i];
+      r.mesh(group,'cylinder','#302647',[0,.12,0],[.82,.22,.82]);
+      r.mesh(group,'cylinder',r.mat(color,{emissive:color,emissiveIntensity:.17,roughness:.8}),[0,.245,0],[.74,.045,.74]);
+      const ring=r.mesh(group,'ring',r.mat('#fee4ad',{emissive:'#d7a86e',emissiveIntensity:.13}),[0,.275,0],[.64,.64,.64]);
+      ring.rotation.x=-Math.PI/2; R.add(group); return group;
+    });
+    this.stageNav = document.getElementById('starter-stages');
+    this.onStageClick = event => {
+      const button=event.target.closest('button[data-stage]');
+      if(button) this.setStarterStage(Number(button.dataset.stage));
+    };
+    this.stageNav?.addEventListener('click',this.onStageClick);
     this.legend = creature(r, 'espejalba'); R.add(this.legend.root); this.legend.root.scale.setScalar(1.5);
     this.layout(16 / 9);
+  }
+  // Interactivity belongs to actual 3D models, not 2D concept portraits.
+  setStarterStage(next) {
+    const stage=Math.max(0,Math.min(2,Math.floor(next)));
+    if(stage===this.starterStage)return;
+    this.starterStage=stage;
+    this.starters.forEach(c=>this.r.release(c.root));
+    this.starters=this.families.map(f=>{const c=creature(this.r,f[stage]);this.root.add(c.root);return c;});
+    this.stageNav?.querySelectorAll('button[data-stage]').forEach(btn=>{
+      btn.setAttribute('aria-pressed',String(Number(btn.dataset.stage)===stage));
+    });
+    const aspect=this.aspect || 16/9;
+    this.aspect=null;this.layout(aspect);
   }
   // Rehace al protagonista con el avatar actual (el editor lo llama en cada cambio).
   setPlayer() {
@@ -92,8 +122,17 @@ export class TitleScene {
     // Vertical: logo arriba, Espejalba y la casa en el medio, iniciales en fila sobre el menú.
     const portrait = aspect < 1;
     this.view = portrait ? { fov: 52, pos: [0, 3.7, 13.5], look: [0, 1.9, 0] } : { fov: 40, pos: [0, 3.0, 10.5], look: [0, 1.55, -1] };
-    const spots = portrait ? [[-1.2, 3.4], [0, 3.8], [1.2, 3.4]] : [[-4.4, 1.6], [-3.2, 2.0], [-2.0, 1.6]];
-    this.starters.forEach((c, i) => { c.root.position.set(spots[i][0], 0, spots[i][1]); c.root.rotation.y = portrait ? (i - 1) * -.2 : .35; });
+    // Central stage under the logo. These are REAL 3D characters on raised
+    // pedestals; the old pixel portraits are hidden only while 3D mode is active.
+    const spots=portrait ? [[-.95,2.7],[0,2.95],[.95,2.7]] : [[-1.85,1.1],[0,.92],[1.85,1.1]];
+    const size=portrait ? [1.05,.71,.49][this.starterStage] : [1.26,1.00,.78][this.starterStage];
+    this.starters.forEach((c,i)=>{
+      c.root.position.set(spots[i][0],.28,spots[i][1]);
+      c.root.scale.setScalar(size);
+      c.root.rotation.y=(i-1)*-.11;
+      this.podiums[i].position.set(spots[i][0],0,spots[i][1]);
+      this.podiums[i].scale.setScalar(portrait?.66:1);
+    });
     this.legend.root.position.set(portrait ? 1.0 : 5.5, 0, portrait ? -4.5 : -5);
     this.legendY = portrait ? 2.0 : 1.0;
     this.house.position.set(portrait ? -4.2 : -7.4, 0, portrait ? -6.2 : -3.4);
@@ -116,5 +155,9 @@ export class TitleScene {
     const L = this.legend; L.model.position.y = this.legendY + Math.sin(t * 1.1) * .14; L.model.rotation.y = -.3 + Math.sin(t * .4) * .15; L.model.rotation.z = Math.sin(t * .9) * .05;
     if (this.player.root.visible) { animatePerson(this.player, this.playerSpot, { dir: 0, moving: null }, t, dt, false); this.player.root.rotation.y = -.45; this.player.head.rotation.x = -.04; }
   }
-  dispose() { this.r.release(this.root); for (const t of [this.background, this.glowMap]) { this.r.textures.delete(t); t.dispose(); } }
+  dispose() {
+    this.stageNav?.removeEventListener('click',this.onStageClick);
+    this.r.release(this.root);
+    for(const t of [this.background,this.glowMap]){this.r.textures.delete(t);t.dispose();}
+  }
 }
