@@ -398,7 +398,7 @@ async function run() {
     log('leyenda de la Bruma (Fraguón) OK');
 
     // ------------------------------------------------ Códigos secretos (con claves de prueba: las reales no van en el repositorio)
-    await page.evaluate(async () => { const m = await import('/src/data/cheats.js'); m.CHEATS.evolve.print = m.codePrint('EVOPRUEBA'); m.CHEATS.money.print = m.codePrint('PLATAPRUEBA'); });
+    await page.evaluate(async () => { const m = await import('/src/data/cheats.js'); m.CHEATS.evolve.print = m.codePrint('EVOPRUEBA'); m.CHEATS.money.print = m.codePrint('PLATAPRUEBA'); m.CHEATS.level.print = m.codePrint('NIVELPRUEBA'); m.CHEATS.legend.print = m.codePrint('LEYENDAPRUEBA'); });
     const tryCode = async code => {
       await page.fill('#ccode', code); await page.click('#panel [data-act="try"]');
       for (let i = 0; i < 80 && await page.evaluate(() => !!__ui.dialog || !document.getElementById('ccode')); i++) { await tap('z', 40); await sleep(150); }
@@ -419,7 +419,23 @@ async function run() {
     await choose('evolve'); await settle();
     s = await st(); assert.equal(s.party[last].sp, 'pipiolo', 'la evolución libre evoluciona sin esperar el nivel');
     await page.evaluate(() => { __game.state.party.pop(); });
-    log('códigos: plata infinita y evolución libre OK');
+    // Subir de nivel (interruptor) y legendarios (regalo): se prueban y después se deja el equipo como estaba.
+    const prevTeam = await page.evaluate(() => ({ party: __game.state.party.length, box: (__game.state.box || []).length, lv: __game.state.party[0].level }));
+    await page.evaluate(() => { __ui.closePanel(); __game.menus.codes(); }); await page.waitForSelector('#ccode');
+    await tryCode('nivel prueba');
+    assert.equal(await page.$$eval('#panel .code-list span', e => e.length), 3, 'subir de nivel queda activo');
+    await tryCode('Leyenda prueba');
+    const owned = await page.evaluate(async () => { const { LEGENDS } = await import('/src/data/cheats.js'); const have = new Set([...__game.state.party, ...(__game.state.box || [])].map(c => c.sp)); return LEGENDS.every(k => have.has(k) && __game.state.dex[k] === 2); });
+    assert.ok(owned, 'el código de legendarios entrega todas las legendarias que faltaban');
+    assert.equal(await page.$$eval('#panel .code-list span', e => e.length), 3, 'el regalo de legendarios no queda prendido');
+    await page.evaluate(() => { __ui.closePanel(); __game.menus.creature(0); });
+    await page.waitForSelector('#panel [data-act="lvl1"]'); await sleep(150);
+    await page.click('#panel [data-act="lvl1"]');
+    for (let i = 0; i < 80 && await page.evaluate(() => !!__ui.dialog || !document.querySelector('#panel [data-act="lvl1"], #panel .sum')); i++) { await tap('z', 40); await sleep(150); }
+    assert.equal(await page.evaluate(() => __game.state.party[0].level), Math.min(100, prevTeam.lv + 1), 'SUBIR 1 NIVEL sube exactamente un nivel');
+    await page.evaluate(([p, b]) => { const s = __game.state; s.party.length = Math.min(s.party.length, p); s.box = (s.box || []).slice(0, b); __ui.closePanel(); }, [prevTeam.party, prevTeam.box]);
+    await settle();
+    log('códigos: plata infinita, evolución libre, subir de nivel y legendarios OK');
 
     // Opción de perspectiva y hora del día
     await tap('Escape'); await page.click('#panel [data-act="options"]'); await page.click('#panel [data-act="persp"]'); await sleep(300);

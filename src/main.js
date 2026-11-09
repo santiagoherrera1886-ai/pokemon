@@ -16,7 +16,7 @@ import { Menus } from './ui/menus.js';
 import { battleSprite, silhouette } from './art/creatures.js';
 import { tree, house } from './art/objects.js';
 import { sheet, setPlayerLook } from './art/characters.js';
-import { ENCOUNTERS, SPECIES, MOVES, makeCreature, refreshStats, encounterList } from './data/creatures.js';
+import { ENCOUNTERS, SPECIES, MOVES, makeCreature, refreshStats, encounterList, expForLevel } from './data/creatures.js';
 import { refillMoney, cheatOn } from './data/cheats.js';
 import { ITEMS, repelled } from './data/items.js';
 
@@ -215,6 +215,18 @@ class Game {
     } finally { this.ow.scripts--; }
   }
 
+  // Código de subir de nivel: sube n niveles (hasta 100), aprende lo de cada nivel y evoluciona si toca.
+  async levelUpBy(c, n) {
+    const ow = this.ow, from = c.level, to = Math.min(100, c.level + n);
+    if (to <= from) return;
+    ow.scripts++;
+    try {
+      c.level = to; c.exp = Math.max(c.exp, expForLevel(to)); refreshStats(c);
+      await ui.say([`¡${c.name} subió al nivel ${to}!`]);
+      for (let lv = from + 1; lv <= to; lv++) await this.learnMoves(c, lv);
+      await this.checkEvolutions();
+    } finally { ow.scripts--; }
+  }
   // Aprende los movimientos de su especie para ese nivel; si ya sabe cuatro, pregunta cuál olvidar.
   async learnMoves(c, level, say = t => ui.say([t])) {
     for (const [lv, mid] of SPECIES[c.sp].learn) {

@@ -111,10 +111,11 @@ export class Menus {
         ${bonus ? `<p class="hint">Semillas: ${bonus}</p>` : ''}
         <div class="moves">${c.moves.map(m => { const M = MOVES[m.id]; return `<span style="--t:${TYPES[M.type].color}"><b>${esc(M.name)}</b><small>${TYPES[M.type].name}${M.power ? ' · ' + M.power : ''} · PP ${m.pp}/${M.pp}</small></span>`; }).join('')}</div>
         ${held}</div></div>
-      <div class="row2">${cheatOn(st, 'evolve') && s.evo ? `<button data-act="evolve" class="evo-bt">EVOLUCIONAR A ${esc(SPECIES[s.evo[0]].name.toUpperCase())}</button>` : ''}${i > 0 ? '<button data-act="lead">PONER PRIMERO</button>' : ''}${gear.length ? `<button data-act="give">${c.item ? 'CAMBIAR OBJETO' : 'DAR OBJETO'}</button>` : ''}${c.item ? '<button data-act="take">QUITAR OBJETO</button>' : ''}<button class="bt-back" data-back>VOLVER</button></div>`,
+      <div class="row2">${cheatOn(st, 'level') && c.level < 100 ? '<button data-act="lvl1" class="evo-bt">SUBIR 1 NIVEL</button><button data-act="lvl10" class="evo-bt">SUBIR 10 NIVELES</button>' : ''}${cheatOn(st, 'evolve') && s.evo ? `<button data-act="evolve" class="evo-bt">EVOLUCIONAR A ${esc(SPECIES[s.evo[0]].name.toUpperCase())}</button>` : ''}${i > 0 ? '<button data-act="lead">PONER PRIMERO</button>' : ''}${gear.length ? `<button data-act="give">${c.item ? 'CAMBIAR OBJETO' : 'DAR OBJETO'}</button>` : ''}${c.item ? '<button data-act="take">QUITAR OBJETO</button>' : ''}<button class="bt-back" data-back>VOLVER</button></div>`,
     { modal: true, cls: 'list-panel wide-panel sum-panel', onAct: async a => {
       if (a === 'lead') { const [x] = st.party.splice(i, 1); st.party.unshift(x); return this.party(); }
       if (a === 'evolve' && s.evo) { ui.closePanel(); await this.game.evolve(c, s.evo[0]); return this.creature(i); }
+      if ((a === 'lvl1' || a === 'lvl10') && cheatOn(st, 'level')) { ui.closePanel(); await this.game.levelUpBy(c, a === 'lvl1' ? 1 : 10); return this.creature(st.party.indexOf(c)); }
       if (a === 'take') { const r = takeHeld(st, c); await ui.say([r.msg]); return this.creature(i); }
       if (a === 'give') return this.pickHeld(i);
     }, onBack: () => this.party() });
