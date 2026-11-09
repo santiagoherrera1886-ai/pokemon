@@ -68,7 +68,7 @@ export class Environment {
     for(let z=0;z<map.h;z++)for(let x=0;x<map.w;x++){
       const code=map.at(x,z);if(code===' '||code==='W')continue;
       const C=getChunk(x,z),n=hash(x,z),ground=map.outdoor?'grass':map.dark?'cave':map.floor==='k'?'tile':'wood';
-      let key=ground,height=-.035,color=ground==='grass'?new T.Color('#9dbd74').multiplyScalar(.96+n*.07):null;
+      let key=ground,height=-.035,color=ground==='grass'?new T.Color('#89b58b').multiplyScalar(.95+n*.09):null;
       if(ground==='tile'&&map.floorColors)color=map.floorColors[(x+z)%map.floorColors.length];
       if(code==='p'||code==='s'){key='path';color=code==='s'?'#eddbac':'#dfcda3';height=-.005;}
       if(map.paved&&code==='p'){
@@ -157,12 +157,30 @@ export class Environment {
         for(const o of C.trees){
           const h=1.65+hash(o.x,o.y)*.3,x=o.x+.5,z=o.y+.5;
           trunks.push({p:[x,.6,z],s:[.12,1.2,.12]});
-          for(let k=0;k<3;k++)leaves.push({p:[x+(k===1?-.2:k===2?.2:0),h+(k===0?.35:0),z+(k===0?-.1:.05)],s:[k===0?.5:.57,k===0?.63:.52,.56],c:['#56885c','#679b62','#78a96c'][o.variant||0]});
-          simple.push({p:[x,h,z],s:[.74,1.1,.73],c:['#56885c','#679b62','#78a96c'][o.variant||0]});
+          // A canopy of five genuine 3D facet-clusters, not an isolated
+          // generic cone. Two foliage palettes evoke the original art sheets.
+          const shades=[
+            ['#416f64','#619a7b','#94c0a0','#c2d1a0','#81b6a1'],
+            ['#4e8370','#70aa84','#b7ce9c','#8bc2a0','#c9b4d4'],
+            ['#4c767b','#65a5a4','#8fc1b4','#a3c7bb','#c7b3d8']
+          ][(o.variant||0)%3];
+          const crowns=[
+            [0,.30,-.10,.57,.63,.52],
+            [-.28,.04,.09,.52,.50,.51],
+            [.28,.01,.08,.53,.50,.53],
+            [-.10,.57,-.03,.46,.49,.48],
+            [.14,.39,.23,.51,.45,.48]
+          ];
+          for(let k=0;k<crowns.length;k++){
+            const [dx,dy,dz,sx,sy,sz]=crowns[k];
+            leaves.push({p:[x+dx,h+dy,z+dz],s:[sx,sy,sz],c:shades[k]});
+          }
+          // Distant trees use a low-poly crown rather than default evergreen cones.
+          simple.push({p:[x,h+.15,z],s:[.82,.92,.80],c:shades[1]});
         }
         instances(chunk,r.geometries.cylinder,r.mat('#847351'),trunks,true);
         instances(near,r.geometries.leaf,this.windMat('#ffffff'),leaves,true);
-        instances(far,r.geometries.cone,r.mat('#ffffff'),simple,false);far.visible=false;
+        instances(far,r.geometries.leaf,r.mat('#ffffff',{flatShading:true}),simple,false);far.visible=false;
         lods.push({near,far,center:C.center});
       }
     }
