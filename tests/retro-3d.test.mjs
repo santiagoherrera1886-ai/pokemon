@@ -6,14 +6,21 @@ import {creatureModel} from '../src/render3d/creatures3d.js';
 import {SPECIES} from '../src/data/creatures.js';
 import {setAlba} from '../src/render3d/alba.js';
 import {person} from '../src/render3d/people.js';
+import { PREMIUM_STARTER_IDS } from '../src/render3d/starter-evolutions.js';
 
 test('Every creature is now a volumetric 3D pixel sculpture, not a 2D billboard',()=>{
  const r=new Resources();
  for(const id of Object.keys(SPECIES)){
   const model=creatureModel(r,id);
   const mesh=model.userData.body;
-  assert.equal(mesh.geometry.userData.retroVoxel,true,id+' should have a 3D voxel body');
-  assert.equal(mesh.geometry.index,null,id+' should use explicit square faces');
+  if(PREMIUM_STARTER_IDS.includes(id)){
+    assert.equal(mesh.geometry.userData.starterSculpt3D,true,id+' needs unique smooth volumetric sculpt');
+    assert.equal(model.userData.starterFamily3D,id,'native starter model must be used in game');
+    assert.equal(model.userData.eyes.length,2,'starter eyes remain animated');
+  }else{
+    assert.equal(mesh.geometry.userData.retroVoxel,true,id+' should have a 3D voxel body');
+    assert.equal(mesh.geometry.index,null,id+' should use exposed square voxel faces');
+  }
   assert.ok(mesh.geometry.getAttribute('position').count>100,id+' should have actual volumetric faces');
   assert.ok(mesh.geometry.getAttribute('normal').count>100,id+' should have 3D normals');
   assert.ok(mesh.geometry.boundingBox.max.x>mesh.geometry.boundingBox.min.x,id+' x volume');
