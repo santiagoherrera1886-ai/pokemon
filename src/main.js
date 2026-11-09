@@ -19,6 +19,7 @@ import { sheet, setPlayerLook } from './art/characters.js';
 import { ENCOUNTERS, SPECIES, MOVES, makeCreature, refreshStats, encounterList, expForLevel } from './data/creatures.js';
 import { refillMoney, cheatOn } from './data/cheats.js';
 import { ITEMS, repelled } from './data/items.js';
+import { GYMS } from './data/gyms.js';
 
 class Game {
   constructor() {
@@ -345,7 +346,8 @@ class Game {
     el.innerHTML = `<div class="roll">
       <h2>ALBORADA · EDICIÓN BRUMA</h2><p>Campeón de la Liga Alborada</p><p><b>${st.name}</b></p>
       <h2>Equipo campeón</h2>${st.party.map(c => `<p>${c.name} · Nv${c.level}</p>`).join('')}
-      <h2>Medallas</h2><p>Hoja · Roca · Marea</p>
+      <h2>Medallas</h2><p>${GYMS.filter(g => (st.badges || []).includes(g.badge)).map(g => g.name).join(' · ') || '—'}</p>
+      <h2>Líderes de gimnasio</h2>${GYMS.map(g => `<p>${g.who[0].toUpperCase() + g.who.slice(1)} · ${g.city}</p>`).join('')}
       <h2>Criaturas registradas</h2><p>${Object.keys(st.dex || {}).length} de ${Object.keys(SPECIES).length}</p>
       <h2>Diseño, programación y pixel art</h2><p>Hecho en el navegador, sin ROM y sin gráficos de terceros.</p>
       <h2>Gracias por jugar</h2><p>La aventura sigue: Pueblo Brisal te espera.</p></div>`;

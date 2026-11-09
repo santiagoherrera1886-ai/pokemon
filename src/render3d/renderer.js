@@ -131,7 +131,9 @@ export class PremiumRenderer {
     const g=this.game,ow=g.ow,m=ow.map;if(!m)return;
     const p=actorPosition(ow.player,m);this.worldRoot.visible=true;this.battleRoot.visible=false;
     const hour=g.hour(),night=m.outdoor&&(hour>=19||hour<5);
-    this.scene.background.set(m.dark?'#1c2228':night?'#2a3550':m.outdoor?'#d8e8dc':'#3a4652');this.scene.fog.color.set(m.dark?'#1c2228':night?'#2a3550':'#e4eee6');this.scene.fog.near=m.outdoor?34:60;this.scene.fog.far=m.outdoor?80:140;this.styleOpts={focusY:.5,tilt:m.outdoor?.4:.12,night:night?.55:0,bloom:night||m.dark?.8:.3,lift:m.dark?.03:.1,grade:night?[1,1,1]:hour>=17&&hour<19?[1.12,.98,.86]:[1.05,1.01,.95],sat:m.dark?1.05:1.12};
+    // Niebla (Ruta 7 y Pueblo Niebla) y frío de nevado (Ruta 9 y Ciudad Escarcha): sólo cambian la bruma y el tono.
+    const mist=m.outdoor&&m.mist,cold=m.outdoor&&!night&&m.snow;
+    this.scene.background.set(m.dark?'#1c2228':night?(mist?'#343a52':'#2a3550'):mist?'#d4d8e2':cold?'#e6eef5':m.outdoor?'#d8e8dc':'#3a4652');this.scene.fog.color.set(m.dark?'#1c2228':night?(mist?'#343a52':'#2a3550'):mist?'#d4d8e2':cold?'#edf3f8':'#e4eee6');this.scene.fog.near=mist?16:m.outdoor?34:60;this.scene.fog.far=mist?54:m.outdoor?80:140;this.styleOpts={focusY:.5,tilt:m.outdoor?.4:.12,night:night?.55:0,bloom:night||m.dark?.8:.3,lift:m.dark?.03:.1,grade:night?[1,1,1]:mist?[1,1,1.05]:cold?[1,1.02,1.08]:hour>=17&&hour<19?[1.12,.98,.86]:[1.05,1.01,.95],sat:m.dark?1.05:mist?.96:1.12};
     const wanted=new Set(visibleMapIds(g.world,m,p,this.settings.radius));
     for(const [id,e]of this.maps)if(!wanted.has(id)){this.r.release(e.root);this.maps.delete(id);}
     for(const id of wanted)if(!this.maps.has(id)){const e=this.environment.build(g.world.get(id),g.state);this.worldRoot.add(e.root);this.maps.set(id,e);}

@@ -83,7 +83,7 @@ function voltio() {
 
 // ---------------------------------------------------------------- RUTA 7 (bosque de niebla: Voltio → Niebla)
 function ruta7() {
-  const b = new MapBuilder('ruta7', 16, 34).meta({ name: 'Ruta 7', outdoor: true, origin: [172, -70], encounters: 'ruta7', battleBg: 'grass' });
+  const b = new MapBuilder('ruta7', 16, 34).meta({ name: 'Ruta 7', outdoor: true, mist: true, origin: [172, -70], encounters: 'ruta7', battleBg: 'grass' });
   draw(b, [
     'TTTTTTppTTTTTTTT', 'TTTTTTppTTTTTTTT',
     'TT....pp.gggggTT', 'TT....pp.gggggTT',
@@ -111,7 +111,7 @@ function ruta7() {
 
 // ---------------------------------------------------------------- PUEBLO NIEBLA (Fantasma)
 function niebla() {
-  const b = new MapBuilder('niebla', 30, 28).meta({ name: 'Pueblo Niebla', outdoor: true, origin: [166, -98], battleBg: 'grass' });
+  const b = new MapBuilder('niebla', 30, 28).meta({ name: 'Pueblo Niebla', outdoor: true, mist: true, origin: [166, -98], battleBg: 'grass' });
   const mid = (a, c) => 'YY' + a + 'pp' + c + 'YY';
   draw(b, [
     rep('Y', 12) + 'pp' + rep('Y', 16), rep('Y', 12) + 'pp' + rep('Y', 16),
