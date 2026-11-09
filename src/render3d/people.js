@@ -4,6 +4,7 @@
 import * as T from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { LOOKS } from '../art/characters.js';
+import { dressCharacter } from './art-direction.js';
 
 // ---------- Geometrías compartidas (se clonan al fusionar, así que no se liberan por personaje) ----------
 const G = {};
@@ -207,6 +208,8 @@ export function person(r, look = 'player') {
     ball(leg, '#f4f1ea', [0, -.29, .03], [.082, .02, .107]);                            // suela
     r.batch(leg); limbs.push(leg);
   }
+  // Individual dimensional costumes on the animated NPC rig.
+  dressCharacter(r,{root,body,head},look,L);
   const shadow = r.shadow(root, 0, 0, .8, .65);
   return { root, body, head, eyes, limbs, shadow, phase: 0, look, headY: .98, blink: 2 + Math.random() * 3 };
 }
