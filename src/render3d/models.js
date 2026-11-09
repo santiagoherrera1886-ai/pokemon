@@ -286,6 +286,77 @@ export function building(r,o) {
     }
   }
   r.batch(finish);
+
+  // New silhouette: the roof must read as an illustrated fantasy town,
+  // not a five-stripe rectangular toy box. These are actual Three.js meshes.
+  const silhouette=new T.Group();silhouette.name='bruma-storybook-silhouette';g.add(silhouette);
+  const form=(shape,color,x,y,z,sx,sy,sz,rotation=[])=>{
+    const p=r.mesh(silhouette,shape,color,[x,y,z],[sx,sy,sz]);
+    if(rotation.length)p.rotation.set(...rotation);return p;
+  };
+  const gableDark=shade(roof,-.30),gableBright=shade(roof,.21);
+  if(!lab){
+    const run=d/2-.12,rise=.95,angle=Math.atan2(rise,run);
+    // Individual roof shingles alternate in short staggered courses. Shingle
+    // tips produce visible relief and shadow at the elevated game camera.
+    for(const side of [-1,1])for(let row=0;row<5;row++){
+      const t=(row+.48)/5;
+      const y=2.16+rise*(1-t)+.105,zz=zc+side*(run*t);
+      const count=Math.max(4,Math.min(14,Math.floor(w/.55)));
+      for(let i=0;i<count;i++){
+        const x=(i+.5+(row%2)*.12)*w/count;
+        const color=(i+row)%5===0?gableBright:(i+row)%3===0?shade(roof,-.12):roof;
+        form('soft',color,x,y,zz,w/count*.86,.035,run*.135,[side*angle,0,0]);
+      }
+    }
+    // Roofline changes in geometry: framed dormers projecting from both
+    // roof slopes. The bright dormer glass has a physical recessed frame.
+    const count=w>6?3:2;
+    for(let i=0;i<count;i++){
+      const x=w*(i+1)/(count+1),z=zc+run*.58;
+      const y=2.16+rise*.42;
+      form('soft',shade(wall,-.02),x,y+.20,z,.71,.53,.47);
+      form('box',gableDark,x,y+.21,z+.252,.51,.36,.06);
+      form('soft','#f6e4ba',x,y+.21,z+.289,.43,.28,.04);
+      form('box','#6db3b9',x,y+.22,z+.314,.32,.19,.018);
+      form('box',WHITE_TRIM,x,y+.22,z+.33,.034,.22,.024);
+      form('soft',gableBright,x,y+.51,z,.88,.095,.64,[.38,0,0]);
+      form('crystal','#f8dd91',x,y+.60,z-.10,.072,.13,.075);
+      // Little flowering vines at the sill are distinct 3D leaves.
+      for(let k=-1;k<=1;k++){
+        form('foliage',k===0?'#6f9a81':'#7db69b',x+k*.135,y+.015,z+.30,.10,.10,.08);
+        form('bloomFlower',k===0?'#f1bad2':'#e8d78f',x+k*.13,y+.11,z+.37,.065,.09,.07);
+      }
+    }
+    // Ridge spires give each building a recognizable skyline.
+    for(const i of [0,1,2]){
+      const x=(i+.5)*w/3;
+      form('crystal',i===1?'#e9bb7a':gableDark,x,3.38,zc,.15,.23,.14);
+      form('soft',gableBright,x,3.16,zc,.22,.075,.20);
+    }
+  }else{
+    // The laboratory is a scientific observatory, not a generic house.
+    for(const side of [-1,1]){
+      const x=side>0?w-.75:.75;
+      form('cylinder','#5f7991',x,2.95,zc-.3,.26,.7,.26);
+      form('crystal','#81e3db',x,3.38,zc-.3,.26,.44,.25);
+      form('ring','#edca8f',x,3.38,zc-.3,.29,.30,.29,[Math.PI/2,0,0]);
+    }
+    form('soft','#e6cc94',w/2,2.75,zc,Math.min(w-1,2.4),.14,.22);
+    for(let i=-2;i<=2;i++)form('crystal',i%2?'#9be4d8':'#f4e0aa',w/2+i*.38,2.92,zc,.12,.21,.12);
+  }
+  if(big){
+    // Gym/league architecture gets symmetrical vertical towers, high
+    // silhouettes and a dimensional crest instead of a standard house.
+    for(const x of [.72,w-.72]){
+      form('soft',trim,x,2.58,zf-.14,.58,.77,.57);
+      form('cylinder',gableDark,x,3.05,zf-.14,.34,.18,.34);
+      form('crystal',opt.emblem||'#8ed6c0',x,3.36,zf-.14,.27,.43,.27);
+      form('soft','#f0d3a1',x,2.24,zf+.18,.40,.12,.43);
+    }
+    form('crystal',opt.emblem||'#9fdbb8',w/2,3.69,zc,.33,.54,.22);
+  }
+  r.batch(silhouette);
   return g;
 }
 
