@@ -224,6 +224,68 @@ export function building(r,o) {
     // Escudo redondo del gimnasio sobre la cumbrera (sólo el color de la medalla, nada de logos).
     if(opt.emblem){const ey=lab?2.9:3.42,ez=zc+.12;ball(WHITE_TRIM,w/2,ey,ez,.42,.42,.1);ball(opt.emblem,w/2,ey,ez+.05,.32,.32,.08);ball('#ffffff',w/2-.1,ey+.1,ez+.12,.07,.06,.02);r.box(g,shade(opt.trim||'#c4b790',-.1),w/2,ey-.4,ez-.02,.1,.4,.08,true);}
   }
+
+  // BRUMA ARCHITECTURE · real 3D facades and roof detailing on all buildings.
+  // Visual only: never touches tile collisions, doors, warps or map data.
+  const finish=new T.Group();finish.name='bruma-architecture';g.add(finish);
+  const mesh=(type,color,x,y,z,sx,sy,sz,rot=0)=>{
+    const part=r.mesh(finish,type,color,[x,y,z],[sx,sy,sz]);
+    part.rotation.z=rot;return part;
+  };
+  const darkTrim=shade(trim,-.26),gold='#edc680';
+  for(const x of [.24,w-.24]){
+    mesh('box',darkTrim,x,1.15,zf+.16,.12,1.75,.07);
+    mesh('box',WHITE_TRIM,x,2.02,zf+.16,.24,.08,.15);
+    mesh('soft',gold,x,.22,zf+.16,.20,.13,.18);
+  }
+  mesh('soft',gold,dc,1.69,zf+.54,1.18,.055,.12);
+  for(const side of [-1,1]){
+    const x=dc+side*.70;
+    mesh('box',darkTrim,x,1.37,zf+.24,.07,.33,.08);
+    mesh('crystal','#ffe1a1',x,1.40,zf+.31,.13,.17,.13);
+    mesh('box',gold,x,1.53,zf+.31,.17,.025,.15);
+    mesh('box',gold,x,1.28,zf+.31,.17,.025,.15);
+    for(let n=0;n<2;n++)mesh('soft',n?'#e2cb9e':'#f1e3bf',dc+side*.31,.03,zf+.52+n*.22,.27,.055,.21);
+  }
+  for(let i=0;i<w;i++){
+    const x=i+.5;if(Math.abs(x-dc)<=.9)continue;
+    for(const side of [-1,1]){
+      const sx=x+side*.35;
+      mesh('box',shade(roof,side>0?.08:-.16),sx,1.35,zf+.16,.10,.68,.05);
+      for(let j=-1;j<=1;j++)mesh('box',WHITE_TRIM,sx,1.35+j*.16,zf+.19,.09,.02,.013);
+    }
+    mesh('soft',gold,x,1.77,zf+.18,.76,.035,.12);
+  }
+  if(lab){
+    const count=Math.min(4,Math.max(2,Math.floor(w/2)));
+    for(let i=0;i<count;i++)mesh('soft',gold,.9+i*(w-1.8)/(count-1),2.54,zc-.04,.07,.06,d-.65);
+    mesh('cylinder','#577384',w-.84,2.87,zc-.4,.16,.41,.16,-.16);
+    mesh('crystal','#79dbe8',w-.80,3.10,zc-.38,.15,.24,.16);
+    mesh('crystal','#83d3cf',dc,2.28,zf+.20,.15,.12,.09);
+  }else{
+    const n=Math.max(3,Math.min(9,Math.floor(w*1.1)));
+    for(let i=0;i<n;i++)mesh('soft',i%3===0?gold:shade(roof,.18),.3+(i+.5)*(w-.6)/n,3.17,zc,.10,.07,.13);
+    mesh('crystal',gold,w/2,3.33,zc,.13,.18,.14);
+    for(const x of [w*.20,w*.80]){
+      mesh('box',shade(roof,-.22),x,2.63,zf-.05,.37,.27,.07);
+      mesh('box',WHITE_TRIM,x,2.64,zf+.015,.24,.16,.027);
+    }
+  }
+  if(big){
+    for(const x of [.62,w-.62]){
+      mesh('soft',gold,x,2.0,zf+.27,.40,.11,.20);
+      mesh('crystal',opt.emblem||'#8ecdc6',x,2.28,zf+.27,.16,.25,.14);
+    }
+    mesh('soft',darkTrim,w/2,2.16,zf+.20,Math.min(w-1,3.3),.12,.15);
+  }else if(!lab){
+    for(const side of [-1,1]){
+      const x=dc+side*.86;
+      mesh('box','#956c50',x,.20,zf+.40,.31,.20,.31);
+      mesh('leaf','#75ac75',x,.40,zf+.40,.22,.22,.20,side*.24);
+      mesh('ball',side>0?'#f0a3b9':'#f7d887',x,.52,zf+.46,.065,.06,.065);
+    }
+  }
+  r.batch(finish);
   return g;
 }
 
