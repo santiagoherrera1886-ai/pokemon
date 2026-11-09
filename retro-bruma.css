@@ -395,3 +395,6 @@ body.at-title.premium-active #starter-stages{
 @media(max-width:899px) and (min-width:601px){
  body.at-title.premium-active #panel.title-panel{bottom:3vh!important}
 }
+
+/* High-definition sculpted starter preview; classic gameplay still keeps its 16-bit treatment. */
+body.at-title.premium-active #premium{image-rendering:auto!important}
