@@ -3,6 +3,7 @@ import {hash} from '../core/pixel.js';
 import {furniture,wallDecoration,building,smallProp} from './models.js';
 import {toonMaterial} from './stylize.js';
 import { dressWorld } from './art-direction.js';
+import { makeStorybookTextures } from './storybook-textures.js';
 
 const dummy=new T.Object3D();
 function instances(parent,geometry,material,items,shadow=true) {
@@ -18,6 +19,7 @@ function instances(parent,geometry,material,items,shadow=true) {
 export class Environment {
   constructor(resources,time) {
     this.r=resources;this.time=time;
+    this.storybook=makeStorybookTextures(resources);
     this.wind=new Map();
     this.wood=resources.texture((g,s)=>{
       g.fillStyle='#d2a978';g.fillRect(0,0,s,s);
@@ -68,22 +70,22 @@ export class Environment {
     for(let z=0;z<map.h;z++)for(let x=0;x<map.w;x++){
       const code=map.at(x,z);if(code===' '||code==='W')continue;
       const C=getChunk(x,z),n=hash(x,z),ground=map.outdoor?'grass':map.dark?'cave':map.floor==='k'?'tile':'wood';
-      let key=ground,height=-.035,color=ground==='grass'?new T.Color('#89b58b').multiplyScalar(.95+n*.09):null;
+      let key=ground,height=-.035,color=ground==='grass'?new T.Color('#acd1ac').multiplyScalar(.94+n*.08):null;
       if(ground==='tile'&&map.floorColors)color=map.floorColors[(x+z)%map.floorColors.length];
       if(code==='p'||code==='s'){key='path';color=code==='s'?'#eddbac':'#dfcda3';height=-.005;}
       if(map.paved&&code==='p'){
         // Calle de asfalto con bordillo claro donde termina la calzada.
-        color=new T.Color('#8c919c').multiplyScalar(.96+n*.06);
+        color=new T.Color('#a5a4ba').multiplyScalar(.94+n*.08);
         for(const [dx,dz] of [[-1,0],[1,0],[0,-1],[0,1]]){const t=map.at(x+dx,z+dz);if(t!=='p'&&t!==undefined)tile(x,z,'curb',{p:[x+.5+dx*.47,.035,z+.5+dz*.47],s:[dx?.07:1,.08,dz?.07:1]});}
       }
       if(map.paved&&(code==='.'||code==='F')){
         let near=false;for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++)if(map.at(x+dx,z+dz)==='p')near=true;
-        if(near){key='sidewalk';height=.01;color=((x+z)%2)?'#efdfa6':'#e6d18f';
+        if(near){key='sidewalk';height=.01;color=((x+z)%2)?'#f4e7d3':'#e5d9d1';
           tile(x,z,'grout',{p:[x+.5,.06,z+.99],s:[1,.006,.02]});tile(x,z,'grout',{p:[x+.99,.06,z+.5],s:[.02,.006,1]});
-          if(hash(x,z,61)>.55)tile(x,z,'inlay',{p:[x+.5,.062,z+.5],s:[.42,.006,.42]});}
+          if(hash(x,z,61)>.55)tile(x,z,'inlay',{p:[x+.5,.062,z+.5],s:[.21,.006,.21]});}
       }
       if(code==='w'){key='water';height=-.045;}
-      if(code==='g'){color='#79a761';}
+      if(code==='g'){color='#8cb79c';}
       if(code==='c'){key='cave';color=new T.Color('#9d9b8e').multiplyScalar(.78+n*.2);}
       if(code==='K'||code==='R'){
         key=map.dark?'cave':'grass';
@@ -108,7 +110,7 @@ export class Environment {
         for(let i=0;i<amount;i++){
           const xx=x+.12+hash(x,z,i+2)*.76,zz=z+.12+hash(z,x,i+8)*.76;
           C.grass.push({p:[xx,.02,zz],s:[1,code==='g'?.75+hash(x,z,i)*.5:.35,1],r:[0,i*2.4,0]});
-          if(code==='F')C.flowers.push({p:[xx,.27,zz],s:[.07,.045,.07],c:['#f6e4ad','#eea692','#edf2cf'][Math.floor(n*3)]});
+          if(code==='F')C.flowers.push({p:[xx,.24,zz],s:[.11,.15,.11],c:['#f6e4ad','#eea692','#edf2cf'][Math.floor(n*3)]});
         }
       }
       if(code==='w')for(const [dx,dz] of [[-1,0],[1,0],[0,-1],[0,1]])if(map.at(x+dx,z+dz)!=='w'){
@@ -143,20 +145,22 @@ export class Environment {
     }
     dressWorld(r,staticProps,map);
     r.batch(staticProps);root.add(staticProps);
-    const mats={grass:r.mat('#ffffff'),path:r.mat('#ffffff'),cave:r.mat('#ffffff'),water:this.water,wood:this.floorMat,tile:r.mat(map.floorColors?'#ffffff':'#dce3d5'),grout:r.mat('#b6c6bb'),rug:r.mat(map.style==='league'?'#af6977':'#789faa'),mat:r.mat('#cc8e74'),trim:r.mat('#edd4a2'),curb:r.mat('#e4e6ea'),sidewalk:r.mat('#ffffff'),inlay:r.mat('#d4b56a'),shore:r.mat('#e8d5a5'),foam:r.mat('#b9dcd2')};
+    const mats={grass:r.mat('#ffffff',{map:this.storybook.grass}),path:r.mat('#ffffff',{map:map.paved?this.storybook.road:this.storybook.path}),cave:r.mat('#ffffff',{map:this.storybook.stone}),water:this.water,wood:this.floorMat,tile:r.mat(map.floorColors?'#ffffff':'#e8e3dc',{map:this.storybook.tile}),grout:r.mat('#b6c6bb'),rug:r.mat(map.style==='league'?'#af6977':'#789faa'),mat:r.mat('#cc8e74'),trim:r.mat('#edd4a2'),curb:r.mat('#dad6d4'),sidewalk:r.mat('#ffffff',{map:this.storybook.sidewalk}),inlay:r.mat('#e9bd86'),shore:r.mat('#e8d5a5'),foam:r.mat('#b9dcd2')};
     const lods=[];
     for(const C of chunks.values()){
       const chunk=new T.Group();root.add(chunk);
       for(const [key,items] of Object.entries(C.tiles))instances(chunk,r.geometries.box,mats[key],items,false);
       instances(chunk,this.blade,this.windMat('#759952'),C.grass,false);
-      instances(chunk,r.geometries.ball,r.mat('#ffffff'),C.flowers,false);
+      instances(chunk,r.geometries.bloomFlower,r.mat('#ffffff',{side:T.DoubleSide}),C.flowers,false);
       instances(chunk,r.geometries.leaf,r.mat('#b6b49c'),C.pebbles,false);
       if(C.trees.length){
         const near=new T.Group(),far=new T.Group();chunk.add(near,far);
-        const trunks=[],leaves=[],simple=[];
+        const trunks=[],leaves=[],simple=[],bark=[],blossoms=[];
         for(const o of C.trees){
           const h=1.65+hash(o.x,o.y)*.3,x=o.x+.5,z=o.y+.5;
-          trunks.push({p:[x,.6,z],s:[.12,1.2,.12]});
+          trunks.push({p:[x,.6,z],s:[.16,1.2,.16]});
+          bark.push({p:[x+.09,.58,z+.075],s:[.035,.34,.03],c:'#bda789'});
+          if(hash(o.x,o.y,13)>.72){blossoms.push({p:[x-.14,h+.57,z+.38],s:[.22,.24,.18],r:[0,hash(o.x,o.y,22)*6.28,0],c:'#f7c7d5'});blossoms.push({p:[x+.27,h+.32,z+.42],s:[.16,.18,.15],c:'#f4db9a'});}
           // A canopy of five genuine 3D facet-clusters, not an isolated
           // generic cone. Two foliage palettes evoke the original art sheets.
           const shades=[
@@ -173,14 +177,17 @@ export class Environment {
           ];
           for(let k=0;k<crowns.length;k++){
             const [dx,dy,dz,sx,sy,sz]=crowns[k];
-            leaves.push({p:[x+dx,h+dy,z+dz],s:[sx,sy,sz],c:shades[k]});
+            const varied=.9+hash(o.x+k,o.y,14)*.24;
+            leaves.push({p:[x+dx+.05*(hash(o.x,o.y,k)-.5),h+dy,z+dz],s:[sx*varied,sy*varied,sz*varied],r:[0,hash(o.x+k,o.y,19)*6.283,0],c:shades[k]});
           }
           // Distant trees use a low-poly crown rather than default evergreen cones.
-          simple.push({p:[x,h+.15,z],s:[.82,.92,.80],c:shades[1]});
+          simple.push({p:[x,h+.15,z],s:[.82,.95,.80],r:[0,hash(o.x,o.y)*6.283,0],c:shades[1]});
         }
         instances(chunk,r.geometries.cylinder,r.mat('#847351'),trunks,true);
-        instances(near,r.geometries.leaf,this.windMat('#ffffff'),leaves,true);
-        instances(far,r.geometries.leaf,r.mat('#ffffff',{flatShading:true}),simple,false);far.visible=false;
+        instances(near,r.geometries.foliage,this.windMat('#ffffff'),leaves,true);
+        instances(near,r.geometries.box,r.mat('#ffffff'),bark,false);
+        instances(near,r.geometries.bloomFlower,r.mat('#ffffff',{side:T.DoubleSide}),blossoms,false);
+        instances(far,r.geometries.foliage,r.mat('#ffffff',{flatShading:true}),simple,false);far.visible=false;
         lods.push({near,far,center:C.center});
       }
     }
