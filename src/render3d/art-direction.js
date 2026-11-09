@@ -294,6 +294,67 @@ export function dressBattle(r,ground,terrain='grass'){
  const color=dark?PALETTE.violet:ice?PALETTE.aqua:PALETTE.mint;
  const trim=dark?PALETTE.gold:PALETTE.cream;
  const spokes=12;
+ // Battlefield depth: each biome has unique physical silhouettes, not a wall
+ // of repeated cone trees. Twenty-four authored low-poly groups are batched
+ // by the normal renderer into a small number of GPU draw calls.
+ const rocky=['cave','mountain','eclipse'].includes(terrain);
+ const coastal=['lake','beach'].includes(terrain);
+ const ceremonial=['gym','league'].includes(terrain);
+ for(let i=0;i<26;i++){
+  const row=Math.floor(i/13),column=i%13;
+  const x=-10.7+column*1.73+(row?.83:0),z=row?-8.15:-6.75;
+  const jitter=Math.sin(i*3.3)*.21,base=1.15+(i%4)*.17;
+  if(rocky){
+   const stone=terrain==='eclipse'?'#47415f':terrain==='cave'?'#58566c':'#7d8194';
+   const peak=ornament(r,ground,'crystal',stone,[x,.6+jitter,z],[.60,1.35+jitter,.56]);
+   peak.rotation.y=i*.6;
+   if(i%3===0){
+    const c=terrain==='eclipse'?PALETTE.rose:terrain==='cave'?PALETTE.violet:PALETTE.aqua;
+    const core=ornament(r,ground,'crystal',c,[x+.28,.68,z+.14],[.20,.52,.18]);
+    core.rotation.z=(i%2?.21:-.18);
+    gem(r,ground,PALETTE.gold,[x-.24,.22,z+.30],.085);
+   }
+  }else if(coastal){
+   ornament(r,ground,'soft',terrain==='lake'?'#447e92':'#c0ad98',[x,.28,z],[.76,.52,.54]);
+   const seaColor=i%3?'#63b8c0':'#89d6cc',stem=ornament(r,ground,'cylinder','#527e80',[x,.75,z],[.075,1.15,.08]);
+   stem.rotation.z=i%2?.13:-.09;
+   for(let k=0;k<3;k++){
+    const side=k-1,a=.32+side*.24;
+    const fan=ornament(r,ground,'leaf',k===1?'#80dfc7':seaColor,[x+side*.36,1.31+(k%2)*.17,z],[.57,.33,.26]);
+    fan.rotation.z=a;
+   }
+   if(i%4===0)gem(r,ground,PALETTE.cream,[x+.24,.68,z+.39],.10);
+  }else{
+   // Layered broadleaf foliage and genuine branches with depth and shading.
+   const trunk=ornament(r,ground,'cylinder',i%2?'#66594f':'#776151',[x,.60,z],[.16,1.2,.16]);
+   trunk.rotation.z=(i%3-1)*.055;
+   const canopy=i%5===0?'#98c3a0':i%3===0?'#729d84':i%2?'#5d957e':'#6eac8c';
+   ornament(r,ground,'leaf',darker(canopy,.74),[x,1.40+jitter,z],[.75,.63,.67]);
+   ornament(r,ground,'leaf',canopy,[x-.26,1.70+jitter,z+.10],[.59,.57,.55]);
+   ornament(r,ground,'leaf',i%3?'#b0d1a0':'#c2abce',[x+.20,1.75+jitter,z-.13],[.54,.52,.52]);
+   if(i%3===0){
+    for(let j=0;j<3;j++)gem(r,ground,j%2?PALETTE.gold:PALETTE.rose,
+     [x+(j-1)*.17,1.92+jitter+(j%2)*.16,z+.31],.042);
+   }
+  }
+ }
+ // Side architecture: portals with real arches/brass trim for major arenas.
+ if(ceremonial){
+  for(const side of [-1,1]){
+   ornament(r,ground,'soft',PALETTE.ink,[side*7.4,1.0,-5.7],[.44,2,.49]);
+   ornament(r,ground,'soft',PALETTE.gold,[side*7.4,2.10,-5.7],[.55,.18,.56]);
+   gem(r,ground,terrain==='league'?PALETTE.violet:PALETTE.mint,[side*7.4,2.35,-5.7],.19);
+  }
+  ornament(r,ground,'soft',PALETTE.gold,[0,2.50,-7.4],[3.4,.25,.55]);
+  for(let i=-3;i<=3;i++)gem(r,ground,i%2?PALETTE.gold:PALETTE.aqua,[i*.43,2.78,-7.3],.075);
+ }
+ if(coastal){
+  // Real depth planes: clear cyan water or sand behind the raised arena.
+  ornament(r,ground,'box',terrain==='lake'?'#79c9c9':'#e7cea7',[0,-.035,-4.65],[20,.08,1.4]);
+  for(let i=-7;i<=7;i+=2)ornament(r,ground,'soft',terrain==='lake'?'#d8f5e1':'#fcdfb8',
+   [i*.8,.019,-4.72+(i%3)*.12],[.58,.017,.055]);
+ }
+
  for(const [cx,cz] of [[-2,1.5],[2,-1.8]]){
   for(let i=0;i<spokes;i++){
    const a=i*2*Math.PI/spokes;
