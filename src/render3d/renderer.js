@@ -13,6 +13,7 @@ import {QUALITY,normalizeQuality,actorPosition,visibleMapIds} from './policy.js'
 import {ui} from '../ui/ui.js';
 import {hash} from '../core/pixel.js';
 import {Stylizer} from './stylize.js';
+import { dressBattle } from './art-direction.js';
 
 const rnd3=()=>Math.random()-.5;
 export class PremiumRenderer {
@@ -160,6 +161,7 @@ export class PremiumRenderer {
       r.box(ground,colors[terrain]||colors.grass,0,-.19,0,22,.3,18,true);
       for(const [x,z]of [[-2,1.5],[2,-1.8]]){r.mesh(ground,'cylinder','#e6d8af',[x,-.005,z],[1.65,.12,1.3]);r.mesh(ground,'cylinder','#c0cf94',[x,.06,z],[1.51,.025,1.16]);}
       for(let i=0;i<26;i++){const row=i<13?0:1,x=(i%13)*2.2-13.2+row*1.1,z=row?-8:-6,rock=terrain==='cave'||terrain==='mountain';r.mesh(ground,rock?'leaf':'cone',rock?(row?'#6f7770':'#858d86'):(row?'#5d8a5c':'#6e9c6b'),[x,1.2+row*.3,z],[1.15,rock?1.7:2.7+row*.5,1]);}
+      dressBattle(r,ground,terrain);
       r.batch(ground);
       this.creatures={foe:creature(r,b.foe.sp),ally:b.ally?creature(r,b.ally.sp):null};
       for(const rig of Object.values(this.creatures))if(rig)this.battleRoot.add(rig.root);
