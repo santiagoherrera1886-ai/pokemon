@@ -341,3 +341,39 @@ body.premium-active #banner::before{display:none}
  .retro-detail .retro-art{transform:scale(.8);margin:-13px;flex-shrink:0}
  .retro-detail p{font-size:.65em}
 }
+
+
+/* APPROVED 3D STARTER FAMILY SHOWCASE
+   3D title scene now contains true models on three elemental platforms.
+   The previous 2D portrait bar stays available only to the classic renderer. */
+body.at-title.premium-active #retro-starters{display:none!important}
+#starter-stages{display:none}
+body.at-title.premium-active #starter-stages{
+ display:flex;gap:8px;align-items:center;justify-content:center;
+ padding:7px 10px;margin-top:13px;pointer-events:auto;
+ border:2px solid #f7d394;background:#211a3ccf;border-radius:7px;
+ box-shadow:0 5px 0 #16122f,inset 0 0 0 2px #67507f;
+ max-width:calc(100vw - 24px)
+}
+#starter-stages button{
+ appearance:none;cursor:pointer;pointer-events:auto;
+ color:#f1e5d5;background:#47345c;
+ font:700 clamp(9px,1.1vw,13px) 'Pixelify Sans',monospace;
+ border:2px solid #a28bb0;border-radius:4px;
+ padding:8px 11px;min-height:34px;
+ white-space:nowrap;letter-spacing:.035em;
+ box-shadow:0 3px 0 #16102b;
+ transition:background .15s,border-color .15s
+}
+#starter-stages button[aria-pressed="true"]{
+ color:#291f3d;background:linear-gradient(180deg,#fff1bc,#dcae6f);
+ border-color:#fff4d0
+}
+#starter-stages button:hover{border-color:#8de0d7}
+#starter-stages button:focus-visible{outline:3px solid #69dcd7;outline-offset:3px}
+@media(max-width:600px){
+ body.at-title.premium-active #starter-stages{gap:4px;margin-top:9px;padding:5px}
+ #starter-stages button{font-size:9px;min-height:33px;padding:5px 6px}
+ #logo::after{display:none}
+}
+@media(prefers-reduced-motion:reduce){#starter-stages button{transition:none}}
