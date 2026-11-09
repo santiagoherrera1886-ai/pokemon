@@ -67,7 +67,27 @@ export function dressCharacter(r,{root,body,head},look,L){
  stripe(r,torso,darker(L.shirt||accent,.78),[0,.39,.16],.08,.018);
  switch(role){
   case 'player':
+    // The protagonist has an unmistakable silhouette seen from overhead:
+    // a travel cloak, dimensional backpack, leather shoulder straps and
+    // the signature Bruma crystal plume. All attached to the existing rig.
+    for(const side of [-1,1]){
+      const coat=ornament(r,torso,'soft',side<0?darker(L.shirt||'#5967a0',.70):darker(L.shirt||'#5967a0',.85),
+        [side*.125,.29,-.23],[.24,.57,.085]);
+      coat.rotation.y=side*.20;coat.rotation.x=.16;
+      ornament(r,torso,'crystal',side<0?PALETTE.rose:PALETTE.aqua,
+        [side*.155,.12,-.26],[.11,.17,.06],[.15,0,side*.18]);
+      const strap=ornament(r,torso,'soft',PALETTE.gold,[side*.15,.52,.135],[.035,.32,.023]);
+      strap.rotation.z=side*.23;
+      ornament(r,torso,'soft',PALETTE.ink,[side*.215,.62,.005],[.076,.09,.15]);
+      ornament(r,torso,'crystal',PALETTE.gold,[side*.21,.68,.02],[.035,.055,.046]);
+    }
+    ornament(r,torso,'soft','#61557e',[0,.46,-.27],[.24,.28,.12]);
+    ornament(r,torso,'box',PALETTE.gold,[0,.47,-.345],[.18,.06,.015]);
+    ornament(r,torso,'crystal',PALETTE.aqua,[0,.48,-.36],[.075,.09,.04]);
     medal(r,face,PALETTE.gold,[0,.30,.32],.060);
+    const plume=ornament(r,face,'foliage',PALETTE.aqua,[.16,.39,-.06],[.105,.18,.09]);
+    plume.rotation.z=-.42;plume.rotation.x=.20;
+    ornament(r,face,'crystal',PALETTE.gold,[.18,.42,-.07],[.045,.11,.046],[0,0,-.27]);
     ornament(r,torso,'box',PALETTE.gold,[.11,.46,.17],[.044,.061,.019]);
     ornament(r,torso,'soft',PALETTE.aqua,[-.105,.41,.17],[.050,.027,.025]);
     break;
