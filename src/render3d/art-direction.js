@@ -81,6 +81,12 @@ export function dressCharacter(r,{root,body,head},look,L){
     ornament(r,torso,'box','#f4fbf6',[-.14,.48,.17],[.085,.12,.015]);
     for(let i=0;i<3;i++)ornament(r,torso,'box',i%2?PALETTE.aqua:PALETTE.plum,[-.14,.53-i*.042,.183],[.058,.012,.006]);
     ornament(r,torso,'crystal',PALETTE.gold,[.19,.59,.15],[.040,.068,.030]);
+    // Distinct professor/researcher eyewear and hair crest move with the animated head.
+    for(const side of [-1,1]){
+      const lens=ornament(r,face,'ring',PALETTE.ink,[side*.13,.035,.285],[.095,.095,.070]);
+      lens.rotation.y=side*.18;
+    }
+    ornament(r,face,'box',PALETTE.gold,[0,.035,.29],[.09,.018,.025]);
     break;
   case 'nurse':
     crest(r,face,PALETTE.rose,[0,.33,.30]);
