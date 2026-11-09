@@ -65,6 +65,7 @@ En pixel clásico, todas las especies usan sprites sacados de sus modelos 3D (`s
 - **Equipo y ficha:** tarjetas con retrato, tipos, estado y PS; la ficha muestra barras de estadísticas, experiencia, movimientos con tipo y potencia, y el objeto equipado (dar, cambiar o quitar).
 - **Registro:** las 62 especies numeradas; las que no has visto salen como «???». Cada ficha trae estadísticas base, dónde vive (de día o de noche) y la línea evolutiva.
 - **Tarjeta de entrenador:** retrato, dinero, tiempo, registro, equipo y medallas.
+- **Códigos secretos** (Opciones › Códigos): hay claves para evolucionar cualquier criatura desde su ficha y para tener plata infinita. Se guardan en la partida y se apagan escribiendo la misma clave otra vez. En el código del juego sólo quedan las huellas de las claves, no el texto.
 
 ## Tiendas y objetos
 

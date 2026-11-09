@@ -404,3 +404,10 @@ img.ico.held { width: 1.1em; height: 1.1em; image-rendering: pixelated; }
 #panel.wide-panel { max-height: min(74vh, 44em); }
 #panel .tabs { flex-wrap: wrap; row-gap: .3em; }
 #panel .tab { min-width: max-content; padding: .22em .55em; }
+
+/* Códigos secretos */
+.code-entry input { text-transform: uppercase; letter-spacing: .08em; }
+.code-list { display: flex; flex-wrap: wrap; gap: .35em; margin: .5em 0 .2em; }
+.code-list span { background: #e2f6ea; color: #1f6a40; border: 2px solid #3faa70; border-radius: 20px; padding: .15em .7em; font: 700 .78em var(--round); }
+.code-list span.none { background: #eef0f6; color: #6a6e86; border-color: #c8ccda; }
+#panel .evo-bt { background: linear-gradient(180deg, #e8d8ff, #c8a8f8) !important; color: #3a1a6a !important; }

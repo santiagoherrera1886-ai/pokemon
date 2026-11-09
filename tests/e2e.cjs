@@ -397,6 +397,30 @@ async function run() {
     await sleep(600); await settle();
     log('leyenda de la Bruma (Fraguón) OK');
 
+    // ------------------------------------------------ Códigos secretos (con claves de prueba: las reales no van en el repositorio)
+    await page.evaluate(async () => { const m = await import('/src/data/cheats.js'); m.CHEATS.evolve.print = m.codePrint('EVOPRUEBA'); m.CHEATS.money.print = m.codePrint('PLATAPRUEBA'); });
+    const tryCode = async code => {
+      await page.fill('#ccode', code); await page.click('#panel [data-act="try"]');
+      for (let i = 0; i < 80 && await page.evaluate(() => !!__ui.dialog || !document.getElementById('ccode')); i++) { await tap('z', 40); await sleep(150); }
+      await page.waitForSelector('#ccode');
+    };
+    await tap('Escape'); await page.click('#panel [data-act="options"]'); await page.click('#panel [data-act="codes"]');
+    await page.waitForSelector('#ccode');
+    await tryCode('no existe');
+    s = await st(); assert.notEqual(s.money, 999999, 'una clave equivocada no hace nada');
+    await tryCode('plata prueba');
+    s = await st(); assert.equal(s.money, 999999, 'plata infinita llena la billetera');
+    await tryCode('Evo Prueba');
+    assert.equal(await page.$$eval('#panel .code-list span', e => e.length), 2, 'los dos códigos quedan activos');
+    await page.evaluate(async () => { const { makeCreature } = await import('/src/data/creatures.js'); __game.state.party.push(makeCreature('pipiu', 5)); });
+    await page.click('#panel [data-back]'); await sleep(150); await page.click('#panel [data-back]'); await sleep(150);
+    const last = await page.evaluate(() => __game.state.party.length - 1);
+    await choose('party'); await choose(String(last));
+    await choose('evolve'); await settle();
+    s = await st(); assert.equal(s.party[last].sp, 'pipiolo', 'la evolución libre evoluciona sin esperar el nivel');
+    await page.evaluate(() => { __game.state.party.pop(); });
+    log('códigos: plata infinita y evolución libre OK');
+
     // Opción de perspectiva y hora del día
     await tap('Escape'); await page.click('#panel [data-act="options"]'); await page.click('#panel [data-act="persp"]'); await sleep(300);
     await page.click('#panel [data-act="hour"]'); await page.click('#panel [data-act="hour"]'); await sleep(200);

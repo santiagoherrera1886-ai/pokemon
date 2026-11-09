@@ -5,6 +5,7 @@ import { iconURL } from '../art/creatures.js';
 import { itemIcon } from '../art/items.js';
 import { SPECIES, MOVES, TYPES, STARTERS, expForLevel, ENCOUNTERS } from '../data/creatures.js';
 import { isHeld, giveHeld, takeHeld } from '../data/held.js';
+import { CHEATS, tryCode, spend, cheatOn } from '../data/cheats.js';
 import { ITEMS, POCKETS, POCKET_ORDER, SPECIAL, VENDING, STAT_NAMES, SEED_MAX, generalStock, lockedStock, shortDesc, sellPrice, pocketItems, canUseOn, useOnCreature, isCapsule } from '../data/items.js';
 import { saveState, listSaves, SLOTS, loadState, storeState, parseState, playTimeText } from '../core/state.js';
 import { cloud, TOKEN_URL } from '../core/cloud.js';
@@ -110,9 +111,10 @@ export class Menus {
         ${bonus ? `<p class="hint">Semillas: ${bonus}</p>` : ''}
         <div class="moves">${c.moves.map(m => { const M = MOVES[m.id]; return `<span style="--t:${TYPES[M.type].color}"><b>${esc(M.name)}</b><small>${TYPES[M.type].name}${M.power ? ' · ' + M.power : ''} · PP ${m.pp}/${M.pp}</small></span>`; }).join('')}</div>
         ${held}</div></div>
-      <div class="row2">${i > 0 ? '<button data-act="lead">PONER PRIMERO</button>' : ''}${gear.length ? `<button data-act="give">${c.item ? 'CAMBIAR OBJETO' : 'DAR OBJETO'}</button>` : ''}${c.item ? '<button data-act="take">QUITAR OBJETO</button>' : ''}<button class="bt-back" data-back>VOLVER</button></div>`,
+      <div class="row2">${cheatOn(st, 'evolve') && s.evo ? `<button data-act="evolve" class="evo-bt">EVOLUCIONAR A ${esc(SPECIES[s.evo[0]].name.toUpperCase())}</button>` : ''}${i > 0 ? '<button data-act="lead">PONER PRIMERO</button>' : ''}${gear.length ? `<button data-act="give">${c.item ? 'CAMBIAR OBJETO' : 'DAR OBJETO'}</button>` : ''}${c.item ? '<button data-act="take">QUITAR OBJETO</button>' : ''}<button class="bt-back" data-back>VOLVER</button></div>`,
     { modal: true, cls: 'list-panel wide-panel sum-panel', onAct: async a => {
       if (a === 'lead') { const [x] = st.party.splice(i, 1); st.party.unshift(x); return this.party(); }
+      if (a === 'evolve' && s.evo) { ui.closePanel(); await this.game.evolve(c, s.evo[0]); return this.creature(i); }
       if (a === 'take') { const r = takeHeld(st, c); await ui.say([r.msg]); return this.creature(i); }
       if (a === 'give') return this.pickHeld(i);
     }, onBack: () => this.party() });
@@ -259,6 +261,7 @@ export class Menus {
       <button data-act="avatar">Mi avatar</button>
       <button data-act="autosave">Guardado automático: <b>${o.autosave === false ? 'NO' : 'SÍ'}</b></button>
       <button data-act="files">Partidas y GitHub${cloud.linked ? ' ☁' : ''}</button>
+      <button data-act="codes">Códigos${Object.keys(this.st.cheats || {}).length ? ` <b>${Object.keys(this.st.cheats).length} ACTIVO${Object.keys(this.st.cheats).length > 1 ? 'S' : ''}</b>` : ''}</button>
       <button data-act="full">Pantalla completa del navegador</button>
       <button data-act="title">Volver al título</button></div>
       <p class="hint">Teclado: flechas/WASD mover · Z/E/Enter = A · X/Shift = B (correr) · Esc/M = menú</p>
@@ -272,10 +275,27 @@ export class Menus {
       if (a === 'avatar') { const av = await this.avatarEditor(this.st.avatar); if (av) { this.st.avatar = av; this.game.applyAvatar(); } }
       if (a === 'autosave') o.autosave = o.autosave === false;
       if (a === 'files') await this.saveFiles();
+      if (a === 'codes') return this.codes();
       if (a === 'full') { try { if (document.fullscreenElement) await document.exitFullscreen(); else await document.documentElement.requestFullscreen(); } catch { /* no permitido */ } }
       if (a === 'title') { const i = await ui.ask('¿Volver al título? Lo que no hayas guardado se perderá.', ['Sí', 'No']); if (i === 0) return this.game.toTitle(); }
       this.options();
     } });
+  }
+
+  // ---------- Códigos secretos ----------
+  codes() {
+    const st = this.st, active = Object.keys(CHEATS).filter(k => cheatOn(st, k));
+    ui.setPanel(`<h3 class="ph">CÓDIGOS</h3><div class="name-entry code-entry"><label for="ccode">Escribe un código secreto</label><input id="ccode" maxlength="40" autocomplete="off" autocapitalize="characters" spellcheck="false"><button data-act="try" class="primary">PROBAR</button></div>
+      <div class="code-list">${active.length ? active.map(k => `<span>✓ ${CHEATS[k].name}</span>`).join('') : '<span class="none">Ningún código activo</span>'}</div>
+      <p class="hint">Para apagar un código, escríbelo otra vez.</p><button class="bt-back" data-back>VOLVER</button>`,
+    { modal: true, cls: 'list-panel', onBack: () => this.options(), onAct: async a => {
+      if (a !== 'try') return;
+      const input = document.getElementById('ccode'), r = tryCode(st, input?.value);
+      input?.blur();   // sin esto, la Z se escribe en la caja en vez de pasar el mensaje
+      await ui.say([r.msg]);
+      this.codes();
+    } });
+    setTimeout(() => { const el = document.getElementById('ccode'); if (!el) return; el.focus(); el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); ui.panel.els[0].click(); } }); }, 30);
   }
 
   // ---------- Tienda ----------
@@ -333,7 +353,7 @@ export class Menus {
             return list(st.bag[id] > 0 ? id : null);
           }
           if (st.money < total) { await ui.say(['No te alcanza la plata.']); return list(id); }
-          st.money -= total;
+          spend(st, total);
           st.bag[id] = (st.bag[id] || 0) + n;
           await ui.say([vending ? (n > 1 ? `¡Clonc, clonc! Cayeron ${n} bebidas: ${it.name} x${n}.` : `¡Clonc! Cayó tu ${it.name}.`) : `¡Listo! Compraste ${it.name} x${n} por ${money(total)}.`]);
           if (isCapsule(id) && n >= 10) { st.bag.capsulaAlba = (st.bag.capsulaAlba || 0) + 1; await ui.say(['¡Por llevar tantas, te regalamos una Cápsula Alba de la casa!']); }

@@ -17,6 +17,7 @@ import { battleSprite, silhouette } from './art/creatures.js';
 import { tree, house } from './art/objects.js';
 import { sheet, setPlayerLook } from './art/characters.js';
 import { ENCOUNTERS, SPECIES, MOVES, makeCreature, refreshStats, encounterList } from './data/creatures.js';
+import { refillMoney, cheatOn } from './data/cheats.js';
 import { ITEMS, repelled } from './data/items.js';
 
 class Game {
@@ -59,6 +60,7 @@ class Game {
     this.frame++;
     ui.update();
     if (this.scene === 'overworld') { this.ow.update(); this.state.playTime++; if (this.autosavePending) this.tryAutosave(); }
+    if (this.state) refillMoney(this.state);   // código de plata infinita
     const w = this.waiters; this.waiters = [];
     w.forEach(r => r());
     input.endFrame();
@@ -249,9 +251,9 @@ class Game {
   }
   async blackout() {
     const st = this.state;
-    const lost = Math.floor(st.money / 2);
+    const lost = cheatOn(st, 'money') ? 0 : Math.floor(st.money / 2);
     st.money -= lost;
-    await ui.say([`¡A ${st.name} no le quedan criaturas en pie!`, `Perdiste $${lost} en la carrera de vuelta...`]);
+    await ui.say([`¡A ${st.name} no le quedan criaturas en pie!`, lost ? `Perdiste $${lost} en la carrera de vuelta...` : 'Corriste de vuelta sin perder ni un peso.']);
     await this.fadeOut();
     await this.healParty();
     const h = st.lastHeal;
