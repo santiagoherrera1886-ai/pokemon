@@ -70,7 +70,7 @@ export class Environment {
       const C=getChunk(x,z),n=hash(x,z),ground=map.outdoor?'grass':map.dark?'cave':map.floor==='k'?'tile':'wood';
       let key=ground,height=-.035,color=ground==='grass'?new T.Color(map.snow?'#eaf1f6':'#9dbd74').multiplyScalar(map.snow?.97+n*.04:.96+n*.07):null;
       if(ground==='tile'&&map.floorColors)color=map.floorColors[(x+z)%map.floorColors.length];
-      if(code==='p'||code==='s'){key='path';color=code==='s'?'#eddbac':'#dfcda3';height=-.005;}
+      if(code==='p'||code==='s'){key='path';color=code==='s'?'#eddbac':map.snow?'#c5ced9':'#dfcda3';height=-.005;}   // en el nevado el camino es nieve pisada
       if(map.paved&&code==='p'){
         // Calle de asfalto con bordillo claro donde termina la calzada.
         color=new T.Color('#8c919c').multiplyScalar(.96+n*.06);
@@ -78,7 +78,7 @@ export class Environment {
       }
       if(map.paved&&(code==='.'||code==='F')){
         let near=false;for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++)if(map.at(x+dx,z+dz)==='p')near=true;
-        if(near){key='sidewalk';height=.01;color=((x+z)%2)?'#efdfa6':'#e6d18f';
+        if(near){key='sidewalk';height=.01;color=map.snow?(((x+z)%2)?'#e6ebf0':'#d8dfe7'):((x+z)%2)?'#efdfa6':'#e6d18f';
           tile(x,z,'grout',{p:[x+.5,.06,z+.99],s:[1,.006,.02]});tile(x,z,'grout',{p:[x+.99,.06,z+.5],s:[.02,.006,1]});
           if(hash(x,z,61)>.55)tile(x,z,'inlay',{p:[x+.5,.062,z+.5],s:[.42,.006,.42]});}
       }
@@ -103,8 +103,8 @@ export class Environment {
         for(let i=0;i<6;i++){const h=code==='U'?(6-i)*.055:.02+i*.035;r.box(staticProps,'#bfa47d',x+.5,h/2,z+.08+i*.16,.85,h,.15);}
         for(const xx of [x+.06,x+.94])r.box(staticProps,'#866a4d',xx,.22,z+.5,.06,.44,.98,true);
       }
-      if((code==='g'||code==='F'||(code==='.'&&n>.7))&&key!=='sidewalk') {
-        const amount=code==='g'?13:code==='F'?5:2;
+      if((code==='g'||code==='F'||(code==='.'&&n>.7&&!map.snow))&&key!=='sidewalk') {   // sobre la nieve no salen matas sueltas
+        const amount=code==='g'?(map.snow?9:13):code==='F'?5:2;
         for(let i=0;i<amount;i++){
           const xx=x+.12+hash(x,z,i+2)*.76,zz=z+.12+hash(z,x,i+8)*.76;
           C.grass.push({p:[xx,.02,zz],s:[1,code==='g'?.75+hash(x,z,i)*.5:.35,1],r:[0,i*2.4,0]});
@@ -143,12 +143,12 @@ export class Environment {
       const patch=new T.Mesh(r.geometries.plane,new T.MeshBasicMaterial({map:light,transparent:true,depthWrite:false}));patch.userData.ownedMaterial=true;patch.rotation.x=-Math.PI/2;patch.position.set(3.2,.014,4.5);patch.scale.set(3.8,4,1);root.add(patch);
     }
     r.batch(staticProps);root.add(staticProps);
-    const mats={grass:r.mat('#ffffff'),path:r.mat('#ffffff'),cave:r.mat('#ffffff'),water:this.water,wood:this.floorMat,tile:r.mat(map.floorColors?'#ffffff':'#dce3d5'),grout:r.mat('#b6c6bb'),rug:r.mat(map.style==='league'?'#af6977':'#789faa'),mat:r.mat('#cc8e74'),trim:r.mat('#edd4a2'),curb:r.mat('#e4e6ea'),sidewalk:r.mat('#ffffff'),inlay:r.mat('#d4b56a'),shore:r.mat('#e8d5a5'),foam:r.mat('#b9dcd2')};
+    const mats={grass:r.mat('#ffffff'),path:r.mat('#ffffff'),cave:r.mat('#ffffff'),water:this.water,wood:this.floorMat,tile:r.mat(map.floorColors?'#ffffff':'#dce3d5'),grout:r.mat('#b6c6bb'),rug:r.mat(map.style==='league'?'#af6977':'#789faa'),mat:r.mat('#cc8e74'),trim:r.mat('#edd4a2'),curb:r.mat('#e4e6ea'),sidewalk:r.mat('#ffffff'),inlay:r.mat(map.snow?'#b9c7d4':'#d4b56a'),shore:r.mat('#e8d5a5'),foam:r.mat('#b9dcd2')};
     const lods=[];
     for(const C of chunks.values()){
       const chunk=new T.Group();root.add(chunk);
       for(const [key,items] of Object.entries(C.tiles))instances(chunk,r.geometries.box,mats[key],items,false);
-      instances(chunk,this.blade,this.windMat(map.snow?'#c4d4df':'#759952'),C.grass,false);
+      instances(chunk,this.blade,this.windMat(map.snow?'#e4edf3':'#759952'),C.grass,false);
       instances(chunk,r.geometries.ball,r.mat('#ffffff'),C.flowers,false);
       instances(chunk,r.geometries.leaf,r.mat('#b6b49c'),C.pebbles,false);
       if(C.trees.length){

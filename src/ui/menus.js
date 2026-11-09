@@ -33,6 +33,8 @@ const LEGEND_PLACE = { espejalba: 'Lago Espejo (historia)', brumalia: 'Ruta 2 de
 function goalAfterLake(st) {
   const g = nextGym(st), n = badgeCount(st);
   if (!g) return 'Tienes las ocho medallas: baja por la Ruta 11 (o sube por la Ruta 5, al norte de Corola) hasta la Liga Alborada';
+  const here = st.map === g.map || st.map === 'gym' + (GYMS.indexOf(g) + 1);
+  if (here) return `Medalla ${n + 1} de ${LEAGUE_BADGES}: entra al gimnasio de ${g.city} y gánale a ${g.who}`;
   const way = { chispa: 'sal de Ciudad Marea por la Ruta 6, al este', sombra: 'sube por la Ruta 7 hasta Pueblo Niebla', puno: 'sube por los cafetales de la Ruta 8', escarcha: 'cruza el paso nevado de la Ruta 9, al oeste de Cafetal', escama: 'baja por el camino antiguo de la Ruta 10' }[g.badge];
   return `Medalla ${n + 1} de ${LEAGUE_BADGES}: ${way ? way + ' y gana' : 'gana'} la Medalla ${g.name} en ${g.city}`;
 }

@@ -52,14 +52,14 @@ export class PremiumRenderer {
     this.backdrop=new T.Group();this.worldRoot.add(this.backdrop);this.backdropCell='';
   }
   updateBackdrop(position){
-    const cx=Math.floor(position.x/8)*8,cz=Math.floor(position.z/8)*8,key=cx+','+cz;
+    const snow=!!this.game.ow.map?.snow,cx=Math.floor(position.x/8)*8,cz=Math.floor(position.z/8)*8,key=cx+','+cz+(snow?'n':'');
     if(this.backdropCell===key)return;
     this.r.release(this.backdrop);this.backdrop=new T.Group();this.worldRoot.add(this.backdrop);this.backdropCell=key;
     const list=[];
     for(let z=cz-22;z<cz+24;z+=2)for(let x=cx-22;x<cx+24;x+=2){if(this.game.world.outdoorAt(x,z)||this.game.world.outdoorAt(x+1,z+1))continue;list.push([x,z]);}
-    const mesh=new T.InstancedMesh(this.r.geometries.cone,this.r.mat('#689363'),list.length),dummy=new T.Object3D();
+    const mesh=new T.InstancedMesh(this.r.geometries.cone,this.r.mat(snow?'#9db5ae':'#689363'),list.length),dummy=new T.Object3D();
     list.forEach(([x,z],i)=>{dummy.position.set(x+.7,1.2,z+.7);dummy.scale.set(1.2,2.7,1.2);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});mesh.computeBoundingSphere();this.backdrop.add(mesh);
-    const floor=this.r.mesh(this.backdrop,'box','#8fae75',[cx,-.13,cz],[70,.1,70]);floor.castShadow=false;
+    const floor=this.r.mesh(this.backdrop,'box',snow?'#e3ebf1':'#8fae75',[cx,-.13,cz],[70,.1,70]);floor.castShadow=false;
   }
   clearWorld(){for(const e of this.maps.values())this.r.release(e.root);this.maps.clear();for(const a of this.actors.values())this.r.release(a.root);this.actors.clear();this.backdropCell='';this.currentMap=null;}
   // Pantalla de inicio: escena propia (lago al amanecer) con cielo en degradé, niebla cálida y sol bajo.
