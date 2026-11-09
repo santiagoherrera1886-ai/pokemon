@@ -1,3 +1,4 @@
+import {hasRetroReference} from '../art/retro-reference.js';
 // Display preferences intentionally live outside alborada-save-v1.
 const KEY = 'alborada-graphics-v1';
 // Los letreros 3D se pintan con la fuente del juego: se espera a que cargue (máximo 2,5 s).
@@ -44,6 +45,8 @@ export class Graphics {
   }
   // Retrato 3D para la interfaz cuando el modo 3D está activo (si no, null y se usa el pixel art).
   portrait(sp) {
+    // El catálogo retro aprobado prima sobre retratos genéricos 3D en cualquier modo.
+    if(hasRetroReference(sp))return null;
     if (this.mode !== 'premium' || this.status !== 'ready' || !this.engine || this.engine.lost) return null;
     try { return this.engine.portrait(sp); } catch (error) { console.warn('Alborada: retrato no disponible', error.message); return null; }
   }
