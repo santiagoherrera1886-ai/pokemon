@@ -1,4 +1,5 @@
 import {hasRetroReference} from '../art/retro-reference.js';
+import {setRetroArt} from '../art/creatures.js';
 // Display preferences intentionally live outside alborada-save-v1.
 const KEY = 'alborada-graphics-v1';
 // Los letreros 3D se pintan con la fuente del juego: se espera a que cargue (máximo 2,5 s).
@@ -9,15 +10,27 @@ function fontsReady() {
 }
 export class Graphics {
   constructor(game) {
-    this.game = game; this.mode = 'premium'; this.quality = 'medium'; this.status = 'idle';
+    // art: 'hd' (criaturas y menús en alta definición, por defecto) o 'retro' (tema Bruma Retro 16-bit).
+    this.game = game; this.mode = 'premium'; this.quality = 'medium'; this.art = 'hd'; this.status = 'idle';
     this.engine = null; this.pending = null;
     try {
       const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
-      if (saved) {this.mode = saved.mode === 'classic' ? 'classic' : 'premium'; this.quality = ['low','medium','high'].includes(saved.quality) ? saved.quality : 'medium';}
+      if (saved) {this.mode = saved.mode === 'classic' ? 'classic' : 'premium'; this.quality = ['low','medium','high'].includes(saved.quality) ? saved.quality : 'medium'; this.art = saved.art === 'retro' ? 'retro' : 'hd';}
       else if (matchMedia('(pointer: coarse)').matches) this.quality = 'low';
     } catch { /* Storage is optional; gameplay still works. */ }
   }
-  save() {try {localStorage.setItem(KEY, JSON.stringify({mode:this.mode, quality:this.quality}));} catch { /* private browsing */ }}
+  save() {try {localStorage.setItem(KEY, JSON.stringify({mode:this.mode, quality:this.quality, art:this.art}));} catch { /* private browsing */ }}
+  // Estilo de arte: activa o apaga la hoja retro, los sprites retro y el pixelado del 3D. Los retratos se rehacen.
+  applyArt() {
+    const retro = this.art === 'retro';
+    setRetroArt(retro);
+    if (typeof document !== 'undefined') {
+      const css = document.getElementById('retroCss'); if (css) css.disabled = !retro;
+      document.body?.classList.toggle('art-retro', retro); document.body?.classList.toggle('art-hd', !retro);
+    }
+    this.engine?.portraits?.clear();
+  }
+  setArt(value) {this.art = value === 'retro' ? 'retro' : 'hd'; this.save(); this.applyArt();}
   async setMode(mode) {
     this.mode = mode === 'classic' ? 'classic' : 'premium'; this.save();
     if (this.mode === 'classic') {this.engine?.setVisible(false); return true;}
@@ -45,8 +58,8 @@ export class Graphics {
   }
   // Retrato 3D para la interfaz cuando el modo 3D está activo (si no, null y se usa el pixel art).
   portrait(sp) {
-    // El catálogo retro aprobado prima sobre retratos genéricos 3D en cualquier modo.
-    if(hasRetroReference(sp))return null;
+    // Con el tema retro, el catálogo retro aprobado prima sobre los retratos 3D en cualquier modo.
+    if(this.art === 'retro' && hasRetroReference(sp))return null;
     if (this.mode !== 'premium' || this.status !== 'ready' || !this.engine || this.engine.lost) return null;
     try { return this.engine.portrait(sp); } catch (error) { console.warn('Alborada: retrato no disponible', error.message); return null; }
   }

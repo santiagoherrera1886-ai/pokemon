@@ -289,7 +289,9 @@ const DRAW = {
 };
 
 // Sprites del modo clásico sacados de los modelos 3D (scripts/sprites.cjs); DRAW queda como respaldo.
-let atlasImg = null, retroImg = null;
+let atlasImg = null, retroImg = null, retroArt = false;
+// Tema Bruma Retro 16-bit (opción de gráficos): usa las ilustraciones retro y el acabado de paleta corta.
+export function setRetroArt(on) { on = !!on; if (on === retroArt) return; retroArt = on; cache.clear(); }
 const loadAtlas = url => new Promise(resolve=>{
   const im = new Image();
   im.onload = () => resolve(im);
@@ -307,7 +309,7 @@ function atlasSprite(g, id, back) {
   // los iconos de equipo y el Registro utilizan exactamente este atlas.
   // La espalda conserva el render previo hasta tener vistas traseras revisadas.
   const ri=RETRO_INDEX.get(id);
-  if (!back && retroImg && ri!==undefined) {
+  if (retroArt && !back && retroImg && ri!==undefined) {
     const S=RETRO_ATLAS.size,cols=RETRO_ATLAS.cols,prev=g.imageSmoothingEnabled;
     g.imageSmoothingEnabled=false;
     g.drawImage(retroImg,(ri%cols)*S,Math.floor(ri/cols)*S,S,S,0,0,64,64);
@@ -361,11 +363,11 @@ export function battleSprite(id, back = false) {
   if (!atlasSprite(g, id, back)) {
     if (DRAW[id]) { DRAW[id](g, back); autoShade(c, 0.18, ['#1e1a24', '#ffffff']); }
     else { ellipse(g, 32, 40, 18, 16, '#b8b4c8'); ellipse(g, 32, 24, 13, 12, '#c8c4d8'); }
-    outline(c, '#1e1a24'); finishRetroSprite(c); c.temp = true; return c;
+    outline(c, '#1e1a24'); if (retroArt) finishRetroSprite(c); c.temp = true; return c;
   }
   outline(c, '#1e1a24');
   // Los recortes ya tienen su paleta original de 30 colores; no reprocesarlos.
-  if (!(retroImg && !back && RETRO_INDEX.has(id))) finishRetroSprite(c);
+  if (retroArt && !(retroImg && !back && RETRO_INDEX.has(id))) finishRetroSprite(c);
   cache.set(k, c);
   return c;
 }

@@ -4,6 +4,7 @@
 import * as T from 'three';
 import { Sculpt } from './sculpt.js';
 import { BRUMA } from './bestiary.js';
+import { INICIALES } from './iniciales.js';
 
 // ---------- Geometrías compartidas de los detalles ----------
 const G = {};
@@ -17,6 +18,58 @@ const OCTA = () => geo('octa', () => new T.OctahedronGeometry(1, 0));
 const PRISM = () => geo('prism', () => new T.CylinderGeometry(.62, 1, 1, 6).translate(0, .5, 0));
 const RING = tube => geo('ring' + tube, () => new T.TorusGeometry(1, tube, 10, 64));
 const BODY = new Map();   // malla esculpida por especie (cara de construir, se guarda)
+
+// Láminas con grosor (orejas de hoja, hojas, aletas, plumas de fuego planas): contorno 2D en una caja de
+// ancho 1 (x de -.5 a .5) y largo 1 (y de 0 a 1), extruido con bisel redondo y luego arqueado.
+// curl dobla la punta hacia +z (hacia el frente de la lámina) y cup ahueca los bordes.
+const OUTLINE = {
+  leaf: t => .5 * Math.pow(Math.sin(Math.PI * t), .72) * (1 - .16 * t),
+  ear: t => .5 * Math.pow(Math.sin(Math.PI * (.12 + .88 * t)), .7),
+  petal: t => .5 * Math.pow(Math.sin(Math.PI * Math.min(1, t * .92 + .04)), .5),
+  blade: t => .5 * Math.pow(Math.sin(Math.PI * (.05 + .95 * t)), 1.1) * (1 - .4 * t)
+};
+// Aletas: contornos por puntos (abanico con borde festoneado, cola de pez de dos lóbulos, cresta).
+const POINTS = {
+  fin: [[0, 0], [.2, .08], [.4, .4], [.52, .78], [.44, .9], [.3, .8], [.22, 1], [.06, .86], [-.06, .96], [-.16, .74], [-.18, .42], [-.12, .12]],
+  fluke: [[0, 0], [.1, .2], [.3, .48], [.52, .8], [.5, 1], [.3, .8], [.1, .62], [0, .58], [-.1, .62], [-.3, .8], [-.5, 1], [-.52, .8], [-.3, .48], [-.1, .2]],
+  crest: [[0, 0], [.34, .18], [.5, .52], [.38, .66], [.3, .58], [.24, .86], [.08, .7], [-.02, 1], [-.12, .68], [-.2, .4], [-.16, .12]],
+  stream: [[0, 0], [.22, .14], [.3, .36], [.24, .6], [.12, .84], [.02, 1], [-.04, .82], [-.02, .56], [-.08, .3], [-.14, .1]]
+};
+function bladeGeo(kind, curl = 0, cup = 0) {
+  const key = 'bl' + kind + curl.toFixed(2) + cup.toFixed(2);
+  return geo(key, () => {
+    const shape = new T.Shape(), f = OUTLINE[kind];
+    if (f) {
+      const N = 22;
+      for (let i = 0; i <= N; i++) { const t = i / N; i ? shape.lineTo(f(t), t) : shape.moveTo(f(t), t); }
+      for (let i = N; i >= 0; i--) { const t = i / N; if (f(t) > 1e-4) shape.lineTo(-f(t), t); }
+    } else POINTS[kind].forEach(([x, y], i) => i ? shape.lineTo(x, y) : shape.moveTo(x, y));
+    shape.closePath();
+    const g = new T.ExtrudeGeometry(shape, { depth: .05, bevelEnabled: true, bevelThickness: .045, bevelSize: .035, bevelSegments: 2, curveSegments: 6, steps: 1 });
+    const p = g.attributes.position;
+    for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i); p.setZ(i, p.getZ(i) - .025 + curl * y * y + cup * x * x * 2); }
+    g.computeVertexNormals(); return g;
+  });
+}
+// Fuego vivo: lenguas con degradé de color (sin luz propia: brillan solas y encienden el resplandor).
+// [color de la base, intensidad, color de la punta, intensidad]; las intensidades > 1 hacen brillar el bloom.
+const FIRE = {
+  core: ['#fff2a8', 1.35, '#ffc83a', 1.12], mid: ['#ffb42a', 1.06, '#ff6a14', .95], out: ['#ff7a1e', .96, '#e0360e', .86],
+  mane: ['#d6300e', .86, '#ffa21e', 1.06], maneTip: ['#ff5e14', .92, '#ffd040', 1.2]
+};
+let FIRE_MAT = null;
+const fireMat = () => FIRE_MAT || (FIRE_MAT = new T.MeshBasicMaterial({ vertexColors: true }));
+// Lengua de fuego: perfil de gota que se tuerce hacia la punta, con degradé de color (base -> punta).
+function flameGeo(bend) {
+  return geo('fl' + bend.toFixed(2), () => {
+    const pts = [];
+    for (let i = 0; i <= 16; i++) { const h = i / 16; pts.push(new T.Vector2(.5 * Math.pow(Math.sin(Math.PI * (.08 + .92 * h)), .85) * Math.pow(1 - h, .55) + .001, h)); }
+    const g = new T.LatheGeometry(pts, 10), p = g.attributes.position;
+    // Curva en S: la base sale derecha y la punta se dobla (bend) como una lengua de fuego.
+    for (let i = 0; i < p.count; i++) { const h = p.getY(i); p.setX(i, p.getX(i) + bend * (h * h * 1.1 - h * .22)); p.setZ(i, p.getZ(i) + bend * Math.sin(h * 3) * .08); }
+    g.computeVertexNormals(); return g;
+  });
+}
 
 const sh = (hex, f) => { const c = new T.Color(hex); return '#' + (f > 0 ? c.lerp(new T.Color('#ffffff'), f) : c.multiplyScalar(1 + f)).getHexString(); };
 const FWD = new T.Vector3(0, 0, 1);
@@ -42,12 +95,24 @@ function kit(r, g, S) {
   };
   const eyes = [];
   // Ojo de figura: óvalo oscuro brillante con iris de color abajo y dos brillos; 'cat' = ojo de color con pupila rasgada.
-  const eyeAt = ({ p, n }, s, iris, { lid = 0, lidColor, style, tilt = 0 } = {}) => {
-    const e = new T.Group(); e.position.copy(p).addScaledVector(n, -s * .14); e.quaternion.setFromUnitVectors(FWD, n); e.rotateZ(tilt); g.add(e);
+  const eyeAt = ({ p, n }, s, iris, { lid = 0, lowLid = 0, lidColor, style, tilt = 0 } = {}) => {
+    const e = new T.Group(); e.position.copy(p).addScaledVector(n, -s * (style === 'almond' ? .24 : .14)); e.quaternion.setFromUnitVectors(FWD, n); e.rotateZ(tilt); g.add(e);
     const keep = m => { m.userData.keep = true; return m; };
     if (style === 'cat') {
       keep(add(SPHERE(), glow(iris, .4), [0, 0, 0], [s * 1.1, s * 1.25, s * .42], null, e));
       keep(add(SPHERE_LO(), M('#1a1420', { roughness: .2 }), [0, 0, s * .2], [s * .3, s * 1.0, s * .3], null, e));
+    } else if (style === 'round') {
+      // Ojo grande de cachorro: borde oscuro, iris de color vivo que llena casi todo y pupila al centro.
+      keep(add(SPHERE(), M('#1c1216', { roughness: .2 }), [0, 0, 0], [s * 1.02, s * 1.22, s * .42], null, e));
+      keep(add(SPHERE(), M(iris, { roughness: .16, emissive: iris, emissiveIntensity: .16 }), [0, -s * .04, s * .1], [s * .86, s * 1.04, s * .36], null, e));
+      keep(add(SPHERE_LO(), M(sh(iris, .32), { roughness: .2 }), [0, -s * .44, s * .2], [s * .56, s * .4, s * .26], null, e));
+      keep(add(SPHERE_LO(), M('#120a0e', { roughness: .12 }), [0, s * .02, s * .25], [s * .44, s * .56, s * .24], null, e));
+    } else if (style === 'almond') {
+      // Mirada adulta: almendra con blanco, iris de color, pupila y delineado (el párpado de piel la recorta).
+      keep(add(SPHERE(), M('#1e1216', { roughness: .3 }), [0, s * .04, -s * .04], [s * 1.32, s * .92, s * .4], null, e));
+      keep(add(SPHERE(), M('#fbf5ea', { roughness: .22 }), [0, -s * .02, s * .05], [s * 1.18, s * .78, s * .36], null, e));
+      keep(add(SPHERE(), M(iris, { roughness: .16, emissive: iris, emissiveIntensity: .2 }), [s * .06, -s * .02, s * .13], [s * .7, s * .72, s * .3], null, e));
+      keep(add(SPHERE_LO(), M('#120a0e', { roughness: .12 }), [s * .07, -s * .02, s * .2], [s * .32, s * .44, s * .2], null, e));
     } else if (style === 'led') {
       // Ojo de máquina o de espíritu: óvalo de luz con borde oscuro, sin pupila.
       keep(add(SPHERE(), M('#1c1a26', { roughness: .2 }), [0, 0, -s * .05], [s * 1.18, s * 1.02, s * .4], null, e));
@@ -56,17 +121,29 @@ function kit(r, g, S) {
       keep(add(SPHERE(), M(sh(iris, -.8), { roughness: .15 }), [0, 0, 0], [s, s * 1.38, s * .44], null, e));
       keep(add(SPHERE_LO(), M(sh(iris, .08), { roughness: .2 }), [0, -s * .46, s * .17], [s * .72, s * .56, s * .32], null, e));
     }
-    keep(add(SPHERE_LO(), HL, [-s * .3, s * .46, s * .35], [s * .36, s * .44, s * .14], null, e));
-    keep(add(SPHERE_LO(), HL, [s * .32, -s * .4, s * .37], [s * .14, s * .14, s * .08], null, e));
-    if (lid) keep(add(SPHERE(), lidColor, [0, s * (1.62 - lid * 1.25), s * .1], [s * 1.28, s * .92, s * .55], null, e));
+    const almond = style === 'almond';
+    keep(add(SPHERE_LO(), HL, almond ? [-s * .2, s * .2, s * .3] : [-s * .3, s * .46, s * .35], almond ? [s * .2, s * .2, s * .1] : [s * .36, s * .44, s * .14], null, e));
+    keep(add(SPHERE_LO(), HL, almond ? [s * .3, -s * .2, s * .3] : [s * .32, -s * .4, s * .37], almond ? [s * .08, s * .08, s * .06] : [s * .14, s * .14, s * .08], null, e));
+    if (almond) {
+      // Párpados delgados de piel que dejan la almendra, con delineado oscuro en el borde de arriba.
+      if (lid) {
+        const edge = s * (.9 - 2 * lid);
+        keep(add(SPHERE(), lidColor, [0, edge + s * .66, s * .02], [s * 1.46, s * .66, s * .42], null, e));
+        keep(add(SPHERE_LO(), M('#1e1216', { roughness: .3 }), [0, edge + s * .02, s * .14], [s * 1.36, s * .1, s * .3], null, e));
+      }
+      if (lowLid) { const edge = -s * (.85 - 2 * lowLid); keep(add(SPHERE(), lidColor, [0, edge - s * .58, 0], [s * 1.42, s * .6, s * .4], null, e)); }
+    } else {
+      if (lid) keep(add(SPHERE(), lidColor, [0, s * (1.62 - lid * 1.25), s * .1], [s * 1.28, s * .92, s * .55], null, e));
+      if (lowLid) keep(add(SPHERE(), lidColor, [0, -s * (1.5 - lowLid * 1.1), s * .08], [s * 1.3, s * .9, s * .5], null, e));
+    }
     eyes.push(e); return e;
   };
   // Cara sobre la cabeza (c = punto dentro de la cabeza): ojos, cachetes pintados y boca.
   const anchors = {};
   const face = o => {
     anchors.head = { c: o.c, size: o.size || .075, top: S.surface(o.c, [0, 1, 0]).p };
-    const { c, spread = .38, pitch = .05, size = .075, iris = '#3a5a9a', cheek = '#f4a3a8', mouth = 'smile', mouthPitch = -.3, mouthW = .045, lid = 0, lidColor = '#888888', style, angry = 0 } = o;
-    for (const s of [-1, 1]) eyeAt(S.surface(c, dirOf(s * spread, pitch)), size, iris, { lid, lidColor, style, tilt: s * angry });
+    const { c, spread = .38, pitch = .05, size = .075, iris = '#3a5a9a', cheek = '#f4a3a8', mouth = 'smile', mouthPitch = -.3, mouthW = .045, lid = 0, lowLid = 0, lidColor = '#888888', style, angry = 0, fangs = false } = o;
+    for (const s of [-1, 1]) eyeAt(S.surface(c, dirOf(s * spread, pitch)), size, iris, { lid, lowLid, lidColor, style, tilt: s * angry });
     if (cheek) for (const s of [-1, 1]) { const h = S.surface(c, dirOf(s * (spread + .34), pitch - .22)); S.paint(E([h.p.x, h.p.y, h.p.z], [size * 1.15, size * .72, size * 1.15]), cheek, size * .7); }
     if (mouth === 'none') return;
     const h = S.surface(c, dirOf(0, mouthPitch)), ink = '#3a2228';
@@ -75,6 +152,8 @@ function kit(r, g, S) {
       S.carve(E([q.x, q.y, q.z], [mouthW * 1.15, mouthW * .85, mouthW * .9]), .012);
       S.paint(E([q.x, q.y, q.z], [mouthW * 1.4, mouthW * 1.1, mouthW * 1.25]), '#6e2434', .008);
       S.paint(E([q.x, q.y - mouthW * .55, q.z + mouthW * .2], [mouthW * .8, mouthW * .42, mouthW * .9]), '#f08a9a', .01);
+      // Colmillitos de cachorro en las comisuras de arriba.
+      if (fangs) for (const s of [-1, 1]) { const f = cone('#fffaf0', [q.x + s * mouthW * .62, q.y + mouthW * .5, q.z + mouthW * .55], [mouthW * .2, mouthW * .42, mouthW * .2]); f.rotation.x = Math.PI; }
       return;
     }
     const arc = (dx, w) => { const m = add(TORUS(Math.PI, .34), ink, [h.p.x + dx, h.p.y + w * .45, h.p.z], [w, w * .8, w]); m.quaternion.setFromUnitVectors(FWD, h.n); m.rotateZ(Math.PI); return m; };
@@ -132,149 +211,77 @@ function kit(r, g, S) {
   };
   // Anillo (órbitas, halos, cinturones) con centro, radio y giro.
   const ring = (c, p, R, rot = [Math.PI / 2, 0, 0], tube = .04) => add(RING(tube), c, p, [R, R, R], rot);
-  return { M, glow, ball, cone, cyl, stick, eyeAt, face, flame, antennae, claws, ember, gem, eyes, add, root: g, anchors, spike, ice, crystal, prism, leaf, vein, wing, ring, sh, S };
+
+  // ---------- Acabado HD (láminas, fuego vivo, pelaje y marcas) ----------
+  // Animaciones propias del modelo (llamas que titilan, hojas que flotan): fn(t, dt) en cada cuadro.
+  const anims = [];
+  const anim = fn => { anims.push(fn); return fn; };
+  // Orienta una pieza: su eje +y va de a hacia b y su cara +z mira hacia face. Devuelve el largo.
+  const orient = (m, a, b, face = [0, 0, 1]) => {
+    const A = new T.Vector3(...a), Y = new T.Vector3(...b).sub(A), len = Y.length() || 1e-3; Y.normalize();
+    const Z = new T.Vector3(...face); Z.addScaledVector(Y, -Z.dot(Y));
+    if (Z.lengthSq() < 1e-6) Z.set(1, 0, 0).addScaledVector(Y, -Y.x);
+    Z.normalize();
+    m.quaternion.setFromRotationMatrix(new T.Matrix4().makeBasis(new T.Vector3().crossVectors(Y, Z), Y, Z)); m.position.copy(A); return len;
+  };
+  // Lámina con grosor (oreja de hoja, hoja, aleta, pétalo) de a a b, de ancho w, con la cara hacia face.
+  const blade = (kind, c, a, b, w, face, { curl = 0, cup = 0, thick = 1, keep = false } = {}) => {
+    const m = add(bladeGeo(kind, curl, cup), c, [0, 0, 0], 1);
+    const len = orient(m, a, b, face); m.scale.set(w, len, len * thick);
+    if (keep || (typeof c === 'object' && c.transparent)) m.userData.keep = true;
+    return m;
+  };
+  // Aleta translúcida de agua (brilla un poco y deja ver el fondo).
+  const finMat = (c, k = .3, opacity = .82) => r.mat(c, { emissive: c, emissiveIntensity: k, roughness: .18, transparent: true, opacity, side: T.DoubleSide, depthWrite: true });
+  const tongueGeo = (bend, pal) => geo('ft' + bend.toFixed(2) + pal, () => {
+    const g = flameGeo(bend).clone(), p = g.attributes.position, [c0, k0, c1, k1] = FIRE[pal], A = new T.Color(c0), B = new T.Color(c1), col = new Float32Array(p.count * 3), tmp = new T.Color();
+    for (let i = 0; i < p.count; i++) { const h = Math.min(1, Math.max(0, p.getY(i))); tmp.copy(A).multiplyScalar(k0).lerp(B.clone().multiplyScalar(k1), Math.pow(h, .8)); tmp.toArray(col, i * 3); }
+    g.setAttribute('color', new T.BufferAttribute(col, 3)); return g;
+  });
+  // Una lengua de fuego de a (base) a b (punta), ancho w; titila sola.
+  const tongue = (a, b, w, { pal = 'mid', bend = .3, face = [0, 0, 1], speed = 1 } = {}) => {
+    const m = new T.Mesh(tongueGeo(bend, pal), fireMat()); m.userData.keep = true; g.add(m);
+    const len = orient(m, a, b, face); m.scale.set(w, len, w);
+    const ph = Math.random() * 6.3, sy = len, q0 = m.quaternion.clone();
+    anim(t => { const k = 1 + Math.sin(t * 9 * speed + ph) * .1 + Math.sin(t * 15.7 * speed + ph * 2) * .05; m.scale.y = sy * k; m.scale.x = m.scale.z = w * (1.04 - (k - 1) * .5); m.quaternion.copy(q0); m.rotateZ(Math.sin(t * 5.3 * speed + ph) * .07); });
+    return m;
+  };
+  // Penacho de fuego (punta de cola, copete): núcleo claro, lengua media y lenguas rojizas alrededor.
+  const plume = (base, dir, size, { face = [0, 0, 1], spread = .5, n = 3, tint = 'out' } = {}) => {
+    const B = new T.Vector3(...base), D = new T.Vector3(...dir).normalize(), F = new T.Vector3(...face).normalize();
+    const side = new T.Vector3().crossVectors(D, F).normalize();
+    const tip = (len, off) => B.clone().addScaledVector(D, len).addScaledVector(side, off).toArray();
+    for (let i = 0; i < n; i++) { const o = n > 1 ? (i / (n - 1) - .5) * 2 : 0; tongue(B.clone().addScaledVector(side, o * size * .14).toArray(), tip(size * (1 - Math.abs(o) * .35), o * size * spread * .6), size * .36, { pal: tint, bend: -o * .6 + .12, face }); }
+    tongue(base, tip(size * .88, 0), size * .34, { pal: 'mid', bend: .28, face });
+    tongue(B.clone().addScaledVector(D, -size * .05).toArray(), tip(size * .55, 0), size * .22, { pal: 'core', bend: .1, face, speed: 1.3 });
+  };
+  // Mechón de pelo fundido al cuerpo: cono de a (base) a b (punta).
+  const tuft = (a, b, rad, c, k = .03) => S.limb(a, b, rad, rad * .12, c, { k, kc: .02 });
+  // Punto de la piel saliendo desde c (dentro del cuerpo) hacia (yaw, pitch); out lo despega.
+  const skin = (c, yaw, pitch, out = 0) => { const h = S.surface(c, dirOf(yaw, pitch)); return [h.p.x + h.n.x * out, h.p.y + h.n.y * out, h.p.z + h.n.z * out]; };
+  // Marca en remolino pintada sobre la piel, centrada en el punto (yaw, pitch) visto desde c.
+  const swirl = (c, yaw, pitch, R, color, { w = .022, turns = 1.1, start = 0, flip = 1, n = 22, tail = 0 } = {}) => {
+    const h = S.surface(c, dirOf(yaw, pitch)), N0 = h.n, up = Math.abs(N0.y) > .9 ? new T.Vector3(1, 0, 0) : new T.Vector3(0, 1, 0);
+    const u = new T.Vector3().crossVectors(up, N0).normalize(), v = new T.Vector3().crossVectors(N0, u), C0 = new T.Vector3(...c);
+    const dot = (q, wi) => { const s = S.surface(c, q.clone().sub(C0).toArray()); S.paint(E(s.p.toArray(), wi), color, wi * .55); };
+    for (let i = 0; i <= n; i++) { const t = i / n, a = start + flip * t * turns * Math.PI * 2, rr = R * (1 - .8 * t); dot(h.p.clone().addScaledVector(u, Math.cos(a) * rr).addScaledVector(v, Math.sin(a) * rr), w * (1 - .4 * t)); }
+    // Cola del remolino: sale desde el borde exterior y se afina.
+    for (let i = 1; i <= tail; i++) { const t = i / tail, a = start - flip * t * .9; dot(h.p.clone().addScaledVector(u, Math.cos(a) * R * (1 + t * .9)).addScaledVector(v, Math.sin(a) * R * (1 + t * .9) - t * R * .3), w * (1 - .7 * t)); }
+  };
+  // Franja pintada sobre la piel entre dos direcciones (rayas de tigre, calcetines, máscaras).
+  const stripe = (c, from, to, w0, w1, color, n = 14) => {
+    for (let i = 0; i <= n; i++) { const t = i / n, p = skin(c, from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t), wi = w0 + (w1 - w0) * t; S.paint(E(p, wi), color, wi * .5); }
+  };
+  // Arco de anillo (agua que gira, estelas): radio R, largo del arco en radianes y grosor relativo.
+  const arc = (c, p, R, len, tube, rot) => add(TORUS(len, tube), c, p, [R, R, R], rot);
+  return { M, glow, ball, cone, cyl, stick, eyeAt, face, flame, antennae, claws, ember, gem, eyes, add, root: g, anchors, spike, ice, crystal, prism, leaf, vein, wing, ring, sh, S,
+    anims, anim, orient, blade, finMat, tongue, plume, tuft, skin, swirl, stripe, arc };
 }
 
 // ---------- Especies ----------
 // S = cuerpo esculpido (una pieza), D = detalles. Cada especie mira hacia +z y pisa y = 0.
+// Las líneas iniciales viven en iniciales.js (acabado HD de la lámina) y el bestiario de la Bruma en bestiary.js.
 const BUILD = {
-  brotelo(S, D) {
-    S.ball([0, .42, 0], [.54, .4, .48], '#dcc79a', { k: 0 });
-    S.ball([0, .58, -.03], [.56, .28, .5], '#6cc152', { k: .07, kc: .03 });
-    for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2 + .2; if (Math.sin(a) > .5) continue; S.ball([Math.cos(a) * .5, .5, Math.sin(a) * .44], .12, i % 2 ? '#62b84a' : '#72c658', { k: .05, kc: .02 }); }
-    S.pair(s => { S.ball([s * .3, .09, .22], [.13, .09, .15], '#cbb284', { k: .05 }); S.ball([s * .3, .09, -.22], [.13, .09, .15], '#cbb284', { k: .05 }); });
-    for (const [x, y, z] of [[-.4, .36, .2], [.44, .3, .06], [.3, .5, .3]]) S.paint(E([x, y, z], .05), '#c9b083', .02);
-    D.face({ c: [0, .4, .05], spread: .38, pitch: -.02, size: .086, iris: '#3e7a3a', mouth: 'open', mouthPitch: -.3 });
-    D.stick('#4f9a3f', [0, .84, -.02], [0, 1.04, -.02], .025);
-    D.ball('#a6dc6a', [-.15, 1.1, -.02], [.18, .045, .1], [0, 0, .4]); D.ball('#8ccc58', [.15, 1.13, -.02], [.18, .045, .1], [0, 0, -.4]);
-  },
-  brotoso(S, D) {
-    S.ball([0, .58, -.1], [.7, .44, .62], '#b89f74', { k: 0 });
-    S.ball([0, .38, -.1], [.76, .13, .68], '#a08660', { k: .04, kc: .02 });
-    S.ball([0, .84, -.12], [.6, .22, .5], '#5fb24c', { k: .08, kc: .03 });
-    for (let i = 0; i < 11; i++) { const a = i / 11 * Math.PI * 2; S.ball([Math.cos(a) * .56, .78, -.12 + Math.sin(a) * .46], .095, i % 2 ? '#56a845' : '#68bb52', { k: .05, kc: .02 }); }
-    S.limb([0, .44, .25], [0, .54, .55], .2, .2, '#e6cc98', { k: .1 });
-    S.ball([0, .58, .62], [.33, .3, .3], '#e6cc98', { k: .1 });
-    S.pair(s => {
-      for (const z of [.28, -.46]) { S.limb([s * .42, .34, z], [s * .48, .1, z + .06], .17, .16, '#d2b684', { k: .08 }); S.ball([s * .48, .07, z + .08], [.17, .08, .19], '#d2b684', { k: .04 }); }
-    });
-    S.ball([0, .3, -.72], [.08, .08, .1], '#d2b684', { k: .05 });
-    D.face({ c: [0, .58, .62], spread: .42, pitch: .06, size: .07, iris: '#3e6a32', mouth: 'smile', mouthPitch: -.32 });
-    D.stick('#4f9a3f', [.08, 1.02, -.12], [.08, 1.28, -.12], .025);
-    D.ball('#a6dc6a', [-.08, 1.34, -.12], [.2, .05, .11], [0, 0, .4]); D.ball('#8ccc58', [.26, 1.37, -.12], [.2, .05, .11], [0, 0, -.4]);
-    for (const [x, z, c] of [[-.34, .08, '#f4a8c4'], [.32, -.3, '#f4d466'], [-.12, -.42, '#f4a8c4']]) { D.ball(c, [x, 1.02, z], [.08, .04, .08]); D.ball('#fff4d0', [x, 1.05, z], .032); }
-  },
-  bosqueron(S, D) {
-    S.ball([0, .72, -.15], [.88, .54, .78], '#9e8862', { k: 0 });
-    S.ball([0, .46, -.15], [.94, .16, .84], '#86714f', { k: .04, kc: .02 });
-    S.ball([0, 1.02, -.18], [.76, .26, .64], '#4f9a4a', { k: .08, kc: .03 });
-    for (let i = 0; i < 13; i++) { const a = i / 13 * Math.PI * 2; S.ball([Math.cos(a) * .72, .96, -.18 + Math.sin(a) * .6], .1, i % 2 ? '#478c42' : '#5aa652', { k: .05, kc: .02 }); }
-    S.limb([0, 1.16, -.22], [.05, 1.7, -.25], .13, .09, '#8c6745', { k: .06, kc: .02 });
-    S.ball([.05, 1.94, -.25], [.46, .3, .42], '#4fa654', { k: .1, kc: .04 });
-    S.ball([-.3, 1.82, -.15], [.3, .24, .28], '#5cb85a', { k: .1 }); S.ball([.36, 1.84, -.36], [.32, .25, .3], '#5cb85a', { k: .1 });
-    S.paint(E([0, 2.18, -.2], [.32, .12, .3]), '#82d070', .08);
-    S.pair(s => S.ball([s * .48, 1.1, .05], [.16, .12, .15], '#62b058', { k: .06 }));
-    S.limb([0, .54, .35], [0, .64, .7], .26, .25, '#d9bd88', { k: .12 });
-    S.ball([0, .7, .78], [.38, .34, .33], '#d9bd88', { k: .12 });
-    S.pair(s => {
-      S.limb([s * .24, .92, .72], [s * .36, 1.08, .64], .08, .035, '#9e8862', { k: .04 });
-      for (const z of [.36, -.6]) { S.limb([s * .55, .44, z], [s * .6, .13, z + .06], .22, .21, '#c9ab7a', { k: .1 }); S.ball([s * .6, .09, z + .1], [.22, .1, .24], '#c9ab7a', { k: .05 }); }
-    });
-    D.face({ c: [0, .7, .78], spread: .42, pitch: .04, size: .074, iris: '#35552a', mouth: 'smile', mouthPitch: -.32 });
-  },
-  brasin(S, D) {
-    S.ball([0, .46, -.04], [.5, .42, .46], '#605a74', { k: 0 });
-    S.ball([0, .66, .16], [.4, .36, .36], '#605a74', { k: .16 });
-    S.paint(E([0, .4, .32], [.3, .28, .22]), '#837d98', .06);
-    S.ball([0, .58, .48], [.19, .14, .17], '#f2dcc4', { k: .06, kc: .02 });
-    S.ball([0, .62, .64], [.07, .055, .05], '#ee8496', { k: .02, kc: .012 });
-    S.pair(s => { S.ball([s * .3, .17, .36], [.15, .08, .17], '#f2dcc4', { k: .05, kc: .02 }); S.ball([s * .26, .07, -.18], [.13, .07, .16], '#f2dcc4', { k: .04, kc: .02 }); D.claws(s * .3, .17, .52, .8); });
-    S.limb([0, .32, -.45], [0, .3, -.6], .07, .03, '#605a74', { k: .04 });
-    for (const [x, y, z, rz] of [[-.47, .5, .14, .5], [.49, .46, .18, -.6], [.3, .76, -.22, .2]]) D.ember(x, y, z, rz);
-    D.flame(0, 1.02, -.08, .9);
-    D.face({ c: [0, .66, .16], spread: .36, pitch: .2, size: .07, iris: '#e08a3a', cheek: '#f49a72', mouth: 'none' });
-  },
-  brason(S, D) {
-    S.ball([0, .66, 0], [.48, .58, .42], '#605a74', { k: 0 });
-    S.paint(E([0, .58, .26], [.3, .4, .24]), '#857f9a', .06);
-    S.ball([0, 1.24, .06], [.38, .35, .34], '#605a74', { k: .14 });
-    S.ball([0, 1.15, .38], [.19, .13, .15], '#f2dcc4', { k: .06, kc: .02 });
-    S.ball([0, 1.19, .52], [.065, .05, .045], '#ee8496', { k: .02, kc: .012 });
-    S.pair(s => {
-      S.limb([s * .36, .92, .08], [s * .58, .68, .24], .13, .11, '#605a74', { k: .08 });
-      S.ball([s * .6, .64, .28], [.16, .12, .16], '#f2dcc4', { k: .04, kc: .02 }); D.claws(s * .6, .6, .43, .9);
-      S.limb([s * .24, .3, .02], [s * .28, .1, .08], .15, .13, '#605a74', { k: .06 });
-      S.ball([s * .28, .07, .14], [.15, .07, .18], '#f2dcc4', { k: .04, kc: .02 });
-    });
-    S.limb([0, .4, -.36], [0, .3, -.56], .08, .04, '#605a74', { k: .05 });
-    for (const [x, y, z, rz] of [[-.42, .7, .2, .4], [.45, .52, .22, -.5], [.2, 1.48, -.2, .3]]) D.ember(x, y, z, rz);
-    D.flame(0, 1.6, -.04, .72); D.flame(0, .44, -.66, .55);
-    D.face({ c: [0, 1.24, .06], spread: .38, pitch: .16, size: .066, iris: '#e08a3a', cheek: '#f49a72', mouth: 'none' });
-  },
-  volcarbon(S, D) {
-    S.ball([0, .72, -.08], [.78, .54, .7], '#5a546a', { k: 0 });
-    S.paint(E([0, .52, .3], [.5, .3, .4]), '#7b7590', .08);
-    S.limb([0, 1.05, -.25], [0, 1.6, -.28], .55, .24, '#7a6150', { k: .14, kc: .04 });
-    S.carve(E([0, 1.74, -.28], [.19, .17, .19]), .04);
-    S.paint(E([0, 1.3, -.27], [.6, .06, .6]), '#6a523f', .03);
-    S.ball([0, .76, .6], [.42, .36, .34], '#5e586e', { k: .16 });
-    S.ball([0, .68, .9], [.2, .13, .12], '#f2dcc4', { k: .06, kc: .02 });
-    S.ball([0, .72, 1.0], [.065, .05, .045], '#ee8496', { k: .02, kc: .012 });
-    S.pair(s => { for (const z of [.4, -.5]) { S.limb([s * .52, .5, z], [s * .58, .15, z + .05], .19, .17, '#5a546a', { k: .1 }); S.ball([s * .58, .1, z + .1], [.2, .1, .22], '#f2dcc4', { k: .05, kc: .02 }); D.claws(s * .58, .1, z + .3, .9); } });
-    D.ball(D.glow('#ffb04a', .95), [0, 1.62, -.28], [.17, .05, .17]);
-    D.flame(0, 1.8, -.28, .6);
-    for (const [x, y, z, rz] of [[-.66, .7, .25, .5], [.68, .66, .2, -.5], [-.32, 1.02, .42, .2], [.4, 1.08, -.4, -.3]]) D.ember(x, y, z, rz, .15);
-    D.face({ c: [0, .76, .6], spread: .44, pitch: .2, size: .072, iris: '#f5c542', style: 'cat', lid: .18, lidColor: '#5e586e', angry: .18, cheek: false, mouth: 'none' });
-  },
-  charquin(S, D) {
-    S.ball([0, .74, .04], [.42, .38, .38], '#5ab6e6', { k: 0 });
-    S.ball([0, .36, -.02], [.32, .3, .29], '#5ab6e6', { k: .14 });
-    S.paint(E([0, .34, .24], [.24, .24, .2]), '#d6f2fa', .05);
-    S.limb([0, 1.02, -.04], [0, 1.27, -.11], .13, .015, '#5ab6e6', { k: .08 });
-    S.pair(s => {
-      S.ball([s * .46, .86, -.02], [.22, .07, .13], '#a8e4f6', { k: .05, kc: .03, rot: [0, 0, s * .55] });
-      S.ball([s * .43, .68, -.02], [.15, .06, .1], '#a8e4f6', { k: .05, kc: .03, rot: [0, 0, s * .2] });
-      S.limb([s * .26, .4, .14], [s * .34, .3, .22], .07, .06, '#5ab6e6', { k: .05 });
-      S.ball([s * .17, .06, .08], [.11, .06, .14], '#3f90c4', { k: .04, kc: .02 });
-    });
-    S.limb([0, .3, -.24], [0, .24, -.52], .13, .04, '#5ab6e6', { k: .08 });
-    S.ball([0, .3, -.48], [.03, .13, .12], '#a8e4f6', { k: .04, kc: .02 });
-    D.face({ c: [0, .74, .04], spread: .4, pitch: .0, size: .088, iris: '#2c6aa8', cheek: '#f7a4b4', mouth: 'open', mouthPitch: -.32 });
-  },
-  charcomar(S, D) {
-    S.ball([0, 1.16, .04], [.38, .35, .35], '#4a9ed6', { k: 0 });
-    S.ball([0, .6, 0], [.4, .46, .36], '#4a9ed6', { k: .16 });
-    S.paint(E([0, .56, .26], [.28, .36, .22]), '#d6f2fa', .05);
-    for (const i of [-1, 0, 1]) S.limb([i * .1, 1.42, -.02], [i * .2, 1.64 - Math.abs(i) * .06, -.12], .08, .02, '#7cc6ec', { k: .05 });
-    S.pair(s => {
-      S.ball([s * .42, 1.22, -.02], [.18, .06, .11], '#a8e4f6', { k: .05, kc: .03, rot: [0, 0, s * .5] });
-      S.limb([s * .34, .86, .02], [s * .62, .72, .06], .1, .06, '#4a9ed6', { k: .08 });
-      S.ball([s * .56, .84, -.04], [.28, .07, .2], '#a8e4f6', { k: .04, kc: .03, rot: [0, 0, s * .3] });
-      S.limb([s * .2, .26, 0], [s * .22, .08, .06], .12, .1, '#4a9ed6', { k: .06 });
-      S.ball([s * .22, .06, .12], [.13, .06, .16], '#3a84bc', { k: .04, kc: .02 });
-    });
-    S.limb([0, .36, -.3], [0, .26, -.64], .14, .04, '#4a9ed6', { k: .08 });
-    S.ball([0, .32, -.6], [.03, .16, .14], '#a8e4f6', { k: .04, kc: .02 });
-    D.face({ c: [0, 1.16, .04], spread: .38, pitch: .02, size: .08, iris: '#245e9a', mouth: 'smile', mouthPitch: -.32 });
-  },
-  mareon(S, D) {
-    S.ball([0, .72, 0], [.42, .6, .36], '#3f86c8', { k: 0 });
-    S.paint(E([0, .66, .26], [.3, .46, .22]), '#d6f2fa', .05);
-    S.ball([0, 1.42, .04], [.37, .34, .33], '#3f86c8', { k: .14 });
-    S.pair(s => {
-      S.ball([s * .56, 1.58, -.06], [.26, .4, .06], '#c4ecfa', { k: .06, kc: .03, rot: [0, 0, -s * .35] });
-      S.paint(E([s * .58, 1.6, -.02], [.17, .28, .05]), '#8fd0ec', .05);
-      S.limb([s * .34, 1.0, .06], [s * .54, .78, .16], .09, .07, '#3f86c8', { k: .06 });
-      S.ball([s * .5, .86, .02], [.18, .06, .12], '#a8e4f6', { k: .04, kc: .02, rot: [0, 0, -s * .6] });
-      S.limb([s * .2, .3, 0], [s * .22, .08, .06], .13, .11, '#3f86c8', { k: .06 });
-      S.ball([s * .22, .06, .12], [.14, .06, .17], '#3576b0', { k: .04, kc: .02 });
-    });
-    for (const i of [-1, 0, 1]) S.limb([i * .1, 1.68, -.02], [i * .22, 1.9 - Math.abs(i) * .08, -.12], .07, .018, '#8fd0ec', { k: .05 });
-    S.limb([0, .4, -.3], [0, .3, -.7], .14, .05, '#3f86c8', { k: .08 });
-    S.ball([0, .36, -.68], [.04, .22, .2], '#a8e4f6', { k: .04, kc: .02 });
-    D.gem([0, 1.66, .34], '#ec92d6', .07);
-    D.face({ c: [0, 1.42, .04], spread: .38, pitch: .05, size: .076, iris: '#3a4aa0', lid: .14, lidColor: '#3f86c8', mouth: 'smile', mouthPitch: -.32 });
-  },
   pipiu(S, D) {
     S.ball([0, .5, 0], [.44, .42, .4], '#c98c5a', { k: 0 });
     S.ball([0, .9, .06], [.33, .31, .31], '#c98c5a', { k: .2 });
@@ -511,11 +518,28 @@ const BUILD = {
     D.face({ c: [0, 1.6, .36], spread: .55, pitch: .05, size: .056, iris: '#3a5aa0', cheek: '#f4c0c8', mouth: 'none' });
   }
 };
-Object.assign(BUILD, BRUMA);
+Object.assign(BUILD, INICIALES, BRUMA);
 export const ALL_SPECIES = Object.keys(BUILD);
 // Rugosidad y brillo metálico del cuerpo por especie (las rocas son mate, el metal brilla).
 const ROUGH = { guijarrin: .62, penon: .64, espejalba: .3, medusin: .28, meduson: .28, magmol: .72, magmor: .72, magmatron: .7, cuarcin: .55, cuarzon: .55, astrocuarzo: .5, ferlum: .34, ferrox: .34, acerion: .32, fraguon: .36, nivalin: .3, nivalmar: .3, nivalord: .3 };
 const METAL = {};
+
+// Piel de figura HD: el color sale de la malla esculpida (con sombra de pliegues horneada) y una luz de borde
+// tibia contornea la silueta, como en un render de estudio. Una sola por rugosidad y brillo metálico.
+const SKIN = new Map();
+export function skinMaterial(rough, metal = 0, lit = 0) {
+  const key = rough + ':' + metal + ':' + lit;
+  if (SKIN.has(key)) return SKIN.get(key);
+  const m = new T.MeshStandardMaterial({ color: '#ffffff', vertexColors: true, roughness: rough, metalness: metal, ...(lit ? { emissive: '#fff4e0', emissiveIntensity: lit } : {}) });
+  m.onBeforeCompile = sh => {
+    sh.uniforms.rimTint = { value: new T.Color('#fff1dc') };
+    sh.fragmentShader = sh.fragmentShader.replace('void main() {', 'uniform vec3 rimTint;\nvoid main() {').replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+      float rimF = 1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);
+      totalEmissiveRadiance += mix(diffuseColor.rgb, rimTint, .45) * (pow(rimF, 3.0) * .55);`);
+  };
+  m.customProgramCacheKey = () => 'alborada-skin';
+  SKIN.set(key, m); return m;
+}
 
 // Modelo de la especie: cuerpo esculpido (se construye una vez y se reutiliza) + detalles.
 export function creatureModel(r, sp) {
@@ -524,12 +548,15 @@ export function creatureModel(r, sp) {
   const g = new T.Group(), S = new Sculpt(), D = kit(r, g, S);
   build(S, D);
   let body = BODY.get(sp);
-  if (!body) { body = S.mesh(.026); BODY.set(sp, body); }
-  const mesh = new T.Mesh(body, r.mat('#ffffff', { vertexColors: true, roughness: ROUGH[sp] ?? .42, ...(METAL[sp] ? { metalness: METAL[sp] } : {}) }));
+  if (!body) { S.ao = .55; body = S.mesh(.026); BODY.set(sp, body); }
+  const mesh = new T.Mesh(body, skinMaterial(ROUGH[sp] ?? .42, METAL[sp] || 0));
   mesh.castShadow = true; mesh.receiveShadow = true; mesh.userData.keep = true; g.add(mesh);
   r.batch(g);
   g.userData.eyes = D.eyes;
   g.userData.head = D.anchors.head;
   g.userData.body = mesh;
+  g.userData.anim = D.anims;
   return g;
 }
+// Mueve lo que cada modelo trae animado (fuego que titila, hojas que flotan, agua que gira).
+export function animateCreature(model, t, dt = 1 / 60) { for (const fn of model.userData.anim || []) fn(t, dt); }

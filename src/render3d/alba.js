@@ -3,6 +3,7 @@
 // el ancla de la cabeza y el tamaño del cuerpo esculpido de cada una.
 import * as T from 'three';
 import { TYPE_FX } from '../data/types.js';
+import { skinMaterial } from './creatures3d.js';
 
 const G = {};
 const geo = (k, make) => G[k] || (G[k] = make());
@@ -67,7 +68,7 @@ export function albaOverlay(r, rig, types = ['normal']) {
   g.traverse(o => { if (o.isMesh) { o.userData.keep = true; o.castShadow = false; } });
   model.add(g);
   const orig = body.material;
-  const lit = r.mat('#ffffff', { vertexColors: true, roughness: orig.roughness, metalness: orig.metalness, emissive: '#fff4e0', emissiveIntensity: .06 });
+  const lit = skinMaterial(orig.roughness, orig.metalness, .06);
   rig.albaFx = g; rig.albaMats = [orig, lit];
   g.userData = { crown, wings, orbit, keep: true };
   g.visible = false;

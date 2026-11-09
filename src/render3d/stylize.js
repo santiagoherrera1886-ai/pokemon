@@ -110,7 +110,7 @@ export class Stylizer {
     u.near.value = camera.near; u.far.value = camera.far;
     u.focusY.value = opts.focusY ?? .5; u.tilt.value = (opts.tilt ?? .4) * .48; u.ink.value = opts.ink ?? .26;
     u.night.value = opts.night ?? 0; u.sat.value = opts.sat ?? 1.1; u.bloom.value = opts.bloom ?? .55; u.lift.value = opts.lift ?? .25;
-    u.retro.value = opts.retro ?? 1;
+    u.retro.value = opts.retro ?? 0;
     if (opts.grade) u.grade.value.set(...opts.grade);
     this.webgl.setRenderTarget(this.target);
     this.webgl.render(scene, camera);

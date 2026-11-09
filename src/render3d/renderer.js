@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {animateCreature} from './creatures3d.js';
 import {Resources} from './resources.js';
 import {Environment} from './environment.js';
 import {DioramaCamera} from './camera.js';
@@ -189,6 +190,7 @@ export class PremiumRenderer {
       rig.blinkAt=rig.blinkAt??time+1+Math.random()*2.5;
       if(time>rig.blinkAt+.14)rig.blinkAt=time+2+Math.random()*3;
       const closed=time>rig.blinkAt;for(const e of rig.eyes||[])e.scale.y=closed?.12:1;
+      animateCreature(rig.model,time,dt);
     }
     this.ball.visible=!!f.ball;if(f.ball){this.ball.position.set((f.ball.x-.5)*10,Math.max(.2,(.5-f.ball.y)*9),(f.ball.y-.43)*9-1.8);this.ball.userData.paint(f.ball.color||'#3a9ad8');this.ball.rotation.set(0,.45,f.ball.spin||0);}
     if(this.trainerRig){this.trainerRig.root.visible=f.trainerA>.05;this.trainerRig.root.position.set(2+f.trainerX*13,0,-1.8);this.trainerRig.root.scale.setScalar(1.5);}
@@ -216,7 +218,7 @@ export class PremiumRenderer {
     if(document.hidden)return;
     if(this.game.scene!=='title'&&this.titleScene)this.clearTitle();
     if(this.game.scene==='battle')this.battle(dt);else if(this.game.scene==='title')this.title(dt);else{this.canvas.style.filter='';this.world(dt);}
-    this.resize();const so={...(this.styleOpts||{})};if(this.degrade>=1)so.tilt=0;if(this.degrade>=2)so.bloom=0;this.style.render(this.scene,this.camera.camera,so);
+    this.resize();const so={...(this.styleOpts||{}),retro:this.game.graphics?.art==='retro'?1:0};if(this.degrade>=1)so.tilt=0;if(this.degrade>=2)so.bloom=0;this.style.render(this.scene,this.camera.camera,so);
     if(++this.frameCount%120===0){this.stats={drawCalls:this.webgl.info.render.calls,triangles:this.webgl.info.render.triangles,textures:this.webgl.info.memory.textures,geometries:this.webgl.info.memory.geometries,maps:this.maps.size,resolution:this.canvas.width,quality:this.quality};}
     // Sustained slow frames reduce only pixel resolution; no simulation changes.
     // Si hay cuadros lentos sostenidos, baja la carga por escalones: 1 sin desenfoque, 2 sin bloom ni MSAA, 3+ menos resolución.

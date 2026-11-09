@@ -173,6 +173,15 @@ export class Sculpt {
       P[v * 3] = x; P[v * 3 + 1] = y; P[v * 3 + 2] = z; N[v * 3] = g[0]; N[v * 3 + 1] = g[1]; N[v * 3 + 2] = g[2];
       this.colorAt(x, y, z, col); COL[v * 3] = col[0]; COL[v * 3 + 1] = col[1]; COL[v * 3 + 2] = col[2];
     }
+    // Oclusión ambiental horneada en el color: los pliegues (bajo la barbilla, entre las patas, la base de las
+    // orejas) se oscurecen como en una figura bien iluminada. ao = fuerza (0 la apaga).
+    if (this.ao > 0) for (let v = 0; v < count; v++) {
+      const x = P[v * 3], y = P[v * 3 + 1], z = P[v * 3 + 2], nx = N[v * 3], ny = N[v * 3 + 1], nz = N[v * 3 + 2];
+      let occ = 0, w = 1;
+      for (let i = 1; i <= 5; i++) { const h = i * .034; occ += (h - this.eval(x + nx * h, y + ny * h, z + nz * h)) * w; w *= .5; }
+      const a = Math.max(0, Math.min(1, 1 - occ * 4.2)), k = 1 - this.ao * (1 - a);
+      COL[v * 3] *= k; COL[v * 3 + 1] *= k * .98 + .02 * a; COL[v * 3 + 2] *= k * .96 + .04 * a;
+    }
     // Caras: un cuadrilátero por cada arista de la rejilla que cruza la superficie.
     const index = [];
     const quad = (a, b, c, d) => {

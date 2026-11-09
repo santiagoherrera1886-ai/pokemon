@@ -38,6 +38,7 @@ class Game {
     document.getElementById('menuBtn').addEventListener('click', () => { if (this.scene === 'overworld' && !this.ow.locked) this.openMenu(); });
     this.state = newState();
     this.graphics = new Graphics(this);
+    this.graphics.applyArt();
     this.ow = new Overworld(this);
     window.__game = this; window.__ui = ui; // acceso para pruebas automatizadas
     this.loop();
