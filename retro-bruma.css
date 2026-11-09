@@ -303,3 +303,41 @@ body.premium-active #banner::before{display:none}
 @keyframes retroStarter{to{transform:translateY(-3px)}}
 @media(max-width:600px){#retro-starters{gap:8px;padding:5px 13px;margin-top:9px}#retro-starters i{width:48px;height:48px;background-size:384px 288px}#retro-starters .rs-water{background-position:-144px 0}#retro-starters .rs-grass{background-position:-288px 0}}
 @media(prefers-reduced-motion:reduce){#retro-starters i{animation:none}}
+
+/* Correcciones de contraste del tema retro.
+   La regla general de botones del modo 3D (body.premium-active #panel button) pesaba más que
+   VOLVER/CERRAR, el botón de la Forma Alba y los colores del menú de inicio, y el hover volvía
+   crema algunos botones de texto claro. Estas reglas sólo devuelven los colores que el tema ya pedía. */
+#panel .bt-back,body.premium-active #panel .bt-back,
+#panel .bt-back:hover:not(:disabled),body.premium-active #panel .bt-back:hover:not(:disabled){
+  background:linear-gradient(180deg,#51466e,#29223e)!important;color:#fff5d7!important;border-color:#2a2140
+}
+#panel .bt-back:hover:not(:disabled){filter:brightness(1.2)}
+#panel .primary:hover:not(:disabled){background:linear-gradient(180deg,#e57c87,#b74474)!important;filter:brightness(1.08)}
+#panel.battle-panel button:hover:not(:disabled){background:linear-gradient(#6a4f8c,#46356f)!important}
+#panel.battle-panel .mv small{color:#d8cbed}
+#panel.battle-panel .bt-alba,body.premium-active #panel.battle-panel .bt-alba,
+#panel.battle-panel .bt-alba:hover:not(:disabled){
+  background:linear-gradient(#fff2bd,#f6ca70,#dc8e72)!important;color:#3d2752!important;border-color:#f9e1a8
+}
+#panel.battle-panel .bt-alba.on,body.premium-active #panel.battle-panel .bt-alba.on,
+#panel.battle-panel .bt-alba.on:hover:not(:disabled){
+  background:linear-gradient(#eda6ff,#a767d0,#673da3)!important;color:#fff!important;border-color:#f3d9ff;
+  box-shadow:0 0 0 2px #f9c976,0 0 16px #d9a6ff
+}
+body.premium-active #panel .hb-party{background:linear-gradient(#ffefe9,#ffd8da)!important}
+body.premium-active #panel .hb-bag{background:linear-gradient(#fff4e2,#f5e3bd)!important}
+body.premium-active #panel .hb-save{background:linear-gradient(#eef8fa,#d7ebf4)!important}
+body.premium-active #panel .hb-opt{background:linear-gradient(#f3efff,#e4d9f1)!important}
+#panel .hb-dex,body.premium-active #panel .hb-dex{background:linear-gradient(#ecf8ee,#d3edd9)!important}
+#panel .hb-card,body.premium-active #panel .hb-card{background:linear-gradient(#fff0e3,#f8d9c0)!important}
+#panel .hb-dex::before{background:#5aa877}
+#panel .hb-card::before{background:#e08d5a}
+
+/* Portada: la sombra de 8 px del logo duplicaba las frases pequeñas; ahora va sólo en el título,
+   la placa y los iniciales. Los espacios entre palabras de la frase superior se respetan. */
+#logo{filter:none}
+#logo h1{filter:drop-shadow(0 4px 0 #392550) drop-shadow(0 8px 0 #15152b)}
+#logo p,#retro-starters{filter:drop-shadow(0 8px 0 #15152b)}
+#logo::before{white-space:pre}
+@media(max-width:600px){#logo::before,#logo::after{text-shadow:1px 1px 0 #281f4b}}
