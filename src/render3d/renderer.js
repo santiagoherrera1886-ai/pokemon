@@ -131,7 +131,7 @@ export class PremiumRenderer {
     const g=this.game,ow=g.ow,m=ow.map;if(!m)return;
     const p=actorPosition(ow.player,m);this.worldRoot.visible=true;this.battleRoot.visible=false;
     const hour=g.hour(),night=m.outdoor&&(hour>=19||hour<5);
-    this.scene.background.set(m.dark?'#1c2228':night?'#2a3550':m.outdoor?'#d8e8dc':'#3a4652');this.scene.fog.color.set(m.dark?'#1c2228':night?'#2a3550':'#e4eee6');this.scene.fog.near=m.outdoor?34:60;this.scene.fog.far=m.outdoor?80:140;this.styleOpts={focusY:.5,tilt:m.outdoor?.4:.12,night:night?.55:0,bloom:night||m.dark?.8:.3,lift:m.dark?.03:.1,grade:night?[1,1,1]:hour>=17&&hour<19?[1.12,.98,.86]:[1.05,1.01,.95],sat:m.dark?1.05:1.12};
+    this.scene.background.set(m.dark?'#1c2228':night?'#2a3550':m.outdoor?'#d8e8dc':'#3a4652');this.scene.fog.color.set(m.dark?'#1c2228':night?'#2a3550':'#e4eee6');this.scene.fog.near=m.outdoor?34:60;this.scene.fog.far=m.outdoor?80:140;this.styleOpts={focusY:.5,tilt:m.outdoor?.16:.10,night:night?.42:0,bloom:night||m.dark?.48:.16,lift:m.dark?.025:.05,ink:m.dark?.62:.72,retro:0,grade:night?[.96,.98,1.06]:hour>=17&&hour<19?[1.1,.96,.90]:[1.06,1.02,1.01],sat:m.dark?1.06:1.10};
     const wanted=new Set(visibleMapIds(g.world,m,p,this.settings.radius));
     for(const [id,e]of this.maps)if(!wanted.has(id)){this.r.release(e.root);this.maps.delete(id);}
     for(const id of wanted)if(!this.maps.has(id)){const e=this.environment.build(g.world.get(id),g.state);this.worldRoot.add(e.root);this.maps.set(id,e);}
