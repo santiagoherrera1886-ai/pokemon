@@ -279,3 +279,27 @@ body.premium-active #banner::before{display:none}
   #logo h1,#logo p,#msgArrow{animation:none!important}
   #panel button{transition:none}
 }
+
+/* Three actual concept-sheet creatures at the title — not decorative placeholders.
+   Sprite atlas 8×6 grid of 32px cells; background scaled exactly 2× for crisp pixels. */
+#retro-starters{
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  margin-top:14px;padding:9px 18px;
+  background:linear-gradient(180deg,rgba(27,21,56,.84),rgba(47,33,74,.86));
+  border:2px solid #f3cf91;border-radius:5px;
+  box-shadow:inset 0 0 0 2px #675081,3px 4px 0 #1d1939;
+}
+#retro-starters i{
+  display:block;flex:none;width:64px;height:64px;
+  background-image:url("./src/art/retro-reference.png");
+  background-repeat:no-repeat;background-size:512px 384px;
+  image-rendering:pixelated;image-rendering:crisp-edges;
+  filter:drop-shadow(2px 3px 0 rgba(0,0,0,.42));
+  animation:retroStarter 2s steps(2,end) infinite alternate;
+}
+#retro-starters .rs-fire{background-position:0 0;animation-delay:-.1s}
+#retro-starters .rs-water{background-position:-192px 0;animation-delay:-.7s}
+#retro-starters .rs-grass{background-position:-384px 0;animation-delay:-1.3s}
+@keyframes retroStarter{to{transform:translateY(-3px)}}
+@media(max-width:600px){#retro-starters{gap:8px;padding:5px 13px;margin-top:9px}#retro-starters i{width:48px;height:48px;background-size:384px 288px}#retro-starters .rs-water{background-position:-144px 0}#retro-starters .rs-grass{background-position:-288px 0}}
+@media(prefers-reduced-motion:reduce){#retro-starters i{animation:none}}
