@@ -24,7 +24,12 @@ export function createFoliageGeometry(){
   }
   const g=new T.BufferGeometry();
   g.setAttribute('position',new T.Float32BufferAttribute(positions,3));
-  g.computeVertexNormals();g.computeBoundingSphere();g.computeBoundingBox();
+  g.computeVertexNormals();
+  // Match the standard Three.js mesh attribute layout (position, normal, uv)
+  // so the engine's static batching can merge these hand-sculpted meshes.
+  const uv=[];for(let i=0;i<positions.length;i+=3)uv.push(positions[i]*.5+.5,positions[i+2]*.5+.5);
+  g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));
+  g.computeBoundingSphere();g.computeBoundingBox();
   g.userData.kind='alborada-3d-foliage';
   return g;
 }
@@ -40,5 +45,5 @@ export function createFlowerGeometry(){
     tri(center,left,point);tri(center,point,right);
     tri([0,-.08,0],point,left);tri([0,-.08,0],right,point);
   }
-  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(p,3));g.computeVertexNormals();return g;
+  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(p,3));g.computeVertexNormals();const uv=[];for(let i=0;i<p.length;i+=3)uv.push(p[i]*.5+.5,p[i+2]*.5+.5);g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));return g;
 }
