@@ -38,6 +38,6 @@ test('trees use a multi-layered broadleaf silhouette in close and distant world 
   const source=readFileSync(new URL('../src/render3d/environment.js',import.meta.url),'utf8');
   assert.match(source,/const crowns=\[/);
   assert.match(source,/leaves\.push\(/);
-  assert.match(source,/instances\(far,r\.geometries\.leaf/);
+  assert.match(source,/instances\(far,r\.geometries\.foliage/);
   assert.doesNotMatch(source,/instances\(far,r\.geometries\.cone/);
 });
