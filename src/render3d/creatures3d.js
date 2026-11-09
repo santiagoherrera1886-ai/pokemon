@@ -549,5 +549,6 @@ export function creatureModel(r, sp) {
   g.userData.head = D.anchors.head;
   g.userData.body = mesh;
   g.userData.starterFamily3D = premium ? sp : null;
+  if (['bosqueron','volcarbon','mareon'].includes(sp)) g.scale.setScalar(.87);
   return g;
 }
