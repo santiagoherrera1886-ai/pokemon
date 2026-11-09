@@ -30,6 +30,16 @@ El mundo, los personajes, las criaturas, los nombres y todo el pixel art son **o
 - La IA de los rivales elige según la efectividad, usa estados y curaciones con criterio y no repite lo que no sirve.
 - **Forma Alba:** con la primera medalla recibes el **Brazalete Alba**. Una vez por combate, en LUCHAR, tocas **FORMA ALBA** antes de escoger el ataque: la criatura crece, le sale una corona de luz con adornos de su tipo, alas de luz y un brillo cálido, y sube su Ataque (+30 %), Defensa (+20 %) y Velocidad (+20 %) hasta que termina el combate. Funciona con todas las especies (`src/data/alba.js`, `src/render3d/alba.js`). Basalto, Coral, Nico, el Jefe Umbra y la Campeona Aurora también la usan con su última criatura.
 
+## Iniciales
+
+Las tres líneas iniciales siguen la lámina de diseño del proyecto (`src/render3d/iniciales.js`):
+
+| Línea | Tipos | Etapas |
+| --- | --- | --- |
+| Planta | Planta · Planta · Planta/Roca | Brotelo (zorrito de orejas de hoja) → Brotoso (zorro esbelto con cola de hojas) → Bosquerón (ciervo con astas en flor) |
+| Fuego | Fuego · Fuego · Fuego/Tierra | Brasín (cachorro de león con cola de fuego) → Brasón (león joven de melena ardiente) → Volcarbón (león que ruge sobre la roca volcánica) |
+| Agua | Agua · Agua · Agua/Psíquico | Charquín (foquita de cola de pez) → Charcomar (nutria dragón de aletas) → Mareón (señor del mar con corona y gema) |
+
 ## Criaturas nuevas (bestiario de la Bruma)
 
 Diez familias de tres etapas, con diseños propios inspirados en las láminas de concepto del proyecto (`src/render3d/bestiary.js`):
@@ -104,8 +114,11 @@ Dos modos, que se cambian en **Opciones → Gráficos** sin perder la partida:
 
 - **3D (por defecto):** pantalla completa con Three.js. Cámara alta casi cenital con perspectiva suave, personajes cabezones que inclinan la cabeza hacia la cámara, criaturas esculpidas (cada cuerpo es una sola pieza que funde cabeza, cuello, patas y cola, con barriga y cachetes pintados, boca tallada y ojos grandes con brillo que parpadean; se arman con campos de distancia y Surface Nets en `src/render3d/sculpt.js`), casas de juguete (techo de tejas en franjas gruesas, cumbrera con remates, ventanas de marco blanco con jardinera y alero festoneado), letreros luminosos en los locales (placa con borde extruido, ícono propio y letras grandes, inclinada hacia la cámara; `src/render3d/signs.js`) y postes de camino con el nombre del lugar pintado, materiales satinados, sol desde arriba a la izquierda con sombras suaves, resplandor (bloom) en lo brillante, gradación cálida y leve desenfoque en los bordes. Las ciudades (Villa Arenal, Corola, Marea) tienen calles de asfalto con bordillo y andenes de baldosa. Los combates usan cámara baja con cielo y fondo según el terreno. Calidad baja, media o alta.
   En 3D la interfaz usa letra redonda (Nunito y Fredoka): diálogo en caja blanca con doble borde y placa de lugar que entra desde la izquierda con el color de la zona.
-  La pantalla de inicio es una escena 3D al amanecer en el Lago Espejo (casa, iniciales, Espejalba a contraluz) con logo nuevo, y las tarjetas de inicial y la lista del equipo muestran retratos 3D de las criaturas.
+  La pantalla de inicio es una escena 3D al amanecer en el Lago Espejo con bruma sobre el agua: las tres iniciales posan en una lomita con el sol detrás, el protagonista las acompaña y suben motas de luz. En pantalla horizontal el logo y el menú van en una columna a la izquierda; en el celular, logo arriba y menú abajo. Las tarjetas de inicial, el equipo y el Registro muestran retratos 3D de las criaturas.
+  **Acabado HD de las criaturas:** luz de borde tibia en la piel, sombra de pliegues horneada en la malla esculpida, ojos redondos de cachorro u ojos en almendra con párpados para las formas mayores, láminas con grosor (orejas de hoja, hojas, aletas translúcidas, pétalos) y fuego vivo que titila. Las formas finales traen su efecto en movimiento: hojas que flotan alrededor de Bosquerón, brasas que suben de Volcarbón y agua que gira a los pies de Mareón.
 - **Pixel clásico:** el motor 2D anterior.
+
+**Estilo de arte** (Opciones → Estilo de arte): **HD** por defecto, o **Retro 16-bit**, que activa el tema Bruma Retro (`retro-bruma.css`, letra pixel, ilustraciones retro de las láminas y pixelado del 3D).
 
 Detalles del modo pixel clásico:
 
@@ -131,9 +144,10 @@ src/battle/battle.js  combate, entrenadores, experiencia, niveles, aprendizaje y
 src/ui/               diálogo, paneles, menú, equipo, mochila por bolsillos, tienda, opciones, viaje rápido, título
 src/data/creatures.js especies, movimientos, tipos y encuentros (de día y de noche)
 src/data/alba.js      Forma Alba: brazalete, multiplicadores y limpieza al terminar el combate
+src/render3d/iniciales.js modelos de las tres líneas iniciales con el acabado HD de la lámina
 src/render3d/bestiary.js  modelos esculpidos de las familias nuevas y las leyendas
 src/render3d/alba.js  corona, alas de luz y brillo de la Forma Alba en 3D
-scripts/sprites.cjs   genera los sprites clásicos de las especies nuevas desde sus modelos 3D
+scripts/sprites.cjs   genera los sprites clásicos de todas las especies desde sus modelos 3D
 src/data/items.js     objetos, bolsillos, inventario de cada tienda y efectos (combate y mapa)
 src/data/avatar.js    opciones del creador de personaje y conversión a look (pixel y 3D)
 src/core/state.js     estado de la partida y tres ranuras de guardado
