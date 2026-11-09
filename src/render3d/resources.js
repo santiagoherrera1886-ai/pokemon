@@ -2,6 +2,7 @@ import * as T from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {toonMaterial} from './stylize.js';
+import {createFoliageGeometry, createFlowerGeometry} from './storybook-foliage.js';
 
 export class Resources {
   constructor() {
@@ -10,6 +11,7 @@ export class Resources {
       box: new T.BoxGeometry(1,1,1), soft: new RoundedBoxGeometry(1,1,1,1,0.055),
       ball: new T.IcosahedronGeometry(1,1), leaf: new T.IcosahedronGeometry(1,0), crystal: new T.OctahedronGeometry(1,0),
       cylinder: new T.CylinderGeometry(1,1,1,8), cone: new T.ConeGeometry(1,1,8),
+      foliage: createFoliageGeometry(), bloomFlower: createFlowerGeometry(),
       plane: new T.PlaneGeometry(1,1), ring: new T.TorusGeometry(1,.06,6,32)
     };
     this.merged = new Set();
