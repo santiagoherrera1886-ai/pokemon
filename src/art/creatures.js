@@ -1,6 +1,7 @@
 // Criaturas originales de Alborada: sprites de combate (frente/espalda) e íconos. 64x64 con sombreado automático.
 import { canvas, px, ellipse, outline, autoShade } from '../core/pixel.js';
 import { ATLAS, ATLAS_SPECIES } from './bruma-sprites.js';
+import {RETRO_ATLAS,RETRO_INDEX} from './retro-reference.js';
 
 const K = '#1e1a24';
 function eyes(g, x1, x2, y, o = {}) {
@@ -288,11 +289,31 @@ const DRAW = {
 };
 
 // Sprites del modo clásico sacados de los modelos 3D (scripts/sprites.cjs); DRAW queda como respaldo.
-let atlasImg = null;
-export const spritesReady = typeof Image === 'undefined' ? Promise.resolve(false) : new Promise(res => {
-  const im = new Image(); im.onload = () => { atlasImg = im; cache.clear(); res(true); }; im.onerror = () => res(false); im.src = ATLAS.url;
+let atlasImg = null, retroImg = null;
+const loadAtlas = url => new Promise(resolve=>{
+  const im = new Image();
+  im.onload = () => resolve(im);
+  im.onerror = () => resolve(null);
+  im.src = url;
 });
+export const spritesReady = typeof Image === 'undefined' ? Promise.resolve(false) :
+  Promise.all([loadAtlas(ATLAS.url),loadAtlas(RETRO_ATLAS.url)]).then(([classic,retro])=>{
+    atlasImg = classic; retroImg = retro;
+    cache.clear();
+    return !!(classic||retro);
+  });
 function atlasSprite(g, id, back) {
+  // Ilustraciones originales del paquete visual aprobado. Los retratos frontales,
+  // los iconos de equipo y el Registro utilizan exactamente este atlas.
+  // La espalda conserva el render previo hasta tener vistas traseras revisadas.
+  const ri=RETRO_INDEX.get(id);
+  if (!back && retroImg && ri!==undefined) {
+    const S=RETRO_ATLAS.size,cols=RETRO_ATLAS.cols,prev=g.imageSmoothingEnabled;
+    g.imageSmoothingEnabled=false;
+    g.drawImage(retroImg,(ri%cols)*S,Math.floor(ri/cols)*S,S,S,0,0,64,64);
+    g.imageSmoothingEnabled=prev;
+    return true;
+  }
   const i = ATLAS_SPECIES.indexOf(id); if (i < 0 || !atlasImg) return false;
   const n = i * 2 + (back ? 1 : 0), S = ATLAS.size;
   g.drawImage(atlasImg, (n % ATLAS.cols) * S, Math.floor(n / ATLAS.cols) * S, S, S, 0, 0, 64, 64);
@@ -343,7 +364,8 @@ export function battleSprite(id, back = false) {
     outline(c, '#1e1a24'); finishRetroSprite(c); c.temp = true; return c;
   }
   outline(c, '#1e1a24');
-  finishRetroSprite(c);
+  // Los recortes ya tienen su paleta original de 30 colores; no reprocesarlos.
+  if (!(retroImg && !back && RETRO_INDEX.has(id))) finishRetroSprite(c);
   cache.set(k, c);
   return c;
 }
