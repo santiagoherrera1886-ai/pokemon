@@ -1,18 +1,18 @@
-// Criaturas 3D de Alborada esculpidas: cada cuerpo es una sola pieza de "plastilina" (sculpt.js) con
+// Criaturas 3D Alborada Bruma Retro: los cuerpos ahora tienen volumen real de vóxeles (sculpt.js) con
 // cabeza, cuello, patas y cola fundidos, barriga y cachetes pintados y boca tallada. Encima van los detalles
 // finos (ojos con brillo que parpadean, llamas, alas, antenas, garras). Diseños propios de cada especie.
 import * as T from 'three';
-import { Sculpt } from './sculpt.js';
+import { Sculpt, voxelSculptGeometry } from './sculpt.js';
 import { BRUMA } from './bestiary.js';
 
 // ---------- Geometrías compartidas de los detalles ----------
 const G = {};
 const geo = (k, make) => G[k] || (G[k] = make());
-const SPHERE = () => geo('s', () => new T.SphereGeometry(1, 24, 16));
-const SPHERE_LO = () => geo('sl', () => new T.SphereGeometry(1, 14, 10));
-const CONE = () => geo('cone', () => new T.ConeGeometry(1, 1, 16));
-const CYL = () => geo('cyl', () => new T.CylinderGeometry(1, 1, 1, 14));
-const TORUS = (arc, tube) => geo('t' + arc.toFixed(3) + tube, () => new T.TorusGeometry(1, tube, 8, 24, arc));
+const SPHERE = () => geo('s', () => new T.SphereGeometry(1, 10, 7));
+const SPHERE_LO = () => geo('sl', () => new T.SphereGeometry(1, 8, 6));
+const CONE = () => geo('cone', () => new T.ConeGeometry(1, 1, 8));
+const CYL = () => geo('cyl', () => new T.CylinderGeometry(1, 1, 1, 8));
+const TORUS = (arc, tube) => geo('t' + arc.toFixed(3) + tube, () => new T.TorusGeometry(1, tube, 5, 16, arc));
 const OCTA = () => geo('octa', () => new T.OctahedronGeometry(1, 0));
 const PRISM = () => geo('prism', () => new T.CylinderGeometry(.62, 1, 1, 6).translate(0, .5, 0));
 const RING = tube => geo('ring' + tube, () => new T.TorusGeometry(1, tube, 10, 64));
@@ -24,7 +24,7 @@ const dirOf = (yaw, pitch) => [Math.cos(pitch) * Math.sin(yaw), Math.sin(pitch),
 const E = Sculpt.ellipsoid, C = Sculpt.roundCone;
 
 function kit(r, g, S) {
-  const M = (c, o = {}) => typeof c === 'object' ? c : r.mat(c, { roughness: .4, ...o });
+  const M = (c, o = {}) => typeof c === 'object' ? c : r.mat(c, { roughness: .95, metalness: 0, flatShading: true, ...o });
   const glow = (c, k = .6) => r.mat(c, { emissive: c, emissiveIntensity: k, roughness: .35 });
   const HL = r.mat('#ffffff', { emissive: '#ffffff', emissiveIntensity: .6, roughness: .25 });
   const add = (gm, c, p, s, rot, parent = g) => {
@@ -524,8 +524,8 @@ export function creatureModel(r, sp) {
   const g = new T.Group(), S = new Sculpt(), D = kit(r, g, S);
   build(S, D);
   let body = BODY.get(sp);
-  if (!body) { body = S.mesh(.026); BODY.set(sp, body); }
-  const mesh = new T.Mesh(body, r.mat('#ffffff', { vertexColors: true, roughness: ROUGH[sp] ?? .42, ...(METAL[sp] ? { metalness: METAL[sp] } : {}) }));
+  if (!body) { body = voxelSculptGeometry(S, .11); BODY.set(sp, body); }
+  const mesh = new T.Mesh(body, r.mat('#ffffff', { vertexColors: true, roughness: .94, metalness: 0, flatShading: true }));
   mesh.castShadow = true; mesh.receiveShadow = true; mesh.userData.keep = true; g.add(mesh);
   r.batch(g);
   g.userData.eyes = D.eyes;
