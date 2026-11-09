@@ -148,7 +148,8 @@ export const INICIALES = {
     const head = [0, 1.62, .58];
     S.ball(head, [.16, .16, .19], C, { k: .1 });
     S.limb([0, 1.56, .66], [0, 1.5, .82], .1, .06, C, { k: .06 });
-    S.paint(E([0, 1.74, .6], [.16, .07, .15]), G, .05);
+    S.paint(E([0, 1.75, .56], [.17, .09, .17]), G, .06);
+    S.paint(E([0, 1.7, .7], [.07, .05, .06]), G, .04);
     // Pecho de pelo largo que cae.
     ruff(D, C, [[5, 1.2, .5, .14, .2, .075], [4, 1.08, .53, .11, .26, .065], [3, .96, .5, .07, .22, .055]]);
     S.pair(s => {
@@ -170,6 +171,7 @@ export const INICIALES = {
     // Astas de rama con hojas y flores.
     S.pair(s => {
       const b = D.skin(head, s * .35, 1.05, -.02), m1 = plus(b, [s * .12, .22, -.06]), m2 = plus(m1, [s * .14, .2, -.1]), tip = plus(m2, [s * .02, .18, -.04]);
+      for (const [dx, dz, c] of [[.06, .05, G], [-.05, .03, GL], [.02, -.06, GD]]) D.blade('leaf', c, b, plus(b, [s * dx * 2, .12, dz * 2]), .08, [s * dx, .4, 1], { curl: .15, thick: .5 });
       D.stick(W, b, m1, .03); D.stick(W, m1, m2, .025); D.stick(W, m2, tip, .02);
       const t1 = plus(m1, [s * .16, .08, .06]), t2 = plus(m2, [s * .16, .02, .08]), t3 = plus(m2, [-s * .04, .16, .06]);
       D.stick(W, m1, t1, .018); D.stick(W, m2, t2, .016); D.stick(W, m2, t3, .015);
@@ -178,13 +180,13 @@ export const INICIALES = {
       flower(D, plus(t1, [0, .03, .03]), .06, [s * .3, .6, .8]);
     });
     // Manto de hojas en capas sobre lomo y hombros, con flores.
-    for (let row = 0; row < 2; row++) for (let i = 0; i < 7; i++) {
-      const s = i % 2 ? 1 : -1, z = .3 - i * .15 + row * .03, base = [s * (.2 + row * .04), 1.3 - row * .1 - Math.abs(z + .1) * .08, z];
+    for (let row = 0; row < 3; row++) for (let i = 0; i < 8; i++) {
+      const s = i % 2 ? 1 : -1, z = .34 - i * .13 + row * .04, base = [s * (.16 + row * .07), 1.31 - row * .09 - Math.abs(z + .1) * .08, z];
       D.blade('leaf', [G, GL, GD][(i + row) % 3], base, plus(base, [s * .13, -.1 - row * .04, -.2]), .14, [s * .6, 1, 0], { curl: .14, cup: .1, thick: .5 });
     }
-    for (const [x, y, z, sz] of [[-.2, 1.34, .22, .07], [.24, 1.32, .02, .075], [-.16, 1.3, -.34, .065], [.08, 1.32, -.56, .06], [.16, 1.28, .36, .06]]) flower(D, [x, y, z], sz, [x * 2, 1, .2]);
+    for (const [x, y, z, sz] of [[-.2, 1.36, .24, .085], [.24, 1.34, .04, .09], [-.18, 1.33, -.3, .08], [.1, 1.34, -.56, .07], [.18, 1.3, .38, .075], [-.26, 1.24, -.06, .07], [.28, 1.22, -.36, .07]]) flower(D, [x, y, z], sz, [x * 2, 1, .2]);
     // Cola: haz de hojas largas que cae.
-    for (const [x, l, c] of [[0, .62, G], [-.08, .54, GL], [.08, .54, GD], [-.14, .44, G], [.14, .44, GL]]) D.blade('blade', c, [x * .4, 1.14, -.6], [x * 1.4, 1.14 - l, -.82 - Math.abs(x)], .16, [x * 4, 0, -1], { curl: -.15, thick: .5 });
+    for (const [x, l, c] of [[0, .78, G], [-.09, .7, GL], [.09, .7, GD], [-.16, .58, G], [.16, .58, GL], [-.04, .5, GD], [.04, .5, G]]) D.blade('blade', c, [x * .4, 1.16, -.6], [x * 1.6, 1.16 - l, -.84 - Math.abs(x) * 1.4], .2, [x * 4, 0, -1], { curl: -.18, thick: .5 });
     // Hojitas que flotan alrededor.
     orbit(D, i => D.blade('leaf', [GL, G][i % 2], [0, 0, 0], [0, .1, 0], .06, [0, 0, 1], { keep: true, thick: .5 }), { n: 6, R: .75, y0: .5, y1: 1.7, speed: .3 });
     D.face({ c: head, spread: .66, pitch: .14, size: .056, iris: '#8cc63e', style: 'almond', lid: .2, lidColor: C, cheek: false, mouth: 'none' });
@@ -223,7 +225,7 @@ export const INICIALES = {
     S.limb([0, .36, -.38], [0, .44, -.6], .055, .045, O, { k: .04 });
     S.limb([0, .44, -.6], [0, .66, -.72], .045, .04, O, { k: .03 });
     S.limb([0, .66, -.72], [0, .84, -.66], .04, .035, O, { k: .03 });
-    D.plume([0, .84, -.66], [0, 1, .12], .46, { face: [1, 0, 0], spread: .6 });
+    D.plume([0, .84, -.66], [0, 1, .12], .48, { face: [1, 0, 0], spread: .6, n: 4 });
     D.face({ c: head, spread: .42, pitch: .03, size: .09, iris: '#b23c1e', style: 'round', cheek: '#f7a088', mouth: 'open', mouthPitch: -.34, mouthW: .05, fangs: true });
     D.ball('#3a2420', [0, .79, .43], [.034, .024, .02]);
   },
@@ -265,7 +267,7 @@ export const INICIALES = {
     S.limb([0, .78, -.5], [0, .9, -.74], .06, .045, O, { k: .04 });
     S.limb([0, .9, -.74], [0, 1.1, -.84], .045, .04, O, { k: .03 });
     S.limb([0, 1.1, -.84], [0, 1.22, -.78], .04, .036, O, { k: .03 });
-    D.plume([0, 1.22, -.78], [0, 1, .1], .6, { face: [1, 0, 0], spread: .65, n: 3 });
+    D.plume([0, 1.22, -.78], [0, 1, .1], .66, { face: [1, 0, 0], spread: .7, n: 5 });
     D.face({ c: head, spread: .52, pitch: .14, size: .068, iris: '#f0a02c', style: 'almond', lid: .22, lowLid: .08, lidColor: O, angry: .18, cheek: false, mouth: 'smile', mouthPitch: -.55, mouthW: .035 });
     D.ball('#3a2420', [0, 1.085, .765], [.032, .024, .022]);
   },
@@ -310,16 +312,17 @@ export const INICIALES = {
     });
     // Melena de fuego enorme que fluye hacia atrás.
     fireMane(D, head, [
-      [0, 1.2, .6, .26, 'mane', .8, .35], [.45, 1.05, .58, .25, 'maneTip', .8, .3], [-.45, 1.05, .58, .25, 'maneTip', .8, .3],
-      [.95, .8, .56, .25, 'mane', .7], [-.95, .8, .56, .25, 'mane', .7], [1.4, .45, .52, .24, 'maneTip', .7], [-1.4, .45, .52, .24, 'maneTip', .7],
-      [1.8, .1, .5, .23, 'mane', .6], [-1.8, .1, .5, .23, 'mane', .6], [2.3, .7, .6, .26, 'mane', .9, .3], [-2.3, .7, .6, .26, 'mane', .9, .3],
-      [2.8, .9, .62, .26, 'maneTip', 1, .3], [-2.8, .9, .62, .26, 'maneTip', 1, .3], [2.2, -.25, .46, .22, 'maneTip', .7], [-2.2, -.25, .46, .22, 'maneTip', .7],
-      [3.14, .4, .56, .25, 'mane', 1, .2], [1.2, -.2, .4, .2, 'mane', .6], [-1.2, -.2, .4, .2, 'mane', .6]
+      [0, 1.2, .74, .28, 'mane', .9, .4], [.45, 1.05, .72, .27, 'maneTip', .9, .35], [-.45, 1.05, .72, .27, 'maneTip', .9, .35],
+      [.95, .8, .68, .27, 'mane', .8], [-.95, .8, .68, .27, 'mane', .8], [1.4, .45, .64, .26, 'maneTip', .8], [-1.4, .45, .64, .26, 'maneTip', .8],
+      [1.8, .1, .58, .25, 'mane', .7], [-1.8, .1, .58, .25, 'mane', .7], [2.3, .7, .76, .28, 'mane', 1, .3], [-2.3, .7, .76, .28, 'mane', 1, .3],
+      [2.8, .9, .8, .28, 'maneTip', 1.1, .3], [-2.8, .9, .8, .28, 'maneTip', 1.1, .3], [2.2, -.25, .56, .24, 'maneTip', .8], [-2.2, -.25, .56, .24, 'maneTip', .8],
+      [3.14, .4, .7, .27, 'mane', 1.1, .2], [1.2, -.2, .48, .22, 'mane', .7], [-1.2, -.2, .48, .22, 'mane', .7], [2.6, .3, .7, .26, 'maneTip', 1.1], [-2.6, .3, .7, .26, 'maneTip', 1.1]
     ]);
     S.limb([0, F + .86, -.58], [0, F + .96, -.86], .07, .05, R, { k: .04 });
     S.limb([0, F + .96, -.86], [0, F + 1.2, -.98], .05, .045, R, { k: .03 });
     S.limb([0, F + 1.2, -.98], [0, F + 1.36, -.92], .045, .04, R, { k: .03 });
-    D.plume([0, F + 1.36, -.92], [0, 1, -.15], .78, { face: [1, 0, 0], spread: .7, n: 4 });
+    D.plume([0, F + 1.36, -.92], [0, 1, -.2], .92, { face: [1, 0, 0], spread: .85, n: 6 });
+    D.plume([0, F + 1.3, -.98], [0, .6, -1], .55, { face: [1, 0, 0], spread: .7, n: 3 });
     // Brasas que suben.
     const sparks = [];
     for (let i = 0; i < 12; i++) { const m = D.ball(D.glow(i % 3 ? '#ff9a3a' : '#ffd25a', 1.4), [0, 0, 0], .022); m.userData.keep = true; sparks.push({ m, x: Math.cos(i * 2.4) * (.4 + (i % 4) * .12), z: Math.sin(i * 2.4) * (.5 + (i % 3) * .12) - .1, ph: i / 12 }); }
@@ -379,13 +382,13 @@ export const INICIALES = {
       S.ball([s * .17, .05, -.45], [.068, .045, .08], C, { k: .03 });
       for (const [yaw, pitch, r] of [[1.5, .3, .04], [1.8, .1, .03], [1.3, .55, .028]]) S.paint(E(D.skin([s * .15, .5, -.5], s * yaw, pitch), r), SP, .015);
       // Dos pares de aletas en la nuca.
-      for (const [yaw, pitch, l, w, up] of [[.9, .55, .34, .24, .22], [1.25, .2, .26, .18, .1]]) { const b = D.skin(head, s * yaw, pitch, -.03); D.blade('crest', D.finMat(FN, .32, .86), b, plus(b, [s * .16, up, -l]), w, [s, .3, .2], { curl: .12, thick: .5 }); }
+      for (const [yaw, pitch, l, w, up] of [[.9, .55, .42, .3, .26], [1.25, .2, .32, .22, .12]]) { const b = D.skin(head, s * yaw, pitch, -.03); D.blade('crest', D.finMat(FN, .32, .86), b, plus(b, [s * .2, up, -l]), w, [s, .3, .2], { curl: .15, thick: .5 }); }
     });
-    for (const [zz, h] of [[-.05, .18], [-.3, .16], [-.52, .12]]) { const b = [0, .74, zz]; D.blade('crest', D.finMat(FN, .3, .86), b, plus(b, [0, h, -.14]), .16, [1, 0, 0], { thick: .5 }); }
+    for (const [zz, h] of [[-.02, .24], [-.26, .21], [-.5, .16], [-.72, .12]]) { const b = [0, .73 - Math.abs(zz) * .06, zz]; D.blade('crest', D.finMat(FN, .3, .86), b, plus(b, [0, h, -.16]), .2, [1, 0, 0], { thick: .5 }); }
     S.limb([0, .48, -.62], [0, .42, -.9], .17, .11, B, { k: .08 });
     S.limb([0, .42, -.9], [0, .54, -1.14], .11, .07, B, { k: .05 });
     S.limb([0, .54, -1.14], [0, .78, -1.26], .07, .045, B, { k: .04 });
-    D.blade('fin', D.finMat(FN, .38, .84), [0, .76, -1.24], [0, 1.28, -1.3], .62, [1, 0, 0], { curl: -.22, thick: .45 });
+    D.blade('fin', D.finMat(FN, .38, .84), [0, .76, -1.24], [0, 1.42, -1.36], .78, [1, 0, 0], { curl: -.28, thick: .45 });
     D.face({ c: head, spread: .56, pitch: .12, size: .064, iris: '#3a7ae6', style: 'almond', lid: .1, lidColor: B, cheek: false, mouth: 'smile', mouthPitch: -.5, mouthW: .035 });
     D.ball('#1e2a44', [0, 1.115, .6], [.03, .022, .02]);
   },
@@ -415,14 +418,15 @@ export const INICIALES = {
       // Corona dorada en la frente y aletas largas que caen como cabello.
       const cb = D.skin(head, s * .3, .9, -.02);
       D.blade('crest', D.M(AU, { metalness: .55, roughness: .28, emissive: '#c08a2a', emissiveIntensity: .25 }), cb, plus(cb, [s * .12, .2, -.12]), .12, [s * .5, .3, 1], { curl: -.1, thick: .5 });
-      for (const [yaw, pitch, l, w] of [[.85, .6, .72, .24], [1.2, .25, .6, .2], [.6, .95, .8, .22]]) { const b = D.skin(head, s * yaw, pitch, -.03); D.blade('stream', D.finMat(FN, .4, .8), b, plus(b, [s * .2, .12, -l]), w, [s, .4, .2], { curl: .25, thick: .4 }); }
+      for (const [yaw, pitch, l, w, up] of [[.85, .6, 1.0, .34, .3], [1.2, .25, .82, .28, .16], [.6, .95, 1.1, .3, .42]]) { const b = D.skin(head, s * yaw, pitch, -.03); D.blade('stream', D.finMat(FN, .42, .78), b, plus(b, [s * .26, up, -l]), w, [s, .4, .2], { curl: .32, thick: .4 }); }
       // Pechera dorada con alas.
       D.blade('crest', D.M(AU, { metalness: .55, roughness: .28, emissive: '#c08a2a', emissiveIntensity: .25 }), [s * .05, 1.12, .5], [s * .26, 1.26, .4], .16, [s * .3, .2, 1], { curl: -.12, thick: .45 });
     });
     D.gem(D.skin(head, 0, .78, .005), GEM, .03);
     D.gem(D.skin([0, 1.08, .3], 0, .15, .005), GEM, .052);
     // Colas de agua: tres aletas largas que flotan detrás.
-    for (const [x, up, l, w] of [[0, .8, .9, .52], [.22, .5, .78, .42], [-.22, .5, .78, .42]]) D.blade('fin', D.finMat(FN, .42, .8), [x * .3, 1.06, -.6], [x * 1.6, 1.06 + up * l, -.6 - l * .8], w, [x * 4 + .01, .3, -1], { curl: -.2, thick: .4 });
+    for (const [x, up, l, w] of [[0, .85, 1.25, .7], [.3, .55, 1.1, .58], [-.3, .55, 1.1, .58], [.5, .25, .9, .46], [-.5, .25, .9, .46]]) D.blade('fin', D.finMat(FN, .44, .78), [x * .25, 1.06, -.6], [x * 1.7, 1.06 + up * l, -.6 - l * .78], w, [x * 4 + .01, .3, -1], { curl: -.26, thick: .4 });
+    for (const [zz, h] of [[-.05, .2], [-.3, .18], [-.55, .14]]) { const b = [0, 1.24 - Math.abs(zz) * .04, zz]; D.blade('crest', D.finMat(FN, .36, .82), b, plus(b, [0, h, -.16]), .18, [1, 0, 0], { thick: .5 }); }
     // Agua que gira a los pies (dos arcos anchos), un charco claro y crestas de ola alrededor.
     const water = D.finMat('#9ad8ff', .5, .42), arcs = [];
     for (let i = 0; i < 2; i++) { const m = D.arc(water, [0, .08 + i * .16, -.06], .7 + i * .12, Math.PI * 1.35, .045, [Math.PI / 2 + (i ? .14 : -.1), 0, i * 2]); m.userData.keep = true; arcs.push(m); }

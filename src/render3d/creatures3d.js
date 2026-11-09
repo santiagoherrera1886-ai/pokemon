@@ -246,14 +246,19 @@ function kit(r, g, S) {
     anim(t => { const k = 1 + Math.sin(t * 9 * speed + ph) * .1 + Math.sin(t * 15.7 * speed + ph * 2) * .05; m.scale.y = sy * k; m.scale.x = m.scale.z = w * (1.04 - (k - 1) * .5); m.quaternion.copy(q0); m.rotateZ(Math.sin(t * 5.3 * speed + ph) * .07); });
     return m;
   };
-  // Penacho de fuego (punta de cola, copete): núcleo claro, lengua media y lenguas rojizas alrededor.
+  // Penacho de fuego (punta de cola, copete): lenguas rojizas alrededor del eje que se tuercen como un
+  // remolino, una lengua media naranja y un núcleo claro.
   const plume = (base, dir, size, { face = [0, 0, 1], spread = .5, n = 3, tint = 'out' } = {}) => {
-    const B = new T.Vector3(...base), D = new T.Vector3(...dir).normalize(), F = new T.Vector3(...face).normalize();
-    const side = new T.Vector3().crossVectors(D, F).normalize();
-    const tip = (len, off) => B.clone().addScaledVector(D, len).addScaledVector(side, off).toArray();
-    for (let i = 0; i < n; i++) { const o = n > 1 ? (i / (n - 1) - .5) * 2 : 0; tongue(B.clone().addScaledVector(side, o * size * .14).toArray(), tip(size * (1 - Math.abs(o) * .35), o * size * spread * .6), size * .36, { pal: tint, bend: -o * .6 + .12, face }); }
-    tongue(base, tip(size * .88, 0), size * .34, { pal: 'mid', bend: .28, face });
-    tongue(B.clone().addScaledVector(D, -size * .05).toArray(), tip(size * .55, 0), size * .22, { pal: 'core', bend: .1, face, speed: 1.3 });
+    const B = new T.Vector3(...base), Dv = new T.Vector3(...dir).normalize(), F = new T.Vector3(...face).normalize();
+    const side = new T.Vector3().crossVectors(Dv, F); if (side.lengthSq() < 1e-6) side.set(1, 0, 0); side.normalize();
+    const F2 = new T.Vector3().crossVectors(side, Dv).normalize();
+    for (let i = 0; i < n; i++) {
+      const a = i / n * Math.PI * 2 + .5, off = side.clone().multiplyScalar(Math.cos(a)).addScaledVector(F2, Math.sin(a) * .75);
+      const len = size * (.7 + ((i * 3) % Math.max(1, n)) / Math.max(1, n) * .3);
+      tongue(B.clone().addScaledVector(off, size * .1).toArray(), B.clone().addScaledVector(Dv, len).addScaledVector(off, size * spread * .45).toArray(), size * .34, { pal: tint, bend: .38, face: off.toArray() });
+    }
+    tongue(base, B.clone().addScaledVector(Dv, size * .95).toArray(), size * .36, { pal: 'mid', bend: .25, face });
+    tongue(B.clone().addScaledVector(Dv, -size * .05).toArray(), B.clone().addScaledVector(Dv, size * .58).toArray(), size * .24, { pal: 'core', bend: .1, face, speed: 1.3 });
   };
   // Mechón de pelo fundido al cuerpo: cono de a (base) a b (punta).
   const tuft = (a, b, rad, c, k = .03) => S.limb(a, b, rad, rad * .12, c, { k, kc: .02 });
