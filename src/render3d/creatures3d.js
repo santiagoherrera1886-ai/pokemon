@@ -4,6 +4,7 @@
 import * as T from 'three';
 import { Sculpt, voxelSculptGeometry } from './sculpt.js';
 import { BRUMA } from './bestiary.js';
+import { STARTER_EVOLUTIONS, PREMIUM_STARTER_IDS } from './starter-evolutions.js';
 
 // ---------- Geometrías compartidas de los detalles ----------
 const G = {};
@@ -512,11 +513,12 @@ const BUILD = {
     D.face({ c: [0, 1.6, .36], spread: .55, pitch: .05, size: .056, iris: '#3a5aa0', cheek: '#f4c0c8', mouth: 'none' });
   }
 };
-Object.assign(BUILD, BRUMA);
+Object.assign(BUILD, BRUMA, STARTER_EVOLUTIONS);
 export const ALL_SPECIES = Object.keys(BUILD);
 // Rugosidad y brillo metálico del cuerpo por especie (las rocas son mate, el metal brilla).
 const ROUGH = { guijarrin: .62, penon: .64, espejalba: .3, medusin: .28, meduson: .28, magmol: .72, magmor: .72, magmatron: .7, cuarcin: .55, cuarzon: .55, astrocuarzo: .5, ferlum: .34, ferrox: .34, acerion: .32, fraguon: .36, nivalin: .3, nivalmar: .3, nivalord: .3 };
 const METAL = {};
+const PLUSH_DETAIL = {brotelo:.058,brotoso:.063,bosqueron:.077,brasin:.057,brason:.062,volcarbon:.074,charquin:.058,charcomar:.061,mareon:.074};
 
 // Modelo de la especie: cuerpo esculpido (se construye una vez y se reutiliza) + detalles.
 export function creatureModel(r, sp) {
@@ -525,18 +527,27 @@ export function creatureModel(r, sp) {
   const g = new T.Group(), S = new Sculpt(), D = kit(r, g, S);
   build(S, D);
   let body = BODY.get(sp);
-  if (!body) { body = voxelSculptGeometry(S, sp === 'guijarrin' ? .075 : .11); BODY.set(sp, body); }
-  const mesh = new T.Mesh(body, r.mat('#ffffff', { vertexColors: true, roughness: .94, metalness: 0, flatShading: true }));
+  if (!body) {
+    // The nine approved starter evolutions have genuine smooth 3D sculpted
+    // meshes and separate dimensional leafy/fire/water details; all other
+    // species retain their original volumetric retro voxel mode.
+    body = STARTER_EVOLUTIONS[sp] ? S.mesh(PLUSH_DETAIL[sp] || .055) : voxelSculptGeometry(S, sp === 'guijarrin' ? .075 : .11);
+    if (STARTER_EVOLUTIONS[sp]) body.userData.starterSculpt3D = true;
+    BODY.set(sp, body);
+  }
+  const premium = !!STARTER_EVOLUTIONS[sp];
+  const mesh = new T.Mesh(body, r.mat('#ffffff', { vertexColors: true, roughness: premium?.69:.94, metalness: 0, flatShading: !premium }));
   mesh.castShadow = true; mesh.receiveShadow = true; mesh.userData.keep = true; g.add(mesh);
   // Inverted-hull outline is itself real 3D geometry. Keeps the inky silhouette
   // from the approved 16-bit character sheets at every camera angle.
   const contour=new T.Mesh(body,PIXEL_INK);
-  contour.scale.setScalar(1.045);
+  contour.scale.setScalar(premium ? 1.025 : 1.045);
   contour.castShadow=false;contour.receiveShadow=false;contour.userData.keep=true;
   g.add(contour);
   r.batch(g);
   g.userData.eyes = D.eyes;
   g.userData.head = D.anchors.head;
   g.userData.body = mesh;
+  g.userData.starterFamily3D = premium ? sp : null;
   return g;
 }
