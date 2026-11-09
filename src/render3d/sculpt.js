@@ -201,3 +201,68 @@ export class Sculpt {
     return geo;
   }
 }
+
+
+// Volumetric Bruma Retro: construct actual exposed cube faces from the same
+// signed-distance model used by the original smooth sculpt. Every voxel has
+// depth, side faces, directional normals and its own limited-palette color.
+// This is NOT a billboard, sprite plane, screen filter or texture pasted onto
+// the old model. It preserves the model's real positions and the rig hierarchy.
+// Complexity is capped for low-memory browsers (maximum 44 cells per axis).
+export function voxelSculptGeometry(sculpt, requestedStep=.105) {
+  let x0=1e9,y0=1e9,z0=1e9,x1=-1e9,y1=-1e9,z1=-1e9;
+  for (const part of sculpt.parts) if(!part.sub) {
+    const b=part.raw; x0=Math.min(x0,b[0]);y0=Math.min(y0,b[1]);z0=Math.min(z0,b[2]);
+    x1=Math.max(x1,b[3]);y1=Math.max(y1,b[4]);z1=Math.max(z1,b[5]);
+  }
+  if (!Number.isFinite(x0)) return new T.BufferGeometry();
+  const maxSpan=Math.max(x1-x0,y1-y0,z1-z0);
+  const step=Math.max(requestedStep,maxSpan/43.0);
+  const pad=step*1.5;
+  x0=Math.floor((x0-pad)/step)*step;
+  y0=Math.floor((y0-pad)/step)*step;
+  z0=Math.floor((z0-pad)/step)*step;
+  const nx=Math.ceil((x1+pad-x0)/step),ny=Math.ceil((y1+pad-y0)/step),nz=Math.ceil((z1+pad-z0)/step);
+  const solid=new Uint8Array(nx*ny*nz);
+  const index=(i,j,k)=>i+nx*(j+ny*k);
+  for(let k=0;k<nz;k++)for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){
+    if(sculpt.eval(x0+(i+.5)*step,y0+(j+.5)*step,z0+(k+.5)*step)<0)solid[index(i,j,k)]=1;
+  }
+  const inside=(i,j,k)=>i>=0&&i<nx&&j>=0&&j<ny&&k>=0&&k<nz&&solid[index(i,j,k)]===1;
+  const positions=[],normals=[],colors=[];
+  const definitions=[
+    // Normal and four local corners in counterclockwise order from outside.
+    [[ 1,0,0],[[1,0,0],[1,1,0],[1,1,1],[1,0,1]]],
+    [[-1,0,0],[[0,0,1],[0,1,1],[0,1,0],[0,0,0]]],
+    [[0, 1,0],[[0,1,1],[1,1,1],[1,1,0],[0,1,0]]],
+    [[0,-1,0],[[0,0,0],[1,0,0],[1,0,1],[0,0,1]]],
+    [[0,0, 1],[[1,0,1],[1,1,1],[0,1,1],[0,0,1]]],
+    [[0,0,-1],[[0,0,0],[0,1,0],[1,1,0],[1,0,0]]]
+  ];
+  const sample=[0,0,0],baseColor=[0,0,0],tri=[0,1,2,0,2,3];
+  const quantize=x=>Math.max(0,Math.min(1,Math.round(x*11)/11));
+  for(let k=0;k<nz;k++)for(let j=0;j<ny;j++)for(let i=0;i<nx;i++) {
+    if(!solid[index(i,j,k)])continue;
+    const px=x0+i*step,py=y0+j*step,pz=z0+k*step;
+    for(const [normal,corners] of definitions) {
+      const [dx,dy,dz]=normal;
+      if(inside(i+dx,j+dy,k+dz))continue;
+      // Sample on the boundary instead of at the block center; retains face markings.
+      sculpt.colorAt(px+(0.5+dx*.47)*step,py+(0.5+dy*.47)*step,pz+(0.5+dz*.47)*step,baseColor);
+      // Pixel-palette grading per 3D face, not per screen-space pixel.
+      const light=dy>0?1.12:dy<0?.74:dx>0?.91:dx<0?.80:dz>0?1:.86;
+      const R=quantize(baseColor[0]*light),G=quantize(baseColor[1]*light),B=quantize(baseColor[2]*light);
+      for (const n of tri) {
+        const corner=corners[n];positions.push(px+corner[0]*step,py+corner[1]*step,pz+corner[2]*step);
+        normals.push(dx,dy,dz);colors.push(R,G,B);
+      }
+    }
+  }
+  const geo=new T.BufferGeometry();
+  geo.setAttribute('position',new T.Float32BufferAttribute(positions,3));
+  geo.setAttribute('normal',new T.Float32BufferAttribute(normals,3));
+  geo.setAttribute('color',new T.Float32BufferAttribute(colors,3));
+  geo.computeBoundingSphere();geo.computeBoundingBox();
+  geo.userData.retroVoxel=true;geo.userData.voxelSize=step;
+  return geo;
+}

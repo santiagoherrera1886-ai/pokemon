@@ -13,6 +13,7 @@ import {QUALITY,normalizeQuality,actorPosition,visibleMapIds} from './policy.js'
 import {ui} from '../ui/ui.js';
 import {hash} from '../core/pixel.js';
 import {Stylizer} from './stylize.js';
+import { dressBattle } from './art-direction.js';
 
 const rnd3=()=>Math.random()-.5;
 export class PremiumRenderer {
@@ -73,7 +74,7 @@ export class PremiumRenderer {
     this.lights.hemi.color.set('#ffece0');this.lights.hemi.groundColor.set('#8aa070');this.lights.hemi.intensity=1.7;
     this.lights.fill.position.set(-4,6,12);this.lights.fill.intensity=.9;
     this.camera.camera.updateMatrixWorld(true);
-    this.styleOpts={focusY:.55,tilt:.12,night:0,bloom:.55,lift:.1,grade:[1.08,1.0,.94],sat:1.14};
+    this.styleOpts={focusY:.55,tilt:.12,night:0,bloom:.55,lift:.1,grade:[1.08,1.0,.94],sat:1.14,retro:0};
   }
   clearTitle(){
     this.titleScene.dispose();this.titleScene=null;
@@ -130,7 +131,7 @@ export class PremiumRenderer {
     const g=this.game,ow=g.ow,m=ow.map;if(!m)return;
     const p=actorPosition(ow.player,m);this.worldRoot.visible=true;this.battleRoot.visible=false;
     const hour=g.hour(),night=m.outdoor&&(hour>=19||hour<5);
-    this.scene.background.set(m.dark?'#1c2228':night?'#2a3550':m.outdoor?'#d8e8dc':'#3a4652');this.scene.fog.color.set(m.dark?'#1c2228':night?'#2a3550':'#e4eee6');this.scene.fog.near=m.outdoor?34:60;this.scene.fog.far=m.outdoor?80:140;this.styleOpts={focusY:.5,tilt:m.outdoor?.4:.12,night:night?.55:0,bloom:night||m.dark?.8:.3,lift:m.dark?.03:.1,grade:night?[1,1,1]:hour>=17&&hour<19?[1.12,.98,.86]:[1.05,1.01,.95],sat:m.dark?1.05:1.12};
+    this.scene.background.set(m.dark?'#1c2228':night?'#2a3550':m.outdoor?'#d8e8dc':'#3a4652');this.scene.fog.color.set(m.dark?'#1c2228':night?'#2a3550':'#e4eee6');this.scene.fog.near=m.outdoor?34:60;this.scene.fog.far=m.outdoor?80:140;this.styleOpts={focusY:.5,tilt:m.outdoor?.16:.10,night:night?.42:0,bloom:night||m.dark?.48:.16,lift:m.dark?.025:.05,ink:m.dark?.62:.72,retro:0,grade:night?[.96,.98,1.06]:hour>=17&&hour<19?[1.1,.96,.90]:[1.06,1.02,1.01],sat:m.dark?1.06:1.10};
     const wanted=new Set(visibleMapIds(g.world,m,p,this.settings.radius));
     for(const [id,e]of this.maps)if(!wanted.has(id)){this.r.release(e.root);this.maps.delete(id);}
     for(const id of wanted)if(!this.maps.has(id)){const e=this.environment.build(g.world.get(id),g.state);this.worldRoot.add(e.root);this.maps.set(id,e);}
@@ -156,10 +157,11 @@ export class PremiumRenderer {
     if(key!==this.battleKey){
       this.clearBattle();this.battleKey=key;
       const r=this.r,ground=new T.Group();this.battleRoot.add(ground);
-      const colors={grass:'#9ab982',lake:'#a4c9b5',cave:'#78807d',beach:'#e4d3ad',mountain:'#a4ac91',gym:'#c8d8bf',eclipse:'#74657f',league:'#dfd2ad'};
+      const colors={grass:'#a3be98',lake:'#72aeb4',cave:'#615e79',beach:'#dcc7a8',mountain:'#8d969c',gym:'#a3bba8',eclipse:'#635178',league:'#9d99bd'};
       r.box(ground,colors[terrain]||colors.grass,0,-.19,0,22,.3,18,true);
       for(const [x,z]of [[-2,1.5],[2,-1.8]]){r.mesh(ground,'cylinder','#e6d8af',[x,-.005,z],[1.65,.12,1.3]);r.mesh(ground,'cylinder','#c0cf94',[x,.06,z],[1.51,.025,1.16]);}
-      for(let i=0;i<26;i++){const row=i<13?0:1,x=(i%13)*2.2-13.2+row*1.1,z=row?-8:-6,rock=terrain==='cave'||terrain==='mountain';r.mesh(ground,rock?'leaf':'cone',rock?(row?'#6f7770':'#858d86'):(row?'#5d8a5c':'#6e9c6b'),[x,1.2+row*.3,z],[1.15,rock?1.7:2.7+row*.5,1]);}
+      // Distinct native 3D terrain geometry comes from dressBattle; no repeated cone wall.
+      dressBattle(r,ground,terrain);
       r.batch(ground);
       this.creatures={foe:creature(r,b.foe.sp),ally:b.ally?creature(r,b.ally.sp):null};
       for(const rig of Object.values(this.creatures))if(rig)this.battleRoot.add(rig.root);
@@ -170,7 +172,7 @@ export class PremiumRenderer {
       this.fxLayer=new T.Group();this.battleRoot.add(this.fxLayer);
       this.movefx=this.movefx||new MoveFX(this.r,this.fxLayer);this.movefx.parent=this.fxLayer;b.fxEvents.length=0;
     }
-    this.worldRoot.visible=false;this.battleRoot.visible=true;this.particles.visible=false;this.scene.background.set({cave:'#2a2a2e',eclipse:'#2a2236',league:'#2e2c4e',lake:'#a8daf0',beach:'#9fd8f4',mountain:'#b8dcf0'}[terrain]||'#a8d8ee');this.scene.fog.color.copy(this.scene.background);this.scene.fog.near=14;this.scene.fog.far=40;this.styleOpts={focusY:.5,tilt:.3,night:0,bloom:.3,lift:.1,grade:[1.05,1.01,.95],sat:1.12};
+    this.worldRoot.visible=false;this.battleRoot.visible=true;this.particles.visible=false;this.scene.background.set({cave:'#2a2a2e',eclipse:'#2a2236',league:'#2e2c4e',lake:'#a8daf0',beach:'#9fd8f4',mountain:'#b8dcf0'}[terrain]||'#a8d8ee');this.scene.fog.color.copy(this.scene.background);this.scene.fog.near=14;this.scene.fog.far=40;this.styleOpts={focusY:.5,tilt:.20,night:0,bloom:.32,lift:.08,grade:[1.05,1.01,.98],sat:1.10,retro:0};
     const f=b.fx,time=this.time.value;
     for(const side of ['foe','ally']){
       const rig=this.creatures[side];if(!rig)continue;

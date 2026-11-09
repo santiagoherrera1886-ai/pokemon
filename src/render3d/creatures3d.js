@@ -1,22 +1,24 @@
-// Criaturas 3D de Alborada esculpidas: cada cuerpo es una sola pieza de "plastilina" (sculpt.js) con
+// Criaturas 3D Alborada Bruma Retro: los cuerpos ahora tienen volumen real de vóxeles (sculpt.js) con
 // cabeza, cuello, patas y cola fundidos, barriga y cachetes pintados y boca tallada. Encima van los detalles
 // finos (ojos con brillo que parpadean, llamas, alas, antenas, garras). Diseños propios de cada especie.
 import * as T from 'three';
-import { Sculpt } from './sculpt.js';
+import { Sculpt, voxelSculptGeometry } from './sculpt.js';
 import { BRUMA } from './bestiary.js';
+import { STARTER_EVOLUTIONS, PREMIUM_STARTER_IDS } from './starter-evolutions.js';
 
 // ---------- Geometrías compartidas de los detalles ----------
 const G = {};
 const geo = (k, make) => G[k] || (G[k] = make());
-const SPHERE = () => geo('s', () => new T.SphereGeometry(1, 24, 16));
-const SPHERE_LO = () => geo('sl', () => new T.SphereGeometry(1, 14, 10));
-const CONE = () => geo('cone', () => new T.ConeGeometry(1, 1, 16));
-const CYL = () => geo('cyl', () => new T.CylinderGeometry(1, 1, 1, 14));
-const TORUS = (arc, tube) => geo('t' + arc.toFixed(3) + tube, () => new T.TorusGeometry(1, tube, 8, 24, arc));
+const SPHERE = () => geo('s', () => new T.SphereGeometry(1, 10, 7));
+const SPHERE_LO = () => geo('sl', () => new T.SphereGeometry(1, 8, 6));
+const CONE = () => geo('cone', () => new T.ConeGeometry(1, 1, 8));
+const CYL = () => geo('cyl', () => new T.CylinderGeometry(1, 1, 1, 8));
+const TORUS = (arc, tube) => geo('t' + arc.toFixed(3) + tube, () => new T.TorusGeometry(1, tube, 5, 16, arc));
 const OCTA = () => geo('octa', () => new T.OctahedronGeometry(1, 0));
 const PRISM = () => geo('prism', () => new T.CylinderGeometry(.62, 1, 1, 6).translate(0, .5, 0));
 const RING = tube => geo('ring' + tube, () => new T.TorusGeometry(1, tube, 10, 64));
-const BODY = new Map();   // malla esculpida por especie (cara de construir, se guarda)
+const BODY = new Map();
+const PIXEL_INK = new T.MeshBasicMaterial({color:'#241638',side:T.BackSide,depthWrite:true});   // malla esculpida por especie (cara de construir, se guarda)
 
 const sh = (hex, f) => { const c = new T.Color(hex); return '#' + (f > 0 ? c.lerp(new T.Color('#ffffff'), f) : c.multiplyScalar(1 + f)).getHexString(); };
 const FWD = new T.Vector3(0, 0, 1);
@@ -24,7 +26,7 @@ const dirOf = (yaw, pitch) => [Math.cos(pitch) * Math.sin(yaw), Math.sin(pitch),
 const E = Sculpt.ellipsoid, C = Sculpt.roundCone;
 
 function kit(r, g, S) {
-  const M = (c, o = {}) => typeof c === 'object' ? c : r.mat(c, { roughness: .4, ...o });
+  const M = (c, o = {}) => typeof c === 'object' ? c : r.mat(c, { roughness: .95, metalness: 0, flatShading: true, ...o });
   const glow = (c, k = .6) => r.mat(c, { emissive: c, emissiveIntensity: k, roughness: .35 });
   const HL = r.mat('#ffffff', { emissive: '#ffffff', emissiveIntensity: .6, roughness: .25 });
   const add = (gm, c, p, s, rot, parent = g) => {
@@ -511,11 +513,12 @@ const BUILD = {
     D.face({ c: [0, 1.6, .36], spread: .55, pitch: .05, size: .056, iris: '#3a5aa0', cheek: '#f4c0c8', mouth: 'none' });
   }
 };
-Object.assign(BUILD, BRUMA);
+Object.assign(BUILD, BRUMA, STARTER_EVOLUTIONS);
 export const ALL_SPECIES = Object.keys(BUILD);
 // Rugosidad y brillo metálico del cuerpo por especie (las rocas son mate, el metal brilla).
 const ROUGH = { guijarrin: .62, penon: .64, espejalba: .3, medusin: .28, meduson: .28, magmol: .72, magmor: .72, magmatron: .7, cuarcin: .55, cuarzon: .55, astrocuarzo: .5, ferlum: .34, ferrox: .34, acerion: .32, fraguon: .36, nivalin: .3, nivalmar: .3, nivalord: .3 };
 const METAL = {};
+const PLUSH_DETAIL = {brotelo:.058,brotoso:.063,bosqueron:.077,brasin:.057,brason:.062,volcarbon:.074,charquin:.058,charcomar:.061,mareon:.074};
 
 // Modelo de la especie: cuerpo esculpido (se construye una vez y se reutiliza) + detalles.
 export function creatureModel(r, sp) {
@@ -524,12 +527,28 @@ export function creatureModel(r, sp) {
   const g = new T.Group(), S = new Sculpt(), D = kit(r, g, S);
   build(S, D);
   let body = BODY.get(sp);
-  if (!body) { body = S.mesh(.026); BODY.set(sp, body); }
-  const mesh = new T.Mesh(body, r.mat('#ffffff', { vertexColors: true, roughness: ROUGH[sp] ?? .42, ...(METAL[sp] ? { metalness: METAL[sp] } : {}) }));
+  if (!body) {
+    // The nine approved starter evolutions have genuine smooth 3D sculpted
+    // meshes and separate dimensional leafy/fire/water details; all other
+    // species retain their original volumetric retro voxel mode.
+    body = STARTER_EVOLUTIONS[sp] ? S.mesh(PLUSH_DETAIL[sp] || .055) : voxelSculptGeometry(S, sp === 'guijarrin' ? .075 : .11);
+    if (STARTER_EVOLUTIONS[sp]) body.userData.starterSculpt3D = true;
+    BODY.set(sp, body);
+  }
+  const premium = !!STARTER_EVOLUTIONS[sp];
+  const mesh = new T.Mesh(body, r.mat('#ffffff', { vertexColors: true, roughness: premium?.69:.94, metalness: 0, flatShading: !premium }));
   mesh.castShadow = true; mesh.receiveShadow = true; mesh.userData.keep = true; g.add(mesh);
+  // Inverted-hull outline is itself real 3D geometry. Keeps the inky silhouette
+  // from the approved 16-bit character sheets at every camera angle.
+  const contour=new T.Mesh(body,PIXEL_INK);
+  contour.scale.setScalar(premium ? 1.025 : 1.045);
+  contour.castShadow=false;contour.receiveShadow=false;contour.userData.keep=true;
+  g.add(contour);
   r.batch(g);
   g.userData.eyes = D.eyes;
   g.userData.head = D.anchors.head;
   g.userData.body = mesh;
+  g.userData.starterFamily3D = premium ? sp : null;
+  if (['bosqueron','volcarbon','mareon'].includes(sp)) g.scale.setScalar(.87);
   return g;
 }

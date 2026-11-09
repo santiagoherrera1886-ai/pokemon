@@ -197,13 +197,17 @@ export function building(r,o) {
     geometry.computeVertexNormals();
     geometry.rotateY(Math.PI/2);
     const roofMesh=new T.Mesh(geometry,r.mat(shade(roof,-.35)));roofMesh.scale.set((w+.44)/(d-.24),1,(d-.24)/(w+.44));roofMesh.position.set(w/2,2.16,zc);roofMesh.castShadow=true;roofMesh.receiveShadow=true;roofMesh.userData.ownedGeometry=true;g.add(roofMesh);
-    // Tejas en franjas gruesas y redondeadas, con una ranura oscura entre franja y franja.
-    const run=D,rise=H,L=Math.hypot(run,rise),theta=Math.atan2(rise,run),N=5,len=L/N;
-    const nx=0,ny=Math.cos(theta),nz=Math.sin(theta);
-    for(const side of [1,-1])for(let j=0;j<N;j++){
-      const k=(j+.55)/N,y=2.16+rise*(1-k)+ny*.06,z=zc+side*(run*k+nz*.06);
-      const strip=r.mesh(g,'soft',gloss(j%2?roof:shade(roof,.07)),[w/2,y,z],[w+.52,.09,len*.9]);strip.rotation.x=side*theta;
-      if(side===1){const lip=r.mesh(g,'soft',gloss(shade(roof,-.12)),[w/2,y-Math.sin(theta)*len*.45-.035,z+Math.cos(theta)*len*.45],[w+.5,.06,.07]);lip.rotation.x=theta;}
+    // Sloped ceramic roof under the individual tiles, instead of five giant
+    // smooth toy-like stripes. The small scalloped shingles are modeled above.
+    const run=D,rise=H,L=Math.hypot(run,rise),theta=Math.atan2(rise,run);
+    for(const side of [1,-1]){
+      const enamel=r.mesh(g,'box',shade(roof,-.08),[w/2,2.16+rise*.5,zc+side*run*.5],[w+.5,.055,L*1.02]);
+      enamel.rotation.x=side*theta;
+      // Decorative timber ribs define a genuine raised storybook roof edge.
+      for(const x of [.12,w-.12]){
+        const beam=r.mesh(g,'cylinder',shade(trim,-.24),[x,2.16+rise*.5+.07,zc+side*run*.5],[.065,L*1.03,.065]);
+        beam.rotation.x=-side*Math.atan2(run,rise);
+      }
     }
     // Canal del alero, cumbrera y remates
     for(const side of [1,-1])b(shade(roof,-.3),w/2,2.13,zc+side*(D+.07),w+.62,.16,.18);
@@ -224,6 +228,139 @@ export function building(r,o) {
     // Escudo redondo del gimnasio sobre la cumbrera (sólo el color de la medalla, nada de logos).
     if(opt.emblem){const ey=lab?2.9:3.42,ez=zc+.12;ball(WHITE_TRIM,w/2,ey,ez,.42,.42,.1);ball(opt.emblem,w/2,ey,ez+.05,.32,.32,.08);ball('#ffffff',w/2-.1,ey+.1,ez+.12,.07,.06,.02);r.box(g,shade(opt.trim||'#c4b790',-.1),w/2,ey-.4,ez-.02,.1,.4,.08,true);}
   }
+
+  // BRUMA ARCHITECTURE · real 3D facades and roof detailing on all buildings.
+  // Visual only: never touches tile collisions, doors, warps or map data.
+  const finish=new T.Group();finish.name='bruma-architecture';g.add(finish);
+  const mesh=(type,color,x,y,z,sx,sy,sz,rot=0)=>{
+    const part=r.mesh(finish,type,color,[x,y,z],[sx,sy,sz]);
+    part.rotation.z=rot;return part;
+  };
+  const darkTrim=shade(trim,-.26),gold='#edc680';
+  for(const x of [.24,w-.24]){
+    mesh('box',darkTrim,x,1.15,zf+.16,.12,1.75,.07);
+    mesh('box',WHITE_TRIM,x,2.02,zf+.16,.24,.08,.15);
+    mesh('soft',gold,x,.22,zf+.16,.20,.13,.18);
+  }
+  mesh('soft',gold,dc,1.69,zf+.54,1.18,.055,.12);
+  for(const side of [-1,1]){
+    const x=dc+side*.70;
+    mesh('box',darkTrim,x,1.37,zf+.24,.07,.33,.08);
+    mesh('crystal','#ffe1a1',x,1.40,zf+.31,.13,.17,.13);
+    mesh('box',gold,x,1.53,zf+.31,.17,.025,.15);
+    mesh('box',gold,x,1.28,zf+.31,.17,.025,.15);
+    for(let n=0;n<2;n++)mesh('soft',n?'#e2cb9e':'#f1e3bf',dc+side*.31,.03,zf+.52+n*.22,.27,.055,.21);
+  }
+  for(let i=0;i<w;i++){
+    const x=i+.5;if(Math.abs(x-dc)<=.9)continue;
+    for(const side of [-1,1]){
+      const sx=x+side*.35;
+      mesh('box',shade(roof,side>0?.08:-.16),sx,1.35,zf+.16,.10,.68,.05);
+      for(let j=-1;j<=1;j++)mesh('box',WHITE_TRIM,sx,1.35+j*.16,zf+.19,.09,.02,.013);
+    }
+    mesh('soft',gold,x,1.77,zf+.18,.76,.035,.12);
+  }
+  if(lab){
+    const count=Math.min(4,Math.max(2,Math.floor(w/2)));
+    for(let i=0;i<count;i++)mesh('soft',gold,.9+i*(w-1.8)/(count-1),2.54,zc-.04,.07,.06,d-.65);
+    mesh('cylinder','#577384',w-.84,2.87,zc-.4,.16,.41,.16,-.16);
+    mesh('crystal','#79dbe8',w-.80,3.10,zc-.38,.15,.24,.16);
+    mesh('crystal','#83d3cf',dc,2.28,zf+.20,.15,.12,.09);
+  }else{
+    const n=Math.max(3,Math.min(9,Math.floor(w*1.1)));
+    for(let i=0;i<n;i++)mesh('soft',i%3===0?gold:shade(roof,.18),.3+(i+.5)*(w-.6)/n,3.17,zc,.10,.07,.13);
+    mesh('crystal',gold,w/2,3.33,zc,.13,.18,.14);
+    for(const x of [w*.20,w*.80]){
+      mesh('box',shade(roof,-.22),x,2.63,zf-.05,.37,.27,.07);
+      mesh('box',WHITE_TRIM,x,2.64,zf+.015,.24,.16,.027);
+    }
+  }
+  if(big){
+    for(const x of [.62,w-.62]){
+      mesh('soft',gold,x,2.0,zf+.27,.40,.11,.20);
+      mesh('crystal',opt.emblem||'#8ecdc6',x,2.28,zf+.27,.16,.25,.14);
+    }
+    mesh('soft',darkTrim,w/2,2.16,zf+.20,Math.min(w-1,3.3),.12,.15);
+  }else if(!lab){
+    for(const side of [-1,1]){
+      const x=dc+side*.86;
+      mesh('box','#956c50',x,.20,zf+.40,.31,.20,.31);
+      mesh('leaf','#75ac75',x,.40,zf+.40,.22,.22,.20,side*.24);
+      mesh('ball',side>0?'#f0a3b9':'#f7d887',x,.52,zf+.46,.065,.06,.065);
+    }
+  }
+  r.batch(finish);
+
+  // New silhouette: the roof must read as an illustrated fantasy town,
+  // not a five-stripe rectangular toy box. These are actual Three.js meshes.
+  const silhouette=new T.Group();silhouette.name='bruma-storybook-silhouette';g.add(silhouette);
+  const form=(shape,color,x,y,z,sx,sy,sz,rotation=[])=>{
+    const p=r.mesh(silhouette,shape,color,[x,y,z],[sx,sy,sz]);
+    if(rotation.length)p.rotation.set(...rotation);return p;
+  };
+  const gableDark=shade(roof,-.30),gableBright=shade(roof,.055);
+  if(!lab){
+    const run=d/2-.12,rise=.95,angle=Math.atan2(rise,run);
+    // Individual roof shingles alternate in short staggered courses. Shingle
+    // tips produce visible relief and shadow at the elevated game camera.
+    for(const side of [-1,1])for(let row=0;row<5;row++){
+      const t=(row+.48)/5;
+      const y=2.16+rise*(1-t)+.105,zz=zc+side*(run*t);
+      const count=Math.max(4,Math.min(10,Math.floor(w/.68)));
+      for(let i=0;i<count;i++){
+        const x=(i+.5+(row%2)*.12)*w/count;
+        const color=(i+row)%7===0?shade(roof,-.16):(i+row)%3===0?gableBright:shade(roof,-.035);
+        form('soft',color,x,y,zz,w/count*.96,.035,run*.15,[side*angle,0,0]);
+      }
+    }
+    // Roofline changes in geometry: framed dormers projecting from both
+    // roof slopes. The bright dormer glass has a physical recessed frame.
+    const count=w>6?3:2;
+    for(let i=0;i<count;i++){
+      const x=w*(i+1)/(count+1),z=zc+run*.58;
+      const y=2.16+rise*.42;
+      form('soft',shade(wall,-.02),x,y+.20,z,.71,.53,.47);
+      form('box',gableDark,x,y+.21,z+.252,.51,.36,.06);
+      form('soft','#f6e4ba',x,y+.21,z+.289,.43,.28,.04);
+      form('box','#6db3b9',x,y+.22,z+.314,.32,.19,.018);
+      form('box',WHITE_TRIM,x,y+.22,z+.33,.034,.22,.024);
+      form('soft',gableBright,x,y+.51,z,.88,.095,.64,[.38,0,0]);
+      form('crystal','#f8dd91',x,y+.60,z-.10,.072,.13,.075);
+      // Little flowering vines at the sill are distinct 3D leaves.
+      for(let k=-1;k<=1;k++){
+        form('foliage',k===0?'#6f9a81':'#7db69b',x+k*.135,y+.015,z+.30,.10,.10,.08);
+        form('bloomFlower',k===0?'#f1bad2':'#e8d78f',x+k*.13,y+.11,z+.37,.065,.09,.07);
+      }
+    }
+    // Ridge spires give each building a recognizable skyline.
+    for(const i of [0,1,2]){
+      const x=(i+.5)*w/3;
+      form('crystal',i===1?'#e9bb7a':gableDark,x,3.38,zc,.15,.23,.14);
+      form('soft',gableBright,x,3.16,zc,.22,.075,.20);
+    }
+  }else{
+    // The laboratory is a scientific observatory, not a generic house.
+    for(const side of [-1,1]){
+      const x=side>0?w-.75:.75;
+      form('cylinder','#5f7991',x,2.95,zc-.3,.26,.7,.26);
+      form('crystal','#81e3db',x,3.38,zc-.3,.26,.44,.25);
+      form('ring','#edca8f',x,3.38,zc-.3,.29,.30,.29,[Math.PI/2,0,0]);
+    }
+    form('soft','#e6cc94',w/2,2.75,zc,Math.min(w-1,2.4),.14,.22);
+    for(let i=-2;i<=2;i++)form('crystal',i%2?'#9be4d8':'#f4e0aa',w/2+i*.38,2.92,zc,.12,.21,.12);
+  }
+  if(big){
+    // Gym/league architecture gets symmetrical vertical towers, high
+    // silhouettes and a dimensional crest instead of a standard house.
+    for(const x of [.72,w-.72]){
+      form('soft',trim,x,2.58,zf-.14,.58,.77,.57);
+      form('cylinder',gableDark,x,3.05,zf-.14,.34,.18,.34);
+      form('crystal',opt.emblem||'#8ed6c0',x,3.36,zf-.14,.27,.43,.27);
+      form('soft','#f0d3a1',x,2.24,zf+.18,.40,.12,.43);
+    }
+    form('crystal',opt.emblem||'#9fdbb8',w/2,3.69,zc,.33,.54,.22);
+  }
+  r.batch(silhouette);
   return g;
 }
 
@@ -260,6 +397,29 @@ export function smallProp(r,o) {
     r.mesh(g,'cylinder','#d1c7a4',[0,.7,0],[.17,.75,.17]);r.mesh(g,'cylinder','#d8d0b2',[0,1.05,0],[.42,.1,.42]);
     r.ball(g,'#c1e1e4',0,1.2,0,.15,.21,.15);
     for(let i=0;i<8;i++){const a=i*Math.PI/4;r.ball(g,'#b0dadd',Math.cos(a)*.38,.83,Math.sin(a)*.38,.04,.24,.04);}
+    // Ciudad Corola: a water-lily shrine in the middle of the fountain.
+    // The petals, basin ornament and rising water arc are genuine 3D meshes.
+    for(let i=0;i<10;i++){
+      const a=i*Math.PI*2/10,c=Math.cos(a),sn=Math.sin(a);
+      const rimFlower=r.mesh(g,'foliage',i%2?'#b6dfca':'#78b9ab',[c*.67,.39,sn*.67],[.14,.09,.12]);
+      rimFlower.rotation.y=a;
+      const pearl=r.mesh(g,'bloomFlower',i%3?'#f9dbaa':'#f0b5cb',[c*.65,.47,sn*.65],[.11,.07,.11]);
+      pearl.rotation.y=a;
+      const ripple=r.mesh(g,'ring','#c6f5eb',[c*.41,.37,sn*.41],[.18,.18,.18]);ripple.rotation.x=Math.PI/2;
+    }
+    for(let i=0;i<7;i++){
+      const a=i*2*Math.PI/7,petal=r.mesh(g,'foliage',i%2?'#9fe0c1':'#e8b8d2',
+        [Math.sin(a)*.26,1.32,Math.cos(a)*.26],[.20,.32,.18]);
+      petal.rotation.z=Math.sin(a)*.52;petal.rotation.x=Math.cos(a)*.46;
+    }
+    r.mesh(g,'crystal',r.mat('#94f4de',{emissive:'#43acbb',emissiveIntensity:.25}),
+      [0,1.60,0],[.19,.34,.19]);
+    const crown=r.mesh(g,'ring','#f7db99',[0,1.38,0],[.32,.32,.32]);crown.rotation.x=Math.PI/2;
+    for(let i=0;i<4;i++){
+      const a=i*Math.PI/2,x=Math.cos(a)*.48,z=Math.sin(a)*.48;
+      const arc=r.mesh(g,'ring',r.mat('#a8f6f1',{transparent:true,opacity:.80,depthWrite:false}),
+        [x,.91,z],[.27,.32,.24]);arc.rotation.y=a;arc.rotation.x=.55;
+    }
   }
   if(o.kind==='bench'){
     for(const x of [-.65,.65])b('#667972',x,.3,0,.12,.6,.55);

@@ -10,6 +10,7 @@ import { saveState, listSaves, SLOTS, loadState, storeState, parseState, playTim
 import { cloud, TOKEN_URL } from '../core/cloud.js';
 import { AVATAR_OPTIONS, defaultAvatar, cleanAvatar, avatarLook } from '../data/avatar.js';
 import { lookFrame } from '../art/characters.js';
+import { RETRO_IDS, RETRO_ATLAS } from '../art/retro-reference.js';
 
 const hpBar = c => { const k = Math.max(0, c.hp / c.stats.hp); return `<div class="hp"><i style="width:${k * 100}%" class="${k > 0.5 ? 'g' : k > 0.2 ? 'y' : 'r'}"></i></div>`; };
 const typeTags = sp => SPECIES[sp].types.map(t => `<span class="type" style="--t:${TYPES[t].color}">${TYPES[t].name}</span>`).join('');
@@ -379,12 +380,14 @@ export class Menus {
         ui.setPanel(`<div class="title-menu">
           ${saves.length ? '<button data-act="continue" class="primary">CONTINUAR</button>' : ''}
           <button data-act="new">NUEVA PARTIDA</button>
+          <button data-act="retro" class="soft">✦ BESTIARIO RETRO · 43 DISEÑOS</button>
           <button data-act="files" class="soft">PARTIDAS Y GITHUB${cloud.linked ? ' ☁' : ''}</button>
           <p class="hint">Juego original sin ROM · guardado en tu navegador${cloud.linked ? ` y en GitHub (${esc(cloud.login)})` : ''}</p></div>`,
         { modal: true, cls: 'title-panel', onAct: a => {
           if (a === 'continue') return saves.length === 1 ? resolve({ type: 'continue', slot: saves[0].slot }) : pick('continue');
           if (a === 'new') return saves.length ? pick('new') : nameStep(1);
           if (a === 'files') return this.saveFiles({ fromTitle: true }).then(main);
+          if (a === 'retro') return this.retroGallery(main);
         } });
       };
       const pick = mode => this.slotPicker(mode).then(slot => slot ? (mode === 'continue' ? resolve({ type: 'continue', slot }) : nameStep(slot)) : main());
@@ -398,6 +401,27 @@ export class Menus {
       };
       main();
     });
+  }
+
+  // Galería de arte de las diez láminas aprobadas. No desbloquea ni modifica criaturas.
+  retroGallery(onExit, selected=null) {
+    const sprite = (id, size=64) => {
+      const i=RETRO_IDS.indexOf(id); if (i<0) return '';
+      const x=-(i%RETRO_ATLAS.cols)*size,y=-Math.floor(i/RETRO_ATLAS.cols)*size;
+      return '<span class="retro-art" aria-hidden="true" style="width:'+size+'px;height:'+size+'px;flex-basis:'+size+'px;background-size:'+(RETRO_ATLAS.cols*size)+'px '+(RETRO_ATLAS.rows*size)+'px;background-position:'+x+'px '+y+'px"></span>';
+    };
+    const species=selected ? SPECIES[selected] : null;
+    const details=species ? '<div class="retro-detail">'+sprite(selected,128)
+      +'<div><strong>'+esc(species.name)+'</strong><p>'+esc(species.desc || 'Criatura de Alborada.')+'</p>'
+      +'<small>Concepto de arte en pixel · vista frontal</small></div></div>' : '';
+    const entries=RETRO_IDS.map(id=>'<button data-act="'+id+'" class="retro-entry '+(selected===id?'on':'')+'" title="'+esc(SPECIES[id]?.name || id)+'">'
+      +sprite(id)+'<small>'+esc(SPECIES[id]?.name || id)+'</small></button>').join('');
+    ui.setPanel('<h3 class="ph">✦ BESTIARIO · BRUMA RETRO</h3>'
+      +'<p class="retro-gallery-intro">43 criaturas originales inspiradas en las láminas. Toca una para ampliar su diseño.</p>'
+      +details+'<div class="retro-gallery-grid">'+entries+'</div>'
+      +'<p class="retro-gallery-note">Estas vistas también aparecen en el Registro. Las espaldas conservan el arte anterior.</p>'
+      +'<button data-back class="bt-back">VOLVER AL TÍTULO</button>',
+      {modal:true,cls:'retro-gallery-panel',onBack:onExit,onAct:id=>this.retroGallery(onExit,id)});
   }
 
   // Miniatura del avatar (pixel art ampliado, igual en los dos modos).

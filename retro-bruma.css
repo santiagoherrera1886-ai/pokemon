@@ -303,3 +303,98 @@ body.premium-active #banner::before{display:none}
 @keyframes retroStarter{to{transform:translateY(-3px)}}
 @media(max-width:600px){#retro-starters{gap:8px;padding:5px 13px;margin-top:9px}#retro-starters i{width:48px;height:48px;background-size:384px 288px}#retro-starters .rs-water{background-position:-144px 0}#retro-starters .rs-grass{background-position:-288px 0}}
 @media(prefers-reduced-motion:reduce){#retro-starters i{animation:none}}
+
+
+/* Bestiario de los 43 dibujos reales de las diez láminas. */
+#panel.retro-gallery-panel,body.premium-active #panel.retro-gallery-panel{
+  position:absolute;top:50%;left:50%;right:auto;bottom:auto;
+  transform:translate(-50%,-50%);
+  width:min(920px,94vw);height:min(730px,92vh);max-height:92vh;
+  display:flex;flex-direction:column;gap:10px;
+  background:linear-gradient(170deg,#fff7e6,#e7e2f6);
+  border:4px solid #302448;box-shadow:inset 0 0 0 3px #cbb18f,0 12px 0 #18152a,0 18px 40px #100f2db3;
+}
+.retro-gallery-intro,.retro-gallery-note{font-size:.78em;line-height:1.3;color:#5a4b6c;margin:0}
+.retro-gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(94px,1fr));grid-auto-rows:100px;gap:8px;
+  min-height:0;overflow-y:auto;padding:8px 4px 15px;scrollbar-color:#9b82b6 #f2e8dd}
+#panel .retro-entry{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  min-height:96px;padding:4px 2px!important;background:#fff9ef!important;
+  border:2px solid #695679!important;border-radius:5px!important;
+}
+#panel .retro-entry.on,#panel .retro-entry:focus-visible{background:#e4d5f3!important;outline:3px solid #56bdbb!important}
+#panel .retro-entry small{font-size:.57em;color:#43315c;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.retro-art{display:block;flex:none;image-rendering:pixelated;image-rendering:crisp-edges;background-image:url("./src/art/retro-reference.png");background-repeat:no-repeat}
+.retro-detail{display:flex;align-items:center;justify-content:center;gap:20px;
+  background:linear-gradient(120deg,#241d44,#533774);border:3px solid #dfba80;border-radius:4px;
+  padding:10px;color:#fff5cd;min-height:156px}
+.retro-detail strong{font:700 clamp(17px,2vw,26px) 'Pixelify Sans',monospace}
+.retro-detail p{font-size:.73em;margin:5px 0;line-height:1.2;color:#ece3f9;max-width:330px}
+.retro-detail small{font-size:.63em;color:#f3cf8b}
+#panel.retro-gallery-panel .bt-back{width:100%;margin-top:auto}
+@media(max-width:600px){
+ #panel.retro-gallery-panel,body.premium-active #panel.retro-gallery-panel{
+   top:48%;height:min(76vh,680px);max-height:76vh;width:96vw;padding:.6em
+ }
+ .retro-gallery-grid{grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:95px;gap:5px}
+ .retro-detail{gap:8px;min-height:130px}
+ .retro-detail .retro-art{transform:scale(.8);margin:-13px;flex-shrink:0}
+ .retro-detail p{font-size:.65em}
+}
+
+
+/* APPROVED 3D STARTER FAMILY SHOWCASE
+   3D title scene now contains true models on three elemental platforms.
+   The previous 2D portrait bar stays available only to the classic renderer. */
+body.at-title.premium-active #retro-starters{display:none!important}
+#starter-stages{display:none}
+body.at-title.premium-active #starter-stages{
+ display:flex;gap:8px;align-items:center;justify-content:center;
+ padding:7px 10px;margin-top:13px;pointer-events:auto;
+ border:2px solid #f7d394;background:#211a3ccf;border-radius:7px;
+ box-shadow:0 5px 0 #16122f,inset 0 0 0 2px #67507f;
+ max-width:calc(100vw - 24px)
+}
+#starter-stages button{
+ appearance:none;cursor:pointer;pointer-events:auto;
+ color:#f1e5d5;background:#47345c;
+ font:700 clamp(9px,1.1vw,13px) 'Pixelify Sans',monospace;
+ border:2px solid #a28bb0;border-radius:4px;
+ padding:8px 11px;min-height:34px;
+ white-space:nowrap;letter-spacing:.035em;
+ box-shadow:0 3px 0 #16102b;
+ transition:background .15s,border-color .15s
+}
+#starter-stages button[aria-pressed="true"]{
+ color:#291f3d;background:linear-gradient(180deg,#fff1bc,#dcae6f);
+ border-color:#fff4d0
+}
+#starter-stages button:hover{border-color:#8de0d7}
+#starter-stages button:focus-visible{outline:3px solid #69dcd7;outline-offset:3px}
+@media(max-width:600px){
+ body.at-title.premium-active #starter-stages{gap:4px;margin-top:9px;padding:5px}
+ #starter-stages button{font-size:9px;min-height:33px;padding:5px 6px}
+ #logo::after{display:none}
+}
+@media(prefers-reduced-motion:reduce){#starter-stages button{transition:none}}
+
+
+/* 3D presentation composition: put menu aside so the true volumetric
+   leaf / flame / water starter families remain visible at full size. */
+@media(min-width:900px){
+ body.at-title.premium-active #panel.title-panel{
+   left:auto!important;right:clamp(22px,3.6vw,75px)!important;
+   transform:none!important;bottom:clamp(15px,4vh,45px)!important;
+   width:min(375px,28vw)!important;
+ }
+ body.at-title.premium-active #panel.title-panel .hint{
+   font-size:.58em;line-height:1.25
+ }
+ body.at-title.premium-active #panel.title-panel button{min-height:42px}
+}
+@media(max-width:899px) and (min-width:601px){
+ body.at-title.premium-active #panel.title-panel{bottom:3vh!important}
+}
+
+/* High-definition sculpted starter preview; classic gameplay still keeps its 16-bit treatment. */
+body.at-title.premium-active #premium{image-rendering:auto!important}
