@@ -160,8 +160,10 @@ class UI {
   restoreBottom(prev) { if (this.restoreHook) this.restoreHook(); }
 
   // ---------- Letrero de zona y fundido ----------
-  banner(name) {
+  // kind: 'town' | 'route' | 'inside' | 'cave' (sólo cambia el color de la placa en 3D).
+  banner(name, kind = 'town') {
     this.bannerEl.textContent = name;
+    this.bannerEl.className = kind;
     this.bannerEl.classList.remove('hidden');
     this.bannerEl.classList.remove('slide'); void this.bannerEl.offsetWidth; this.bannerEl.classList.add('slide');
     this.bannerTimer = 150;

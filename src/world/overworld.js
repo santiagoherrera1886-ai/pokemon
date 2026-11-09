@@ -74,7 +74,7 @@ export class Overworld {
     Object.assign(this.st, { map: mapId, x, y, dir });
     this.st.visited = this.st.visited || {};
     this.st.visited[mapId] = true;
-    if (banner) ui.banner(this.map.name);
+    if (banner) ui.banner(this.map.name, this.map.dark ? 'cave' : !this.map.outdoor ? 'inside' : this.map.encounters ? 'route' : 'town');
     this.game.refreshHome?.();
   }
   refreshNpcs() {

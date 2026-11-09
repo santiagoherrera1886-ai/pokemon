@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {storeSign,postSign} from './signs.js';
 
 const WOOD='#a16d45', LIGHTWOOD='#d5a878', CREAM='#fff0d5', DARK='#32404b';
 const BOOKS=['#d26a61','#5b99b2','#e2b94f','#739d67','#a082b1'];
@@ -210,16 +211,13 @@ export function building(r,o) {
     for(const x of [-.3,w+.3])ball(shade(roof,-.22),x,3.16,zc,.17);
     if(opt.chimney){b('#b9785e',w-.95,2.95,zc-.25,.5,1.05,.5);for(let k=0;k<3;k++)b('#a6684f',w-.95,2.6+k*.26,zc-.005,.52,.03,.02,false);b('#e3b69a',w-.95,3.5,zc-.25,.64,.13,.64);b('#544c47',w-.95,3.57,zc-.25,.4,.02,.4,false);}
   }
-  // Letrero en placa sobre el alero, inclinado hacia la cámara alta: borde de color, fondo crema y letras grandes.
+  // Letrero luminoso del local sobre el alero, inclinado hacia la cámara alta, con patas al techo (ver signs.js).
   if(opt.sign||lab){
-    const text=lab?'CEIBA':opt.sign, color=opt.signColor||'#467b70';
-    const map=r.texture((c,s)=>{c.fillStyle='#fffaf0';c.fillRect(0,0,s,s);c.fillStyle=color;c.font=`bold ${Math.round(s*.22)}px sans-serif`;c.textAlign='center';c.textBaseline='middle';
-      const fit=Math.min(1,s*.9/c.measureText(text).width);c.save();c.translate(s/2,s/2);c.scale(fit,2.9);c.fillText(text,0,0);c.restore();},256);
-    const sw=Math.min(w-.5,Math.max(1.9,text.length*.3)),sy=lab?2.75:2.66,sz=lab?zf-.05:zf-.12;
-    const plate=new T.Group();plate.position.set(dc,sy,sz);plate.rotation.x=-.5;g.add(plate);
-    r.box(plate,color,0,0,0,sw+.2,.58,.1,true);r.box(plate,WHITE_TRIM,0,0,.04,sw+.04,.46,.06,true);
-    for(const x of [-sw/2+.15,sw/2-.15])r.box(plate,shade(color,-.2),x,-.38,-.06,.08,.34,.08,true);
-    const sign=new T.Mesh(r.geometries.plane,new T.MeshBasicMaterial({map}));sign.userData.ownedMaterial=true;sign.position.set(0,0,.08);sign.scale.set(sw-.08,.4,1);plate.add(sign);
+    const text=lab?'LAB. CEIBA':opt.sign, color=opt.signColor||(lab?'#3a8a78':'#467b70');
+    const sh=big?1.0:lab?.9:.82, by=lab?2.5:2.3;
+    const sign=storeSign(r,{text,color,height:sh,maxWidth:w-(big?1.2:.55)}), sw=sign.userData.width;
+    for(const x of [-sw*.34,sw*.34])r.box(sign,shade(color,-.5),x,-sh/2-.16,-.13,.09,.42,.09,true);
+    sign.position.set(w/2,by+sh/2+.08,lab?zf+.02:zf+.12);sign.rotation.x=-.4;g.add(sign);
   }
   if(big){
     for(const x of [.35,w-.35]){b(opt.trim||'#c4b790',x,1.2,zf+.15,.3,2.25,.36);b('#eee1bb',x,2.32,zf+.15,.48,.16,.48);b(shade(opt.trim||'#c4b790',-.15),x,.18,zf+.15,.42,.2,.46);}
@@ -232,7 +230,7 @@ export function building(r,o) {
 export function smallProp(r,o) {
   const g=new T.Group(),b=(c,x,y,z,w,h,d)=>r.box(g,c,x,y,z,w,h,d,true);
   if(o.kind==='fence'){for(const x of [-.34,.34]){b('#eee0be',x,.38,0,.12,.76,.14);r.mesh(g,'cone','#eee0be',[x,.82,0],[.095,.16,.095]);}for(const y of [.31,.59])b('#eee0be',0,y,0,1,.09,.09);}
-  if(o.kind==='sign'){b(WOOD,0,.32,0,.12,.64,.12);b('#c49a67',0,.8,0,.87,.54,.13);for(let i=0;i<3;i++)b('#705b43',0,.67+i*.12,.075,.6,.025,.01);}
+  if(o.kind==='sign')g.add(postSign(r,(o.text||[])[0]||''));
   if(o.kind==='mailbox'){b('#667f79',0,.4,0,.11,.8,.11);b('#cb6a5a',0,.85,0,.65,.37,.42);b('#f4db96',.34,1,0,.04,.3,.04);b('#f4db96',.4,1.12,0,.14,.1,.04);}
   if(o.kind==='rock')r.mesh(g,'leaf','#96a6a0',[0,.3,0],[.44,.4,.42]);
   if(o.kind==='bush')r.mesh(g,'leaf','#6caa69',[0,.3,0],[.48,.45,.48]);

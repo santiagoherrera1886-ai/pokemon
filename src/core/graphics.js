@@ -1,5 +1,11 @@
 // Display preferences intentionally live outside alborada-save-v1.
 const KEY = 'alborada-graphics-v1';
+// Los letreros 3D se pintan con la fuente del juego: se espera a que cargue (máximo 2,5 s).
+function fontsReady() {
+  if (typeof document === 'undefined' || !document.fonts?.load) return Promise.resolve();
+  const wait = Promise.all(['700 64px Fredoka', '800 32px Nunito'].map(f => document.fonts.load(f))).catch(() => {});
+  return Promise.race([wait, new Promise(res => setTimeout(res, 2500))]);
+}
 export class Graphics {
   constructor(game) {
     this.game = game; this.mode = 'premium'; this.quality = 'medium'; this.status = 'idle';
@@ -21,7 +27,7 @@ export class Graphics {
     if (this.engine) return !this.engine.lost;
     if (this.pending) return this.pending;
     this.status = 'loading';
-    this.pending = import('../render3d/renderer.js').then(({PremiumRenderer}) => {
+    this.pending = fontsReady().then(() => import('../render3d/renderer.js')).then(({PremiumRenderer}) => {
       this.engine = new PremiumRenderer(this.game, this.quality, status => {
         this.status = status;
         if (status === 'lost') this.game.toast('Gráficos pausados · modo clásico activo');

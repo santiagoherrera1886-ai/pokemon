@@ -2,7 +2,7 @@
 const {chromium}=require('playwright');
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'..'),out=path.join(__dirname,'screenshots','graphics');fs.mkdirSync(out,{recursive:true});
-const types={'.js':'text/javascript','.html':'text/html','.css':'text/css','.png':'image/png'};
+const types={'.js':'text/javascript','.html':'text/html','.css':'text/css','.png':'image/png','.woff2':'font/woff2'};
 const server=http.createServer((req,res)=>{const p=new URL(req.url,'http://localhost').pathname,f=path.join(root,p==='/'?'index.html':p);if(!fs.existsSync(f)||!fs.statSync(f).isFile()){res.writeHead(404);return res.end();}res.writeHead(200,{'Content-Type':types[path.extname(f)]||'application/octet-stream'});fs.createReadStream(f).pipe(res);});
 const report={checks:[],scenes:[],errors:[]};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));

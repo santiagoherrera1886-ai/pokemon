@@ -54,7 +54,8 @@ La tienda muestra íconos en pixel art, descripción de cada objeto, cantidad x1
 
 Dos modos, que se cambian en **Opciones → Gráficos** sin perder la partida:
 
-- **3D (por defecto):** pantalla completa con Three.js. Cámara alta casi cenital con perspectiva suave, personajes cabezones que inclinan la cabeza hacia la cámara, criaturas esculpidas (cada cuerpo es una sola pieza que funde cabeza, cuello, patas y cola, con barriga y cachetes pintados, boca tallada y ojos grandes con brillo que parpadean; se arman con campos de distancia y Surface Nets en `src/render3d/sculpt.js`), casas de juguete (techo de tejas en franjas gruesas, cumbrera con remates, ventanas de marco blanco con jardinera, alero festoneado y letreros en placa legibles desde arriba), materiales satinados, sol desde arriba a la izquierda con sombras suaves, resplandor (bloom) en lo brillante, gradación cálida y leve desenfoque en los bordes. Las ciudades (Villa Arenal, Corola, Marea) tienen calles de asfalto con bordillo y andenes de baldosa. Los combates usan cámara baja con cielo y fondo según el terreno. Calidad baja, media o alta.
+- **3D (por defecto):** pantalla completa con Three.js. Cámara alta casi cenital con perspectiva suave, personajes cabezones que inclinan la cabeza hacia la cámara, criaturas esculpidas (cada cuerpo es una sola pieza que funde cabeza, cuello, patas y cola, con barriga y cachetes pintados, boca tallada y ojos grandes con brillo que parpadean; se arman con campos de distancia y Surface Nets en `src/render3d/sculpt.js`), casas de juguete (techo de tejas en franjas gruesas, cumbrera con remates, ventanas de marco blanco con jardinera y alero festoneado), letreros luminosos en los locales (placa con borde extruido, ícono propio y letras grandes, inclinada hacia la cámara; `src/render3d/signs.js`) y postes de camino con el nombre del lugar pintado, materiales satinados, sol desde arriba a la izquierda con sombras suaves, resplandor (bloom) en lo brillante, gradación cálida y leve desenfoque en los bordes. Las ciudades (Villa Arenal, Corola, Marea) tienen calles de asfalto con bordillo y andenes de baldosa. Los combates usan cámara baja con cielo y fondo según el terreno. Calidad baja, media o alta.
+  En 3D la interfaz usa letra redonda (Nunito y Fredoka): diálogo en caja blanca con doble borde y placa de lugar que entra desde la izquierda con el color de la zona.
   La pantalla de inicio es una escena 3D al amanecer en el Lago Espejo (casa, iniciales, Espejalba a contraluz) con logo nuevo, y las tarjetas de inicial y la lista del equipo muestran retratos 3D de las criaturas.
 - **Pixel clásico:** el motor 2D anterior.
 
@@ -83,6 +84,7 @@ src/ui/               diálogo, paneles, menú, equipo, mochila por bolsillos, t
 src/data/creatures.js especies, movimientos, tipos y encuentros
 src/data/items.js     objetos, bolsillos, inventario de cada tienda y efectos (combate y mapa)
 tests/e2e.cjs         prueba que juega toda la historia en Chromium real
+fonts/                Pixelify Sans, Fredoka y Nunito (licencia SIL OFL, incluida), servidas localmente
 ```
 
 ## Pruebas

@@ -2,7 +2,7 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
-const types = {'.js':'text/javascript', '.html':'text/html', '.css':'text/css', '.png':'image/png', '.json':'application/json'};
+const types = {'.js':'text/javascript', '.html':'text/html', '.css':'text/css', '.png':'image/png', '.json':'application/json', '.woff2':'font/woff2'};
 http.createServer((req, res) => {
   const name = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
   const file = path.resolve(root, '.' + (name === '/' ? '/index.html' : name));

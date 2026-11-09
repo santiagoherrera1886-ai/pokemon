@@ -18,7 +18,7 @@ const GRAPHICS_MODE=process.env.GRAPHICS_MODE||'premium';
 const SHOTS = path.join(__dirname, 'screenshots',GRAPHICS_MODE);
 fs.mkdirSync(SHOTS, { recursive: true });
 for (const f of fs.readdirSync(SHOTS)) if (f.endsWith('.png')) fs.unlinkSync(path.join(SHOTS, f));
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.woff2': 'font/woff2' };
 const server = http.createServer((req, res) => {
   let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   if (p === '/') p = '/index.html';
