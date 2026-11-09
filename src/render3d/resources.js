@@ -7,9 +7,9 @@ export class Resources {
   constructor() {
     this.materials = new Map(); this.textures = new Set();
     this.geometries = {
-      box: new T.BoxGeometry(1,1,1), soft: new RoundedBoxGeometry(1,1,1,2,0.09),
-      ball: new T.SphereGeometry(1,20,14), leaf: new T.IcosahedronGeometry(1,1),
-      cylinder: new T.CylinderGeometry(1,1,1,12), cone: new T.ConeGeometry(1,1,8),
+      box: new T.BoxGeometry(1,1,1), soft: new RoundedBoxGeometry(1,1,1,1,0.055),
+      ball: new T.IcosahedronGeometry(1,1), leaf: new T.IcosahedronGeometry(1,0),
+      cylinder: new T.CylinderGeometry(1,1,1,8), cone: new T.ConeGeometry(1,1,8),
       plane: new T.PlaneGeometry(1,1), ring: new T.TorusGeometry(1,.06,6,32)
     };
     this.merged = new Set();
