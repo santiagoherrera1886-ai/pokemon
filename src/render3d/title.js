@@ -124,8 +124,8 @@ export class TitleScene {
     this.view = portrait ? { fov: 52, pos: [0, 3.7, 13.5], look: [0, 1.9, 0] } : { fov: 40, pos: [0, 3.0, 10.5], look: [0, 1.55, -1] };
     // Central stage under the logo. These are REAL 3D characters on raised
     // pedestals; the old pixel portraits are hidden only while 3D mode is active.
-    const spots=portrait ? [[-.95,2.7],[0,2.95],[.95,2.7]] : [[-1.85,1.1],[0,.92],[1.85,1.1]];
-    const size=portrait ? [1.05,.71,.49][this.starterStage] : [1.26,1.00,.78][this.starterStage];
+    const spots=portrait ? [[-1.05,2.7],[0,2.88],[1.05,2.7]] : [[-2.15,1.12],[0,.94],[2.15,1.12]];
+    const size=portrait ? [1.00,.76,.58][this.starterStage] : [1.34,1.12,1.05][this.starterStage];
     this.starters.forEach((c,i)=>{
       c.root.position.set(spots[i][0],.28,spots[i][1]);
       c.root.scale.setScalar(size);
@@ -137,7 +137,7 @@ export class TitleScene {
     this.legendY = portrait ? 2.0 : 1.0;
     this.house.position.set(portrait ? -4.2 : -7.4, 0, portrait ? -6.2 : -3.4);
     this.sun.position.set(portrait ? 9 : 22.6, portrait ? 9 : 3.4, -38);
-    this.player.root.visible = !portrait; this.playerSpot = { x: 2.6, z: 3.4 };
+    this.player.root.visible = false; this.playerSpot = { x: 2.6, z: 3.4 };
   }
   update(camera, aspect, t, dt) {
     this.layout(aspect);
