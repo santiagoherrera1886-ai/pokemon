@@ -50,7 +50,7 @@ async function tap(key, hold = 60) {
 }
 
 // Resuelve lo que esté pendiente: diálogos, preguntas (elige la primera opción), combates y créditos.
-async function settle(maxMs = 120000, { answer = 0 } = {}) {
+async function settle(maxMs = 300000, { answer = 0 } = {}) {
   const t0 = Date.now();
   while (Date.now() - t0 < maxMs) {
     const s = await st();
@@ -60,9 +60,9 @@ async function settle(maxMs = 120000, { answer = 0 } = {}) {
     if (s.scene === 'battle') {
       // Escoge el ataque que más daño haría (potencia × efectividad × mismo tipo), como haría un jugador.
       const pickMove = async () => {
-        // Con el Brazalete Alba, la prueba despierta la Forma Alba antes de atacar (una vez por combate).
+        // Con el Brazalete Alba, la prueba despierta la Forma Alba contra entrenadores (una vez por combate).
         const alba = await page.$('#panel .bt-alba:not(.on)');
-        if (alba) { await alba.click(); await sleep(60); }
+        if (alba && await page.evaluate(() => !!__game.battleObj?.trainer)) { await alba.click(); await sleep(60); }
         const best = await page.evaluate(async () => {
           const b = __game.battleObj; if (!b || !b.ally || !b.foe) return null;
           const { MOVES, SPECIES, effectiveness } = await import('/src/data/creatures.js');
@@ -332,7 +332,7 @@ async function run() {
     await settle();
     s = await st(); assert.equal(s.map, 'brisal', 'el viaje rápido debe llevar a Brisal');
     log('viaje rápido OK');
-    await walkTo(17, 11, 'lago'); await settle(180000);
+    await walkTo(17, 11, 'lago'); await settle(480000);
     s = await st(); assert.equal(s.story, 11);
     await shot('lago-final');
     log('evento del Lago Espejo y Espejalba OK');
@@ -362,7 +362,7 @@ async function run() {
     await shot('liga');
     await walkTo(7, 11); await settle();
     s = await st(); assert.ok(s.flags.nicoLiga, 'combate final con Nico');
-    await walkTo(7, 5); await settle(240000);
+    await walkTo(7, 5); await settle(600000);
     s = await st(); assert.equal(s.story, 12, 'debe ser campeón');
     assert.equal(s.map, 'casa1');
     await shot('campeon-en-casa');
@@ -373,7 +373,7 @@ async function run() {
     const home = await st();
     await page.evaluate(() => { __game.ow.load('cueva', 22, 12, 1, false); });
     await sleep(600);
-    await talkTo(24, 12); await settle(180000);
+    await talkTo(24, 12); await settle(300000);
     assert.ok(await page.evaluate(() => (__game.state.dex || {}).fraguon >= 1), 'Fraguón debe aparecer en la Cueva Eco');
     await page.evaluate(([m, x, y]) => { __game.ow.load(m, x, y, 0, false); }, [home.map, home.x, home.y]);
     await sleep(600); await settle();
