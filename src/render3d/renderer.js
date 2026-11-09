@@ -6,11 +6,13 @@ import {Lighting} from './lighting.js';
 import {character,animateCharacter,creature} from './actors.js';
 import {capsuleModel} from './models.js';
 import {TitleScene} from './title.js';
+import {MoveFX} from './movefx.js';
 import {QUALITY,normalizeQuality,actorPosition,visibleMapIds} from './policy.js';
 import {ui} from '../ui/ui.js';
 import {hash} from '../core/pixel.js';
 import {Stylizer} from './stylize.js';
 
+const rnd3=()=>Math.random()-.5;
 export class PremiumRenderer {
   constructor(game,quality,onStatus){
     this.game=game;this.onStatus=onStatus;this.lost=false;this.last=performance.now();this.maps=new Map();this.actors=new Map();this.battleKey=null;this.frameCount=0;
@@ -121,7 +123,7 @@ export class PremiumRenderer {
     this.webgl.setViewport(prev);this.webgl.setRenderTarget(prevRT);this.r.release(rig.root);
     const url=out.toDataURL('image/png');if(this.avatarShots.size>40)this.avatarShots.clear();this.avatarShots.set(key,url);return url;
   }
-  clearBattle(){this.r.release(this.battleRoot);this.battleRoot=new T.Group();this.scene.add(this.battleRoot);this.battleKey=null;this.creatures=null;}
+  clearBattle(){this.movefx?.clear();this.r.release(this.battleRoot);this.battleRoot=new T.Group();this.scene.add(this.battleRoot);this.battleKey=null;this.creatures=null;}
   world(dt){
     const g=this.game,ow=g.ow,m=ow.map;if(!m)return;
     const p=actorPosition(ow.player,m);this.worldRoot.visible=true;this.battleRoot.visible=false;
@@ -161,8 +163,10 @@ export class PremiumRenderer {
       for(const rig of Object.values(this.creatures))if(rig)this.battleRoot.add(rig.root);
       this.ball=capsuleModel(r);this.battleRoot.add(this.ball);this.ball.visible=false;
       this.trainerRig=trainer?character(r,trainer):null;if(this.trainerRig)this.battleRoot.add(this.trainerRig.root);
-      const geo=new T.BufferGeometry();geo.setAttribute('position',new T.BufferAttribute(new Float32Array(128*3),3));geo.setAttribute('color',new T.BufferAttribute(new Float32Array(128*3),3));
-      this.battleParticles=new T.Points(geo,new T.PointsMaterial({size:.1,vertexColors:true,transparent:true,opacity:.8,depthWrite:false,depthTest:false}));this.battleParticles.userData.ownedGeometry=true;this.battleParticles.userData.ownedMaterial=true;this.battleParticles.frustumCulled=false;this.battleRoot.add(this.battleParticles);
+      // Alto de cada criatura (para apuntar los efectos al pecho y a los pies).
+      for(const rig of Object.values(this.creatures))if(rig){rig.root.updateMatrixWorld(true);rig.h=Math.max(.6,new T.Box3().setFromObject(rig.model).max.y);}
+      this.fxLayer=new T.Group();this.battleRoot.add(this.fxLayer);
+      this.movefx=this.movefx||new MoveFX(this.r,this.fxLayer);this.movefx.parent=this.fxLayer;b.fxEvents.length=0;
     }
     this.worldRoot.visible=false;this.battleRoot.visible=true;this.particles.visible=false;this.scene.background.set({cave:'#2a2a2e',eclipse:'#2a2236',league:'#2e2c4e',lake:'#a8daf0',beach:'#9fd8f4',mountain:'#b8dcf0'}[terrain]||'#a8d8ee');this.scene.fog.color.copy(this.scene.background);this.scene.fog.near=14;this.scene.fog.far=40;this.styleOpts={focusY:.5,tilt:.3,night:0,bloom:.3,lift:.1,grade:[1.05,1.01,.95],sat:1.12};
     const f=b.fx,time=this.time.value;
@@ -174,7 +178,7 @@ export class PremiumRenderer {
       rig.root.rotation.y=ally?Math.PI+.3:.3;
       const s=ally?1.35:(f.foeScale??1)*1.12;rig.root.scale.setScalar(s);
       rig.model.position.y=Math.sin(time*3.8+(ally?0:1))*.045;
-      rig.model.rotation.z=Math.sin(time*2.4)*.025;
+      rig.model.rotation.z=Math.sin(time*2.4)*.025;rig.baseScale??=rig.model.scale.x;rig.model.scale.setScalar(rig.baseScale);
       // Parpadeo de figura: cada 2 a 5 segundos los ojos se cierran un instante.
       rig.blinkAt=rig.blinkAt??time+1+Math.random()*2.5;
       if(time>rig.blinkAt+.14)rig.blinkAt=time+2+Math.random()*3;
@@ -184,15 +188,20 @@ export class PremiumRenderer {
     if(this.trainerRig){this.trainerRig.root.visible=f.trainerA>.05;this.trainerRig.root.position.set(2+f.trainerX*13,0,-1.8);this.trainerRig.root.scale.setScalar(1.5);}
     this.camera.update(null,null,dt,true);this.lights.update(this.camera.focus,false);
     this.camera.camera.updateMatrixWorld(true);
-    const positions=this.battleParticles.geometry.attributes.position,colors=this.battleParticles.geometry.attributes.color,c=new T.Color();
-    b.parts.forEach((p,i)=>{
-      p.x+=p.vx;p.y+=p.vy;p.vy+=p.g||0;p.life--;
-      if(i>=128)return;
-      const point=this.camera.screenPoint(p.x/b.L.w,p.y/b.L.h);
-      positions.setXYZ(i,point.x,point.y,point.z);c.set(p.color);colors.setXYZ(i,c.r,c.g,c.b);
-    });
-    this.battleParticles.geometry.setDrawRange(0,Math.min(128,b.parts.length));positions.needsUpdate=colors.needsUpdate=true;b.parts=b.parts.filter(p=>p.life>0);
-    if(f.shake>0){this.camera.camera.position.x+=Math.sin(this.game.frame*13)*f.shake*.012;f.shake--;}
+    // Animaciones de los movimientos (movefx.js): se crean con los eventos que deja el combate.
+    const rigs=this.creatures,side=n=>rigs[n]||rigs.foe;
+    const ctx={
+      center:n=>{const r=side(n);return r.root.position.clone().add(new T.Vector3(0,r.h*r.root.scale.y*.5,0));},
+      feet:n=>side(n).root.position.clone().setY(0),
+      height:n=>{const r=side(n);return r.h*r.root.scale.y;}
+    };
+    this.movefx.camera=this.camera.camera;
+    while(b.fxEvents.length)this.movefx.spawn(b.fxEvents.shift(),ctx);
+    const shake=this.movefx.update(dt,this.camera.camera);
+    if(this.movefx.items.length)this.styleOpts.bloom=.62;
+    for(const n of this.movefx.wobbleTargets()){const r=rigs[n];if(r){r.model.rotation.z+=Math.sin(time*30)*.08;r.model.scale.setScalar(r.baseScale*(1+Math.sin(time*24)*.04));}}
+    if(shake>0){this.camera.camera.position.x+=rnd3()*shake;this.camera.camera.position.y+=rnd3()*shake*.6;}
+    b.parts.length=0;
     // Existing battle FX is presentation state. Consume flash exactly as classic render does.
     if(f.flash>0){this.canvas.style.filter=`brightness(${1+f.flash*2})`;f.flash=Math.max(0,f.flash-.08);}else this.canvas.style.filter='';
   }

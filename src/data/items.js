@@ -1,6 +1,6 @@
 // Objetos de Alborada (contenido original): catálogo, bolsillos de la mochila, qué vende cada tienda
 // y los efectos que comparten el combate y el menú de la mochila.
-import { SPECIES, MOVES, expForLevel, refreshStats } from './creatures.js';
+import { SPECIES, MOVES, STATUS, expForLevel, refreshStats } from './creatures.js';
 
 // ---------- Bolsillos de la mochila ----------
 export const POCKETS = {
@@ -43,6 +43,13 @@ export const ITEMS = {
   aguaPanela: drink('Agua de Panela', 200, 'Bebida dulce y calientica. Restaura 40 PS.', '#c8873a', { heal: 40 }),
   jugoLulo: drink('Jugo de Lulo', 300, 'Jugo fresco y bien ácido. Restaura 60 PS.', '#e8c030', { heal: 60 }),
   avena: drink('Avena', 400, 'Avena fría y espesa. Restaura 80 PS.', '#efe2c4', { heal: 80 }),
+  // Curas de estado
+  antidoto: spray('Antídoto', 100, 'Cura el envenenamiento de una criatura.', '#4aa85a', { cure: 'ven' }),
+  arnica: spray('Pomada de Árnica', 200, 'Alivia los músculos tiesos: cura la parálisis.', '#e0b030', { cure: 'par' }),
+  tinto: drink('Tinto Cargado', 250, 'Un café bien cargado que despierta a cualquiera.', '#6a3a1e', { cure: 'dor' }),
+  sabila: item('medicinas', 'jar')('Gel de Sábila', 250, 'Gel fresquito que cura las quemaduras.', '#3f9a5e', { cure: 'que' }),
+  panelaCaliente: drink('Panela Caliente', 250, 'Bebida hirviendo que descongela a una criatura.', '#d8782a', { cure: 'con' }),
+  remedioCasero: item('medicinas', 'heart')('Remedio Casero', 600, 'El remedio de la abuela: cura cualquier estado.', '#e86a9a', { cure: 'all' }),
   rocio: drop('Rocío', 1500, 'Gotas del amanecer. Recupera 10 PP de cada movimiento de una criatura.', '#5ac8e8', { pp: 10 }),
   rocioPuro: drop('Rocío Puro', 3000, 'Recupera todos los PP de todos los movimientos de una criatura.', '#3a7af0', { pp: 'full' }),
 
@@ -72,9 +79,9 @@ export const sellPrice = id => Math.floor((ITEMS[id]?.price || 0) / 2);
 // ---------- Qué vende cada tienda ----------
 // Mostrador general: crece con las medallas, como en la portátil.
 const GENERAL = [
-  ['capsula', 0], ['supercapsula', 0], ['tonico', 0], ['supertonico', 0], ['despertar', 0], ['rocio', 0], ['repelente', 0], ['silbato', 0],
-  ['hipertonico', 1], ['repelenteFuerte', 1],
-  ['hipercapsula', 2], ['tonicoMax', 2], ['repelenteTotal', 2],
+  ['capsula', 0], ['supercapsula', 0], ['tonico', 0], ['supertonico', 0], ['despertar', 0], ['antidoto', 0], ['tinto', 0], ['arnica', 0], ['rocio', 0], ['repelente', 0], ['silbato', 0],
+  ['hipertonico', 1], ['sabila', 1], ['panelaCaliente', 1], ['repelenteFuerte', 1],
+  ['hipercapsula', 2], ['tonicoMax', 2], ['remedioCasero', 2], ['repelenteTotal', 2],
   ['rocioPuro', 3]
 ];
 // Mostrador especial de cada ciudad (lo atiende la vendedora del delantal).
@@ -113,6 +120,7 @@ export function shortDesc(id) {
   if (it.pocket === 'capsulas') return { fast: 'Mejor en el primer turno', dusk: 'Mejor de noche y en cuevas', timer: 'Mejor en combates largos', net: 'Mejor con Agua y Bicho' }[it.special] || (it.catchBonus ? `Atrapa ×${it.catchBonus}` : 'Captura normal');
   if (it.heal) return it.heal === 'full' ? 'Cura todos los PS' : `Cura ${it.heal} PS`;
   if (it.revive) return 'Reanima con media vida';
+  if (it.cure) return it.cure === 'all' ? 'Cura cualquier estado' : `Cura: ${STATUS[it.cure].name.toLowerCase()}`;
   if (it.pp) return it.pp === 'full' ? 'Llena todos los PP' : `+${it.pp} PP a cada movimiento`;
   if (it.boost) return it.boost === 'crit' ? 'Más golpes críticos' : `Sube ${STAT_SHORT[it.boost]} en combate`;
   if (it.repel) return `${it.repel} pasos sin salvajes débiles`;
@@ -127,20 +135,25 @@ export function shortDesc(id) {
 export function canUseOn(id, c) {
   const it = ITEMS[id];
   if (it.revive) return c.hp <= 0;
+  if (it.cure) return c.hp > 0 && !!c.status && (it.cure === 'all' || it.cure === c.status);
   if (it.heal) return c.hp > 0 && c.hp < c.stats.hp;
   if (it.pp) return c.moves.some(m => m.pp < MOVES[m.id].pp);
   if (it.seed) return (c.bonus?.[it.seed] || 0) < SEED_MAX;
   if (it.levelUp) return c.level < 100;
   return false;
 }
-export const targetsCreature = id => { const it = ITEMS[id]; return !!(it.revive || it.heal || it.pp || it.seed || it.levelUp); };
+export const targetsCreature = id => { const it = ITEMS[id]; return !!(it.revive || it.cure || it.heal || it.pp || it.seed || it.levelUp); };
 
 // Aplica el objeto a una criatura. Devuelve { ok, msg, from, to } (from/to de PS para animar la barra).
 export function useOnCreature(id, c) {
   const it = ITEMS[id];
   if (!canUseOn(id, c)) return NO;
   const max = c.stats.hp, from = c.hp;
-  if (it.revive) { c.hp = Math.max(1, Math.floor(max * it.revive)); return { ok: true, msg: `¡${c.name} se recuperó!`, from, to: c.hp }; }
+  if (it.revive) { c.hp = Math.max(1, Math.floor(max * it.revive)); c.status = null; return { ok: true, msg: `¡${c.name} se recuperó!`, from, to: c.hp }; }
+  if (it.cure) {
+    const was = c.status; c.status = null; c.sleep = 0;
+    return { ok: true, msg: `¡${c.name} ${{ ven: 'ya no está envenenado', que: 'ya no tiene quemaduras', par: 'ya no está paralizado', dor: 'se despertó', con: 'se descongeló' }[was] || 'se curó'}!`, cured: true };
+  }
   if (it.heal) { c.hp = it.heal === 'full' ? max : Math.min(max, c.hp + it.heal); return { ok: true, msg: `${c.name} recuperó ${c.hp - from} PS.`, from, to: c.hp }; }
   if (it.pp) {
     for (const m of c.moves) m.pp = it.pp === 'full' ? MOVES[m.id].pp : Math.min(MOVES[m.id].pp, m.pp + it.pp);

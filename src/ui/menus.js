@@ -1,6 +1,6 @@
 // Paneles de la pantalla inferior fuera del combate: menú principal, equipo, mochila por bolsillos,
 // guardado, opciones, tienda (comprar, vender, mostrador especial, máquina expendedora), elección de inicial y título.
-import { ui, esc, money } from './ui.js';
+import { ui, esc, money, statusChip } from './ui.js';
 import { iconURL } from '../art/creatures.js';
 import { itemIcon } from '../art/items.js';
 import { SPECIES, MOVES, TYPES, STARTERS, expForLevel } from '../data/creatures.js';
@@ -55,14 +55,14 @@ export class Menus {
 
   party() {
     const st = this.st;
-    ui.setPanel(`<h3 class="ph">EQUIPO</h3><div class="plist">${st.party.length ? st.party.map((c, i) => `<button data-act="${i}">${this.pic(c.sp)}<span class="pn"><b>${esc(c.name)}</b><small>Nv${c.level}</small></span>${hpBar(c)}<em>${Math.ceil(c.hp)}/${c.stats.hp}</em></button>`).join('') : '<p class="empty">Todavía no tienes criaturas.</p>'}</div><button class="bt-back" data-back>VOLVER</button>`,
+    ui.setPanel(`<h3 class="ph">EQUIPO</h3><div class="plist">${st.party.length ? st.party.map((c, i) => `<button data-act="${i}">${this.pic(c.sp)}<span class="pn"><b>${esc(c.name)}</b><small>Nv${c.level} ${statusChip(c)}</small></span>${hpBar(c)}<em>${Math.ceil(c.hp)}/${c.stats.hp}</em></button>`).join('') : '<p class="empty">Todavía no tienes criaturas.</p>'}</div><button class="bt-back" data-back>VOLVER</button>`,
       { modal: true, cls: 'list-panel', onAct: i => this.creature(+i), onBack: () => this.home(true) });
   }
   creature(i) {
     const c = this.st.party[i], s = SPECIES[c.sp];
     const toNext = expForLevel(c.level + 1) - c.exp;
     const bonus = Object.entries(c.bonus || {}).filter(([, v]) => v > 0).map(([k, v]) => `${k.toUpperCase()} +${v}`).join(' · ');
-    ui.setPanel(`<div class="detail">${this.pic(c.sp)}<div><b>${esc(c.name)}</b> <small>Nv${c.level}</small><div>${typeTags(c.sp)}</div></div></div>
+    ui.setPanel(`<div class="detail">${this.pic(c.sp)}<div><b>${esc(c.name)}</b> <small>Nv${c.level}</small> ${statusChip(c)}<div>${typeTags(c.sp)}</div></div></div>
       <p class="desc">${esc(s.desc)}</p>
       <div class="stats"><span>PS ${Math.ceil(c.hp)}/${c.stats.hp}</span><span>ATQ ${c.stats.atk}</span><span>DEF ${c.stats.def}</span><span>VEL ${c.stats.spe}</span><span>Sig. nivel: ${toNext} exp</span>${bonus ? `<span>Semillas: ${bonus}</span>` : ''}</div>
       <div class="moves">${c.moves.map(m => `<span style="--t:${TYPES[MOVES[m.id].type].color}">${esc(MOVES[m.id].name)} <small>PP ${m.pp}/${MOVES[m.id].pp}</small></span>`).join('')}</div>
@@ -118,7 +118,7 @@ export class Menus {
     const extra = c => it.pp ? ` · PP ${c.moves.reduce((a, m) => a + m.pp, 0)}/${c.moves.reduce((a, m) => a + MOVES[m.id].pp, 0)}`
       : it.seed ? ` · ${it.seed.toUpperCase()} +${c.bonus?.[it.seed] || 0}/${SEED_MAX}` : '';
     ui.show(`¿En quién vas a usar ${it.name}?`);
-    ui.setPanel(`<h3 class="ph">${ico(id, 'ico sm')} ${esc(it.name)} <small>x${st.bag[id] || 0}</small></h3><div class="plist">${st.party.map((c, i) => `<button data-act="${i}" class="${canUseOn(id, c) ? '' : 'dim'}">${this.pic(c.sp)}<span class="pn"><b>${esc(c.name)}</b><small>Nv${c.level}${extra(c)}</small></span>${hpBar(c)}<em>${Math.ceil(c.hp)}/${c.stats.hp}</em></button>`).join('')}</div><button class="bt-back" data-back>VOLVER</button>`,
+    ui.setPanel(`<h3 class="ph">${ico(id, 'ico sm')} ${esc(it.name)} <small>x${st.bag[id] || 0}</small></h3><div class="plist">${st.party.map((c, i) => `<button data-act="${i}" class="${canUseOn(id, c) ? '' : 'dim'}">${this.pic(c.sp)}<span class="pn"><b>${esc(c.name)}</b><small>Nv${c.level} ${statusChip(c)}${extra(c)}</small></span>${hpBar(c)}<em>${Math.ceil(c.hp)}/${c.stats.hp}</em></button>`).join('')}</div><button class="bt-back" data-back>VOLVER</button>`,
       { modal: true, cls: 'list-panel', onBack: () => this.bag(it.pocket), onAct: async a => {
         const c = st.party[+a];
         const res = useOnCreature(id, c);

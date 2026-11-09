@@ -171,7 +171,7 @@ class Game {
   }
   async healParty(anim = false) {
     if (anim) { ui.show('♪ ♫ ♪'); await this.frames(70); ui.hideMsg(); }
-    for (const c of this.state.party) { c.hp = c.stats.hp; for (const m of c.moves) m.pp = MOVES[m.id].pp; }
+    for (const c of this.state.party) { c.hp = c.stats.hp; c.status = null; c.sleep = 0; for (const m of c.moves) m.pp = MOVES[m.id].pp; }
   }
   chooseStarter() { return this.menus.starter(); }
   async openShop(opts) { await this.menus.shop(opts); ui.hideMsg(); this.menus.home(false); }

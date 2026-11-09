@@ -58,9 +58,21 @@ async function settle(maxMs = 120000, { answer = 0 } = {}) {
     if (await page.$('#credits')) { await page.click('#credits'); await sleep(200); continue; }
     if (s.scene === 'overworld' && await page.$('#panel .starters, #panel .ilist')) return s;   // decisiones que toma la prueba
     if (s.scene === 'battle') {
-      const mv0 = await page.$('#panel .mv:not([disabled])');
-      if (mv0) { await mv0.click(); await sleep(200); continue; }
-      if (await page.$('#panel .bt-fight')) { await page.click('#panel .bt-fight'); await sleep(80); const mv = await page.$('#panel .mv:not([disabled])'); if (mv) await mv.click(); await sleep(200); continue; }
+      // Escoge el ataque que más daño haría (potencia × efectividad × mismo tipo), como haría un jugador.
+      const pickMove = async () => {
+        const best = await page.evaluate(async () => {
+          const b = __game.battleObj; if (!b || !b.ally || !b.foe) return null;
+          const { MOVES, SPECIES, effectiveness } = await import('/src/data/creatures.js');
+          let bi = null, bv = -1;
+          b.ally.moves.forEach((m, i) => { const M = MOVES[m.id]; if (m.pp <= 0) return; const v = M.power ? M.power * (M.hits ? 3 : 1) * effectiveness(M.type, SPECIES[b.foe.sp].types) * (SPECIES[b.ally.sp].types.includes(M.type) ? 1.5 : 1) * M.acc / 100 : 1; if (v > bv) { bv = v; bi = i; } });
+          return bi;
+        });
+        const el = (best !== null && await page.$(`#panel .mv[data-act="${best}"]:not([disabled])`)) || await page.$('#panel .mv:not([disabled])');
+        if (el) await el.click();
+        return !!el;
+      };
+      if (await page.$('#panel .mv:not([disabled])')) { await pickMove(); await sleep(200); continue; }
+      if (await page.$('#panel .bt-fight')) { await page.click('#panel .bt-fight'); await sleep(80); await pickMove(); await sleep(200); continue; }
       const sw = await page.$$('#panel .bt-list.party button:not(.cur)');
       if (sw.length) { for (const b of sw) { await b.click(); await sleep(100); if (!(await page.$('#panel .bt-list.party'))) break; } continue; }
     }

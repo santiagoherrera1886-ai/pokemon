@@ -1,17 +1,22 @@
 // Combate por turnos a pantalla completa: escena con fondo según el terreno, sprites con animación,
 // efectos por tipo de movimiento, entrenadores con varias criaturas, experiencia, niveles, aprendizaje y captura.
-import { ui, esc } from '../ui/ui.js';
+import { ui, esc, statusChip } from '../ui/ui.js';
 import { itemIcon } from '../art/items.js';
 import { input } from '../core/input.js';
 import { battleSprite, silhouette, iconURL } from '../art/creatures.js';
 import { sheet } from '../art/characters.js';
 import { canvas, px, ellipse, hash } from '../core/pixel.js';
-import { SPECIES, MOVES, TYPES, effectiveness, expForLevel, refreshStats } from '../data/creatures.js';
+import { SPECIES, MOVES, TYPES, STATUS, effectiveness, expForLevel, refreshStats } from '../data/creatures.js';
+import { canGetStatus, TYPE_FX } from '../data/types.js';
+import { movePower, ANIM_FRAMES } from '../data/moves.js';
 import { ITEMS, POCKETS, BATTLE_POCKETS, pocketItems, isCapsule, canUseOn, useOnCreature, catchBonus } from '../data/items.js';
 
 const $ = id => document.getElementById(id);
 const STAGE = s => s >= 0 ? (2 + s) / 2 : 2 / (2 - s);
 const rand = () => Math.random();
+const CONTACT = new Set(['tackle', 'scratch', 'bite', 'punch', 'slash']);
+const STAT_NAMES = { atk: 'el Ataque', def: 'la Defensa', spe: 'la Velocidad' };
+
 
 // ---------- Fondos según terreno ----------
 const BGS = {
@@ -52,8 +57,10 @@ export class Battle {
     this.activeIdx = this.st.party.findIndex(c => c.hp > 0);
     this.fx = { foeX: 1, allyX: -1, foeAlpha: 1, allyAlpha: 1, foeY: 0, allyY: 0, flash: 0, ball: null, foeScale: 1, shake: 0, trainerX: 0, trainerA: this.trainer ? 1 : 0 };
     this.parts = [];
+    this.fxEvents = [];                       // animaciones pendientes para el modo 3D
     this.participants = new Set();
     this.allyStages = { atk: 0, def: 0, spe: 0 };
+    this.volAlly = { conf: 0, prot: 0 }; this.volFoe = { conf: 0, prot: 0 };
     document.body.classList.add('in-battle');
   }
   get foe() { return this.foeParty[this.foeIdx]; }
@@ -100,10 +107,16 @@ export class Battle {
     }
     if (f.ball) this.drawCapsule(g, f.ball, L, k);
     for (const p of this.parts) {
+      if (p.delay > 0) { p.delay--; continue; }
       p.x += p.vx; p.y += p.vy; p.vy += p.g || 0; p.life--;
       g.globalAlpha = Math.max(0, Math.min(1, p.life / 12));
       if (p.ring) { g.strokeStyle = p.color; g.lineWidth = k; g.beginPath(); g.arc(p.x, p.y, (30 - p.life) * k * 1.4, 0, Math.PI * 2); g.stroke(); }
-      else { g.fillStyle = p.color; g.fillRect(Math.round(p.x), Math.round(p.y), p.s * k, p.s * k); }
+      else if (p.line) { g.strokeStyle = p.color; g.lineWidth = Math.max(1, p.s * k / 2); g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(p.line[0], p.line[1]); g.stroke(); }
+      else if (p.text) { g.fillStyle = p.color; g.font = `bold ${p.s * k * 3}px monospace`; g.fillText(p.text, p.x, p.y); }
+      else {
+        if (p.trail) { g.fillStyle = p.trail; g.fillRect(Math.round(p.x - p.vx * 2), Math.round(p.y - p.vy * 2), p.s * k, p.s * k); }
+        g.fillStyle = p.color; g.fillRect(Math.round(p.x), Math.round(p.y), p.s * k, p.s * k);
+      }
     }
     g.globalAlpha = 1;
     this.parts = this.parts.filter(p => p.life > 0);
@@ -125,18 +138,35 @@ export class Battle {
     g.restore();
   }
 
-  // Efecto visual según el tipo del movimiento, centrado en el objetivo.
-  effect(type, onFoe) {
+  // Animaciones del modo clásico (pixel): partículas, proyectiles, rayos, ondas y estados.
+  effect2d(ev) {
     const L = this.L; if (!L) return;
-    const [cx, cy0] = onFoe ? L.foe : L.ally, cy = cy0 - 30 * L.k;
-    const add = (n, f) => { for (let i = 0; i < n; i++) this.parts.push(f(i)); };
-    const R = (a) => (rand() - 0.5) * a;
-    const C = { planta: ['#5cb04c', '#a8e880'], fuego: ['#f07a24', '#f8c838'], agua: ['#3e98dc', '#b4e4fa'], electrico: ['#f8d038', '#ffffff'], roca: ['#9a8468', '#6a5a46'], volador: ['#ffffff', '#c8dcf8'], bicho: ['#9ab830', '#d8f0a0'], psiquico: ['#e85a9a', '#c8a0f0'], siniestro: ['#3a2c48', '#6a5a7a'], normal: ['#ffffff', '#f8e8a8'] }[type] || ['#fff', '#fff'];
-    if (type === 'psiquico' || type === 'siniestro') add(4, i => ({ x: cx, y: cy, vx: 0, vy: 0, life: 30 - i * 5, color: C[i % 2], ring: true }));
-    else if (type === 'fuego') add(22, i => ({ x: cx + R(40 * L.k), y: cy + 20 * L.k, vx: R(0.6), vy: -1 - rand() * 1.4, life: 26, color: C[i % 2], s: 2 }));
-    else if (type === 'roca') add(12, i => ({ x: cx + R(50 * L.k), y: cy - 40 * L.k, vx: 0, vy: 1, g: 0.25, life: 26, color: C[i % 2], s: 3 }));
-    else if (type === 'electrico') add(18, i => ({ x: cx + R(50 * L.k), y: cy + R(40 * L.k), vx: R(3), vy: R(3), life: 14, color: C[i % 2], s: 2 }));
-    else add(18, i => ({ x: cx + R(20 * L.k), y: cy + R(20 * L.k), vx: R(3), vy: R(3) - 0.5, g: type === 'agua' ? 0.08 : 0, life: 22, color: C[i % 2], s: 2 }));
+    const k = L.k, side = n => (n === 'ally' ? L.ally : L.foe), [fx0, fy0] = side(ev.from), [tx0, ty0] = side(ev.to);
+    const sx = fx0, sy = fy0 - 32 * k, cx = tx0, cy = ty0 - 32 * k;
+    const C = TYPE_FX[ev.status] || TYPE_FX[ev.type] || TYPE_FX.normal;
+    const R = a => (rand() - 0.5) * a, add = (n, f) => { for (let i = 0; i < n; i++) this.parts.push(f(i)); };
+    const burst = (n, spd = 3, life = 18, size = 2) => add(n, i => { const a = rand() * Math.PI * 2, v = (0.4 + rand()) * spd; return { x: cx, y: cy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life, color: C[i % C.length], s: size, delay: ev.delay || 0 }; });
+    const toward = (n, d0, spread, size, life) => add(n, i => ({ x: sx + R(spread), y: sy + R(spread), vx: (cx - sx) / life, vy: (cy - sy) / life, life, color: C[i % C.length], s: size, delay: d0 + i * 1.2, then: 'burst' }));
+    switch (ev.anim) {
+      case 'shot': case 'sting': add(1, () => ({ x: sx, y: sy, vx: (cx - sx) / 18, vy: (cy - sy) / 18, life: 18, color: C[0], s: ev.anim === 'sting' ? 3 : 6, trail: C[1] })); this.pendingBurst = { at: this.game.frame + 18, n: 16 }; break;
+      case 'spray': case 'drain': if (ev.anim === 'drain') { add(14, i => ({ x: cx + R(30 * k), y: cy + R(30 * k), vx: (sx - cx) / 26, vy: (sy - cy) / 26, life: 26, color: C[i % 2], s: 3, delay: i * 2 })); } else toward(22, 0, 6 * k, 3, 20); break;
+      case 'beam': add(30, i => ({ x: sx + (cx - sx) * i / 30, y: sy + (cy - sy) * i / 30 + R(4 * k), vx: 0, vy: 0, life: 22, color: C[i % 2], s: 4, delay: i * .6 })); this.pendingBurst = { at: this.game.frame + 24, n: 18 }; break;
+      case 'bolt': { let x = cx, y = cy - 120 * k; for (let i = 0; i < 14; i++) { const nx = cx + R(30 * k), ny = y + 9 * k; this.parts.push({ x, y, vx: 0, vy: 0, life: 16, color: i % 2 ? '#ffffff' : C[0], s: 4, line: [nx, ny], delay: 4 }); x = nx; y = ny; } burst(16, 3, 16, 3); break; }
+      case 'rain': add(26, i => { const vy = (2.6 + rand()) * k; return { x: cx + R(70 * k), y: cy - vy * 18 - rand() * 12 * k, vx: 0, vy, life: 24, color: C[i % C.length], s: 3 + (i % 2), delay: i * 1.2 }; }); break;
+      case 'pillar': add(30, i => ({ x: cx + R(30 * k), y: ty0, vx: R(.6), vy: -2.5 - rand() * 3, life: 26, color: C[i % C.length], s: 3, delay: i * .5 })); break;
+      case 'wave': add(36, i => ({ x: sx - 30 * k + R(10 * k), y: ty0 - (i % 6) * 6 * k, vx: (cx - sx + 60 * k) / 30, vy: R(.6), life: 32, color: C[i % 2], s: 4, delay: (i % 6) * 2 })); break;
+      case 'quake': this.fx.shake = 24; add(20, i => ({ x: cx + R(90 * k), y: ty0, vx: R(2), vy: -2 - rand() * 2, g: .25, life: 26, color: C[i % C.length], s: 3 })); break;
+      case 'gust': add(26, i => { const a = i / 26 * Math.PI * 4; return { x: cx + Math.cos(a) * 26 * k, y: cy + 20 * k - i * 2 * k, vx: -Math.sin(a) * 2, vy: -.6, life: 24, color: C[i % 2], s: 2, delay: i * .5 }; }); break;
+      case 'rings': case 'roar': case 'shadow': add(5, i => ({ x: ev.anim === 'roar' ? sx : cx, y: ev.anim === 'roar' ? sy : cy, vx: 0, vy: 0, life: 30 - i * 5, color: C[i % 2], ring: true, delay: i * 4 })); if (ev.anim === 'shadow') burst(14, 1.5, 26, 4); break;
+      case 'heal': case 'buff': add(16, i => ({ x: cx + R(40 * k), y: cy + 24 * k, vx: 0, vy: -1.4 - rand(), life: 28, color: C[i % C.length], s: 2, delay: i * 1.5 })); break;
+      case 'debuff': add(14, i => ({ x: cx + R(40 * k), y: cy - 24 * k, vx: 0, vy: 1.4 + rand(), life: 24, color: C[i % C.length], s: 2, delay: i * 1.5 })); break;
+      case 'powder': case 'sparkle': add(26, i => ({ x: cx + R(60 * k), y: cy - 40 * k + R(20 * k), vx: R(.8), vy: .6 + rand() * .6, life: 34, color: C[i % C.length], s: 2, delay: i })); break;
+      case 'shield': add(5, i => ({ x: cx, y: cy, vx: 0, vy: 0, life: 26 - i * 3, color: C[0], ring: true, delay: i * 3 })); break;
+      case 'status': if (ev.status === 'dor') add(3, i => ({ x: cx + 10 * k + i * 6 * k, y: cy - 10 * k, vx: .5, vy: -.8, life: 30, color: '#ffffff', s: 3 + i, delay: i * 8, text: 'z' })); else burst(18, 2, 24, 2); break;
+      case 'dragon': add(32, i => { const t = i / 32; return { x: sx + (cx - sx) * t + Math.sin(t * 12) * 14 * k, y: sy + (cy - sy) * t + Math.cos(t * 12) * 10 * k, vx: 0, vy: 0, life: 22, color: C[i % 2], s: 4, delay: i * .7 }; }); this.pendingBurst = { at: this.game.frame + 24, n: 20 }; break;
+      default: burst(ev.anim === 'punch' || ev.anim === 'tackle' ? 16 : 12, 3.2, 18, 3); if (ev.anim === 'scratch' || ev.anim === 'slash') add(3, i => ({ x: cx - 18 * k + i * 12 * k, y: cy - 18 * k, vx: 0, vy: 0, life: 16, color: '#ffffff', s: 3, line: [cx - 6 * k + i * 12 * k, cy + 18 * k] }));
+    }
+    if (this.pendingBurst) { const b = this.pendingBurst; this.pendingBurst = null; const n = b.n; add(n, i => { const a = rand() * Math.PI * 2, v = 1 + rand() * 3; return { x: cx, y: cy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 16, color: C[i % C.length], s: 3, delay: b.at - this.game.frame }; }); }
   }
 
   // ---------- HUD ----------
@@ -144,10 +174,10 @@ export class Battle {
     const foe = this.foe, al = this.ally;
     const bar = (hp, max) => { const k = Math.max(0, hp / max); return `<div class="hp"><i style="width:${k * 100}%" class="${k > 0.5 ? 'g' : k > 0.2 ? 'y' : 'r'}"></i></div>`; };
     const caught = this.opts.wild && this.st.dex && this.st.dex[foe.sp] === 2 ? ' <span title="Ya atrapado">◉</span>' : '';
-    $('hudFoe').innerHTML = `<b>${esc(foe.name)}</b>${caught}<span>Nv${foe.level}</span>${bar(foe.hp, foe.stats.hp)}`;
+    $('hudFoe').innerHTML = `<b>${esc(foe.name)}</b>${caught}${statusChip(foe)}<span>Nv${foe.level}</span>${bar(foe.hp, foe.stats.hp)}`;
     if (al) {
       const lo = expForLevel(al.level), hi = expForLevel(al.level + 1);
-      $('hudAlly').innerHTML = `<b>${esc(al.name)}</b><span>Nv${al.level}</span>${bar(al.hp, al.stats.hp)}<em>${Math.max(0, Math.ceil(al.hp))}/${al.stats.hp}</em><div class="xp"><i style="width:${Math.max(0, Math.min(100, (al.exp - lo) / (hi - lo) * 100))}%"></i></div>`;
+      $('hudAlly').innerHTML = `<b>${esc(al.name)}</b>${statusChip(al)}<span>Nv${al.level}</span>${bar(al.hp, al.stats.hp)}<em>${Math.max(0, Math.ceil(al.hp))}/${al.stats.hp}</em><div class="xp"><i style="width:${Math.max(0, Math.min(100, (al.exp - lo) / (hi - lo) * 100))}%"></i></div>`;
     }
   }
   showHud(foe, ally) { $('hudFoe').classList.toggle('hidden', !foe); $('hudAlly').classList.toggle('hidden', !ally); }
@@ -193,6 +223,7 @@ export class Battle {
   async sendFoe() {
     const f = this.fx;
     this.foe.stages = { atk: 0, def: 0, spe: 0 };
+    this.volFoe = { conf: 0, prot: 0 };
     this.seen(this.foe);
     f.foeAlpha = 1; f.foeY = 0; f.foeScale = 0.1; f.foeX = 0; f.flash = 0.5;
     await this.msg(`${this.trainer.name} envió a ${this.foe.name}.`, 10);
@@ -203,6 +234,7 @@ export class Battle {
   async sendOut() {
     this.fx.allyX = -1; this.fx.allyAlpha = 1; this.fx.allyY = 0;
     this.allyStages = { atk: 0, def: 0, spe: 0 };
+    this.volAlly = { conf: 0, prot: 0 };
     this.allyCrit = false;
     this.participants.add(this.activeIdx);
     ui.show(`¡Adelante, ${this.ally.name}!`);
@@ -228,7 +260,8 @@ export class Battle {
         const al = this.ally;
         if (al.moves.every(m => m.pp <= 0)) { ui.show(`¡A ${al.name} no le quedan PP! Usará Forcejeo.`); return resolve({ type: 'move', i: -1 }); }
         ui.setPanel(`<div class="bt-moves">${al.moves.map((m, i) => { const M = MOVES[m.id]; const eff = M.power ? effectiveness(M.type, SPECIES[this.foe.sp].types) : 1; return `<button class="mv" style="--t:${TYPES[M.type].color}" data-act="${i}" ${m.pp <= 0 ? 'disabled' : ''}><b>${esc(M.name)}</b><small>${TYPES[M.type].name}${M.power ? ' · ' + M.power : ''}${this.st.dex?.[this.foe.sp] && eff !== 1 ? (eff > 1 ? ' · ¡eficaz!' : ' · poco eficaz') : ''}</small><em>PP ${m.pp}/${M.pp}</em></button>`; }).join('')}</div><button class="bt-back" data-back>VOLVER</button>`,
-          { modal: true, cls: 'battle-panel', onAct: a => resolve({ type: 'move', i: +a }), onBack: main });
+          { modal: true, cls: 'battle-panel', onAct: a => resolve({ type: 'move', i: +a }), onBack: main,
+            onFocus: el => { const M = MOVES[al.moves[+el.dataset.act]?.id]; if (M) ui.show(`${M.name}: ${M.desc || ''}${M.power ? ` Potencia ${M.power}` : ''}${M.acc < 100 ? ` · Precisión ${M.acc}%` : ''}${M.prio ? ' · Va primero' : ''}`); } });
       };
       // Mochila de combate: bolsillos de Cápsulas, Medicinas y Batalla.
       const bag = pocket => {
@@ -252,7 +285,7 @@ export class Battle {
       const party = (forced, itemId) => {
         const usable = c => itemId ? canUseOn(itemId, c) : (c.hp > 0 && this.st.party.indexOf(c) !== this.activeIdx);
         if (itemId) ui.show(`¿En quién vas a usar ${ITEMS[itemId].name}?`);
-        ui.setPanel(`<div class="bt-list party">${this.st.party.map((c, i) => `<button data-act="${i}" class="${i === this.activeIdx ? 'cur' : ''}${usable(c) ? '' : ' dim'}">${this.pic(c.sp)}<b>${esc(c.name)}</b><span>Nv${c.level} · ${Math.ceil(c.hp)}/${c.stats.hp}</span></button>`).join('')}</div>${forced ? '' : '<button class="bt-back" data-back>VOLVER</button>'}`,
+        ui.setPanel(`<div class="bt-list party">${this.st.party.map((c, i) => `<button data-act="${i}" class="${i === this.activeIdx ? 'cur' : ''}${usable(c) ? '' : ' dim'}">${this.pic(c.sp)}<b>${esc(c.name)}</b>${statusChip(c)}<span>Nv${c.level} · ${Math.ceil(c.hp)}/${c.stats.hp}</span></button>`).join('')}</div>${forced ? '' : '<button class="bt-back" data-back>VOLVER</button>'}`,
           { modal: true, cls: 'battle-panel', onAct: a => {
             const i = +a, c = this.st.party[i];
             if (itemId) { if (!canUseOn(itemId, c)) { ui.show('No tendría ningún efecto.'); return; } return resolve({ type: 'item', id: itemId, target: i }); }
@@ -267,15 +300,26 @@ export class Battle {
   // ---------- Turnos ----------
   foeMove() {
     const usable = this.foe.moves.filter(m => m.pp > 0);
-    if (!usable.length) return { id: 'embestida', pp: 1 };
-    // IA: prefiere ataques fuertes y eficaces; a veces usa un movimiento de estado.
-    const target = this.ally ? SPECIES[this.ally.sp].types : [];
-    const score = m => { const M = MOVES[m.id]; if (!M.power) return 25; return M.power * effectiveness(M.type, target) * (SPECIES[this.foe.sp].types.includes(M.type) ? 1.5 : 1); };
-    const smart = this.trainer ? 0.75 : 0.45;
+    if (!usable.length) return { id: 'forcejeo', pp: 1 };
+    // IA: prefiere ataques fuertes y eficaces; usa estados y mejoras de vez en cuando y no repite lo inútil.
+    const foe = this.foe, ally = this.ally, target = ally ? SPECIES[ally.sp].types : [], mine = SPECIES[foe.sp].types;
+    const hpK = foe.hp / foe.stats.hp;
+    const score = m => {
+      const M = MOVES[m.id];
+      if (M.power) return movePower(m.id) * effectiveness(M.type, target) * (mine.includes(M.type) ? 1.5 : 1) * (M.acc / 100) * (M.recoil && hpK < .3 ? .5 : 1) + (M.prio && ally && ally.hp < ally.stats.hp * .25 ? 60 : 0);
+      if (M.protect) return this.volFoe.prot === this.turnN - 1 ? 0 : 12;
+      if (M.heal) return hpK < .4 ? 120 : hpK > .8 ? 0 : 20;
+      if (M.status) return ally && !ally.status && canGetStatus(M.status[0], target) ? 55 * M.acc / 100 : 0;
+      if (M.confuse) return this.volAlly.conf ? 0 : 35;
+      if (M.stat) { const e = M.stat[0], st = e.target === 'self' ? foe.stages : this.allyStages; return Math.abs(st[e.stat] + e.stages) > 4 ? 0 : 28; }
+      return 10;
+    };
+    const smart = this.trainer ? 0.8 : 0.5;
     if (rand() < smart) return usable.reduce((a, b) => score(b) > score(a) ? b : a);
-    return usable[Math.floor(rand() * usable.length)];
+    const ok = usable.filter(m => score(m) > 0);
+    return (ok.length ? ok : usable)[Math.floor(rand() * (ok.length || usable.length))];
   }
-  speed(c, stages) { return c.stats.spe * STAGE(stages.spe); }
+  speed(c, stages) { return c.stats.spe * STAGE(stages.spe) * (c.status === 'par' ? .5 : 1); }
 
   async turn(act) {
     ui.closePanel();
@@ -302,6 +346,7 @@ export class Battle {
       await this.msg(`${this.st.name} usó ${it.name} en ${c.name}.`, 20);
       const res = useOnCreature(act.id, c);
       if (res.to !== undefined && act.target === this.activeIdx) { c.hp = res.from; await this.tween(c, 'hp', res.to, 24); c.hp = res.to; this.hud(); }
+      if (res.cured) { this.hud(); this.play('heal', 'normal', act.target === this.activeIdx, { self: true }); }
       await this.msg(res.msg);
       return this.foeTurn();
     }
@@ -309,7 +354,7 @@ export class Battle {
       const it = ITEMS[act.id], al = this.ally;
       this.st.bag[act.id]--;
       await this.msg(`¡${this.st.name} usó ${it.name}!`, 20);
-      this.effect('normal', false);
+      this.play('buff', 'normal', true, { self: true });
       if (it.boost === 'crit') {
         if (this.allyCrit) await this.msg(`${al.name} ya está concentrado al máximo.`);
         else { this.allyCrit = true; await this.msg(`¡${al.name} se concentró! Sus golpes críticos serán más probables.`); }
@@ -325,58 +370,180 @@ export class Battle {
 
     const mine = act.i < 0 ? { id: 'forcejeo', pp: 1 } : this.ally.moves[act.i];
     const theirs = this.foeMove();
+    const pa = MOVES[mine.id].prio || 0, pf = MOVES[theirs.id].prio || 0;
     const sa = this.speed(this.ally, this.allyStages), sf = this.speed(this.foe, this.foe.stages);
-    const order = (sa > sf || (sa === sf && rand() < 0.5)) ? ['ally', 'foe'] : ['foe', 'ally'];
-    for (const who of order) {
+    const allyFirst = pa !== pf ? pa > pf : (sa > sf || (sa === sf && rand() < 0.5));
+    for (const who of allyFirst ? ['ally', 'foe'] : ['foe', 'ally']) {
       const end = who === 'ally' ? await this.attack(true, mine) : await this.attack(false, theirs);
       if (end !== undefined) return end;
     }
+    return this.endTurn();
+  }
+  async foeTurn() { const e = await this.attack(false, this.foeMove()); return e === undefined ? this.endTurn() : e; }
+
+  // ---------- Estados ----------
+  nameOf(c, isAlly) { return isAlly ? c.name : (this.trainer ? `${c.name} rival` : (this.opts.legendary ? c.name : `El ${c.name} salvaje`)); }
+  vol(isAlly) { return isAlly ? this.volAlly : this.volFoe; }
+  // Animación: en 3D la dibuja el motor (fxEvents); en clásico, partículas en el lienzo. Devuelve cuadros a esperar.
+  play(anim, type, fromAlly, extra = {}) {
+    const ev = { anim, type, from: fromAlly ? 'ally' : 'foe', to: extra.self ? (fromAlly ? 'ally' : 'foe') : (fromAlly ? 'foe' : 'ally'), ...extra };
+    const g = this.game.graphics;
+    if (g && g.mode === 'premium' && g.status === 'ready' && g.engine && !g.engine.lost) { this.fxEvents.push(ev); if (this.fxEvents.length > 12) this.fxEvents.shift(); }
+    else this.effect2d(ev);
+    return ANIM_FRAMES[anim] || 30;
+  }
+  async applyStatus(target, id, targetIsAlly, announce) {
+    const name = this.nameOf(target, targetIsAlly);
+    if (target.hp <= 0) return false;
+    if (target.status) { if (announce) await this.msg(target.status === id ? `¡${name} ya está ${STATUS[id].name.toLowerCase()}!` : `No afectó a ${name}...`); return false; }
+    if (!canGetStatus(id, SPECIES[target.sp].types)) { if (announce) await this.msg(`No afecta a ${name}...`); return false; }
+    target.status = id; if (id === 'dor') target.sleep = 2 + Math.floor(rand() * 3);
+    await this.wait(this.play('status', id, targetIsAlly, { self: true, status: id }));
+    this.hud(); await this.msg(`¡${name} ${STATUS[id].verb}!`);
+    return true;
+  }
+  async confuse(target, targetIsAlly, announce) {
+    const v = this.vol(targetIsAlly), name = this.nameOf(target, targetIsAlly);
+    if (target.hp <= 0) return;
+    if (v.conf) { if (announce) await this.msg(`¡${name} ya está confundido!`); return; }
+    v.conf = 2 + Math.floor(rand() * 4);
+    await this.wait(this.play('status', 'conf', targetIsAlly, { self: true, status: 'conf' }));
+    await this.msg(`¡${name} quedó confundido!`);
+  }
+  async changeStat(c, stages, e, isAlly) {
+    const name = this.nameOf(c, isAlly);
+    if (c.hp <= 0) return;
+    if ((e.stages > 0 && stages[e.stat] >= 6) || (e.stages < 0 && stages[e.stat] <= -6)) { await this.msg(`¡${STAT_NAMES[e.stat]} de ${name} no puede ${e.stages > 0 ? 'subir' : 'bajar'} más!`); return; }
+    stages[e.stat] = Math.max(-6, Math.min(6, stages[e.stat] + e.stages));
+    this.play(e.stages > 0 ? 'buff' : 'debuff', e.stages > 0 ? 'normal' : 'psiquico', isAlly, { self: true, quiet: true });
+    await this.msg(`¡${Math.abs(e.stages) > 1 ? (e.stages > 0 ? 'Subió mucho' : 'Bajó mucho') : (e.stages > 0 ? 'Subió' : 'Bajó')} ${STAT_NAMES[e.stat]} de ${name}!`);
+  }
+  // Antes de moverse: sueño, congelación, confusión y parálisis. Devuelve true, 'skip' o { end }.
+  async canAct(user, isAlly) {
+    const name = this.nameOf(user, isAlly), v = this.vol(isAlly);
+    if (user.status === 'dor') {
+      if (--user.sleep > 0) { await this.wait(this.play('status', 'dor', isAlly, { self: true, status: 'dor' }) >> 1); await this.msg(`${name} está dormido.`); return 'skip'; }
+      user.status = null; this.hud(); await this.msg(`¡${name} se despertó!`);
+    }
+    if (user.status === 'con') {
+      if (rand() < .2) { user.status = null; this.hud(); await this.msg(`¡${name} se descongeló!`); }
+      else { await this.wait(this.play('status', 'con', isAlly, { self: true, status: 'con' }) >> 1); await this.msg(`¡${name} está congelado!`); return 'skip'; }
+    }
+    if (v.conf > 0) {
+      if (--v.conf === 0) await this.msg(`¡${name} ya no está confundido!`);
+      else {
+        await this.wait(this.play('status', 'conf', isAlly, { self: true, status: 'conf' }) >> 1);
+        await this.msg(`${name} está confundido...`);
+        if (rand() < 1 / 3) {
+          const dmg = this.damage(user, user, { power: 40, type: null }, isAlly ? this.allyStages : this.foe.stages, isAlly ? this.allyStages : this.foe.stages, isAlly).dmg;
+          await this.hit(user, isAlly, dmg, 6);
+          await this.msg('¡Se golpeó a sí mismo por la confusión!');
+          if (user.hp <= 0) return { end: await this.faint(isAlly) };
+          return 'skip';
+        }
+      }
+    }
+    if (user.status === 'par' && rand() < .25) { await this.wait(this.play('status', 'par', isAlly, { self: true, status: 'par' }) >> 1); await this.msg(`¡${name} está paralizado! No se puede mover.`); return 'skip'; }
+    return true;
+  }
+  // Fin del turno: quemaduras y veneno restan PS.
+  async endTurn() {
+    for (const isAlly of [true, false]) {
+      const c = isAlly ? this.ally : this.foe;
+      if (!c || c.hp <= 0 || (c.status !== 'que' && c.status !== 'ven')) continue;
+      const dmg = Math.max(1, Math.floor(c.stats.hp / (c.status === 'que' ? 16 : 8)));
+      await this.wait(this.play('status', c.status, isAlly, { self: true, status: c.status }) >> 1);
+      await this.msg(c.status === 'que' ? `¡${this.nameOf(c, isAlly)} sufre por la quemadura!` : `¡El veneno le resta PS a ${this.nameOf(c, isAlly)}!`, 26);
+      await this.hit(c, isAlly, dmg, 4);
+      if (c.hp <= 0) { const end = await this.faint(isAlly); if (end !== undefined) return end; }
+    }
     return null;
   }
-  async foeTurn() { const e = await this.attack(false, this.foeMove()); return e === undefined ? null : e; }
+  // Daño con la fórmula de siempre: ataque, defensa, etapas, quemadura, mismo tipo, efectividad y crítico.
+  damage(user, target, M, us, ts, isAlly) {
+    const eff = M.type ? effectiveness(M.type, SPECIES[target.sp].types) : 1;
+    const critRate = Math.min(.5, (M.crit ? 1 / 8 : 1 / 16) * (isAlly && this.allyCrit ? 4 : 1));
+    const crit = M.type && rand() < critRate ? 1.5 : 1;
+    const A = user.stats.atk * (crit > 1 ? Math.max(1, STAGE(us.atk)) : STAGE(us.atk)) * (user.status === 'que' ? .5 : 1);
+    const D = target.stats.def * (crit > 1 ? Math.min(1, STAGE(ts.def)) : STAGE(ts.def));
+    const stab = M.type && SPECIES[user.sp].types.includes(M.type) ? 1.5 : 1;
+    let dmg = Math.floor(Math.floor(Math.floor(2 * user.level / 5 + 2) * M.power * A / D) / 50) + 2;
+    dmg = Math.max(1, Math.floor(dmg * stab * eff * crit * (0.85 + rand() * 0.15)));
+    return { dmg, eff, crit };
+  }
+  // Aplica daño con parpadeo, sacudida y barra de PS animada.
+  async hit(c, isAlly, dmg, shake = 6) {
+    const blink = isAlly ? 'allyBlink' : 'foeBlink';
+    this.fx[blink] = true; this.fx.shake = shake; await this.wait(14); this.fx[blink] = false;
+    await this.tween(c, 'hp', Math.max(0, c.hp - dmg), 18);
+    c.hp = Math.max(0, Math.round(c.hp)); this.hud();
+  }
 
   // Devuelve undefined si el combate sigue, null si terminó el turno por un cambio, o el resultado final.
   async attack(isAlly, slot) {
     const user = isAlly ? this.ally : this.foe, target = isAlly ? this.foe : this.ally;
     const us = isAlly ? this.allyStages : this.foe.stages, ts = isAlly ? this.foe.stages : this.allyStages;
-    const M = MOVES[slot.id];
+    const M = MOVES[slot.id], name = this.nameOf(user, isAlly), tname = this.nameOf(target, !isAlly);
+    const can = await this.canAct(user, isAlly);
+    if (can !== true) return can === 'skip' ? undefined : can.end;
     slot.pp = Math.max(0, slot.pp - 1);
-    const who = isAlly ? user.name : (this.trainer ? `${user.name} rival` : (this.opts.legendary ? user.name : `El ${user.name} salvaje`));
-    await this.msg(`¡${who} usó ${M.name}!`, 28);
-    const key = isAlly ? 'allyX' : 'foeX', dir = isAlly ? 1 : -1;
-    await this.tween(this.fx, key, 0.04 * dir, 4); await this.tween(this.fx, key, 0, 4);
-    if (rand() * 100 >= M.acc) { await this.msg('¡Pero falló!'); return undefined; }
-    if (M.power > 0) {
-      const eff = effectiveness(M.type, SPECIES[target.sp].types);
-      this.effect(M.type, isAlly);
-      await this.wait(16);
-      if (eff === 0) { await this.msg(`No afecta a ${target.name}...`); return undefined; }
-      const crit = rand() < (isAlly && this.allyCrit ? 1 / 4 : 1 / 16) ? 1.5 : 1;
-      const A = user.stats.atk * (crit > 1 ? Math.max(1, STAGE(us.atk)) : STAGE(us.atk));
-      const D = target.stats.def * (crit > 1 ? Math.min(1, STAGE(ts.def)) : STAGE(ts.def));
-      const stab = SPECIES[user.sp].types.includes(M.type) ? 1.5 : 1;
-      let dmg = Math.floor(Math.floor(Math.floor(2 * user.level / 5 + 2) * M.power * A / D) / 50) + 2;
-      dmg = Math.max(1, Math.floor(dmg * stab * eff * crit * (0.85 + rand() * 0.15)));
-      const blink = isAlly ? 'foeBlink' : 'allyBlink';
-      this.fx[blink] = true; this.fx.shake = eff > 1 ? 14 : 6; await this.wait(20); this.fx[blink] = false;
-      await this.tween(target, 'hp', Math.max(0, target.hp - dmg), 22);
-      target.hp = Math.max(0, Math.round(target.hp));
-      if (crit > 1) await this.msg('¡Un golpe crítico!', 30);
-      if (eff > 1) await this.msg('¡Es muy eficaz!', 30);
-      if (eff < 1) await this.msg('No es muy eficaz...', 30);
-      if (target.hp <= 0) return this.faint(!isAlly);
-    } else if (M.effect) {
-      const e = M.effect, stages = e.target === 'foe' ? ts : us, whom = e.target === 'foe' ? target : user;
-      const names = { atk: 'el Ataque', def: 'la Defensa', spe: 'la Velocidad' };
-      this.effect('psiquico', e.target === 'foe' ? isAlly : !isAlly);
-      if (Math.abs(stages[e.stat] + e.stages) > 6) await this.msg(`¡${names[e.stat]} de ${whom.name} no puede cambiar más!`);
-      else { stages[e.stat] += e.stages; await this.msg(`¡${e.stages < 0 ? 'Bajó' : 'Subió'} ${names[e.stat]} de ${whom.name}!`); }
+    await this.msg(`¡${name} usó ${M.name}!`, 28);
+    // Embestida hacia el rival en los ataques de contacto; un pasito en los demás.
+    const key = isAlly ? 'allyX' : 'foeX', dir = isAlly ? 1 : -1, reach = CONTACT.has(M.anim) ? .1 : .03;
+    await this.tween(this.fx, key, reach * dir, CONTACT.has(M.anim) ? 6 : 4);
+    if (M.protect) {
+      this.vol(isAlly).prot = this.turnN;
+      await this.wait(this.play('shield', M.type, isAlly, { self: true }));
+      await this.tween(this.fx, key, 0, 4);
+      await this.msg(`¡${name} se protege!`); return undefined;
     }
+    const aimsFoe = M.power > 0 || M.status || M.confuse || (M.stat || []).some(e => e.target === 'foe');
+    if (aimsFoe && this.vol(!isAlly).prot === this.turnN) { await this.tween(this.fx, key, 0, 4); await this.wait(this.play('shield', 'normal', !isAlly, { self: true })); await this.msg(`¡${tname} se protegió del ataque!`); return undefined; }
+    if (aimsFoe && rand() * 100 >= M.acc) { await this.tween(this.fx, key, 0, 4); await this.msg(`¡${name} falló!`); return undefined; }
+    if (M.power > 0) {
+      const eff0 = effectiveness(M.type, SPECIES[target.sp].types);
+      const n = M.hits ? M.hits[0] + Math.floor(rand() * (M.hits[1] - M.hits[0] + 1)) : 1;
+      let total = 0, hits = 0, crits = 0;
+      for (let h = 0; h < n && target.hp > 0; h++) {
+        const frames = this.play(M.anim, M.type, isAlly, { power: M.power, eff: eff0, hit: h });
+        await this.wait(h === 0 ? frames : Math.min(frames, 22));
+        if (h === 0) await this.tween(this.fx, key, 0, 4);
+        if (eff0 === 0) { await this.msg(`No afecta a ${tname}...`); return undefined; }
+        const r = this.damage(user, target, M, us, ts, isAlly), before = target.hp;
+        await this.hit(target, !isAlly, r.dmg, r.eff > 1 ? 16 : M.power >= 90 ? 10 : 6);
+        total += before - target.hp; hits++; if (r.crit > 1) crits++;
+        if (target.status === 'con' && M.type === 'fuego' && target.hp > 0) { target.status = null; this.hud(); await this.msg(`¡${tname} se descongeló!`); }
+      }
+      if (crits) await this.msg(crits > 1 ? `¡${crits} golpes críticos!` : '¡Un golpe crítico!', 30);
+      if (n > 1) await this.msg(`¡Golpeó ${hits} ${hits === 1 ? 'vez' : 'veces'}!`, 30);
+      if (eff0 > 1) await this.msg('¡Es muy eficaz!', 30);
+      if (eff0 < 1) await this.msg('No es muy eficaz...', 30);
+      if (M.drain && user.hp > 0 && user.hp < user.stats.hp) { const heal = Math.max(1, Math.floor(total * M.drain)); await this.tween(user, 'hp', Math.min(user.stats.hp, user.hp + heal), 16); user.hp = Math.round(user.hp); this.hud(); await this.msg(`¡${tname} perdió energía!`, 26); }
+      if (M.recoil) { const back = Math.max(1, Math.floor(total * M.recoil)); await this.hit(user, isAlly, back, 4); await this.msg(`¡${name} también se hizo daño!`, 26); }
+      if (target.hp <= 0) { const end = await this.faint(!isAlly); if (end === 'win' || end === 'lose' || user.hp > 0) return end; return this.faint(isAlly); }
+      if (M.status && rand() * 100 < M.status[1]) await this.applyStatus(target, M.status[0], !isAlly, false);
+      if (M.confuse && rand() * 100 < M.confuse) await this.confuse(target, !isAlly, false);
+      for (const e of M.stat || []) if (rand() * 100 < e.chance) await this.changeStat(e.target === 'self' ? user : target, e.target === 'self' ? us : ts, e, e.target === 'self' ? isAlly : !isAlly);
+      if (user.hp <= 0) return this.faint(isAlly);
+      return undefined;
+    }
+    // Movimientos de estado
+    const self = !aimsFoe || M.heal;
+    await this.wait(this.play(M.anim, M.type, isAlly, { self }));
+    await this.tween(this.fx, key, 0, 4);
+    if (M.heal) {
+      if (user.hp >= user.stats.hp) await this.msg(`¡Los PS de ${name} ya están al máximo!`);
+      else { await this.tween(user, 'hp', Math.min(user.stats.hp, user.hp + Math.ceil(user.stats.hp * M.heal)), 22); user.hp = Math.round(user.hp); this.hud(); await this.msg(`¡${name} recuperó PS!`); }
+    }
+    if (M.status) await this.applyStatus(target, M.status[0], !isAlly, true);
+    if (M.confuse) await this.confuse(target, !isAlly, true);
+    for (const e of M.stat || []) await this.changeStat(e.target === 'self' ? user : target, e.target === 'self' ? us : ts, e, e.target === 'self' ? isAlly : !isAlly);
     return undefined;
   }
 
   async faint(allyFainted) {
     if (!allyFainted) {
+      this.foe.status = null;
       await Promise.all([this.tween(this.fx, 'foeY', 40, 18), this.tween(this.fx, 'foeAlpha', 0, 18)]);
       this.showHud(false, true);
       await this.msg(this.trainer ? `¡${this.foe.name} rival se debilitó!` : `¡${this.opts.legendary ? '' : 'El '}${this.foe.name}${this.opts.legendary ? '' : ' salvaje'} se debilitó!`);
@@ -393,6 +560,7 @@ export class Battle {
       }
       return 'win';
     }
+    this.ally.status = null;
     await Promise.all([this.tween(this.fx, 'allyY', 40, 18), this.tween(this.fx, 'allyAlpha', 0, 18)]);
     await this.msg(`¡${this.ally.name} se debilitó!`);
     this.participants.delete(this.activeIdx);
@@ -445,7 +613,8 @@ export class Battle {
     const rate = this.opts.legendary ? 45 : 190;
     const hour = this.game.hour();
     const bonus = catchBonus(id, { turn: this.turnN || 1, foe: this.foe, night: hour >= 19 || hour < 6, dark: !!this.game.ow?.map?.dark || this.opts.bg === 'cave' });
-    const chance = Math.min(1, ((3 * max - 2 * hp) * rate * bonus) / (3 * max) / 255 + 0.04);
+    const statusBonus = { dor: 2, con: 2, par: 1.5, ven: 1.5, que: 1.5 }[this.foe.status] || 1;
+    const chance = Math.min(1, ((3 * max - 2 * hp) * rate * bonus * statusBonus) / (3 * max) / 255 + 0.04);
     const ok = rand() < chance;
     const wobbles = ok ? 3 : Math.floor(rand() * 3);
     for (let w = 0; w < wobbles; w++) {

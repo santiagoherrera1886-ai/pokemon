@@ -197,3 +197,6 @@ class UI {
 
 export const ui = new UI();
 export { esc, money };
+// Chip del estado alterado (QUE, VEN, PAR, DOR, CON) para el HUD y las listas.
+const STATUS_CHIP = { que: ['QUE', '#e8603a'], ven: ['VEN', '#9a4ab8'], par: ['PAR', '#d8aa10'], dor: ['DOR', '#7a7a96'], con: ['CON', '#48b0d8'] };
+export const statusChip = c => c && STATUS_CHIP[c.status] ? `<i class="st" style="--s:${STATUS_CHIP[c.status][1]}">${STATUS_CHIP[c.status][0]}</i>` : '';

@@ -19,7 +19,15 @@ El mundo, los personajes, las criaturas, los nombres y todo el pixel art son **o
 | Equipo Eclipse | Bodega de Ciudad Marea, Lago Espejo | Admin. Bruma, Jefe Umbra y la guardiana Espejalba (se puede atrapar) |
 | Liga | Ruta 5, Liga Alborada | Combate final con Nico, Campeona Aurora, créditos y regreso a casa |
 
-**Contenido:** 28 especies con evoluciones, 10 tipos, 33 movimientos, más de 20 entrenadores con línea de visión, 3 gimnasios, viaje rápido con la Mensajera de las posadas, PC de almacenamiento, registro de criaturas vistas y atrapadas.
+**Contenido:** 28 especies con evoluciones, 18 tipos, 107 movimientos, 5 estados alterados, más de 20 entrenadores con línea de visión, 3 gimnasios, viaje rápido con la Mensajera de las posadas, PC de almacenamiento, registro de criaturas vistas y atrapadas.
+
+## Combate
+
+- **18 tipos** (Normal, Fuego, Agua, Planta, Eléctrico, Hielo, Lucha, Veneno, Tierra, Volador, Psíquico, Bicho, Roca, Fantasma, Dragón, Siniestro, Acero y Hada) con su tabla completa de ventajas, desventajas e inmunidades (`src/data/types.js`).
+- **107 movimientos** (`src/data/moves.js`): ataques de varias potencias, golpes que van primero, de 2 a 5 golpes, retroceso, drenaje, curación, protección, críticos fáciles, subidas y bajadas de estadísticas y efectos secundarios.
+- **Estados:** quemado (resta PS y baja el ataque), envenenado, paralizado (más lento y a veces no se mueve), dormido y congelado, más la confusión durante el combate. Se quedan después del combate; se curan en la posada o con Antídoto, Pomada de Árnica, Tinto Cargado, Gel de Sábila, Panela Caliente y Remedio Casero. Cada tipo tiene inmunidades (el Fuego no se quema, el Eléctrico no se paraliza, etc.).
+- **Animaciones por movimiento:** en 3D (`src/render3d/movefx.js`) hay proyectiles, chorros, rayos, relámpagos, lluvias de rocas y pétalos, columnas, olas, terremotos con sacudida de cámara, remolinos, anillos psíquicos, sombras, mordiscos, zarpazos, drenajes, escudos, mejoras y efectos de cada estado. En pixel clásico, las mismas animaciones con partículas.
+- La IA de los rivales elige según la efectividad, usa estados y curaciones con criterio y no repite lo que no sirve.
 
 ## Personaje y partidas
 
@@ -113,7 +121,7 @@ Para que la prueba sea rápida y no dependa del azar, después de elegir inicial
 ## Pendiente
 
 - Música y efectos de sonido.
-- Estados alterados (veneno, parálisis, sueño) y objetos equipables.
+- Objetos equipables.
 - Más zonas opcionales después de la Liga.
 
 ## Sobre `original/pokediamond`
