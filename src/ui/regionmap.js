@@ -41,15 +41,18 @@ function bounds(world) {
 
 // HTML del mapa: el lienzo más las etiquetas (en HTML para que se lean bien a cualquier tamaño).
 export function regionMapHTML(world, st) {
-  const B = bounds(world), pos = (gx, gy) => `left:${((gx - B.x0) / B.w * 100).toFixed(2)}%;top:${((gy - B.y0) / B.h * 100).toFixed(2)}%`;
+  const B = bounds(world);
+  const pos = (gx, gy) => `left:${((gx - B.x0) / B.w * 100).toFixed(2)}%;top:${((gy - B.y0) / B.h * 100).toFixed(2)}%`;
+  // Las etiquetas de los bordes se pegan hacia adentro para que no se salgan del mapa.
+  const label = (gx, gy) => { const t = (gx - B.x0) / B.w; return pos(gx, gy) + (t < .1 ? ';transform:translate(0,-50%)' : t > .9 ? ';transform:translate(-100%,-50%)' : ''); };
   const visited = st.visited || {}, esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const out = [];
   for (const m of world.outdoor) {
     const cx = m.origin[0] + m.w / 2, cy = m.origin[1] + m.h / 2, seen = visited[m.id] ? '' : ' fog';
-    if (m.encounters && !['lago', 'volcan', 'manglar', 'isla'].includes(m.id)) out.push(`<span class="rm-l route${seen}" style="${pos(cx, cy)}">${esc(m.name)}</span>`);
-    else out.push(`<span class="rm-l town${['lago', 'volcan', 'manglar', 'isla'].includes(m.id) ? ' spot' : ''}${seen}" style="${pos(cx, m.origin[1] + m.h - 2.5)}">${esc(m.name)}</span>`);
+    if (m.encounters && !['lago', 'volcan', 'manglar', 'isla'].includes(m.id)) out.push(`<span class="rm-l route${seen}" style="${label(cx, cy)}">${esc(m.name)}</span>`);
+    else out.push(`<span class="rm-l town${['lago', 'volcan', 'manglar', 'isla'].includes(m.id) ? ' spot' : ''}${seen}" style="${label(cx, m.origin[1] + m.h - 2.5)}">${esc(m.name)}</span>`);
   }
-  out.push(`<span class="rm-l spot" style="${pos(95.5, -66)}">Cueva Eco</span>`);
+  out.push(`<span class="rm-l spot" style="${label(95.5, -66)}">Cueva Eco</span>`);
   const next = nextGym(st);
   GYMS.forEach((g, i) => {
     const m = world.get(g.map), o = m && m.objects.find(o => o.kind === 'gym');
