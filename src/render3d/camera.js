@@ -2,7 +2,7 @@ import * as T from 'three';
 // Cámara alta casi cenital con perspectiva suave (lente larga). Sin giro lateral: las calles se ven derechas.
 // `h` es la altura visible (en casillas) a la distancia del foco; la distancia se calcula a partir del FOV.
 const FOV = 28;
-const PITCH = 50 * Math.PI / 180;
+const PITCH = 46 * Math.PI / 180;
 const TAN = Math.tan(FOV * Math.PI / 360);
 const BATTLE_DIR = new T.Vector3(0, Math.sin(22 * Math.PI / 180), Math.cos(22 * Math.PI / 180));
 

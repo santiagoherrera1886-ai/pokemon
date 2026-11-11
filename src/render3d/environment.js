@@ -55,6 +55,41 @@ export class Environment {
       color=mix(color,vec3(.76,.88,.83),clouds*.3);color+=glint*.23;
       gl_FragColor=vec4(color,1.); #include <tonemapping_fragment>
       #include <colorspace_fragment>}`.replace(/ #/g,'\n#')});
+    // Suelo con textura: pasto con briznas pintadas y tierra con granos y piedritas. La textura se proyecta en
+    // coordenadas del mundo (no por casilla), así no se nota la cuadrícula; el color de cada casilla la tiñe.
+    const wrapDraw=(g,q,fn)=>{for(const dx of [-q,0,q])for(const dy of [-q,0,q]){g.save();g.translate(dx,dy);fn();g.restore();}};
+    const rnd=(i,k)=>hash(i,k,7);
+    const grassTex=resources.texture((g,q)=>{
+      g.fillStyle='#eef2e4';g.fillRect(0,0,q,q);
+      wrapDraw(g,q,()=>{
+        for(let i=0;i<70;i++){const x=rnd(i,1)*q,y=rnd(i,2)*q,r=18+rnd(i,3)*40;const gr=g.createRadialGradient(x,y,2,x,y,r);const dark=rnd(i,4)>.5;
+          gr.addColorStop(0,dark?'rgba(70,120,60,.20)':'rgba(255,255,210,.26)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(x-r,y-r,r*2,r*2);}
+        g.lineCap='round';
+        for(let i=0;i<2600;i++){const x=rnd(i,5)*q,y=rnd(i,6)*q,l=5+rnd(i,7)*9,a=-1.57+(rnd(i,8)-.5)*1.1;
+          g.strokeStyle=rnd(i,9)>.45?`rgba(40,95,45,${.10+rnd(i,10)*.16})`:`rgba(250,255,200,${.14+rnd(i,11)*.2})`;g.lineWidth=1.2+rnd(i,12)*1.4;
+          g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(a)*l,y+Math.sin(a)*l);g.stroke();}
+      });
+    },512);
+    const dirtTex=resources.texture((g,q)=>{
+      g.fillStyle='#f3efe6';g.fillRect(0,0,q,q);
+      wrapDraw(g,q,()=>{
+        for(let i=0;i<60;i++){const x=rnd(i,21)*q,y=rnd(i,22)*q,r=20+rnd(i,23)*46;const gr=g.createRadialGradient(x,y,2,x,y,r);
+          gr.addColorStop(0,rnd(i,24)>.5?'rgba(120,90,50,.16)':'rgba(255,250,225,.3)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(x-r,y-r,r*2,r*2);}
+        for(let i=0;i<1500;i++){const x=rnd(i,25)*q,y=rnd(i,26)*q;g.fillStyle=rnd(i,27)>.5?`rgba(110,80,45,${.1+rnd(i,28)*.18})`:'rgba(255,252,235,.35)';g.fillRect(x,y,1.5+rnd(i,29)*2,1.5+rnd(i,30)*2);}
+        for(let i=0;i<46;i++){const x=rnd(i,31)*q,y=rnd(i,32)*q,r=3+rnd(i,33)*5;g.fillStyle='rgba(95,75,50,.28)';g.beginPath();g.ellipse(x+1,y+2,r,r*.7,0,0,7);g.fill();
+          g.fillStyle='rgba(235,228,212,.95)';g.beginPath();g.ellipse(x,y,r,r*.7,0,0,7);g.fill();}
+      });
+    },512);
+    for(const t of [grassTex,dirtTex]){t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=8;}
+    const worldMat=(map,scale)=>{const m=toonMaterial({map,roughness:.9});
+      m.onBeforeCompile=shader=>{shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+          vec4 puchaW=vec4(transformed,1.);
+          #ifdef USE_INSTANCING
+          puchaW=instanceMatrix*puchaW;
+          #endif
+          puchaW=modelMatrix*puchaW; vMapUv=puchaW.xz*${scale.toFixed(3)};`);};
+      m.customProgramCacheKey=()=> 'pucha-ground-'+scale;return m;};
+    this.grassMat=worldMat(grassTex,.2);this.dirtMat=worldMat(dirtTex,.25);
     this.blade=new T.BufferGeometry();
     this.blade.setAttribute('position',new T.Float32BufferAttribute([-.07,0,0,.07,0,0,.035,.45,.025,0,0,-.07,0,0,.07,.025,.38,.01],3));this.blade.setAttribute('color',new T.Float32BufferAttribute([.62,.62,.62,.62,.62,.62,1.28,1.28,1.1,.62,.62,.62,.62,.62,.62,1.28,1.28,1.1],3));this.blade.computeVertexNormals();
     // Lava: el mismo oleaje del agua, pero al rojo vivo.
@@ -117,8 +152,9 @@ export class Environment {
       if(code==='c'){key='cave';color=new T.Color('#9d9b8e').multiplyScalar(.78+n*.2);}
       if(code==='K'||code==='R'){
         key=map.dark?'cave':'grass';
-        r.box(staticProps,code==='K'?P.cliff:'#777d7a',x+.5,.55,z+.5,.99,1.12,.99,true);
-        r.box(staticProps,code==='K'?P.cliffTop:'#949990',x+.5,1.13,z+.5,.95,.11,.95,true);
+        const kh=code==='K'?hash(x,z,71)*.38:0,kc=.92+hash(x,z,72)*.14;
+        r.box(staticProps,'#'+new T.Color(code==='K'?P.cliff:'#777d7a').multiplyScalar(kc).getHexString(),x+.5,.55+kh/2,z+.5,1.02,1.12+kh,1.02,true);
+        r.box(staticProps,'#'+new T.Color(code==='K'?P.cliffTop:'#949990').multiplyScalar(kc).getHexString(),x+.5,1.13+kh,z+.5,.97,.11,.97,true);
       }
       tile(x,z,key,{p:[x+.5,height,z+.5],s:[1,.08,1],c:color});
       if(ground==='tile'){
@@ -182,7 +218,7 @@ export class Environment {
       const patch=new T.Mesh(r.geometries.plane,new T.MeshBasicMaterial({map:light,transparent:true,depthWrite:false}));patch.userData.ownedMaterial=true;patch.rotation.x=-Math.PI/2;patch.position.set(3.2,.014,4.5);patch.scale.set(3.8,4,1);root.add(patch);
     }
     r.batch(staticProps);root.add(staticProps);
-    const mats={grass:r.mat('#ffffff'),path:r.mat('#ffffff'),cave:r.mat('#ffffff'),water:this.water,wood:this.floorMat,tile:r.mat(map.floorColors?'#ffffff':'#dce3d5'),grout:r.mat('#b6c6bb'),rug:r.mat(map.style==='league'?'#af6977':'#789faa'),mat:r.mat('#cc8e74'),trim:r.mat('#edd4a2'),curb:r.mat('#e4e6ea'),sidewalk:r.mat('#ffffff'),inlay:r.mat(map.snow?'#b9c7d4':'#d4b56a'),shore:r.mat(P.shore),foam:r.mat(P.foam),edge:r.mat(P.edge),lava:this.lava};
+    const mats={grass:this.grassMat,path:this.dirtMat,cave:r.mat('#ffffff'),water:this.water,wood:this.floorMat,tile:r.mat(map.floorColors?'#ffffff':'#dce3d5'),grout:r.mat('#b6c6bb'),rug:r.mat(map.style==='league'?'#af6977':'#789faa'),mat:r.mat('#cc8e74'),trim:r.mat('#edd4a2'),curb:r.mat('#e4e6ea'),sidewalk:r.mat('#ffffff'),inlay:r.mat(map.snow?'#b9c7d4':'#d4b56a'),shore:r.mat(P.shore),foam:r.mat(P.foam),edge:r.mat(P.edge),lava:this.lava};
     const lods=[];
     for(const C of chunks.values()){
       const chunk=new T.Group();root.add(chunk);
@@ -194,15 +230,17 @@ export class Environment {
         const near=new T.Group(),far=new T.Group();chunk.add(near,far);
         const trunks=[],leaves=[],simple=[];
         for(const o of C.trees){
-          const h=1.65+hash(o.x,o.y)*.3,x=o.x+.5,z=o.y+.5;
-          trunks.push({p:[x,.6,z],s:[.12,1.2,.12]});
-          const tint=P.leaves;
-          for(let k=0;k<3;k++)leaves.push({p:[x+(k===1?-.2:k===2?.2:0),h+(k===0?.35:0),z+(k===0?-.1:.05)],s:[k===0?.5:.57,k===0?.63:.52,.56],c:tint[o.variant||0]});
-          simple.push({p:[x,h,z],s:[.74,1.1,.73],c:tint[o.variant||0]});
+          const h=1.75+hash(o.x,o.y)*.35,x=o.x+.5,z=o.y+.5,k=.92+hash(o.y,o.x,5)*.2;
+          trunks.push({p:[x,.65,z],s:[.15,1.3,.15]});trunks.push({p:[x,.12,z],s:[.24,.24,.24]});
+          const tint=P.leaves,base=new T.Color(tint[o.variant||0]),lo='#'+base.clone().multiplyScalar(.84).getHexString(),hi='#'+base.clone().lerp(new T.Color('#f4ffb8'),.24).getHexString(),mid='#'+base.getHexString();
+          // Copa redonda de varios lóbulos: abajo más oscuro, arriba un brillo, como hojas de verdad al sol.
+          for(const [dx,dy,dz,sx,sy,sz,c] of [[0,.2,0,.8,.72,.76,mid],[-.36,-.02,.06,.5,.46,.5,lo],[.36,-.04,.04,.5,.46,.5,lo],[0,-.1,.32,.52,.44,.46,mid],[.04,-.02,-.3,.5,.46,.46,lo],[.1,.62,-.06,.5,.42,.48,mid],[-.2,.56,.14,.36,.3,.34,hi],[.22,.3,.3,.3,.26,.28,hi]])
+            leaves.push({p:[x+dx*k,h+dy*k,z+dz*k],s:[sx*k,sy*k,sz*k],c});
+          simple.push({p:[x,h+.15,z],s:[.86,.95,.82],c:mid});
         }
-        instances(chunk,r.geometries.cylinder,r.mat('#847351'),trunks,true);
+        instances(chunk,r.geometries.cylinder,r.mat('#7d5f40'),trunks,true);
         instances(near,r.geometries.leaf,this.windMat('#ffffff'),leaves,true);
-        instances(far,r.geometries.cone,r.mat('#ffffff'),simple,false);far.visible=false;
+        instances(far,r.geometries.leaf,r.mat('#ffffff'),simple,false);far.visible=false;
         lods.push({near,far,center:C.center});
       }
     }
@@ -214,5 +252,5 @@ export class Environment {
     for(const g of entry.glows)g.visible=night;
     for(const lod of entry.lods){const x=lod.center[0]+entry.root.position.x,z=lod.center[1]+entry.root.position.z;const near=Math.hypot(x-pos.x,z-pos.z)<17;lod.near.visible=near;lod.far.visible=!near;}
   }
-  dispose(){this.floorMat.dispose();this.water.dispose();this.lava.dispose();this.glowMat.dispose();this.poolMat.dispose();this.blade.dispose();this.wind.forEach(m=>m.dispose());}
+  dispose(){this.floorMat.dispose();this.water.dispose();this.lava.dispose();this.grassMat.dispose();this.dirtMat.dispose();this.glowMat.dispose();this.poolMat.dispose();this.blade.dispose();this.wind.forEach(m=>m.dispose());}
 }

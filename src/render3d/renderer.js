@@ -58,8 +58,8 @@ export class PremiumRenderer {
     this.r.release(this.backdrop);this.backdrop=new T.Group();this.worldRoot.add(this.backdrop);this.backdropCell=key;
     const list=[];
     for(let z=cz-22;z<cz+24;z+=2)for(let x=cx-22;x<cx+24;x+=2){if(this.game.world.outdoorAt(x,z)||this.game.world.outdoorAt(x+1,z+1))continue;list.push([x,z]);}
-    const mesh=new T.InstancedMesh(this.r.geometries.cone,this.r.mat(P.back),list.length),dummy=new T.Object3D();
-    list.forEach(([x,z],i)=>{dummy.position.set(x+.7,1.2,z+.7);dummy.scale.set(1.2,2.7,1.2);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});mesh.computeBoundingSphere();this.backdrop.add(mesh);
+    const mesh=new T.InstancedMesh(this.r.geometries.leaf,this.r.mat(P.back),list.length),dummy=new T.Object3D();
+    list.forEach(([x,z],i)=>{const hh=hash(x,z,3);dummy.position.set(x+.5+hh*.6,1.5+hh*.5,z+.5+hash(z,x,4)*.6);dummy.scale.set(1.45+hh*.3,1.5+hh*.5,1.4);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});mesh.computeBoundingSphere();this.backdrop.add(mesh);
     const floor=this.r.mesh(this.backdrop,'box',P.floor,[cx,-.13,cz],[70,.1,70]);floor.castShadow=false;
   }
   clearWorld(){for(const e of this.maps.values())this.r.release(e.root);this.maps.clear();for(const a of this.actors.values())this.r.release(a.root);this.actors.clear();this.backdropCell='';this.currentMap=null;}
