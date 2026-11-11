@@ -3,6 +3,7 @@ import * as T from 'three';
 // `h` es la altura visible (en casillas) a la distancia del foco; la distancia se calcula a partir del FOV.
 const FOV = 28;
 const PITCH = 38 * Math.PI / 180;
+const PITCH_IN = 46 * Math.PI / 180;   // los cuartos pequeños se miran desde más arriba para que quepan completos
 const TAN = Math.tan(FOV * Math.PI / 360);
 const BATTLE_DIR = new T.Vector3(0, Math.sin(22 * Math.PI / 180), Math.cos(22 * Math.PI / 180));
 
@@ -11,13 +12,14 @@ export class DioramaCamera {
     this.camera = new T.PerspectiveCamera(FOV, 16 / 9, .5, 160);
     this.focus = new T.Vector3();
     this.dir = new T.Vector3(0, Math.sin(PITCH), Math.cos(PITCH));
+    this.dirIn = new T.Vector3(0, Math.sin(PITCH_IN), Math.cos(PITCH_IN));
     this.offset = this.dir.clone().multiplyScalar(20);
     this.key = null; this.frames = new Map(); this.aspect = 16 / 9; this.distance = 20;
   }
   interiorFrame(map) {
     if (this.frames.has(map.id)) return this.frames.get(map.id);
     const right = new T.Vector3(1, 0, 0);
-    const up = new T.Vector3().crossVectors(this.dir, right).normalize();
+    const up = new T.Vector3().crossVectors(this.dirIn, right).normalize();
     const center = new T.Vector3(map.w / 2, .5, (map.h + 1.5) / 2);
     const points = [];
     for (const x of [-.3, map.w + .3]) {
@@ -45,7 +47,7 @@ export class DioramaCamera {
     if (this.key !== key) this.focus.copy(target); else this.focus.lerp(target, 1 - Math.exp(-dt * 8));
     this.key = key;
     this.distance = h / (2 * TAN);
-    this.offset.copy(battle ? BATTLE_DIR : this.dir).multiplyScalar(this.distance);
+    this.offset.copy(battle ? BATTLE_DIR : follow ? this.dir : this.dirIn).multiplyScalar(this.distance);
     this.camera.position.copy(this.focus).add(this.offset); this.camera.lookAt(this.focus);
   }
   // Punto 3D sobre el plano del foco que cae en las coordenadas de pantalla (0..1) dadas.

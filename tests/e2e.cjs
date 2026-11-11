@@ -380,6 +380,12 @@ async function run() {
     s = await st(); assert.equal(s.map, 'corola'); assert.equal(s.y, 2, 'sin las ocho medallas no se entra a la Ruta 5');
     log('la Liga pide las ocho medallas OK');
 
+    // ------------------------------------------------ Zona nueva del oeste: Ruta 12 y Pueblo Guadua
+    await walkTo(14, 15, 'guadua');
+    s = await st(); assert.equal(s.map, 'guadua', 'se llega caminando de Corola a Pueblo Guadua');
+    await shot('pueblo-guadua');
+    log('Ruta 12 y Pueblo Guadua OK');
+
     // ------------------------------------------------ Región del este: los cinco gimnasios que faltan
     // Entrenamiento exprés: el equipo sube de nivel, evoluciona y aprende lo de su nivel, como si hubiera
     // entrenado en el pasto. Los entrenadores de ruta y de gimnasio ya se probaron antes: aquí van los líderes.

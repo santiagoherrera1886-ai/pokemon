@@ -30,7 +30,15 @@ Pueblo Brisal → Sendero 1 (al oeste, el Lago Espejo) → Villa Arenal → Ruta
 
 Cada ciudad nueva tiene un guardia en la salida hacia la siguiente ruta: deja pasar cuando ganas en su gimnasio. La Liga pide las **ocho medallas**. En el juego, **Inicio → VER MAPA** muestra la región dibujada con sus casillas, los ocho gimnasios numerados (en color los ganados), la Liga y dónde estás.
 
-**Contenido:** 62 especies (diez familias nuevas y cinco leyendas), todas con Forma Alba, 18 tipos, 123 movimientos, 5 estados alterados, 69 mapas (22 al aire libre, 12 rutas y zonas con criaturas salvajes), 48 entrenadores con línea de visión, 8 gimnasios con edificio propio en 3D, viaje rápido con la Mensajera de las posadas, PC de almacenamiento, registro de criaturas vistas y atrapadas.
+**Zonas opcionales** (sin gimnasio, con entrenadores, criaturas, pueblos y un regalo escondido en cada punta):
+
+- **Oeste, selva:** Ciudad Corola → Ruta 12 → **Pueblo Guadua** → Ruta 13 → Lago Espejo. Desde el lago sólo se sube con la Medalla Hoja.
+- **Sur, costa:** Villa Arenal → Ruta 14 → **Puerto Caracol**.
+- **Centro, seco:** Pueblo Cobre → Ruta 15 (Desierto Tatacoa) → **Cerro Fragua**, un volcán con lava.
+
+**Aspecto del mundo 3D:** cámara cercana e inclinada para que se vean las caras; personajes cabezones con ojos grandes de color; suelo con manchas de pasto y florecitas, bordes en los caminos, pasto alto frondoso; biomas con paleta propia (pradera, nieve, selva, desierto, volcán); partículas según el lugar y la hora (polen, pétalos, luciérnagas, nieve, arena, chispas, niebla), sombras de nubes y faroles que alumbran de noche.
+
+**Contenido:** 62 especies (diez familias nuevas y cinco leyendas), todas con Forma Alba, 18 tipos, 123 movimientos, 5 estados alterados, 83 mapas (29 al aire libre, 18 rutas y zonas con criaturas salvajes), 58 entrenadores con línea de visión, 8 gimnasios con edificio propio en 3D, viaje rápido con la Mensajera de las posadas, PC de almacenamiento, registro de criaturas vistas y atrapadas.
 
 ## Combate
 

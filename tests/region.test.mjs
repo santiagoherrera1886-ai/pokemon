@@ -39,7 +39,7 @@ test('los mapas exteriores no se montan y cada borde abierto empata con el mapa 
   }
 });
 
-test('desde Pueblo Brisal se llega caminando a los 69 mapas', () => {
+test('desde Pueblo Brisal se llega caminando a los 83 mapas', () => {
   const seen = new Set(), q = [['brisal', 5, 10]];
   while (q.length) {
     const [id, x, y] = q.pop(), k = `${id}:${x},${y}`;
@@ -60,7 +60,7 @@ test('desde Pueblo Brisal se llega caminando a los 69 mapas', () => {
   }
   const reached = new Set([...seen].map(k => k.split(':')[0]));
   assert.deepEqual(Object.keys(maps).filter(id => !reached.has(id)), []);
-  assert.equal(reached.size, 69);
+  assert.equal(reached.size, 83);
 });
 
 test('cada puerta lleva a un piso caminable y el regreso cae frente a la puerta', () => {

@@ -3,6 +3,7 @@
 import { MapBuilder } from './builder.js';
 import { buildStoryMaps } from './maps2.js';
 import { buildRegionMaps } from './maps3.js';
+import { buildNewZones, connectNewZones } from './maps4.js';
 
 const S = st => st.story;
 
@@ -247,6 +248,8 @@ export function buildMaps() {
     vecino('vecino2', 'Casa de los Ocampo', 'man', ['¿Sabías que las criaturas suben de nivel ganando combates?', 'Y al subir aprenden movimientos nuevos.'], ['brisal', 18, 16]),
     vecino('vecino3', 'Casa de la playa', 'girl', ['Mi abuela dice que el mar trae criaturas raras en invierno.'], ['arenal', 6, 20])
   ];
-  list.push(...buildStoryMaps(), ...buildRegionMaps());
-  return Object.fromEntries(list.map(m => [m.id, m]));
+  list.push(...buildStoryMaps(), ...buildRegionMaps(), ...buildNewZones());
+  const maps = Object.fromEntries(list.map(m => [m.id, m]));
+  connectNewZones(maps);
+  return maps;
 }

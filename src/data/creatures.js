@@ -92,6 +92,12 @@ export const ENCOUNTERS = {
   cueva: { rate: 0.09, list: [['guijarrin', 9, 12, 50], ['sombrin', 10, 12, 30], ['mentelin', 10, 11, 20], ['magmol', 10, 12, 18], ['ferlum', 10, 12, 15], ['cuarcin', 10, 12, 8]] },
   ruta4: { rate: 0.12, list: [['medusin', 14, 16, 30], ['chispaz', 14, 16, 25], ['pipiolo', 15, 17, 25], ['guijarrin', 14, 16, 20], ['nivalin', 14, 16, 18], ['truenin', 14, 16, 10], ['fatuin', 15, 17, 20, 'noche']] },
   ruta5: { rate: 0.12, list: [['sombrador', 44, 47, 25], ['mentelin', 44, 46, 20], ['voltaz', 45, 47, 20], ['seton', 45, 47, 15], ['penon', 45, 47, 15], ['arborex', 44, 46, 10], ['arieton', 45, 47, 10], ['cobrumbra', 44, 46, 10], ['orbelina', 44, 46, 8], ['astrocuarzo', 44, 46, 8], ['velaria', 45, 47, 16, 'noche']] },
+  // Zonas opcionales: selva del oeste, costa del sur, desierto y volcán.
+  ruta12: { rate: 0.12, list: [['setin', 11, 13, 25], ['alasol', 11, 13, 20], ['verdilago', 11, 13, 18], ['michin', 12, 14, 14], ['sierpin', 11, 13, 14], ['pipiolo', 14, 15, 8], ['sombrin', 12, 14, 16, 'noche']] },
+  ruta13: { rate: 0.12, list: [['verdilago', 12, 15, 24], ['setin', 12, 15, 20], ['sierpin', 12, 14, 18], ['lanin', 12, 14, 14], ['truenin', 13, 15, 10], ['michin', 13, 15, 12], ['fatuin', 13, 15, 16, 'noche']] },
+  ruta14: { rate: 0.12, list: [['pipiu', 5, 7, 28], ['roedin', 5, 7, 24], ['medusin', 5, 8, 22], ['nivalin', 6, 8, 12], ['capullin', 5, 6, 14], ['sombrin', 6, 8, 12, 'noche']] },
+  ruta15: { rate: 0.12, list: [['guijarrin', 14, 17, 28], ['sierpin', 14, 16, 20], ['ferlum', 14, 17, 16], ['magmol', 15, 17, 14], ['lanin', 14, 16, 12], ['cuarcin', 15, 17, 8], ['fatuin', 15, 17, 14, 'noche']] },
+  volcan: { rate: 0.12, list: [['magmol', 17, 20, 30], ['guijarrin', 17, 19, 22], ['ferlum', 17, 20, 18], ['fatuin', 18, 20, 14], ['cuarcin', 18, 20, 8], ['sombrin', 17, 19, 12, 'noche']] },
   // La región del este y del norte: Ruta 6 a Ruta 11.
   ruta6: { rate: 0.12, list: [['meduson', 26, 29, 30], ['nivalmar', 26, 29, 22], ['pipiolo', 26, 28, 20], ['voltaz', 26, 28, 18], ['tormavis', 27, 29, 12], ['roedon', 26, 28, 12], ['candelo', 27, 29, 16, 'noche']] },
   ruta7: { rate: 0.12, list: [['sombrador', 30, 32, 25], ['mentelin', 30, 33, 22], ['serpentil', 30, 32, 18], ['foliaton', 30, 32, 16], ['mistigato', 30, 32, 12], ['alasol', 30, 32, 12], ['candelo', 30, 33, 22, 'noche']] },

@@ -11,6 +11,11 @@ const TILE = {
 };
 const SNOW = { '.': '#eef3f7', g: '#cddde7', Y: '#8fa9a2', K: '#b9c4cc', O: '#c4c8cc', T: '#8fa9a2' };
 const PAVED = { '.': '#dcd4c0' };
+const BIOME = {
+  desert: { '.': '#ecd49a', g: '#d2ba74', K: '#c48a58', O: '#b98a5c' },
+  volcano: { '.': '#7a6c66', g: '#62554f', K: '#4b403e', O: '#5a4c48', w: '#ff8a2a', p: '#9a8a80' },
+  jungle: { '.': '#74b464', g: '#4a9a4e', T: '#2f7c4c', J: '#3f9a52' }
+};
 
 // Lugar exterior (mapa, x, y) donde está el jugador; si está bajo techo, la puerta por la que entró.
 function outdoorSpot(world, st) {
@@ -41,8 +46,8 @@ export function regionMapHTML(world, st) {
   const out = [];
   for (const m of world.outdoor) {
     const cx = m.origin[0] + m.w / 2, cy = m.origin[1] + m.h / 2, seen = visited[m.id] ? '' : ' fog';
-    if (m.encounters && m.id !== 'lago') out.push(`<span class="rm-l route${seen}" style="${pos(cx, cy)}">${esc(m.name)}</span>`);
-    else out.push(`<span class="rm-l town${m.id === 'lago' ? ' spot' : ''}${seen}" style="${pos(cx, m.origin[1] + m.h - 2.5)}">${esc(m.name)}</span>`);
+    if (m.encounters && m.id !== 'lago' && m.id !== 'volcan') out.push(`<span class="rm-l route${seen}" style="${pos(cx, cy)}">${esc(m.name)}</span>`);
+    else out.push(`<span class="rm-l town${m.id === 'lago' || m.id === 'volcan' ? ' spot' : ''}${seen}" style="${pos(cx, m.origin[1] + m.h - 2.5)}">${esc(m.name)}</span>`);
   }
   out.push(`<span class="rm-l spot" style="${pos(95.5, -66)}">Cueva Eco</span>`);
   const next = nextGym(st);
@@ -76,7 +81,7 @@ export function drawRegionMap(canvas, world, st) {
     const ox = (m.origin[0] - B.x0) * PX, oy = (m.origin[1] - B.y0) * PX;
     for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) {
       const c = m.tiles[y][x];
-      g.fillStyle = (m.snow && SNOW[c]) || (m.paved && PAVED[c]) || TILE[c] || TILE['.'];
+      g.fillStyle = (m.biome && BIOME[m.biome] && BIOME[m.biome][c]) || (m.snow && SNOW[c]) || (m.paved && PAVED[c]) || TILE[c] || TILE['.'];
       g.fillRect(ox + x * PX, oy + y * PX, PX, PX);
     }
     for (const o of m.objects) {

@@ -110,6 +110,7 @@ body.touch.landscape #panel { left: auto; right: 12px; transform: none; bottom: 
 .goal small { display: block; font-size: .7em; color: #8a6a3a; letter-spacing: .1em; }
 .goal .goal-map { float: right; margin: .05em 0 .2em .6em; padding: .25em .7em !important; font-size: .72em; border-radius: 999px !important; }
 /* Mapa de la región */
+#panel.map-panel { width: min(96vw, 1040px); max-width: none; }
 .map-panel .rmap { position: relative; width: 100%; margin: .2em 0 .5em; border: 3px solid #b89a64; border-radius: 10px; overflow: hidden; background: #efe7d0; }
 .map-panel .rmap canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
 .rm-l { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; pointer-events: none; font: 700 .62em var(--round, sans-serif); color: #3a2e1e; text-shadow: 0 0 2px #fff, 0 0 3px #fff, 0 0 4px #fff; }
