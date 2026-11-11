@@ -1,7 +1,8 @@
 import * as T from 'three';
 import {animateCreature} from './creatures3d.js';
 import {Resources} from './resources.js';
-import {Environment} from './environment.js';
+import {Environment,biomeOf} from './environment.js';
+import {Ambient} from './ambient.js';
 import {DioramaCamera} from './camera.js';
 import {Lighting} from './lighting.js';
 import {character,animateCharacter,creature} from './actors.js';
@@ -19,7 +20,7 @@ const rnd3=()=>Math.random()-.5;
 export class PremiumRenderer {
   constructor(game,quality,onStatus){
     this.game=game;this.onStatus=onStatus;this.lost=false;this.last=performance.now();this.maps=new Map();this.actors=new Map();this.battleKey=null;this.frameCount=0;
-    this.canvas=document.createElement('canvas');this.canvas.id='premium';this.canvas.setAttribute('aria-label','Alborada · mundo 3D');
+    this.canvas=document.createElement('canvas');this.canvas.id='premium';this.canvas.setAttribute('aria-label','Puchamon · mundo 3D');
     this.canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();this.lost=true;this.setVisible(false);onStatus('lost');});
     this.canvas.addEventListener('webglcontextrestored',()=>{this.lost=false;this.sizeKey='';this.clearWorld();this.clearBattle();onStatus('ready');});
     try{this.webgl=new T.WebGLRenderer({canvas:this.canvas,antialias:true,alpha:false,powerPreference:'high-performance'});}
@@ -30,7 +31,7 @@ export class PremiumRenderer {
     this.scene=new T.Scene();this.scene.background=new T.Color('#9aaea7');this.scene.fog=new T.Fog('#b7c8b0',28,68);
     this.r=new Resources();this.time={value:0};this.environment=new Environment(this.r,this.time);this.camera=new DioramaCamera();this.lights=new Lighting(this.scene);
     this.worldRoot=new T.Group();this.scene.add(this.worldRoot);this.battleRoot=new T.Group();this.scene.add(this.battleRoot);
-    this.setQuality(quality);this.makeParticles();this.makeBackdrop();
+    this.setQuality(quality);this.makeParticles();this.makeBackdrop();this.ambient=new Ambient(this.worldRoot);
     this.onResize=()=>{this.sizeKey='';};addEventListener('resize',this.onResize);
   }
   setVisible(visible){this.canvas.style.display=visible?'block':'none';document.body.classList.toggle('premium-active',visible);}
@@ -52,14 +53,14 @@ export class PremiumRenderer {
     this.backdrop=new T.Group();this.worldRoot.add(this.backdrop);this.backdropCell='';
   }
   updateBackdrop(position){
-    const snow=!!this.game.ow.map?.snow,cx=Math.floor(position.x/8)*8,cz=Math.floor(position.z/8)*8,key=cx+','+cz+(snow?'n':'');
+    const mapNow=this.game.ow.map||{},P=biomeOf(mapNow),cx=Math.floor(position.x/8)*8,cz=Math.floor(position.z/8)*8,key=cx+','+cz+P.back;
     if(this.backdropCell===key)return;
     this.r.release(this.backdrop);this.backdrop=new T.Group();this.worldRoot.add(this.backdrop);this.backdropCell=key;
     const list=[];
     for(let z=cz-22;z<cz+24;z+=2)for(let x=cx-22;x<cx+24;x+=2){if(this.game.world.outdoorAt(x,z)||this.game.world.outdoorAt(x+1,z+1))continue;list.push([x,z]);}
-    const mesh=new T.InstancedMesh(this.r.geometries.cone,this.r.mat(snow?'#9db5ae':'#689363'),list.length),dummy=new T.Object3D();
+    const mesh=new T.InstancedMesh(this.r.geometries.cone,this.r.mat(P.back),list.length),dummy=new T.Object3D();
     list.forEach(([x,z],i)=>{dummy.position.set(x+.7,1.2,z+.7);dummy.scale.set(1.2,2.7,1.2);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});mesh.computeBoundingSphere();this.backdrop.add(mesh);
-    const floor=this.r.mesh(this.backdrop,'box',snow?'#e3ebf1':'#8fae75',[cx,-.13,cz],[70,.1,70]);floor.castShadow=false;
+    const floor=this.r.mesh(this.backdrop,'box',P.floor,[cx,-.13,cz],[70,.1,70]);floor.castShadow=false;
   }
   clearWorld(){for(const e of this.maps.values())this.r.release(e.root);this.maps.clear();for(const a of this.actors.values())this.r.release(a.root);this.actors.clear();this.backdropCell='';this.currentMap=null;}
   // Pantalla de inicio: escena propia (lago al amanecer) con cielo en degradé, niebla cálida y sol bajo.
@@ -133,11 +134,11 @@ export class PremiumRenderer {
     const hour=g.hour(),night=m.outdoor&&(hour>=19||hour<5);
     // Niebla (Ruta 7 y Pueblo Niebla) y frío de nevado (Ruta 9 y Ciudad Escarcha): sólo cambian la bruma y el tono.
     const mist=m.outdoor&&m.mist,cold=m.outdoor&&!night&&m.snow;
-    this.scene.background.set(m.dark?'#1c2228':night?(mist?'#343a52':'#2a3550'):mist?'#d4d8e2':cold?'#e6eef5':m.outdoor?'#d8e8dc':'#3a4652');this.scene.fog.color.set(m.dark?'#1c2228':night?(mist?'#343a52':'#2a3550'):mist?'#d4d8e2':cold?'#edf3f8':'#e4eee6');this.scene.fog.near=mist?16:m.outdoor?34:60;this.scene.fog.far=mist?54:m.outdoor?80:140;this.styleOpts={focusY:.5,tilt:m.outdoor?.4:.12,night:night?.55:0,bloom:night||m.dark?.8:.3,lift:m.dark?.03:.1,grade:night?[1,1,1]:mist?[1,1,1.05]:cold?[1,1.02,1.08]:hour>=17&&hour<19?[1.12,.98,.86]:[1.05,1.01,.95],sat:m.dark?1.05:mist?.96:1.12};
+    this.scene.background.set(m.dark?'#1c2228':night?(mist?'#343a52':'#2a3550'):mist?'#d4d8e2':cold?'#e6eef5':m.outdoor?'#d8e8dc':'#3a4652');this.scene.fog.color.set(m.dark?'#1c2228':night?(mist?'#343a52':'#2a3550'):mist?'#d4d8e2':cold?'#edf3f8':'#e4eee6');this.scene.fog.near=mist?16:m.outdoor?34:60;this.scene.fog.far=mist?54:m.outdoor?80:140;this.styleOpts={focusY:.5,tilt:m.outdoor?.4:.12,night:night?.55:0,bloom:night||m.dark?.8:.3,lift:m.dark?.03:.1,grade:night?[1,1,1]:mist?[1,1,1.05]:cold?[1,1.02,1.08]:m.biome==='volcano'?[1.1,.97,.9]:m.biome==='desert'?[1.08,1.02,.9]:hour>=17&&hour<19?[1.12,.98,.86]:[1.05,1.01,.95],sat:m.dark?1.05:mist?.96:1.16};
     const wanted=new Set(visibleMapIds(g.world,m,p,this.settings.radius));
     for(const [id,e]of this.maps)if(!wanted.has(id)){this.r.release(e.root);this.maps.delete(id);}
     for(const id of wanted)if(!this.maps.has(id)){const e=this.environment.build(g.world.get(id),g.state);this.worldRoot.add(e.root);this.maps.set(id,e);}
-    for(const e of this.maps.values())this.environment.update(e,g.state,p);
+    for(const e of this.maps.values())this.environment.update(e,g.state,p,night);
     this.backdrop.visible=!!m.outdoor;if(m.outdoor)this.updateBackdrop(p);
     const active=new Set();
     for(const actor of [...ow.npcs,ow.player]){
@@ -147,7 +148,8 @@ export class PremiumRenderer {
     }
     for(const [id,rig]of this.actors)if(!active.has(id)){this.r.release(rig.root);this.actors.delete(id);}
     this.camera.update(m,p,dt);this.lights.update(this.camera.focus,!m.outdoor,hour,m.dark);
-    this.particles.visible=true;this.particles.geometry.setDrawRange(0,m.outdoor?this.settings.particles:12);
+    this.particles.visible=!m.outdoor;this.particles.geometry.setDrawRange(0,12);
+    this.ambient.update(m,night,this.camera.focus,this.time.value,this.webgl.domElement.height,1/Math.tan(this.camera.camera.fov*Math.PI/360)*.5,this.settings.particles/72);
     this.particles.position.set(p.x,0,p.z);this.particles.rotation.y=this.time.value*.015;
     this.currentMap=m.id;
   }
@@ -227,5 +229,5 @@ export class PremiumRenderer {
     this.slowTime=raw>.04?this.slowTime+Math.min(raw,1):Math.max(0,this.slowTime-raw*.5);
     if(this.slowTime>1.5&&this.degrade<5){this.degrade++;this.slowTime=0;if(this.degrade===2){this.style.samples=0;this.style.target?.dispose();this.style.target=null;}if(this.degrade>=3)this.adaptive=Math.max(.55,this.adaptive-.15);this.sizeKey='';}
   }
-  dispose(){removeEventListener('resize',this.onResize);this.style.dispose();this.clearWorld();this.clearBattle();this.r.release(this.backdrop);this.particles.geometry.dispose();this.particles.material.dispose();this.environment.dispose();this.lights.dispose();this.r.dispose();this.webgl.dispose();this.canvas.remove();}
+  dispose(){removeEventListener('resize',this.onResize);this.style.dispose();this.clearWorld();this.clearBattle();this.r.release(this.backdrop);this.particles.geometry.dispose();this.particles.material.dispose();this.ambient.dispose();this.environment.dispose();this.lights.dispose();this.r.dispose();this.webgl.dispose();this.canvas.remove();}
 }

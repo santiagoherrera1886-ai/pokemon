@@ -1,4 +1,4 @@
-# Alborada · Edición Bruma
+# Puchamon · Edición Alborada
 
 **Jugar:** https://pokemon-sa-ntiago.vercel.app/
 

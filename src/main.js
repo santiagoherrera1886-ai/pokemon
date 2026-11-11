@@ -123,7 +123,7 @@ class Game {
     // En el título se ve el avatar de la última partida guardada.
     const last = listSaves().sort((a, b) => b.savedAt - a.savedAt)[0];
     this.previewAvatar(last ? last.avatar : defaultAvatar());
-    if (cloud.linked) cloud.pull().catch(e => console.warn('Alborada: GitHub no respondió', e.message));
+    if (cloud.linked) cloud.pull().catch(e => console.warn('Puchamon: GitHub no respondió', e.message));
     const choice = await this.menus.title();
     ui.closePanel();
     document.body.classList.remove('at-title');
@@ -344,7 +344,7 @@ class Game {
     el.id = 'credits';
     const st = this.state;
     el.innerHTML = `<div class="roll">
-      <h2>ALBORADA · EDICIÓN BRUMA</h2><p>Campeón de la Liga Alborada</p><p><b>${st.name}</b></p>
+      <h2>PUCHAMON · EDICIÓN ALBORADA</h2><p>Campeón de la Liga Alborada</p><p><b>${st.name}</b></p>
       <h2>Equipo campeón</h2>${st.party.map(c => `<p>${c.name} · Nv${c.level}</p>`).join('')}
       <h2>Medallas</h2><p>${GYMS.filter(g => (st.badges || []).includes(g.badge)).map(g => g.name).join(' · ') || '—'}</p>
       <h2>Líderes de gimnasio</h2>${GYMS.map(g => `<p>${g.who[0].toUpperCase() + g.who.slice(1)} · ${g.city}</p>`).join('')}

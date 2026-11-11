@@ -51,7 +51,7 @@ export class Graphics {
     }).catch(error => {
       this.status = 'unavailable'; this.mode = 'classic';
       this.game.toast('3D no disponible · puedes seguir en clásico');
-      console.warn('Alborada: 3D no disponible', error.message);
+      console.warn('Puchamon: 3D no disponible', error.message);
       return false;
     }).finally(() => {this.pending = null;});
     return this.pending;
@@ -61,11 +61,11 @@ export class Graphics {
     // Con el tema retro, el catálogo retro aprobado prima sobre los retratos 3D en cualquier modo.
     if(this.art === 'retro' && hasRetroReference(sp))return null;
     if (this.mode !== 'premium' || this.status !== 'ready' || !this.engine || this.engine.lost) return null;
-    try { return this.engine.portrait(sp); } catch (error) { console.warn('Alborada: retrato no disponible', error.message); return null; }
+    try { return this.engine.portrait(sp); } catch (error) { console.warn('Puchamon: retrato no disponible', error.message); return null; }
   }
   avatarPortrait(look) {
     if (this.mode !== 'premium' || this.status !== 'ready' || !this.engine || this.engine.lost) return null;
-    try { return this.engine.avatarPortrait(look); } catch (error) { console.warn('Alborada: retrato del avatar no disponible', error.message); return null; }
+    try { return this.engine.avatarPortrait(look); } catch (error) { console.warn('Puchamon: retrato del avatar no disponible', error.message); return null; }
   }
   render() {
     const supportedScene = this.game.scene === 'overworld' || this.game.scene === 'battle' || this.game.scene === 'title';
@@ -75,7 +75,7 @@ export class Graphics {
     try {this.engine.render(); this.engine.setVisible(true); return true;}
     catch (error) {
       this.engine.setVisible(false); this.status = 'unavailable'; this.mode = 'classic';
-      console.warn('Alborada: se recuperó el modo clásico', error.message);
+      console.warn('Puchamon: se recuperó el modo clásico', error.message);
       this.game.toast('Modo clásico activo · tu partida continúa'); return false;
     }
   }

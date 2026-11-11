@@ -3,7 +3,7 @@
 import { SLOTS, loadState, storeState, parseState } from './state.js';
 
 const KEY = 'alborada-github-v1', FILE = 'alborada-partidas.json', API = 'https://api.github.com';
-export const TOKEN_URL = 'https://github.com/settings/tokens/new?scopes=gist&description=Alborada%20partidas';
+export const TOKEN_URL = 'https://github.com/settings/tokens/new?scopes=gist&description=Puchamon%20partidas';
 
 function read() { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { return null; } }
 function write(v) { try { v ? localStorage.setItem(KEY, JSON.stringify(v)) : localStorage.removeItem(KEY); } catch { /* sin almacenamiento */ } }
@@ -37,7 +37,7 @@ export const cloud = {
       gistId = list.find(g => g.files && g.files[FILE])?.id || null;
       if (list.length < 100) break;
     }
-    if (!gistId) gistId = (await gh('/gists', token, { method: 'POST', body: JSON.stringify({ description: 'Alborada · partidas guardadas', public: false, files: { [FILE]: { content: JSON.stringify(bundle()) } } }) })).id;
+    if (!gistId) gistId = (await gh('/gists', token, { method: 'POST', body: JSON.stringify({ description: 'Puchamon · partidas guardadas', public: false, files: { [FILE]: { content: JSON.stringify(bundle()) } } }) })).id;
     write({ token, login: user.login, gistId, lastSync: Date.now() });
     return user.login;
   },
@@ -69,6 +69,6 @@ export const cloud = {
   pushSoon() {
     if (!this.linked) return;
     clearTimeout(this.timer);
-    this.timer = setTimeout(() => this.push().catch(e => console.warn('Alborada: respaldo en GitHub pendiente', e.message)), 1500);
+    this.timer = setTimeout(() => this.push().catch(e => console.warn('Puchamon: respaldo en GitHub pendiente', e.message)), 1500);
   }
 };

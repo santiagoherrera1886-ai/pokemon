@@ -1,4 +1,4 @@
-/* Alborada · pantalla completa. La interfaz se superpone al canvas del juego. */
+/* Puchamon · pantalla completa. La interfaz se superpone al canvas del juego. */
 /* Fuentes libres (SIL OFL) servidas desde ./fonts para que el juego no dependa de terceros. */
 @font-face { font-family: 'Pixelify Sans'; font-weight: 400; font-display: swap; src: url(./fonts/pixelify-sans-latin-400-normal.woff2) format('woff2'); }
 @font-face { font-family: 'Pixelify Sans'; font-weight: 600; font-display: swap; src: url(./fonts/pixelify-sans-latin-600-normal.woff2) format('woff2'); }

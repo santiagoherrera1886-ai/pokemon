@@ -176,7 +176,7 @@ export class Menus {
     const st = this.st, dex = Object.values(st.dex || {});
     const portrait = this.game.graphics?.avatarPortrait?.(avatarLook(st.avatar));
     ui.setPanel(`<div class="tcard">
-      <div class="tc-head"><span>TARJETA DE ENTRENADOR</span><span>ALBORADA</span></div>
+      <div class="tc-head"><span>TARJETA DE ENTRENADOR</span><span>PUCHAMON</span></div>
       <div class="tc-body">${portrait ? `<img class="tc-av3d" src="${portrait}" alt="">` : `<img class="tc-av" src="${this.avatarThumb(st.avatar, 6)}" alt="">`}
         <div class="tc-data"><b>${esc(st.name)}</b>
           <span>Dinero <em>${money(st.money)}</em></span><span>Tiempo de juego <em>${playTimeText(st.playTime)}</em></span>
