@@ -4,7 +4,7 @@ import { SPECIES, RIVAL_PICK, makeCreature, rivalForm } from '../data/creatures.
 import { ITEMS, SPECIAL } from '../data/items.js';
 import { gymOf, hasBadge, badgeCount, nextGym, leagueOpen, LEAGUE_BADGES } from '../data/gyms.js';
 
-const N = { mom: 'Mamá', nico: 'Nico', prof: 'Prof. Ceiba', aide: 'Ayudante', kid: 'Niño', nurse: 'Enfermera Malva', clerk: 'Dependiente', vendor: 'Vendedora', rivalMom: 'Mamá de Nico', guard: 'Guardia', grunt: 'Recluta Eclipse', bruma: 'Bruma', umbra: 'Umbra', aurora: 'Campeona Aurora', courier: 'Mensajera' };
+const N = { mom: 'Mamá', nico: 'Nico', prof: 'Prof. Ceiba', aide: 'Ayudante', kid: 'Niño', nurse: 'Enfermera Malva', clerk: 'Dependiente', vendor: 'Vendedora', rivalMom: 'Mamá de Nico', guard: 'Guardia', grunt: 'Recluta Eclipse', bruma: 'Bruma', umbra: 'Umbra', aurora: 'Campeona Aurora', courier: 'Mensajera', sailor: 'Capitán' };
 
 export class Scripts {
   constructor(game) { this.game = game; }
@@ -211,7 +211,7 @@ const S = {
   async viaje(ow, game) {
     const st = game.state;
     if (!(st.badges || []).length) return say(N.courier, '¡Hola! Soy la Mensajera de Alborada.', 'Cuando tengas tu primera medalla, te llevo volando a cualquier pueblo que ya conozcas.');
-    const places = [['Pueblo Brisal', 'brisal', 5, 8], ['Villa Arenal', 'arenal', 18, 8], ['Ciudad Corola', 'corola', 6, 16], ['Pueblo Cobre', 'cobre', 6, 17], ['Ciudad Marea', 'marea', 22, 8], ['Pueblo Guadua', 'guadua', 7, 12], ['Puerto Caracol', 'caracol', 7, 8], ['Cabo Faro', 'cabo', 6, 16],
+    const places = [['Pueblo Brisal', 'brisal', 5, 8], ['Villa Arenal', 'arenal', 18, 8], ['Ciudad Corola', 'corola', 6, 16], ['Pueblo Cobre', 'cobre', 6, 17], ['Ciudad Marea', 'marea', 22, 8], ['Pueblo Guadua', 'guadua', 7, 12], ['Puerto Caracol', 'caracol', 7, 8], ['Cabo Faro', 'cabo', 6, 16], ['Valle de las Palmas', 'palmar', 7, 15], ['Pueblo Llanero', 'sabana', 7, 13],
       ['Ciudad Voltio', 'voltio', 6, 16], ['Pueblo Niebla', 'niebla', 6, 19], ['Villa Cafetal', 'cafetal', 6, 12], ['Ciudad Escarcha', 'escarcha', 6, 17], ['Ciudad Albor', 'albor', 14, 13], ['Liga Alborada', 'ruta5', 7, 7]]
       .filter(p => st.visited && st.visited[p[1]]).map(([name, map, x, y]) => ({ name, map, x, y }));
     await say(N.courier, '¡Hola! ¿A dónde te llevo?');
@@ -373,6 +373,28 @@ const S = {
   async bloqueoSelva(ow) {
     await ui.say(['El sendero se mete en una selva espesa. Se oyen criaturas grandes.', 'Mejor volver con la Medalla Hoja.']);
     await ow.stepBack();
+  },
+  async bloqueoOeste(ow) {
+    await say(N.guard, 'Más allá del lago el bosque se vuelve monte cerrado y las criaturas ya están crecidas.', 'Vuelve cuando tengas la Medalla Marea y te abro el paso.');
+    await ow.stepBack();
+  },
+  async guardiaOeste(ow, game) {
+    if (hasBadge(game.state, 'marea')) return say(N.guard, '¡La Medalla Marea! Sigue derecho al oeste.', 'Llegas al Valle de las Palmas, y de ahí baja el camino a los Llanos y al manglar.');
+    await say(N.guard, 'Al oeste del lago hay todo un valle de palmas gigantes.', 'Pero las criaturas de allá no son para principiantes. Trae la Medalla Marea.');
+  },
+  // El barco de Cabo Faro a la Isla Totuma (ida y vuelta).
+  async barcoIsla(ow, game) {
+    const st = game.state;
+    if (badgeCount(st) < LEAGUE_BADGES) return say(N.sailor, 'Mar adentro está la Isla Totuma, pero el mar de allá no es para cualquiera.', `Zarpo con quien tenga las ${LEAGUE_BADGES} medallas. Llevas ${badgeCount(st)}.`);
+    const i = await ui.ask('¿Zarpamos para la Isla Totuma?', ['Sí, vamos', 'Ahora no'], { name: N.sailor });
+    if (i !== 0) return say(N.sailor, 'Aquí lo espero, que el barco no se mueve solo.');
+    await say(N.sailor, '¡Suelten amarras!');
+    await ow.warp('isla', 18, 29, 1);
+  },
+  async barcoVuelta(ow, game) {
+    const i = await ui.ask('¿Volvemos a Cabo Faro?', ['Sí, de regreso', 'Me quedo'], { name: N.sailor });
+    if (i !== 0) return say(N.sailor, 'Tranquilo, la isla no se va a ningún lado.');
+    await ow.warp('cabo', 20, 14, 0);
   },
   async bloqueoRuinas(ow) {
     await say(N.guard, 'Alto ahí. Por el camino de piedra sólo entra a Ciudad Albor quien tenga la Medalla Escarcha.', 'Vuelve cuando hayas ganado en el gimnasio de Ciudad Escarcha.');

@@ -386,6 +386,14 @@ async function run() {
     await shot('pueblo-guadua');
     log('Ruta 12 y Pueblo Guadua OK');
 
+    // ------------------------------------------------ Occidente: Ruta 22 y el Valle de las Palmas
+    await page.evaluate(() => { const g = __game; g.ow.load('lago', 3, 10, 2, false); g.ow.scripts = 1; });
+    await settle();
+    await walkTo(7, 15, 'palmar');
+    s = await st(); assert.equal(s.map, 'palmar', 'del lago se llega al Valle de las Palmas');
+    await shot('valle-de-las-palmas');
+    log('Ruta 22 y Valle de las Palmas OK');
+
     // ------------------------------------------------ Región del este: los cinco gimnasios que faltan
     // Entrenamiento exprés: el equipo sube de nivel, evoluciona y aprende lo de su nivel, como si hubiera
     // entrenado en el pasto. Los entrenadores de ruta y de gimnasio ya se probaron antes: aquí van los líderes.

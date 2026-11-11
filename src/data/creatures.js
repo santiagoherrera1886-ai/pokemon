@@ -117,6 +117,13 @@ export const ENCOUNTERS = {
   ruta14: { rate: 0.12, list: [['cangrejin', 5, 8, 24], ['pipiu', 5, 7, 22], ['roedin', 5, 7, 18], ['medusin', 5, 8, 18], ['orugazul', 5, 7, 14], ['capullin', 5, 6, 10], ['sombrin', 6, 8, 12, 'noche']] },
   ruta15: { rate: 0.12, list: [['gurrin', 14, 17, 26], ['guijarrin', 14, 17, 20], ['sierpin', 14, 16, 16], ['arrieron', 18, 19, 10], ['ferlum', 14, 17, 12], ['magmol', 15, 17, 12], ['cuarcin', 15, 17, 8], ['fatuin', 15, 17, 14, 'noche']] },
   volcan: { rate: 0.12, list: [['magmol', 17, 20, 26], ['gurrin', 17, 20, 18], ['guijarrin', 17, 19, 16], ['ferlum', 17, 20, 14], ['arrieron', 19, 21, 10], ['fatuin', 18, 20, 12], ['cuarcin', 18, 20, 8], ['sombrin', 17, 19, 12, 'noche']] },
+  // El occidente: bosque del lago, valle de palmas, sabana, manglar y la isla.
+  ruta22: { rate: 0.12, list: [['arrierin', 19, 22, 22], ['orugazul', 19, 21, 16], ['perecin', 20, 22, 16], ['colibrin', 20, 23, 16], ['michin', 20, 22, 12], ['mariposol', 21, 23, 10], ['sombrin', 20, 22, 14, 'noche']] },
+  ruta23: { rate: 0.12, list: [['anteojin', 23, 26, 20], ['doradita', 23, 26, 18], ['perecin', 23, 25, 16], ['arrierin', 23, 25, 14], ['colibron', 24, 26, 12], ['carnerazo', 23, 26, 12], ['fatuin', 23, 26, 14, 'noche']] },
+  ruta24: { rate: 0.12, list: [['arrieron', 26, 29, 22], ['anteojin', 26, 28, 16], ['gurrin', 26, 28, 16], ['roedon', 26, 29, 14], ['pipiolo', 26, 29, 14], ['colibron', 27, 29, 12], ['sombrador', 26, 29, 12, 'noche']] },
+  manglar: { rate: 0.12, list: [['cangrejin', 28, 30, 20], ['doradon', 29, 32, 18], ['cangrejon', 29, 32, 16], ['medusin', 28, 30, 14], ['meduson', 29, 31, 14], ['mariposol', 29, 31, 12], ['sierpin', 28, 30, 12], ['velaria', 30, 32, 10, 'noche']] },
+  ruta25: { rate: 0.12, list: [['cangrejon', 31, 34, 20], ['perezon', 31, 34, 18], ['meduson', 31, 33, 16], ['mariposol', 31, 34, 14], ['pipiolo', 31, 33, 14], ['nivalmar', 31, 33, 12], ['sombrador', 31, 34, 12, 'noche']] },
+  isla: { rate: 0.14, list: [['condoral', 46, 50, 14], ['cangrejon', 46, 49, 18], ['doradon', 46, 49, 16], ['perezon', 46, 49, 14], ['mariposol', 46, 49, 14], ['arrieron', 46, 49, 12], ['gurron', 46, 49, 12], ['velaria', 47, 50, 12, 'noche']] },
   // Las cuatro puntas del mapa: cabo, glaciar, playa larga, banco de arena, ruinas y camino de piedra.
   ruta16: { rate: 0.12, list: [['colibron', 28, 31, 20], ['cangrejon', 28, 31, 18], ['meduson', 28, 31, 16], ['pipiolo', 28, 30, 14], ['tormavis', 28, 31, 14], ['nivalmar', 28, 30, 12], ['candelo', 29, 31, 12, 'noche']] },
   ruta17: { rate: 0.12, list: [['condorin', 40, 42, 22], ['nivalord', 40, 43, 20], ['anteojon', 40, 43, 16], ['arieton', 40, 42, 14], ['cuarzon', 40, 41, 12], ['acerion', 41, 43, 12], ['velaria', 41, 43, 12, 'noche']] },

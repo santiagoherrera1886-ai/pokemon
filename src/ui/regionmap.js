@@ -46,8 +46,8 @@ export function regionMapHTML(world, st) {
   const out = [];
   for (const m of world.outdoor) {
     const cx = m.origin[0] + m.w / 2, cy = m.origin[1] + m.h / 2, seen = visited[m.id] ? '' : ' fog';
-    if (m.encounters && m.id !== 'lago' && m.id !== 'volcan') out.push(`<span class="rm-l route${seen}" style="${pos(cx, cy)}">${esc(m.name)}</span>`);
-    else out.push(`<span class="rm-l town${m.id === 'lago' || m.id === 'volcan' ? ' spot' : ''}${seen}" style="${pos(cx, m.origin[1] + m.h - 2.5)}">${esc(m.name)}</span>`);
+    if (m.encounters && !['lago', 'volcan', 'manglar', 'isla'].includes(m.id)) out.push(`<span class="rm-l route${seen}" style="${pos(cx, cy)}">${esc(m.name)}</span>`);
+    else out.push(`<span class="rm-l town${['lago', 'volcan', 'manglar', 'isla'].includes(m.id) ? ' spot' : ''}${seen}" style="${pos(cx, m.origin[1] + m.h - 2.5)}">${esc(m.name)}</span>`);
   }
   out.push(`<span class="rm-l spot" style="${pos(95.5, -66)}">Cueva Eco</span>`);
   const next = nextGym(st);

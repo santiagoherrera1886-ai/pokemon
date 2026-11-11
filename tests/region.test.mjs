@@ -39,7 +39,7 @@ test('los mapas exteriores no se montan y cada borde abierto empata con el mapa 
   }
 });
 
-test('desde Pueblo Brisal se llega caminando a los 97 mapas', () => {
+test('desde Pueblo Brisal se llega caminando a todo el mapa salvo la isla (que es en barco)', () => {
   const seen = new Set(), q = [['brisal', 5, 10]];
   while (q.length) {
     const [id, x, y] = q.pop(), k = `${id}:${x},${y}`;
@@ -59,8 +59,12 @@ test('desde Pueblo Brisal se llega caminando a los 97 mapas', () => {
     }
   }
   const reached = new Set([...seen].map(k => k.split(':')[0]));
-  assert.deepEqual(Object.keys(maps).filter(id => !reached.has(id)), []);
-  assert.equal(reached.size, 97);
+  // La Isla Totuma y sus interiores sólo se alcanzan en el barco de Cabo Faro.
+  const barco = ['isla', 'posadaIsla', 'tiendaIsla', 'casaIsla'];
+  assert.deepEqual(Object.keys(maps).filter(id => !reached.has(id)), barco);
+  assert.equal(reached.size + barco.length, 116);
+  assert.ok(maps.cabo.npcs.some(n => n.talk === 'barcoIsla'), 'el capitán de Cabo Faro lleva a la isla');
+  assert.ok(maps.isla.npcs.some(n => n.talk === 'barcoVuelta'), 'y trae de vuelta');
 });
 
 test('cada puerta lleva a un piso caminable y el regreso cae frente a la puerta', () => {

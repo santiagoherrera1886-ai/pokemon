@@ -32,13 +32,20 @@ Cada ciudad nueva tiene un guardia en la salida hacia la siguiente ruta: deja pa
 
 **Zonas opcionales** (sin gimnasio, con entrenadores, criaturas, pueblos y un regalo escondido en cada punta):
 
-- **Oeste, selva:** Ciudad Corola → Ruta 12 → **Pueblo Guadua** → Ruta 13 → Lago Espejo. Desde el lago sólo se sube con la Medalla Hoja.
-- **Sur, costa:** Villa Arenal → Ruta 14 → **Puerto Caracol**.
-- **Centro, seco:** Pueblo Cobre → Ruta 15 (Desierto Tatacoa) → **Cerro Fragua**, un volcán con lava.
+- **Selva del noroeste:** Ciudad Corola → Ruta 12 → **Pueblo Guadua** → Ruta 13 → Lago Espejo (pide la Medalla Hoja).
+- **Costa sur:** Villa Arenal → Ruta 14 → **Puerto Caracol** → Ruta 18 (playa larga) → Ruta 19 (banco de arena) → Ciudad Marea. Cierra la vuelta de la costa.
+- **Centro seco:** Pueblo Cobre → Ruta 15 (Desierto Tatacoa) → **Cerro Fragua**, un volcán con lava.
+- **Punta este:** Ciudad Voltio → Ruta 16 → **Cabo Faro**, con su faro encendido.
+- **Techo del mundo:** Ciudad Escarcha → Ruta 17 (glaciar) → **Pico Cóndor**, el punto más alto.
+- **Ruinas:** Pueblo Guadua → Ruta 20 → **Ruinas del Alba** → Ruta 21 → Ciudad Albor (esa puerta pide la Medalla Escarcha).
+- **Occidente:** Lago Espejo → Ruta 22 → **Valle de las Palmas** → Ruta 23 → **Pueblo Llanero** → Ruta 24 → **Manglar** → Ruta 25 → Puerto Caracol. Se abre con la Medalla Marea.
+- **Isla Totuma:** con las ocho medallas, el capitán de Cabo Faro zarpa mar adentro. Allá las criaturas salvajes pasan del nivel 46.
 
-**Aspecto del mundo 3D:** cámara cercana e inclinada para que se vean las caras; personajes cabezones con ojos grandes de color; suelo con manchas de pasto y florecitas, bordes en los caminos, pasto alto frondoso; biomas con paleta propia (pradera, nieve, selva, desierto, volcán); partículas según el lugar y la hora (polen, pétalos, luciérnagas, nieve, arena, chispas, niebla), sombras de nubes y faroles que alumbran de noche.
+**Puchamones:** a las familias de la Bruma se suman nueve de fauna del país, cada una con sus dos etapas: hormiga arriera (Arrierín/Arrierón), colibrí (Colibrín/Colibrón), rana dorada (Doradita/Doradón), armadillo (Gurrín/Gurrón), cangrejo (Cangrejín/Cangrejón), perezoso (Perecín/Perezón), oso de anteojos (Anteojín/Anteojón), mariposa azul (Orugazul/Mariposol) y cóndor (Condorín/Condoral).
 
-**Contenido:** 62 especies (diez familias nuevas y cinco leyendas), todas con Forma Alba, 18 tipos, 123 movimientos, 5 estados alterados, 83 mapas (29 al aire libre, 18 rutas y zonas con criaturas salvajes), 58 entrenadores con línea de visión, 8 gimnasios con edificio propio en 3D, viaje rápido con la Mensajera de las posadas, PC de almacenamiento, registro de criaturas vistas y atrapadas.
+**Aspecto del mundo 3D:** cámara cercana e inclinada para que se vean las caras; personajes cabezones con ojos grandes de color, cejas, cachetes y manos de muñeco; suelo con manchas de pasto y florecitas, bordes en los caminos, pasto alto frondoso; biomas con paleta propia (pradera, nieve, selva, desierto, volcán); partículas según el lugar y la hora (polen, pétalos, luciérnagas, nieve, arena, chispas, niebla), sombras de nubes y faroles que alumbran de noche.
+
+**Contenido:** 80 especies (nueve familias de fauna colombiana, diez familias de la Bruma y cinco leyendas), todas con Forma Alba, 18 tipos, 123 movimientos, 5 estados alterados, 116 mapas (46 al aire libre, 32 rutas y zonas con criaturas salvajes), 86 entrenadores con línea de visión, 8 gimnasios con edificio propio en 3D, viaje rápido con la Mensajera de las posadas, PC de almacenamiento, registro de criaturas vistas y atrapadas.
 
 ## Combate
 
