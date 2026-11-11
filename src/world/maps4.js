@@ -30,8 +30,10 @@ function ruta12() {
 function guadua() {
   const b = new MapBuilder('guadua', 30, 28).meta({ name: 'Pueblo Guadua', outdoor: true, biome: 'jungle', origin: [-30, -84], battleBg: 'grass' });
   b.border('T').rect(2, 14, 28, 2, 'p').rect(17, 16, 2, 12, 'p');
+  const north = () => b.rect(18, 0, 2, 14, 'p');   // salida norte → Ruta 20 (se abre después de sembrar las guaduas)
   b.rect(7, 12, 1, 2, 'p').rect(14, 12, 1, 2, 'p').rect(24, 12, 1, 2, 'p').rect(7, 21, 1, 1, 'p').rect(7, 22, 10, 1, 'p');
   b.rect(21, 19, 5, 4, 'w').rect(3, 3, 24, 1, 'B').rect(3, 5, 8, 1, 'B').rect(19, 5, 8, 1, 'B').rect(11, 18, 4, 2, 'F').rect(21, 24, 4, 2, 'F');
+  north();
   for (const [x, y] of [[20, 18], [26, 18], [26, 23], [3, 25], [12, 25], [28 - 2, 8]]) b.set(x, y, 'J');
   b.building('house', 4, 8, 6, 4, POSADA, 'posadaGuadua', 6, 7)
     .building('house', 12, 8, 5, 4, TIENDA, 'tiendaGuadua', 5, 6)
@@ -74,7 +76,7 @@ function ruta14() {
 function caracol() {
   const b = new MapBuilder('caracol', 30, 24).meta({ name: 'Puerto Caracol', outdoor: true, origin: [30, 24], battleBg: 'beach' });
   b.border('T').rect(2, 17, 26, 3, 's').rect(0, 20, 30, 4, 'w').rect(14, 0, 2, 10, 'p').rect(2, 10, 26, 2, 'p');
-  b.rect(7, 8, 1, 2, 'p').rect(22, 8, 1, 2, 'p').rect(18, 12, 1, 4, 'p').rect(18, 15, 5, 1, 'p').rect(14, 12, 2, 5, 'p');
+  b.rect(28, 10, 2, 2, 'p').rect(7, 8, 1, 2, 'p').rect(22, 8, 1, 2, 'p').rect(18, 12, 1, 4, 'p').rect(18, 15, 5, 1, 'p').rect(14, 12, 2, 5, 'p');
   b.rect(3, 13, 5, 2, 'F').rect(24, 3, 3, 2, 'F').rect(10, 3, 3, 3, 'g');
   for (const [x, y] of [[3, 17], [9, 18], [25, 17], [27, 18], [11, 13], [26, 13], [2, 8]]) b.set(x, y, 'J');
   b.building('house', 4, 4, 6, 4, POSADA, 'posadaCaracol', 6, 7)

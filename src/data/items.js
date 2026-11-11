@@ -119,6 +119,7 @@ export const SPECIAL = {
   marea: { name: 'Botica del Puerto', items: ['pocimaFuerza', 'pocimaCoraza', 'pocimaViento', 'pocimaCertera', 'dulce', 'perlaDeRio', 'escarchaEterna', 'brasaEterna'] },
   guadua: { name: 'Canastos de la Selva', items: ['miel', 'remedioCasero', 'guayaba', 'capsulaMalla', 'rocio'] },
   caracol: { name: 'Puesto del Muelle', items: ['perlaDeRio', 'capsulaVeloz', 'dulce', 'panelaCaliente', 'despertar'] },
+  cabo: { name: 'Bodega del Faro', items: ['capsulaVeloz', 'capsulaOcaso', 'pocimaViento', 'rocio', 'dulce'] },
   voltio: { name: 'Taller del Viento', items: ['bobinaDeCobre', 'panueloVeloz', 'capsulaVeloz', 'pocimaViento', 'repelenteTotal', 'rocio'] },
   niebla: { name: 'Velería de la Bruma', items: ['velaDeNiebla', 'capsulaOcaso', 'cristalMental', 'remedioCasero', 'despertar', 'miel'] },
   cafetal: { name: 'Tienda de la Hacienda', items: ['tinto', 'arepaReserva', 'vendaDeCampeon', 'cintaFuerza', 'pocimaFuerza', 'dulce', 'guayaba'] },
@@ -126,7 +127,7 @@ export const SPECIAL = {
   albor: { name: 'Bazar del Templo', items: ['escamaAntigua', 'semillaVital', 'semillaFuerza', 'semillaCoraza', 'semillaViento', 'rocioPuro', 'dulce', 'capsulaReloj'] }
 };
 export const VENDING = ['aguaPanela', 'jugoLulo', 'avena'];
-export const TOWN_NAMES = { arenal: 'Villa Arenal', corola: 'Ciudad Corola', cobre: 'Pueblo Cobre', marea: 'Ciudad Marea', guadua: 'Pueblo Guadua', caracol: 'Puerto Caracol', voltio: 'Ciudad Voltio', niebla: 'Pueblo Niebla', cafetal: 'Villa Cafetal', escarcha: 'Ciudad Escarcha', albor: 'Ciudad Albor' };
+export const TOWN_NAMES = { arenal: 'Villa Arenal', corola: 'Ciudad Corola', cobre: 'Pueblo Cobre', marea: 'Ciudad Marea', guadua: 'Pueblo Guadua', caracol: 'Puerto Caracol', cabo: 'Cabo Faro', voltio: 'Ciudad Voltio', niebla: 'Pueblo Niebla', cafetal: 'Villa Cafetal', escarcha: 'Ciudad Escarcha', albor: 'Ciudad Albor' };
 
 export function generalStock(st) {
   const n = (st.badges || []).length;

@@ -98,6 +98,15 @@ export const ENCOUNTERS = {
   ruta14: { rate: 0.12, list: [['pipiu', 5, 7, 28], ['roedin', 5, 7, 24], ['medusin', 5, 8, 22], ['nivalin', 6, 8, 12], ['capullin', 5, 6, 14], ['sombrin', 6, 8, 12, 'noche']] },
   ruta15: { rate: 0.12, list: [['guijarrin', 14, 17, 28], ['sierpin', 14, 16, 20], ['ferlum', 14, 17, 16], ['magmol', 15, 17, 14], ['lanin', 14, 16, 12], ['cuarcin', 15, 17, 8], ['fatuin', 15, 17, 14, 'noche']] },
   volcan: { rate: 0.12, list: [['magmol', 17, 20, 30], ['guijarrin', 17, 19, 22], ['ferlum', 17, 20, 18], ['fatuin', 18, 20, 14], ['cuarcin', 18, 20, 8], ['sombrin', 17, 19, 12, 'noche']] },
+  // Las cuatro puntas del mapa: cabo, glaciar, playa larga, banco de arena, ruinas y camino de piedra.
+  ruta16: { rate: 0.12, list: [['meduson', 28, 31, 26], ['pipiolo', 28, 30, 22], ['tormavis', 28, 31, 18], ['nivalmar', 28, 30, 16], ['voltaz', 28, 30, 12], ['candelo', 29, 31, 14, 'noche']] },
+  ruta17: { rate: 0.12, list: [['nivalord', 40, 43, 26], ['arieton', 40, 42, 20], ['cuarzon', 40, 41, 18], ['acerion', 41, 43, 16], ['meduson', 40, 42, 10], ['velaria', 41, 43, 14, 'noche']] },
+  pico: { rate: 0.12, list: [['nivalord', 42, 45, 28], ['acerion', 42, 45, 20], ['astrocuarzo', 43, 45, 16], ['arieton', 42, 44, 16], ['elestrix', 43, 45, 10], ['velaria', 43, 45, 14, 'noche']] },
+  ruta18: { rate: 0.12, list: [['pipiu', 9, 11, 26], ['medusin', 9, 12, 24], ['roedin', 9, 11, 20], ['nivalin', 10, 12, 14], ['alasol', 10, 12, 10], ['sombrin', 10, 12, 12, 'noche']] },
+  ruta19: { rate: 0.12, list: [['meduson', 24, 25, 22], ['medusin', 22, 23, 18], ['nivalmar', 22, 25, 22], ['pipiolo', 22, 24, 18], ['roedon', 22, 24, 12], ['sombrador', 23, 25, 12, 'noche']] },
+  ruta20: { rate: 0.12, list: [['verdilago', 16, 17, 22], ['setin', 16, 19, 22], ['sierpin', 16, 19, 18], ['michin', 16, 17, 14], ['truenin', 17, 19, 12], ['cuarcin', 17, 19, 8], ['fatuin', 17, 19, 14, 'noche']] },
+  ruinas: { rate: 0.12, list: [['foliaton', 20, 23, 20], ['mistigato', 20, 23, 18], ['serpentil', 20, 23, 18], ['cuarcin', 20, 23, 14], ['seton', 22, 23, 12], ['tormavis', 20, 22, 10], ['sombrador', 20, 23, 16, 'noche']] },
+  ruta21: { rate: 0.12, list: [['arieton', 38, 41, 22], ['penon', 38, 40, 20], ['ferrox', 38, 39, 16], ['cobrumbra', 38, 41, 16], ['orbelina', 38, 40, 12], ['arborex', 38, 41, 10], ['velaria', 38, 41, 14, 'noche']] },
   // La región del este y del norte: Ruta 6 a Ruta 11.
   ruta6: { rate: 0.12, list: [['meduson', 26, 29, 30], ['nivalmar', 26, 29, 22], ['pipiolo', 26, 28, 20], ['voltaz', 26, 28, 18], ['tormavis', 27, 29, 12], ['roedon', 26, 28, 12], ['candelo', 27, 29, 16, 'noche']] },
   ruta7: { rate: 0.12, list: [['sombrador', 30, 32, 25], ['mentelin', 30, 33, 22], ['serpentil', 30, 32, 18], ['foliaton', 30, 32, 16], ['mistigato', 30, 32, 12], ['alasol', 30, 32, 12], ['candelo', 30, 33, 22, 'noche']] },

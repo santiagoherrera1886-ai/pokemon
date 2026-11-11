@@ -211,7 +211,7 @@ const S = {
   async viaje(ow, game) {
     const st = game.state;
     if (!(st.badges || []).length) return say(N.courier, '¡Hola! Soy la Mensajera de Alborada.', 'Cuando tengas tu primera medalla, te llevo volando a cualquier pueblo que ya conozcas.');
-    const places = [['Pueblo Brisal', 'brisal', 5, 8], ['Villa Arenal', 'arenal', 18, 8], ['Ciudad Corola', 'corola', 6, 16], ['Pueblo Cobre', 'cobre', 6, 17], ['Ciudad Marea', 'marea', 22, 8], ['Pueblo Guadua', 'guadua', 7, 12], ['Puerto Caracol', 'caracol', 7, 8],
+    const places = [['Pueblo Brisal', 'brisal', 5, 8], ['Villa Arenal', 'arenal', 18, 8], ['Ciudad Corola', 'corola', 6, 16], ['Pueblo Cobre', 'cobre', 6, 17], ['Ciudad Marea', 'marea', 22, 8], ['Pueblo Guadua', 'guadua', 7, 12], ['Puerto Caracol', 'caracol', 7, 8], ['Cabo Faro', 'cabo', 6, 16],
       ['Ciudad Voltio', 'voltio', 6, 16], ['Pueblo Niebla', 'niebla', 6, 19], ['Villa Cafetal', 'cafetal', 6, 12], ['Ciudad Escarcha', 'escarcha', 6, 17], ['Ciudad Albor', 'albor', 14, 13], ['Liga Alborada', 'ruta5', 7, 7]]
       .filter(p => st.visited && st.visited[p[1]]).map(([name, map, x, y]) => ({ name, map, x, y }));
     await say(N.courier, '¡Hola! ¿A dónde te llevo?');
@@ -372,6 +372,10 @@ const S = {
   // ---------- Zonas nuevas ----------
   async bloqueoSelva(ow) {
     await ui.say(['El sendero se mete en una selva espesa. Se oyen criaturas grandes.', 'Mejor volver con la Medalla Hoja.']);
+    await ow.stepBack();
+  },
+  async bloqueoRuinas(ow) {
+    await say(N.guard, 'Alto ahí. Por el camino de piedra sólo entra a Ciudad Albor quien tenga la Medalla Escarcha.', 'Vuelve cuando hayas ganado en el gimnasio de Ciudad Escarcha.');
     await ow.stepBack();
   },
   // Regalo de una sola vez: npc.arg = { flag, item, n, who, lines, after }.

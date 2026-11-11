@@ -5,8 +5,8 @@ import {actorPosition,visibleMapIds,QUALITY,normalizeQuality} from '../src/rende
 import {Graphics} from '../src/core/graphics.js';
 import {newState,loadState,saveState} from '../src/core/state.js';
 
-test('all 83 maps retain valid bidirectional door and stair destinations',()=>{
-  const maps=buildMaps();assert.equal(Object.keys(maps).length,83);
+test('all 97 maps retain valid bidirectional door and stair destinations',()=>{
+  const maps=buildMaps();assert.equal(Object.keys(maps).length,97);
   for(const map of Object.values(maps))for(const warp of map.warps){
     assert.ok(maps[warp.to],`${map.id} -> ${warp.to}`);
     assert.ok(warp.tx>=0 && warp.tx<maps[warp.to].w && warp.ty>=0 && warp.ty<maps[warp.to].h);
