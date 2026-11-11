@@ -1,8 +1,8 @@
 import * as T from 'three';
-// Cámara alta casi cenital con perspectiva suave (lente larga). Sin giro lateral: las calles se ven derechas.
+// Cámara inclinada y cercana, como en los juegos de bolsillo: se ven las caras y los frentes de las casas. Sin giro lateral: las calles se ven derechas.
 // `h` es la altura visible (en casillas) a la distancia del foco; la distancia se calcula a partir del FOV.
 const FOV = 28;
-const PITCH = 46 * Math.PI / 180;
+const PITCH = 38 * Math.PI / 180;
 const TAN = Math.tan(FOV * Math.PI / 360);
 const BATTLE_DIR = new T.Vector3(0, Math.sin(22 * Math.PI / 180), Math.cos(22 * Math.PI / 180));
 
@@ -37,11 +37,11 @@ export class DioramaCamera {
     const key = battle ? 'battle' : map.outdoor ? 'outside' : map.id;
     const frame = !battle && !follow ? this.interiorFrame(map) : null;
     const a = this.aspect;
-    let h = battle ? 7 : follow ? 9.2 : Math.max(frame.width / a, frame.height);
-    if (follow && a < 1) h = Math.min(17, 9.5 / a);
+    let h = battle ? 7 : follow ? 7.2 : Math.max(frame.width / a, frame.height);
+    if (follow && a < 1) h = Math.min(15, 7.6 / a);
     if (battle && a < 1) h = Math.min(15, 9 / a);
     this.camera.aspect = a; this.camera.updateProjectionMatrix();
-    const target = battle ? new T.Vector3(0, .5, 0) : follow ? new T.Vector3(position.x, .1, position.z - .3) : frame.target;
+    const target = battle ? new T.Vector3(0, .5, 0) : follow ? new T.Vector3(position.x, .55, position.z - .2) : frame.target;
     if (this.key !== key) this.focus.copy(target); else this.focus.lerp(target, 1 - Math.exp(-dt * 8));
     this.key = key;
     this.distance = h / (2 * TAN);

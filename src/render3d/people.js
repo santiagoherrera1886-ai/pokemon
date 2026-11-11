@@ -75,25 +75,26 @@ export function person(r, look = 'player') {
   r.batch(body);
 
   // ---------------- Cabeza ----------------
-  const head = new T.Group(); head.position.y = .98; head.scale.setScalar(1.2); root.add(head);
+  const head = new T.Group(); head.position.y = 1.03; head.scale.setScalar(1.4); /* cabezón: la cara es lo que da la expresión */ root.add(head);
   const skull = new T.Group(); head.add(skull);
   ball(skull, L.skin, [0, 0, 0], [.31, .29, .285]);
   pill(skull, L.skin, [0, -.28, -.02], .055, .06);                                     // cuello
   for (const x of [-1, 1]) ball(skull, L.skin, [x * .3, -.01, -.01], [.05, .065, .04]); // orejas
   ball(skull, shade(L.skin, -.04), [0, -.05, .28], [.014, .01, .01]);                    // nariz
   for (const x of [-1, 1]) ball(skull, '#f5b0a4', [x * .175, -.075, .215], [.04, .02, .015], [0, x * .6, 0]); // cachetes
-  add(skull, torus(Math.PI), '#6a2e2a', [0, -.105, .262], [.022, .016, .016], [0, 0, Math.PI]); // boca
-  for (const x of [-1, 1]) pill(skull, shade(L.hair, -.1), [x * .11, .085, .266], .008, .04, [1, 1, .6], [0, x * .3, Math.PI / 2 + x * .1]); // cejas finas
+  add(skull, torus(Math.PI), '#6a2e2a', [0, -.118, .258], [.036, .024, .02], [0, 0, Math.PI]); // sonrisa
+  for (const x of [-1, 1]) pill(skull, shade(L.hair, -.1), [x * .11, .1, .262], .013, .05, [1, 1, .6], [0, x * .3, Math.PI / 2 + x * .1]); // cejas finas
 
   // Ojos (grupo aparte para parpadear)
   const eyes = new T.Group(); head.add(eyes);
   for (const x of [-1, 1]) {
     // Ojo ovalado oscuro con un brillo grande, como figura de plástico; el color del iris solo asoma abajo.
     const e = new T.Group(); e.position.set(x * .108, -.02, .248); e.rotation.y = x * .38; eyes.add(e);
-    ball(e, shade(eyeColor, -.6), [0, 0, 0], [.04, .064, .024]);
-    ball(e, shade(eyeColor, -.05), [0, -.03, .012], [.028, .024, .014]);
-    ball(e, '#ffffff', [-x * .012, .026, .02], [.014, .017, .008]);
-    ball(e, '#ffffff', [x * .01, -.02, .022], [.005, .005, .004]);
+    ball(e, '#1c1a26', [0, 0, 0], [.054, .08, .024]);                                   // contorno
+    ball(e, eyeColor, [0, -.012, .01], [.043, .06, .018]);                               // iris de color, grande
+    ball(e, shade(eyeColor, -.55), [0, .004, .016], [.026, .04, .012]);                  // pupila
+    ball(e, '#ffffff', [-x * .016, .034, .024], [.019, .022, .008]);                     // brillo grande
+    ball(e, '#ffffff', [x * .014, -.03, .024], [.008, .008, .004]);
     if (lashes) pill(e, '#1e1a24', [x * .03, .052, .006], .007, .03, [1, 1, .8], [0, 0, Math.PI / 2 - x * .5]);
   }
   if (GLASSES.has(look)) { for (const x of [-1, 1]) add(head, torus(Math.PI * 2, .09), '#4a3a32', [x * .105, -.005, .285], [.07, .07, .05], [0, x * .3, 0]); add(head, torus(Math.PI, .12), '#4a3a32', [0, .005, .3], [.035, .02, .03]); }
@@ -215,7 +216,7 @@ export function person(r, look = 'player') {
     r.batch(leg); limbs.push(leg);
   }
   const shadow = r.shadow(root, 0, 0, .8, .65);
-  return { root, body, head, eyes, limbs, shadow, phase: 0, look, headY: .98, blink: 2 + Math.random() * 3 };
+  return { root, body, head, eyes, limbs, shadow, phase: 0, look, headY: 1.03, blink: 2 + Math.random() * 3 };
 }
 
 const ANGLES = [0, Math.PI, -Math.PI / 2, Math.PI / 2];
