@@ -5,6 +5,7 @@ import * as T from 'three';
 import { Sculpt } from './sculpt.js';
 import { BRUMA } from './bestiary.js';
 import { INICIALES } from './iniciales.js';
+import { FAUNA } from './fauna.js';
 
 // ---------- Geometrías compartidas de los detalles ----------
 const G = {};
@@ -523,7 +524,7 @@ const BUILD = {
     D.face({ c: [0, 1.6, .36], spread: .55, pitch: .05, size: .056, iris: '#3a5aa0', cheek: '#f4c0c8', mouth: 'none' });
   }
 };
-Object.assign(BUILD, INICIALES, BRUMA);
+Object.assign(BUILD, INICIALES, BRUMA, FAUNA);
 export const ALL_SPECIES = Object.keys(BUILD);
 // Rugosidad y brillo metálico del cuerpo por especie (las rocas son mate, el metal brilla).
 const ROUGH = { guijarrin: .62, penon: .64, espejalba: .3, medusin: .28, meduson: .28, magmol: .72, magmor: .72, magmatron: .7, cuarcin: .55, cuarzon: .55, astrocuarzo: .5, ferlum: .34, ferrox: .34, acerion: .32, fraguon: .36, nivalin: .3, nivalmar: .3, nivalord: .3 };
