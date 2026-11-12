@@ -43,7 +43,7 @@ Cada ciudad nueva tiene un guardia en la salida hacia la siguiente ruta: deja pa
 
 **Puchamones:** a las familias de la Bruma se suman nueve de fauna del país, cada una con sus dos etapas: hormiga arriera (Arrierín/Arrierón), colibrí (Colibrín/Colibrón), rana dorada (Doradita/Doradón), armadillo (Gurrín/Gurrón), cangrejo (Cangrejín/Cangrejón), perezoso (Perecín/Perezón), oso de anteojos (Anteojín/Anteojón), mariposa azul (Orugazul/Mariposol) y cóndor (Condorín/Condoral).
 
-**Aspecto del mundo 3D:** cámara cercana e inclinada para que se vean las caras; personajes cabezones con ojos grandes de color, cejas, cachetes y manos de muñeco; suelo con manchas de pasto y florecitas, bordes en los caminos, pasto alto frondoso; biomas con paleta propia (pradera, nieve, selva, desierto, volcán); partículas según el lugar y la hora (polen, pétalos, luciérnagas, nieve, arena, chispas, niebla), sombras de nubes y faroles que alumbran de noche.
+**Aspecto del mundo 3D:** cámara cercana e inclinada para que se vean las caras; personajes de unas 4 cabezas con la dirección aprobada (cara pintada con ojos almendrados, iris en degradé y brillos, cejas, nariz y boca pequeñas; pelo en mechones; ropa con paneles, vueltas y suelas; rodillas que doblan al caminar), y cada NPC con su complexión, peinado y ropa; suelo con manchas de pasto y florecitas, bordes en los caminos, pasto alto frondoso; biomas con paleta propia (pradera, nieve, selva, desierto, volcán); partículas según el lugar y la hora (polen, pétalos, luciérnagas, nieve, arena, chispas, niebla), sombras de nubes y faroles que alumbran de noche.
 
 **Contenido:** 80 especies (nueve familias de fauna colombiana, diez familias de la Bruma y cinco leyendas), todas con Forma Alba, 18 tipos, 123 movimientos, 5 estados alterados, 116 mapas (46 al aire libre, 32 rutas y zonas con criaturas salvajes), 86 entrenadores con línea de visión, 8 gimnasios con edificio propio en 3D, viaje rápido con la Mensajera de las posadas, PC de almacenamiento, registro de criaturas vistas y atrapadas.
 
@@ -62,9 +62,9 @@ Las tres líneas iniciales siguen la lámina de diseño del proyecto (`src/rende
 
 | Línea | Tipos | Etapas |
 | --- | --- | --- |
-| Planta | Planta · Planta · Planta/Roca | Brotelo (zorrito de orejas de hoja) → Brotoso (zorro esbelto con cola de hojas) → Bosquerón (ciervo con astas en flor) |
-| Fuego | Fuego · Fuego · Fuego/Tierra | Brasín (cachorro de león con cola de fuego) → Brasón (león joven de melena ardiente) → Volcarbón (león que ruge sobre la roca volcánica) |
-| Agua | Agua · Agua · Agua/Psíquico | Charquín (foquita de cola de pez) → Charcomar (nutria dragón de aletas) → Mareón (señor del mar con corona y gema) |
+| Planta | Planta · Planta · Planta/Roca | Brotelo (gatito-zorro verde salvia con orejas de hoja, collar de hojas y cola-brote) → Brotoso (zorro esbelto con cola de hojas) → Bosquerón (ciervo con astas en flor) |
+| Fuego | Fuego · Fuego · Fuego/Tierra | Brasín (cachorro de león dorado con melena de llamas y cola de fuego) → Brasón (león joven de melena ardiente) → Volcarbón (león que ruge sobre la roca volcánica) |
+| Agua | Agua · Agua · Agua/Psíquico | Charquín (foquita azul verdosa con cresta de agua y cola de pez) → Charcomar (nutria dragón de aletas) → Mareón (señor del mar con corona y gema) |
 
 ## Criaturas nuevas (bestiario de la Bruma)
 
@@ -139,11 +139,13 @@ La tienda muestra íconos en pixel art, descripción de cada objeto, cantidad x1
 
 Dos modos, que se cambian en **Opciones → Gráficos** sin perder la partida:
 
-- **3D (por defecto):** pantalla completa con Three.js. Cámara alta casi cenital con perspectiva suave, personajes cabezones que inclinan la cabeza hacia la cámara, criaturas esculpidas (cada cuerpo es una sola pieza que funde cabeza, cuello, patas y cola, con barriga y cachetes pintados, boca tallada y ojos grandes con brillo que parpadean; se arman con campos de distancia y Surface Nets en `src/render3d/sculpt.js`), casas de juguete (techo de tejas en franjas gruesas, cumbrera con remates, ventanas de marco blanco con jardinera y alero festoneado), letreros luminosos en los locales (placa con borde extruido, ícono propio y letras grandes, inclinada hacia la cámara; `src/render3d/signs.js`) y postes de camino con el nombre del lugar pintado, materiales satinados, sol desde arriba a la izquierda con sombras suaves, resplandor (bloom) en lo brillante, gradación cálida y leve desenfoque en los bordes. Las ciudades (Villa Arenal, Corola, Marea) tienen calles de asfalto con bordillo y andenes de baldosa. Los combates usan cámara baja con cielo y fondo según el terreno. Calidad baja, media o alta.
+- **3D (por defecto):** pantalla completa con Three.js. Cámara alta casi cenital con perspectiva suave, personajes de unas 4 cabezas con cara pintada que inclinan la cabeza hacia la cámara, criaturas esculpidas (cada cuerpo es una sola pieza que funde cabeza, cuello, patas y cola, con barriga y cachetes pintados, boca tallada y ojos grandes con brillo que parpadean; se arman con campos de distancia y Surface Nets en `src/render3d/sculpt.js`), casas de juguete (techo de tejas en franjas gruesas, cumbrera con remates, ventanas de marco blanco con jardinera y alero festoneado), letreros luminosos en los locales (placa con borde extruido, ícono propio y letras grandes, inclinada hacia la cámara; `src/render3d/signs.js`) y postes de camino con el nombre del lugar pintado, materiales satinados, sol desde arriba a la izquierda con sombras suaves, resplandor (bloom) en lo brillante, gradación cálida y leve desenfoque en los bordes. Las ciudades (Villa Arenal, Corola, Marea) tienen calles de asfalto con bordillo y andenes de baldosa. Los combates usan cámara baja con cielo y fondo según el terreno. Calidad baja, media o alta.
   En 3D la interfaz usa letra redonda (Nunito y Fredoka): diálogo en caja blanca con doble borde y placa de lugar que entra desde la izquierda con el color de la zona.
   La pantalla de inicio es una escena 3D al amanecer en el Lago Espejo con bruma sobre el agua: las tres iniciales posan en una lomita con el sol detrás, el protagonista las acompaña y suben motas de luz. En pantalla horizontal el logo y el menú van en una columna a la izquierda; en el celular, logo arriba y menú abajo. Las tarjetas de inicial, el equipo y el Registro muestran retratos 3D de las criaturas.
   **Acabado HD de las criaturas:** luz de borde tibia en la piel, sombra de pliegues horneada en la malla esculpida, ojos redondos de cachorro u ojos en almendra con párpados para las formas mayores, láminas con grosor (orejas de hoja, hojas, aletas translúcidas, pétalos) y fuego vivo que titila. Las formas finales traen su efecto en movimiento: hojas que flotan alrededor de Bosquerón, brasas que suben de Volcarbón y agua que gira a los pies de Mareón.
 - **Pixel clásico:** el motor 2D anterior.
+
+**Protagonista 3D** (Opciones → Protagonista 3D): **Esculpido** por defecto (`src/render3d/people.js`, sigue el avatar), o **Modelo GLB (prueba)**: el prototipo técnico del paquete Puchamon Base 3D (`assets/models/player.glb`, clips Idle, Walk, Run y Talk), cargado con `src/render3d/hero-model.js`. Está apagado por defecto hasta su revisión visual; no sigue los colores del avatar y, mientras carga o si falla, se ve el esculpido.
 
 **Estilo de arte** (Opciones → Estilo de arte): **HD** por defecto, o **Retro 16-bit**, que activa el tema Bruma Retro (`retro-bruma.css`, letra pixel, ilustraciones retro de las láminas y pixelado del 3D).
 
@@ -175,6 +177,10 @@ src/data/gyms.js      los ocho gimnasios: medalla, líder, ciudad, regalo, sigui
 src/render3d/gyms.js  el edificio 3D de cada gimnasio según su tipo
 src/ui/regionmap.js   mapa de la región con gimnasios, Liga y posición del jugador
 src/render3d/iniciales.js modelos de las tres líneas iniciales con el acabado HD de la lámina
+src/render3d/people.js    personajes 3D: complexión, ropa, pelo y animación de cada diseño (tabla DESIGN)
+src/render3d/faces.js     cabeza torneada y cara pintada (ojos abiertos y cerrados para parpadear)
+src/render3d/hero-model.js protagonista GLB opcional (prototipo) con su esqueleto y clips
+assets/models/player.glb  prototipo técnico del protagonista entregado con el paquete Puchamon Base 3D
 src/render3d/bestiary.js  modelos esculpidos de las familias nuevas y las leyendas
 src/render3d/alba.js  corona, alas de luz y brillo de la Forma Alba en 3D
 scripts/sprites.cjs   genera los sprites clásicos de todas las especies desde sus modelos 3D
@@ -202,6 +208,7 @@ Para que la prueba sea rápida y no dependa del azar, después de elegir inicial
 ## Pendiente
 
 - Música y efectos de sonido.
+- Revisión visual del protagonista GLB (prototipo técnico) antes de usarlo por defecto; los GLB de Brotelo, Brasín y Charquín todavía no existen (sólo hay conceptos), por eso en el juego siguen siendo modelos esculpidos.
 - Más zonas opcionales después de la Liga (por ahora, después de ser campeón quedan las leyendas de la Bruma).
 
 ## Sobre `original/pokediamond`
