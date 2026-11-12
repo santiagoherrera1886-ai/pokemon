@@ -207,7 +207,9 @@ async function run() {
     await talkTo(4, 3); await settle();
     s = await st(); assert.equal(s.story, 2);
     await walkTo(0, 2); await walkTo(5, 7);
-    await walkTo(19, 13, 'sendero1');
+    // El disparador de Nico ocupa (19..20,13): se pisa a propósito y se deja correr la escena.
+    await walkTo(20, 14, 'sendero1');
+    await step('ArrowUp'); await settle();
     s = await st(); assert.equal(s.map, 'sendero1');
     await shot('sendero-1');
     log('pueblo, casa de Nico y sendero OK');
