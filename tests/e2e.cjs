@@ -289,7 +289,9 @@ async function run() {
     assert.equal(await page.evaluate(() => __game.state.party[0].item), 'guayaba', 'la criatura debe llevar la Guayaba');
     await page.click('#panel [data-back]'); await sleep(150); await page.click('#panel [data-back]'); await sleep(150);
     await choose('dex');
-    assert.equal(await page.$$eval('#panel .dx', b => b.length), 62, 'el Registro muestra las 62 especies');
+    const especies = await page.evaluate(async () => Object.keys((await import('/src/data/creatures.js')).SPECIES).length);
+    assert.equal(await page.$$eval('#panel .dx', b => b.length), especies, `el Registro muestra las ${especies} especies`);
+    assert.ok(especies >= 80, 'el juego tiene al menos 80 especies');
     const seen = await page.$('#panel .dx:not(.unseen)'); await seen.click(); await sleep(250); await shot('registro');
     assert.ok(await page.$('#panel .sbars'), 'la ficha del Registro trae estadísticas');
     await page.click('#panel [data-back]'); await sleep(150); await page.click('#panel [data-back]'); await sleep(150);
