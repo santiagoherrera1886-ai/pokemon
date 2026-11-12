@@ -8,16 +8,16 @@ export const AVATAR_OPTIONS = {
     chico: [['short', 'Corto'], ['spiky', 'Puntas'], ['curly', 'Rizos'], ['buzz', 'Rapado']],
     chica: [['long', 'Largo'], ['tail', 'Cola'], ['bun', 'Moño'], ['bob', 'Melena']]
   },
-  hat: [null, '#e04848', '#3a6ad8', '#2a9a5a', '#f0b030', '#2a2a32', '#f6f2ea', '#e86aa0'],
-  top: ['#2f5fb8', '#d84848', '#2a9a5a', '#f0a030', '#8a4ad0', '#2a2a32', '#f6f2ea', '#e86aa0'],
-  bottom: ['#3a3a4a', '#2a3a6a', '#6a4a2a', '#d8d0c0', '#c83a4a', '#2a6a4a', '#e86aa0'],
-  bag: ['#f0b040', '#e04848', '#3a6ad8', '#2a9a5a', '#f6f2ea', '#8a4ad0']
+  hat: [null, '#e04848', '#3a6ad8', '#2a9a5a', '#f0b030', '#2a2a32', '#f6f2ea', '#e86aa0', '#e2603f'],
+  top: ['#2f5fb8', '#d84848', '#2a9a5a', '#f0a030', '#8a4ad0', '#2a2a32', '#f6f2ea', '#e86aa0', '#e2603f'],
+  bottom: ['#3a3a4a', '#2a3a6a', '#6a4a2a', '#d8d0c0', '#c83a4a', '#2a6a4a', '#e86aa0', '#4170b4'],
+  bag: ['#f0b040', '#e04848', '#3a6ad8', '#2a9a5a', '#f6f2ea', '#8a4ad0', '#3a3e48']
 };
 
 export function defaultAvatar(body = 'chico') {
   return body === 'chica'
     ? { body: 'chica', skin: 1, hairColor: 1, hairStyle: 'long', hat: 6, top: 7, bottom: 0, bag: 4 }
-    : { body: 'chico', skin: 1, hairColor: 0, hairStyle: 'short', hat: 1, top: 0, bottom: 0, bag: 0 };
+    : { body: 'chico', skin: 1, hairColor: 1, hairStyle: 'short', hat: 8, top: 8, bottom: 7, bag: 6 };
 }
 
 // Corrige valores fuera de rango (partidas viejas o archivos editados a mano).
@@ -39,7 +39,7 @@ export function avatarLook(avatar) {
   const hat = o.hat[a.hat], top = o.top[a.top];
   return {
     skin: o.skin[a.skin], hair: o.hairColor[a.hairColor], style: a.hairStyle,
-    wearCap: !!hat, hat: hat || undefined, hatBand: hat === '#f6f2ea' ? '#e04848' : '#ffffff',
+    wearCap: !!hat, hat: hat || undefined, hatBand: hat === '#f6f2ea' ? '#e04848' : '#f6f0e2',
     shirt: top, accent: top === '#f6f2ea' ? '#3a6ad8' : '#f6f2ea', pants: o.bottom[a.bottom],
     shoes: chica ? darker(o.bottom[a.bottom]) : '#d84a4a', bag: o.bag[a.bag],
     skirt: chica, lashes: chica, eyes: chica ? '#7a4a9a' : '#3a5a9a'
