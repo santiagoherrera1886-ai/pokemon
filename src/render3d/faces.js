@@ -229,3 +229,71 @@ export function faceMaterial(spec) {
   return m;
 }
 export function disposeFaces() { for (const t of CACHE.values()) { t.open.dispose(); t.closed.dispose(); } CACHE.clear(); }
+
+// ---------- Ojos pintados para criaturas (concepto aprobado de los iniciales) ----------
+// Una calcomanía curva por ojo: almendra con línea de pestañas gruesa y remate afuera, iris en degradé,
+// pupila, sombra del párpado, dos brillos y la ceja. side = 1 si el rabillo va hacia +x.
+const EYE_MOODS = {
+  bold: { lid: .1, droop: .1, brow: .32, bw: 1, eh: .92 },
+  happy: { lid: 0, droop: -.04, brow: -.1, bw: .7, eh: 1.06 },
+  calm: { lid: .18, droop: 0, brow: .05, bw: .8, eh: .9 }
+};
+const EYE_CACHE = new Map();
+export function creatureEyeMaterial({ iris, brow, mood = 'bold', side = 1, lashes = false }) {
+  const key = [iris, brow, mood, side, lashes].join('|');
+  if (EYE_CACHE.has(key)) return EYE_CACHE.get(key);
+  const W = 192, c = document.createElement('canvas'); c.width = c.height = W;
+  const g = c.getContext('2d'), U = W / 2, P = (x, y) => [(x + 1) * U, (1 - y) * U], s = side;
+  const Md = EYE_MOODS[mood] || EYE_MOODS.bold, h = .5 * Md.eh;
+  const cy = -.16, inner = [-s * .6, cy - h * .16], outer = [s * .66, cy - h * .02 - Md.droop * .5];
+  const up1 = [-s * .4, cy + h * 1.2 - Md.lid], up2 = [s * .36, cy + h * 1.32 - Md.lid * 1.3];
+  const lo1 = [s * .36, cy - h * 1.3], lo2 = [-s * .38, cy - h * 1.18], N = 16;
+  const upper = Array.from({ length: N + 1 }, (_, i) => bez(inner, up1, up2, outer, i / N));
+  const lower = Array.from({ length: N + 1 }, (_, i) => bez(outer, lo1, lo2, inner, i / N));
+  const path = pts => { g.beginPath(); pts.forEach(([x, y], i) => { const [px, py] = P(x, y); i ? g.lineTo(px, py) : g.moveTo(px, py); }); };
+  path([...upper, ...lower]); g.closePath(); g.fillStyle = '#fbf7f0'; g.fill();
+  g.save(); g.clip();
+  const [ix, iy] = P(s * .04, cy - h * .1), irx = .4 * U, iry = h * 1.12 * U;
+  const grad = g.createLinearGradient(ix, iy - iry, ix, iy + iry);
+  grad.addColorStop(0, tone(iris, -.6)); grad.addColorStop(.45, iris); grad.addColorStop(1, tone(iris, .45));
+  g.fillStyle = grad; g.beginPath(); g.ellipse(ix, iy, irx, iry, 0, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = tone(iris, -.65); g.lineWidth = .035 * U; g.stroke();
+  g.fillStyle = tone(iris, -.82); g.beginPath(); g.ellipse(ix, iy - iry * .06, irx * .42, iry * .5, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = rgba(tone(iris, .55), .55); g.beginPath(); g.ellipse(ix, iy + iry * .58, irx * .58, iry * .22, 0, 0, Math.PI * 2); g.fill();
+  const [ux, uy] = P(0, cy + h), shadow = g.createLinearGradient(ux, uy, ux, uy + h * .9 * U);
+  shadow.addColorStop(0, 'rgba(50,25,35,.45)'); shadow.addColorStop(1, 'rgba(50,25,35,0)');
+  g.fillStyle = shadow; path([...upper, ...upper.slice().reverse().map(([x, y]) => [x, y - h * .9])]); g.fill();
+  g.restore();
+  g.fillStyle = '#ffffff';
+  const hl = (x, y, rx, ry) => { const [px, py] = P(x, y); g.beginPath(); g.ellipse(px, py, rx * U, ry * U, -.3 * s, 0, Math.PI * 2); g.fill(); };
+  hl(s * .04 - s * .14, cy + h * .38, .13, .16); hl(s * .04 + s * .16, cy - h * .5, .06, .07);
+  // Línea de pestañas: gruesa, más ancha hacia el rabillo y con remate.
+  g.fillStyle = '#24171a'; g.beginPath();
+  upper.forEach(([x, y], i) => { const t = i / N, [px, py] = P(x, y + .05 + .12 * t * t); i ? g.lineTo(px, py) : g.moveTo(px, py); });
+  g.lineTo(...P(outer[0] + s * .2, outer[1] - h * .12));
+  upper.slice().reverse().forEach(([x, y]) => g.lineTo(...P(x, y - .025)));
+  g.closePath(); g.fill();
+  if (lashes) {
+    g.strokeStyle = '#24171a'; g.lineCap = 'round'; g.lineWidth = .05 * U;
+    for (const k of [.7, .86]) { const [bx, by] = bez(inner, up1, up2, outer, k); g.beginPath(); g.moveTo(...P(bx, by + .06)); g.lineTo(...P(bx + s * .14, by + .26)); g.stroke(); }
+  }
+  g.strokeStyle = 'rgba(60,35,35,.55)'; g.lineWidth = .035 * U; g.lineCap = 'round'; path(lower.slice(1, 8)); g.stroke();
+  // Ceja: trazo que se afina hacia afuera; decidida (baja adentro) o alegre (arqueada).
+  if (brow) {
+    const a = [-s * .52, cy + h * 1.5 + .12 - Md.brow * .22], b = [s * .7, cy + h * 1.62 + .12 + Md.brow * .1], m = [(a[0] + b[0]) / 2, Math.max(a[1], b[1]) + .08 + (Md.brow < 0 ? .1 : 0)];
+    const top = [], bot = [];
+    for (let i = 0; i <= 12; i++) { const t = i / 12, u = 1 - t, x = u * u * a[0] + 2 * u * t * m[0] + t * t * b[0], y = u * u * a[1] + 2 * u * t * m[1] + t * t * b[1], k = .13 * Md.bw * (1 - t * .7); top.push([x, y + k * .5]); bot.push([x, y - k * .5]); }
+    g.fillStyle = brow; g.beginPath(); [...top, ...bot.reverse()].forEach(([x, y], i) => { const [px, py] = P(x, y); i ? g.lineTo(px, py) : g.moveTo(px, py); }); g.closePath(); g.fill();
+  }
+  const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; t.anisotropy = 4;
+  const m = new T.MeshStandardMaterial({ map: t, emissive: '#ffffff', emissiveMap: t, emissiveIntensity: .22, transparent: true, roughness: .45, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, depthWrite: false });
+  EYE_CACHE.set(key, m); return m;
+}
+// Parche curvo (trozo de esfera de radio R alrededor de +z) que cubre ±a radianes.
+const PATCH = new Map();
+export function eyePatchGeometry(R, a) {
+  const key = Math.round(R * 1000) + ':' + Math.round(a * 1000);
+  if (!PATCH.has(key)) PATCH.set(key, new T.SphereGeometry(R, 14, 14, Math.PI / 2 - a, 2 * a, Math.PI / 2 - a, 2 * a));
+  return PATCH.get(key);
+}
+export function disposeCreatureEyes() { for (const m of EYE_CACHE.values()) { m.map.dispose(); m.dispose(); } EYE_CACHE.clear(); for (const g of PATCH.values()) g.dispose(); PATCH.clear(); }

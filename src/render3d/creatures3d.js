@@ -6,6 +6,7 @@ import { Sculpt } from './sculpt.js';
 import { BRUMA } from './bestiary.js';
 import { INICIALES } from './iniciales.js';
 import { FAUNA } from './fauna.js';
+import { creatureEyeMaterial, eyePatchGeometry } from './faces.js';
 
 // ---------- Geometrías compartidas de los detalles ----------
 const G = {};
@@ -96,7 +97,14 @@ function kit(r, g, S) {
   };
   const eyes = [];
   // Ojo de figura: óvalo oscuro brillante con iris de color abajo y dos brillos; 'cat' = ojo de color con pupila rasgada.
-  const eyeAt = ({ p, n }, s, iris, { lid = 0, lowLid = 0, lidColor, style, tilt = 0 } = {}) => {
+  const eyeAt = ({ p, n }, s, iris, { lid = 0, lowLid = 0, lidColor, style, tilt = 0, side = 1, R = .28, brow, mood, lashes } = {}) => {
+    if (style === 'anime') {
+      // Ojo pintado (calcomanía curva sobre la piel), como en el concepto aprobado de los iniciales.
+      // Para parpadear basta aplastarlo en y, igual que los ojos de figura.
+      const m = new T.Mesh(eyePatchGeometry(R * 1.012, s * 1.9 / R), creatureEyeMaterial({ iris, brow, mood, side, lashes }));
+      m.position.copy(p).addScaledVector(n, -R); m.quaternion.setFromUnitVectors(FWD, n); m.rotateZ(tilt);
+      m.userData.keep = true; m.renderOrder = 2; g.add(m); eyes.push(m); return m;
+    }
     const e = new T.Group(); e.position.copy(p).addScaledVector(n, -s * (style === 'almond' ? .24 : .14)); e.quaternion.setFromUnitVectors(FWD, n); e.rotateZ(tilt); g.add(e);
     const keep = m => { m.userData.keep = true; return m; };
     if (style === 'cat') {
@@ -143,8 +151,8 @@ function kit(r, g, S) {
   const anchors = {};
   const face = o => {
     anchors.head = { c: o.c, size: o.size || .075, top: S.surface(o.c, [0, 1, 0]).p };
-    const { c, spread = .38, pitch = .05, size = .075, iris = '#3a5a9a', cheek = '#f4a3a8', mouth = 'smile', mouthPitch = -.3, mouthW = .045, lid = 0, lowLid = 0, lidColor = '#888888', style, angry = 0, fangs = false } = o;
-    for (const s of [-1, 1]) eyeAt(S.surface(c, dirOf(s * spread, pitch)), size, iris, { lid, lowLid, lidColor, style, tilt: s * angry });
+    const { c, spread = .38, pitch = .05, size = .075, iris = '#3a5a9a', cheek = '#f4a3a8', mouth = 'smile', mouthPitch = -.3, mouthW = .045, lid = 0, lowLid = 0, lidColor = '#888888', style, angry = 0, fangs = false, brow, mood, lashes } = o;
+    for (const s of [-1, 1]) { const at = S.surface(c, dirOf(s * spread, pitch)); eyeAt(at, size, iris, { lid, lowLid, lidColor, style, tilt: s * angry, side: s, R: Math.max(.08, at.p.distanceTo(new T.Vector3(...c))), brow, mood, lashes }); }
     if (cheek) for (const s of [-1, 1]) { const h = S.surface(c, dirOf(s * (spread + .34), pitch - .22)); S.paint(E([h.p.x, h.p.y, h.p.z], [size * 1.15, size * .72, size * 1.15]), cheek, size * .7); }
     if (mouth === 'none') return;
     const h = S.surface(c, dirOf(0, mouthPitch)), ink = '#3a2228';
