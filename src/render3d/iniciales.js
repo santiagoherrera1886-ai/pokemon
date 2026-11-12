@@ -62,39 +62,52 @@ function orbit(D, make, { n, R, y0, y1, speed = .35, bob = .08 }) {
 }
 
 export const INICIALES = {
-  // ---------------- Brotelo · zorrito de orejas de hoja (planta)
+  // ---------------- Brotelo · gatito-zorro de orejas de hoja (planta), según el concepto aprobado:
+  // pelaje verde salvia, pecho, hocico y patas crema, orejas de hoja grandes, collar de hojas y una cola
+  // larga y fina que termina en un brote.
   brotelo(S, D) {
-    const C = '#f6efe3', G = '#86b83a', GD = '#5d8e2a', GL = '#b9db6c', IN = '#e3964c', P = '#7a5236';
-    S.ball([0, .36, -.08], [.25, .23, .32], C, { k: 0 });
-    S.ball([0, .43, .1], [.21, .22, .19], C, { k: .1 });
-    S.pair(s => S.ball([s * .14, .32, -.24], [.14, .16, .17], C, { k: .08 }));
+    const F = '#a3bc8a', FD = '#7f9c69', C = '#f5ecd8', G = '#8cc63f', GD = '#5c9a2c', GL = '#bfe07a', IN = '#f3e9d2', P = '#6e5a46';
+    S.ball([0, .38, -.08], [.21, .2, .3], F, { k: 0 });
+    S.ball([0, .45, .1], [.18, .21, .17], F, { k: .1 });
+    S.paint(E([0, .4, .22], [.12, .18, .08]), C, .07);
+    S.pair(s => S.ball([s * .115, .34, -.23], [.115, .15, .155], F, { k: .08 }));
     S.pair(s => {
-      S.limb([s * .12, .3, .12], [s * .13, .08, .16], .074, .064, C, { k: .05 });
-      S.ball([s * .13, .055, .2], [.075, .05, .085], C, { k: .03 });
-      S.paint(E([s * .13, .035, .255], [.07, .03, .04]), P, .02);
-      S.limb([s * .16, .26, -.27], [s * .17, .08, -.24], .08, .066, C, { k: .05 });
-      S.ball([s * .17, .055, -.19], [.075, .05, .085], C, { k: .03 });
-      S.paint(E([s * .17, .035, -.135], [.07, .03, .04]), P, .02);
+      S.limb([s * .105, .32, .12], [s * .115, .08, .16], .058, .05, F, { k: .05 });
+      S.ball([s * .115, .05, .2], [.064, .044, .078], C, { k: .03 });
+      S.paint(E([s * .115, .11, .16], [.06, .055, .06]), C, .03);
+      S.limb([s * .135, .28, -.26], [s * .145, .08, -.23], .064, .052, F, { k: .05 });
+      S.ball([s * .145, .05, -.18], [.064, .044, .078], C, { k: .03 });
+      S.paint(E([s * .145, .11, -.23], [.062, .055, .06]), C, .03);
+      for (const z of [.2, -.18]) S.paint(E([s * (z > 0 ? .115 : .145), .03, z + .06], [.05, .025, .03]), P, .015);
+      D.tuft([s * .12, .14, .15], [s * .17, .11, .19], .028, C);
+      D.tuft([s * .15, .14, -.22], [s * .2, .11, -.19], .028, C);
+      // Mechones de pelo en hombros y ancas.
+      D.tuft(D.skin([s * .115, .34, -.23], s * 1.6, .35, -.02), plus(D.skin([s * .115, .34, -.23], s * 1.6, .35), [s * .06, -.06, -.04]), .04, F);
+      D.tuft(D.skin([0, .45, .1], s * 1.4, .2, -.02), plus(D.skin([0, .45, .1], s * 1.4, .2), [s * .06, -.07, .02]), .04, F);
     });
-    const head = [0, .84, .1];
-    S.ball(head, [.34, .3, .29], C, { k: .14 });
-    S.ball([0, .755, .34], [.12, .08, .075], '#fffaf2', { k: .06, kc: .03 });
+    const head = [0, .84, .12];
+    S.ball(head, [.31, .28, .27], F, { k: .14 });
+    S.paint(E([0, .74, .3], [.2, .12, .14]), C, .07);
+    S.ball([0, .75, .35], [.11, .075, .07], C, { k: .06, kc: .03 });
     S.pair(s => {
-      for (const [yy, pp, l] of [[1.22, -.28, .12], [1.36, -.08, .1], [1.08, -.46, .085]]) { const b = D.skin(head, s * yy, pp, -.05); D.tuft(b, [b[0] + s * l, b[1] - l * .5, b[2] + .01], .055, C); }
-      // Manchas verdes en forma de hoja en ancas y hombros.
-      for (const [c, yaw, pitch, sz] of [[[s * .14, .32, -.24], s * 1.5, .25, .07], [[s * .14, .32, -.24], s * 1.9, -.1, .05], [[0, .43, .1], s * 1.2, .1, .045]]) S.paint(E(D.skin(c, yaw, pitch), [sz * .55, sz, sz * .55], [0, 0, s * .5]), G, .02);
+      // Mejillas esponjadas crema y mechones verdes detrás.
+      for (const [yy, pp, l] of [[1.2, -.3, .12], [1.36, -.1, .1], [1.06, -.48, .09]]) { const b = D.skin(head, s * yy, pp, -.05); D.tuft(b, [b[0] + s * l, b[1] - l * .5, b[2] + .01], .054, C); }
+      for (const [yy, pp, l] of [[1.75, .25, .1], [2.1, .05, .09]]) { const b = D.skin(head, s * yy, pp, -.05); D.tuft(b, [b[0] + s * l, b[1] - l * .3, b[2] - l * .4], .05, FD); }
     });
-    const tuftBase = D.skin(head, 0, 1.15, -.03);
-    for (const [x, z, l, c] of [[0, .02, .22, G], [-.08, -.02, .18, GL], [.08, -.02, .18, GD], [0, -.08, .16, G]]) D.blade('leaf', c, plus(tuftBase, [x * .5, 0, z]), plus(tuftBase, [x * 1.6, l, z + .08]), .09, [x, .3, 1], { curl: .2, thick: .5 });
-    S.pair(s => leafEar(D, head, s, { yaw: .66, pitch: .72, len: .38, w: .33, out: .4, back: .05, color: G, inner: IN, rib: GD, curl: -.16 }));
-    leafCollar(D, [0, .6, .1], { R: .2, n: 9, len: .2, w: .13, from: -2.2, to: 2.2, colors: [G, GL, GD] });
-    // Cola: tallo corto y una hoja grande que se curva hacia arriba, con otra más chica detrás.
-    S.limb([0, .36, -.36], [0, .46, -.5], .06, .04, C, { k: .04 });
-    D.blade('leaf', G, [0, .44, -.5], [0, 1.0, -.66], .44, [1, 0, .15], { curl: .32, cup: .18, thick: .5 });
-    D.blade('leaf', GD, [.02, .44, -.52], [.05, .84, -.76], .3, [1, 0, -.2], { curl: .24, thick: .45 });
-    D.stick(GD, [.03, .48, -.52], [.03, .92, -.68], .01);
-    D.face({ c: head, spread: .42, pitch: .02, size: .088, iris: '#5aa83a', style: 'round', cheek: '#f4a3a3', mouth: 'open', mouthPitch: -.34, mouthW: .05, fangs: true });
-    D.ball('#3a2a26', [0, .79, .41], [.032, .022, .02]);
+    // Copete de pelo verde sobre la frente.
+    const top = D.skin(head, 0, 1.22, -.04);
+    for (const [x, z, l, c] of [[0, -.02, .16, F], [-.06, -.05, .13, FD], [.06, -.05, .13, FD], [0, -.1, .14, FD]]) D.blade('ear', c, plus(top, [x, -.01, z]), plus(top, [x * 2.4, l, z - .07]), .07, [x * 3, .3, 1], { curl: .15, thick: .6 });
+    S.pair(s => leafEar(D, head, s, { yaw: .7, pitch: .72, len: .46, w: .36, out: .44, back: .04, color: G, inner: IN, rib: GD, curl: -.16 }));
+    leafCollar(D, [0, .6, .1], { R: .18, n: 11, len: .22, w: .15, from: -2.4, to: 2.4, droop: .75, colors: [G, GL, GD] });
+    // Cola larga y fina que sube en curva y termina en un brote de cuatro hojas.
+    S.limb([0, .38, -.34], [0, .4, -.5], .042, .034, F, { k: .04 });
+    S.limb([0, .4, -.5], [0, .58, -.62], .034, .028, F, { k: .03 });
+    S.limb([0, .58, -.62], [0, .8, -.56], .028, .024, F, { k: .03 });
+    const tip = [0, .8, -.56];
+    D.stick(GD, tip, plus(tip, [0, .08, .02]), .014);
+    for (const [d, l, w, c] of [[[0, 1, .15], .2, .11, G], [[.75, .65, -.05], .18, .1, GL], [[-.75, .65, -.05], .18, .1, GD], [[.1, .55, -.85], .15, .085, G]]) D.blade('leaf', c, plus(tip, [0, .07, .02]), plus(plus(tip, [0, .07, .02]), d, l), w, [d[0], .35, 1], { curl: .22, cup: .15, thick: .5 });
+    D.face({ c: head, spread: .44, pitch: .03, size: .09, iris: '#b8662a', style: 'round', angry: .1, cheek: '#f4a3a3', mouth: 'open', mouthPitch: -.34, mouthW: .05, fangs: true });
+    D.ball('#3a2a26', [0, .79, .41], [.03, .021, .019]);
   },
 
   // ---------------- Brotoso · zorro esbelto de hojas (planta)
@@ -193,40 +206,49 @@ export const INICIALES = {
     D.ball('#3a2a26', [0, 1.525, .835], [.028, .02, .02]);
   },
 
-  // ---------------- Brasín · cachorro de león con cola de fuego (fuego)
+  // ---------------- Brasín · cachorro de león con melena y cola de fuego (fuego), según el concepto aprobado:
+  // pelaje dorado, pecho crema esponjado, melena de llamas rojas y naranjas alrededor de la cara,
+  // orejas redondas y la punta de la cola encendida.
   brasin(S, D) {
-    const O = '#ee7a2c', OD = '#d0601e', C = '#f8e2bc', BR = '#5e3424', IN = '#f6b48c';
-    S.ball([0, .38, -.06], [.27, .25, .34], O, { k: 0 });
-    S.ball([0, .44, .12], [.22, .23, .2], O, { k: .1 });
-    S.paint(E([0, .36, .24], [.16, .2, .1]), C, .07);
-    S.pair(s => S.ball([s * .14, .33, -.24], [.15, .17, .17], O, { k: .08 }));
+    const O = '#f2a23e', OD = '#dc842c', C = '#f8e5c2', BR = '#c35a2c', IN = '#f8c99c';
+    S.ball([0, .38, -.06], [.26, .24, .33], O, { k: 0 });
+    S.ball([0, .44, .12], [.21, .23, .19], O, { k: .1 });
+    S.paint(E([0, .36, .24], [.15, .2, .1]), C, .07);
+    S.pair(s => S.ball([s * .135, .33, -.23], [.145, .165, .165], O, { k: .08 }));
     S.pair(s => {
-      S.limb([s * .12, .3, .14], [s * .13, .08, .17], .078, .068, O, { k: .05 });
+      S.limb([s * .12, .3, .14], [s * .13, .08, .17], .076, .066, O, { k: .05 });
       S.ball([s * .13, .055, .21], [.08, .055, .09], C, { k: .03 });
-      S.limb([s * .16, .27, -.27], [s * .17, .08, -.24], .084, .07, O, { k: .05 });
-      S.ball([s * .17, .055, -.18], [.08, .055, .09], C, { k: .03 });
-      D.swirl([s * .14, .33, -.24], s * 1.6, .1, .065, C, { w: .02, turns: .85, tail: 5, flip: s });
-      D.swirl([0, .44, .12], s * 1.25, -.05, .045, C, { w: .016, turns: .8, tail: 4, flip: s });
+      S.limb([s * .155, .27, -.26], [s * .165, .08, -.23], .082, .068, O, { k: .05 });
+      S.ball([s * .165, .055, -.17], [.08, .055, .09], C, { k: .03 });
+      for (const z of [.21, -.17]) S.paint(E([s * (z > 0 ? .13 : .165), .04, z + .06], [.055, .03, .03]), '#7a4a32', .015);
+      D.swirl([s * .135, .33, -.23], s * 1.6, .1, .065, C, { w: .02, turns: .85, tail: 5, flip: s });
+      D.tuft([s * .13, .14, .16], [s * .18, .1, .2], .03, C);
     });
-    for (let i = 0; i < 5; i++) { const x = (i - 2) * .06, b = [x, .52 - Math.abs(x) * .4, .3 - Math.abs(x) * .3]; D.tuft(b, [x * 1.4, b[1] - .17, b[2] + .05], .055, C); }
+    // Pechera de pelo crema que cae.
+    ruff(D, C, [[5, .56, .26, .12, .17, .06], [4, .48, .28, .09, .19, .055]]);
     const head = [0, .86, .12];
-    S.ball(head, [.35, .31, .3], O, { k: .14 });
-    S.paint(E([0, .74, .3], [.26, .14, .16]), C, .08);
+    S.ball(head, [.34, .3, .29], O, { k: .14 });
+    S.paint(E([0, .74, .3], [.25, .14, .16]), C, .08);
     S.ball([0, .755, .36], [.13, .08, .075], C, { k: .06, kc: .03 });
     S.pair(s => {
       for (const [yy, pp, l] of [[1.2, -.32, .12], [1.36, -.12, .1], [1.05, -.5, .09]]) { const b = D.skin(head, s * yy, pp, -.05); D.tuft(b, [b[0] + s * l, b[1] - l * .5, b[2] + .01], .056, C); }
-      const e = plus(D.skin(head, s * .78, .72, -.04), [s * .03, .04, -.02]);
-      S.ball(e, [.15, .16, .07], BR, { k: .05, kc: .02, rot: [0, s * .45, -s * .3] });
-      S.paint(E(plus(e, [-s * .01, -.01, .05]), [.1, .11, .05], [0, s * .45, -s * .3]), IN, .03);
-      S.paint(E(plus(e, [s * .01, -.03, -.05]), [.12, .1, .05], [0, s * .45, -s * .3]), O, .03);
+      const e = plus(D.skin(head, s * .8, .74, -.04), [s * .03, .04, -.02]);
+      S.ball(e, [.14, .15, .07], O, { k: .05, kc: .02, rot: [0, s * .45, -s * .3] });
+      S.paint(E(plus(e, [-s * .01, -.01, .05]), [.095, .1, .05], [0, s * .45, -s * .3]), IN, .03);
+      S.paint(E(plus(e, [s * .015, .03, -.02]), [.13, .11, .06], [0, s * .45, -s * .3]), BR, .02);
     });
-    // Copete de fuego y cola con la punta encendida.
-    D.plume(D.skin(head, 0, 1.1, -.06), [0, 1, -.38], .54, { face: [0, .3, 1], spread: .5, n: 3 });
-    S.limb([0, .36, -.38], [0, .44, -.6], .055, .045, O, { k: .04 });
-    S.limb([0, .44, -.6], [0, .66, -.72], .045, .04, O, { k: .03 });
-    S.limb([0, .66, -.72], [0, .84, -.66], .04, .035, O, { k: .03 });
-    D.plume([0, .84, -.66], [0, 1, .12], .48, { face: [1, 0, 0], spread: .6, n: 4 });
-    D.face({ c: head, spread: .42, pitch: .03, size: .09, iris: '#b23c1e', style: 'round', cheek: '#f7a088', mouth: 'open', mouthPitch: -.34, mouthW: .05, fangs: true });
+    // Melena de llamas alrededor de la cara (más chica que la de Brasón) y copete encendido.
+    fireMane(D, head, [
+      [.62, .95, .26, .15, 'mane', .6, .3], [-.62, .95, .26, .15, 'mane', .6, .3], [1.05, .62, .27, .15, 'maneTip', .55], [-1.05, .62, .27, .15, 'maneTip', .55],
+      [1.42, .28, .26, .15, 'mane', .5], [-1.42, .28, .26, .15, 'mane', .5], [1.72, -.08, .24, .14, 'maneTip', .45], [-1.72, -.08, .24, .14, 'maneTip', .45],
+      [2.2, .45, .28, .15, 'mane', .8], [-2.2, .45, .28, .15, 'mane', .8], [2.7, .7, .3, .16, 'maneTip', .9], [-2.7, .7, .3, .16, 'maneTip', .9], [3.14, .9, .3, .16, 'mane', .9]
+    ]);
+    D.plume(D.skin(head, 0, 1.08, -.06), [0, 1, -.32], .5, { face: [0, .3, 1], spread: .5, n: 3 });
+    S.limb([0, .36, -.36], [0, .42, -.58], .052, .043, O, { k: .04 });
+    S.limb([0, .42, -.58], [0, .62, -.72], .043, .038, O, { k: .03 });
+    S.limb([0, .62, -.72], [0, .82, -.68], .038, .034, O, { k: .03 });
+    D.plume([0, .82, -.68], [0, 1, .1], .56, { face: [1, 0, 0], spread: .6, n: 4 });
+    D.face({ c: head, spread: .42, pitch: .03, size: .09, iris: '#a8501e', style: 'round', angry: .12, cheek: '#f7a088', mouth: 'smile', mouthPitch: -.34, mouthW: .045 });
     D.ball('#3a2420', [0, .79, .43], [.034, .024, .02]);
   },
 
@@ -331,36 +353,45 @@ export const INICIALES = {
     D.ball('#2e1a16', [0, F + 1.4, .9], [.04, .028, .026]);
   },
 
-  // ---------------- Charquín · foquita de cola de pez (agua)
+  // ---------------- Charquín · foquita de cola de pez (agua), según el concepto aprobado: cuerpo de foca
+  // azul verdoso erguido sobre las aletas delanteras, panza crema, manchas claras en el lomo, aletas en las
+  // mejillas, cresta de agua en la cabeza, bigotes y una cola que sube y termina en aleta translúcida.
   charquin(S, D) {
-    const B = '#3e92e2', BD = '#2a72c4', C = '#f4ecdb', SP = '#a2d6f8', FN = '#8ed0f6';
-    S.ball([0, .42, -.06], [.28, .3, .31], B, { k: 0 });
-    S.paint(E([0, .38, .2], [.21, .27, .14]), C, .07);
-    S.pair(s => S.ball([s * .13, .3, -.24], [.14, .15, .16], B, { k: .08 }));
+    const B = '#55b2c8', BD = '#3a90ad', C = '#f4ecdb', SP = '#e4f4f2', FN = '#8fd8f4';
+    S.ball([0, .4, .04], [.25, .32, .25], B, { k: 0 });
+    S.limb([0, .3, -.06], [0, .17, -.4], .24, .16, B, { k: .1 });
+    S.limb([0, .17, -.4], [0, .17, -.64], .16, .085, B, { k: .07 });
+    S.limb([0, .17, -.64], [0, .3, -.8], .085, .055, B, { k: .04 });
+    S.paint(E([0, .38, .2], [.19, .3, .12]), C, .07);
+    S.paint(E([0, .12, -.28], [.16, .08, .3]), C, .05);
+    for (const [x, y, z, r] of [[.1, .36, -.16, .04], [-.12, .33, -.24, .035], [.15, .28, -.34, .03], [-.06, .3, -.42, .028], [.08, .25, -.52, .024], [-.15, .26, -.12, .028]]) S.paint(E([x, y + .1, z], [r, r * .7, r]), SP, .015);
+    // Aletas delanteras anchas apoyadas en el piso y aletitas traseras.
     S.pair(s => {
-      S.limb([s * .13, .3, .14], [s * .14, .08, .17], .072, .064, B, { k: .05 });
-      S.ball([s * .14, .055, .21], [.078, .05, .088], C, { k: .03 });
-      S.limb([s * .16, .25, -.27], [s * .17, .08, -.24], .076, .066, B, { k: .05 });
-      S.ball([s * .17, .055, -.19], [.078, .05, .088], C, { k: .03 });
-      S.paint(E(D.skin([s * .13, .3, -.24], s * 1.5, .3), .03), SP, .02);
+      S.limb([s * .17, .26, .1], [s * .25, .1, .16], .07, .05, B, { k: .05 });
+      D.blade('fin', D.M(B, { roughness: .45 }), [s * .25, .08, .17], [s * .46, .02, .3], .26, [0, 1, .15], { curl: .06, cup: .1, thick: .8 });
+      D.blade('fin', D.M(BD, { roughness: .45 }), [s * .26, .075, .17], [s * .44, .018, .29], .2, [0, 1, .15], { curl: .06, thick: .5 });
+      D.blade('fin', D.M(B, { roughness: .45 }), [s * .1, .1, -.62], [s * .3, .02, -.7], .14, [0, 1, 0], { curl: .05, thick: .7 });
     });
-    const head = [0, .88, .1];
-    S.ball(head, [.33, .3, .29], B, { k: .14 });
-    S.paint(E([0, .76, .26], [.27, .15, .17]), C, .08);
-    S.ball([0, .77, .34], [.13, .08, .075], C, { k: .06, kc: .03 });
-    for (const [yaw, pitch, r] of [[0, 1.2, .045], [-.4, 1.0, .035], [.4, 1.0, .035], [-.2, .75, .028], [.2, .75, .028]]) S.paint(E(D.skin(head, yaw, pitch), r), SP, .015);
+    const head = [0, .86, .12];
+    S.ball(head, [.31, .28, .27], B, { k: .14 });
+    S.paint(E([0, .74, .3], [.24, .14, .15]), C, .08);
+    S.ball([0, .76, .35], [.12, .08, .075], C, { k: .06, kc: .03 });
+    for (const [yaw, pitch, r] of [[-.45, 1.0, .035], [.5, .95, .03], [-.2, .72, .026], [.25, .7, .024]]) S.paint(E(D.skin(head, yaw, pitch), r), SP, .015);
     S.pair(s => {
-      const b = D.skin(head, s * 1.4, .05, -.04);
-      D.blade('fin', D.finMat(FN, .3, .88), b, plus(b, [s * .24, .08, -.08]), .2, [s * .2, .2, 1], { curl: .1, thick: .6 });
+      const b = D.skin(head, s * 1.35, .1, -.04);
+      D.blade('fin', D.finMat(FN, .3, .88), b, plus(b, [s * .26, .1, -.1]), .22, [s * .2, .2, 1], { curl: .1, thick: .6 });
+      // Bigotes
+      for (const k of [-1, 1]) D.stick('#fff8ee', plus([s * .08, .76 + k * .012, .4], [0, 0, 0]), [s * .3, .78 + k * .04, .36], .004);
     });
-    // Aletitas del lomo y cola larga con aleta de pez.
-    for (const [p, h] of [[1.45, .14], [1.85, .11]]) { const b = D.skin([0, .42, -.06], 0, p, -.03); D.blade('crest', D.finMat(FN, .3, .9), b, plus(b, [0, h, -.08]), .14, [1, 0, 0], { thick: .5 }); }
-    S.limb([0, .32, -.34], [0, .24, -.6], .12, .07, B, { k: .07 });
-    S.limb([0, .24, -.6], [0, .3, -.82], .07, .045, B, { k: .04 });
-    D.blade('fluke', D.M(B, { roughness: .3 }), [0, .3, -.8], [0, .44, -1.08], .5, [1, 0, 0], { curl: .08, thick: .55 });
-    D.blade('fluke', D.finMat(FN, .35, .85), [.012, .31, -.84], [.012, .43, -1.06], .4, [1, 0, 0], { thick: .4 });
-    D.face({ c: head, spread: .42, pitch: .04, size: .09, iris: '#2e78de', style: 'round', cheek: '#f6a6b8', mouth: 'open', mouthPitch: -.34, mouthW: .05, fangs: true });
-    D.ball('#1e2a44', [0, .8, .42], [.034, .024, .02]);
+    // Cresta de agua: ola que sale de la coronilla y se enrosca hacia atrás.
+    const crest = D.skin(head, 0, 1.15, -.02);
+    D.blade('crest', D.finMat(FN, .35, .9), crest, plus(crest, [0, .22, -.12]), .2, [1, 0, 0], { curl: .3, thick: .5 });
+    D.blade('crest', D.finMat('#c9eefc', .35, .9), plus(crest, [.03, -.02, .06]), plus(crest, [.06, .16, -.02]), .13, [1, 0, .2], { curl: .25, thick: .4 });
+    // Aleta de la cola, translúcida, abierta como abanico.
+    D.blade('fluke', D.finMat(FN, .35, .85), [0, .3, -.8], [.16, .5, -1.02], .32, [.4, .2, -1], { curl: .1, thick: .5 });
+    D.blade('fluke', D.finMat(FN, .35, .85), [0, .3, -.8], [-.16, .5, -1.02], .32, [-.4, .2, -1], { curl: .1, thick: .5 });
+    D.face({ c: head, spread: .42, pitch: .04, size: .09, iris: '#2aa8bf', style: 'round', cheek: '#f6a6b8', mouth: 'open', mouthPitch: -.34, mouthW: .05, fangs: true });
+    D.ball('#1e2a34', [0, .8, .42], [.034, .024, .02]);
   },
 
   // ---------------- Charcomar · nutria dragón de aletas (agua)
