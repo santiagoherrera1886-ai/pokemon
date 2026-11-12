@@ -6,6 +6,7 @@ import * as T from 'three';
 import { creature, character } from './actors.js';
 import { animateCreature } from './creatures3d.js';
 import { animatePerson } from './people.js';
+import { detachHero } from './hero-model.js';
 import { building } from './models.js';
 
 const sky = r => r.texture((g, s) => {
@@ -91,7 +92,7 @@ export class TitleScene {
   // Rehace al protagonista con el avatar actual (el editor lo llama en cada cambio).
   setPlayer() {
     const old = this.player; this.player = character(this.r, 'player'); this.root.add(this.player.root);
-    if (old) { this.player.root.visible = old.root.visible; this.r.release(old.root); }
+    if (old) { this.player.root.visible = old.root.visible; detachHero(old); this.r.release(old.root); }
     if (this.aspect) { const a = this.aspect; this.aspect = 0; this.layout(a); }
   }
   // Acomoda la escena según la forma de la pantalla (horizontal o vertical).
@@ -131,5 +132,5 @@ export class TitleScene {
     for (const p of this.motes) { const u = (t * p.sp + p.ph) % 1; p.s.position.set(p.x + Math.sin(t * .6 + p.ph * 9) * .3, .1 + u * 2.6, p.z); p.s.material.opacity = 1; p.s.visible = u > .04 && u < .96; }
     if (this.player.root.visible) { animatePerson(this.player, this.playerSpot, { dir: 0, moving: null }, t, dt, false); this.player.root.rotation.y = .45; this.player.head.rotation.x = -.04; }
   }
-  dispose() { this.r.release(this.root); for (const t of [this.background, this.glowMap, this.mistMap]) { this.r.textures.delete(t); t.dispose(); } }
+  dispose() { detachHero(this.player); this.r.release(this.root); for (const t of [this.background, this.glowMap, this.mistMap]) { this.r.textures.delete(t); t.dispose(); } }
 }

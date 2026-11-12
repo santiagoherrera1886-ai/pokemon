@@ -6,6 +6,8 @@ import {Ambient} from './ambient.js';
 import {DioramaCamera} from './camera.js';
 import {Lighting} from './lighting.js';
 import {character,animateCharacter,creature} from './actors.js';
+import {attachHero,updateHero,detachHero} from './hero-model.js';
+import {disposeFaces} from './faces.js';
 import {capsuleModel} from './models.js';
 import {TitleScene} from './title.js';
 import {MoveFX} from './movefx.js';
@@ -62,7 +64,9 @@ export class PremiumRenderer {
     list.forEach(([x,z],i)=>{const hh=hash(x,z,3);dummy.position.set(x+.5+hh*.6,1.5+hh*.5,z+.5+hash(z,x,4)*.6);dummy.scale.set(1.45+hh*.3,1.5+hh*.5,1.4);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});mesh.computeBoundingSphere();this.backdrop.add(mesh);
     const floor=this.r.mesh(this.backdrop,'box',P.floor,[cx,-.13,cz],[70,.1,70]);floor.castShadow=false;
   }
-  clearWorld(){for(const e of this.maps.values())this.r.release(e.root);this.maps.clear();for(const a of this.actors.values())this.r.release(a.root);this.actors.clear();this.backdropCell='';this.currentMap=null;}
+  clearWorld(){for(const e of this.maps.values())this.r.release(e.root);this.maps.clear();for(const a of this.actors.values()){detachHero(a);this.r.release(a.root);}this.actors.clear();this.backdropCell='';this.currentMap=null;}
+  // Protagonista GLB (prototipo, opcional): se monta sobre el muñeco esculpido cuando la opción está encendida.
+  heroOn(){return this.game.graphics?.hero==='glb';}
   // Pantalla de inicio: escena propia (lago al amanecer) con cielo en degradé, niebla cálida y sol bajo.
   title(dt){
     if(!this.titleScene){this.titleScene=new TitleScene(this.r);this.scene.add(this.titleScene.root);this.savedFill=this.lights.fill.position.clone();}
@@ -70,6 +74,8 @@ export class PremiumRenderer {
     this.worldRoot.visible=false;this.battleRoot.visible=false;this.particles.visible=true;this.canvas.style.filter='';
     this.scene.background=ts.background;this.scene.fog.color.set('#f6d8bd');this.scene.fog.near=22;this.scene.fog.far=75;
     ts.update(this.camera.camera,this.camera.aspect,t,dt);
+    if(this.heroOn()&&!ts.player.hero)attachHero(ts.player);else if(!this.heroOn()&&ts.player.hero)detachHero(ts.player);
+    if(ts.player.hero)updateHero(ts.player,{},dt);
     this.lights.update(new T.Vector3(0,0,-2),false,12);
     this.lights.sun.position.set(6,10,-7);this.lights.sun.target.position.set(-1,0,0);this.lights.sun.color.set('#ffd6a6');this.lights.sun.intensity=2.6;
     this.lights.hemi.color.set('#ffece0');this.lights.hemi.groundColor.set('#8aa070');this.lights.hemi.intensity=1.7;
@@ -106,7 +112,7 @@ export class PremiumRenderer {
   }
   // El avatar cambió: se rehace el muñeco del protagonista (en el mundo y en el título).
   refreshPlayer(){
-    const rig=this.actors.get('player');if(rig){this.r.release(rig.root);this.actors.delete('player');}
+    const rig=this.actors.get('player');if(rig){detachHero(rig);this.r.release(rig.root);this.actors.delete('player');}
     this.titleScene?.setPlayer();this.avatarShots?.clear();
   }
   // Retrato 3D del avatar de cuerpo entero (editor de personaje). Igual que portrait(), en una esquina del lienzo.
@@ -143,10 +149,12 @@ export class PremiumRenderer {
     const active=new Set();
     for(const actor of [...ow.npcs,ow.player]){
       const id=actor.id,look=actor.look;active.add(id);
-      if(!this.actors.has(id)){const rig=character(this.r,look);this.actors.set(id,rig);this.worldRoot.add(rig.root);}
-      animateCharacter(this.actors.get(id),actor,m,this.time.value,dt,!!ui.dialog&&!actor.moving);
+      if(!this.actors.has(id)){const rig=character(this.r,look);this.actors.set(id,rig);this.worldRoot.add(rig.root);if(actor===ow.player&&this.heroOn())attachHero(rig);}
+      const rig=this.actors.get(id),talking=!!ui.dialog&&!actor.moving;
+      animateCharacter(rig,actor,m,this.time.value,dt,talking);
+      if(rig.hero)updateHero(rig,{moving:!!actor.moving,running:!!actor.moving&&actor.moving.dur<=10,talking},dt);
     }
-    for(const [id,rig]of this.actors)if(!active.has(id)){this.r.release(rig.root);this.actors.delete(id);}
+    for(const [id,rig]of this.actors)if(!active.has(id)){detachHero(rig);this.r.release(rig.root);this.actors.delete(id);}
     this.camera.update(m,p,dt);this.lights.update(this.camera.focus,!m.outdoor,hour,m.dark);
     this.particles.visible=!m.outdoor;this.particles.geometry.setDrawRange(0,12);
     this.ambient.update(m,night,this.camera.focus,this.time.value,this.webgl.domElement.height,1/Math.tan(this.camera.camera.fov*Math.PI/360)*.5,this.settings.particles/72);
@@ -229,5 +237,5 @@ export class PremiumRenderer {
     this.slowTime=raw>.04?this.slowTime+Math.min(raw,1):Math.max(0,this.slowTime-raw*.5);
     if(this.slowTime>1.5&&this.degrade<5){this.degrade++;this.slowTime=0;if(this.degrade===2){this.style.samples=0;this.style.target?.dispose();this.style.target=null;}if(this.degrade>=3)this.adaptive=Math.max(.55,this.adaptive-.15);this.sizeKey='';}
   }
-  dispose(){removeEventListener('resize',this.onResize);this.style.dispose();this.clearWorld();this.clearBattle();this.r.release(this.backdrop);this.particles.geometry.dispose();this.particles.material.dispose();this.ambient.dispose();this.environment.dispose();this.lights.dispose();this.r.dispose();this.webgl.dispose();this.canvas.remove();}
+  dispose(){removeEventListener('resize',this.onResize);this.style.dispose();if(this.titleScene)detachHero(this.titleScene.player);this.clearWorld();disposeFaces();this.clearBattle();this.r.release(this.backdrop);this.particles.geometry.dispose();this.particles.material.dispose();this.ambient.dispose();this.environment.dispose();this.lights.dispose();this.r.dispose();this.webgl.dispose();this.canvas.remove();}
 }

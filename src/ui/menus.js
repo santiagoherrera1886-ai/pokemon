@@ -273,6 +273,7 @@ export class Menus {
       <button data-act="graphics">Gráficos: <b>${graphics.mode === 'premium' ? '3D' : 'PIXEL CLÁSICO'}</b></button>
       <button data-act="quality">Calidad 3D: <b>${({low:'BAJA',medium:'MEDIA',high:'ALTA'})[graphics.quality]}</b></button>
       <button data-act="art">Estilo de arte: <b>${graphics.art === 'retro' ? 'RETRO 16-BIT' : 'HD'}</b></button>
+      <button data-act="hero">Protagonista 3D: <b>${graphics.hero === 'glb' ? 'MODELO GLB (PRUEBA)' : 'ESCULPIDO'}</b></button>
       <button data-act="persp">Perspectiva (pixel clásico): <b>${o.perspective ? 'SÍ' : 'NO'}</b></button>
       <button data-act="speed">Velocidad del texto: <b>${['LENTA', 'NORMAL', 'RÁPIDA', 'INSTANTÁNEA'][o.textSpeed]}</b></button>
       <button data-act="hour">Hora del día: <b>${o.forceHour === undefined ? 'REAL' : o.forceHour === 12 ? 'SIEMPRE DÍA' : 'SIEMPRE NOCHE'}</b></button>
@@ -288,6 +289,7 @@ export class Menus {
       if (a === 'graphics') { await graphics.setMode(graphics.mode === 'premium' ? 'classic' : 'premium'); }
       if (a === 'quality') { const levels = ['low','medium','high']; graphics.setQuality(levels[(levels.indexOf(graphics.quality)+1)%3]); }
       if (a === 'art') graphics.setArt(graphics.art === 'retro' ? 'hd' : 'retro');
+      if (a === 'hero') graphics.setHero(graphics.hero === 'glb' ? 'sculpt' : 'glb');
       if (a === 'persp') { o.perspective = !o.perspective; this.game.applyOptions(); }
       if (a === 'speed') { o.textSpeed = (o.textSpeed + 1) % 4; this.game.applyOptions(); }
       if (a === 'hour') { o.forceHour = o.forceHour === undefined ? 12 : o.forceHour === 12 ? 22 : undefined; }

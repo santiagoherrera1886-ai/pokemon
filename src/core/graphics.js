@@ -11,15 +11,17 @@ function fontsReady() {
 export class Graphics {
   constructor(game) {
     // art: 'hd' (criaturas y menús en alta definición, por defecto) o 'retro' (tema Bruma Retro 16-bit).
-    this.game = game; this.mode = 'premium'; this.quality = 'medium'; this.art = 'hd'; this.status = 'idle';
+    // hero: 'sculpt' (protagonista esculpido, por defecto) o 'glb' (prototipo GLB del paquete Puchamon Base 3D).
+    this.game = game; this.mode = 'premium'; this.quality = 'medium'; this.art = 'hd'; this.hero = 'sculpt'; this.status = 'idle';
     this.engine = null; this.pending = null;
     try {
       const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
-      if (saved) {this.mode = saved.mode === 'classic' ? 'classic' : 'premium'; this.quality = ['low','medium','high'].includes(saved.quality) ? saved.quality : 'medium'; this.art = saved.art === 'retro' ? 'retro' : 'hd';}
+      if (saved) {this.mode = saved.mode === 'classic' ? 'classic' : 'premium'; this.quality = ['low','medium','high'].includes(saved.quality) ? saved.quality : 'medium'; this.art = saved.art === 'retro' ? 'retro' : 'hd'; this.hero = saved.hero === 'glb' ? 'glb' : 'sculpt';}
       else if (matchMedia('(pointer: coarse)').matches) this.quality = 'low';
     } catch { /* Storage is optional; gameplay still works. */ }
   }
-  save() {try {localStorage.setItem(KEY, JSON.stringify({mode:this.mode, quality:this.quality, art:this.art}));} catch { /* private browsing */ }}
+  save() {try {localStorage.setItem(KEY, JSON.stringify({mode:this.mode, quality:this.quality, art:this.art, hero:this.hero}));} catch { /* private browsing */ }}
+  setHero(value) {this.hero = value === 'glb' ? 'glb' : 'sculpt'; this.save(); this.engine?.refreshPlayer?.();}
   // Estilo de arte: activa o apaga la hoja retro, los sprites retro y el pixelado del 3D. Los retratos se rehacen.
   applyArt() {
     const retro = this.art === 'retro';
