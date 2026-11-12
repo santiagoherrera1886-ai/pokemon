@@ -224,7 +224,7 @@ export function faceTextures(spec) {
 }
 export function faceMaterial(spec) {
   const tex = faceTextures(spec);
-  const m = new T.MeshStandardMaterial({ map: tex.open, transparent: true, roughness: .78, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, depthWrite: false });
+  const m = new T.MeshStandardMaterial({ map: tex.open, emissive: '#ffffff', emissiveMap: tex.open, emissiveIntensity: .24, transparent: true, roughness: .8, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, depthWrite: false });
   m.userData.faces = tex;
   return m;
 }

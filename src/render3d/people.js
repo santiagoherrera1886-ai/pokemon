@@ -297,8 +297,11 @@ export function person(r, look = 'player') {
   const headY = shY + .07, hk = B.head;
   const head = new T.Group(); head.position.set(0, headY, B.hunch ? .05 : 0); root.add(head);
   const skull = new T.Group(); skull.position.set(0, .175 * hk, .012); skull.scale.setScalar(hk); head.add(skull);
-  add(skull, headGeometry(), L.skin, [0, 0, 0], [1, 1, .97]);
-  for (const s of [-1, 1]) ball(skull, L.skin, [s * .16, -.035, -.01], [.022, .042, .03], [0, s * .3, 0]);       // orejas
+  // La cara mira a la cámara alta y el sol viene de atrás: la piel de la cabeza lleva un poco de luz propia
+  // para que la cara siempre se lea (como la luz de relleno de los personajes en las ilustraciones).
+  const skinHead = r.mat(L.skin, { ...OPT, emissive: L.skin, emissiveIntensity: .24 });
+  add(skull, headGeometry(), skinHead, [0, 0, 0], [1, 1, .97]);
+  for (const s of [-1, 1]) ball(skull, skinHead, [s * .16, -.035, -.01], [.022, .042, .03], [0, s * .3, 0]);       // orejas
   const hair = L.hair, hairD = shade(hair, -.2), hairM = mat(hair), hairDM = mat(hairD);
   const style = L.style, capOn = style === 'cap' || !!L.wearCap, hs = style === 'cap' ? 'capHair' : style;
   const lockMesh = (a, e, len, wid, o = {}) => {
@@ -406,8 +409,9 @@ export function person(r, look = 'player') {
     add(skull, capG(.5), hc, [0, .066, -.014], [.206, .17, .218], [-.12, 0, 0]);
     add(skull, panelG(), band, [0, .066, -.014], [.209, .173, .221], [-.12, 0, 0]);
     add(skull, sphere(), shade(hc, -.1), [0, .232, -.036], [.018, .01, .018]);
-    add(skull, visorG(.158, .155, .014), hc, [0, .078, .168], [1, 1, 1], [.12, 0, 0]);
-    add(skull, visorG(.152, .148, .006), shade(hc, -.22), [0, .07, .17], [1, 1, 1], [.12, 0, 0]);
+    // Visera corta y un poco levantada: desde la cámara alta del juego no tapa los ojos.
+    add(skull, visorG(.152, .118, .014), hc, [0, .086, .17], [1, 1, 1], [-.1, 0, 0]);
+    add(skull, visorG(.146, .112, .006), shade(hc, -.22), [0, .078, .172], [1, 1, 1], [-.1, 0, 0]);
     if (D.leaves) for (const s of [-1, 1]) add(skull, sphere(), '#2fa89a', [s * .022, .16, .186], [.025, .012, .006], [-.6, s * .25, s * .7]);
     else add(skull, cyl(), hc, [0, .16, .188], [.022, .006, .022], [Math.PI / 2 - .55, 0, 0]);
   } else if (hatKind === 'police' || hatKind === 'captain') {
@@ -543,6 +547,6 @@ export function animatePerson(rig, p, actor, time, dt, talking = false) {
   // Parpadeo: cambia la textura de la cara por la de ojos cerrados un instante.
   rig.blink -= dt;
   const faces = rig.face?.material?.userData?.faces;
-  if (faces) { const want = rig.blink < .12 ? faces.closed : faces.open; if (rig.face.material.map !== want) rig.face.material.map = want; }
+  if (faces) { const want = rig.blink < .12 ? faces.closed : faces.open; if (rig.face.material.map !== want) rig.face.material.map = rig.face.material.emissiveMap = want; }
   if (rig.blink < 0) rig.blink = 2.2 + Math.random() * 3;
 }
