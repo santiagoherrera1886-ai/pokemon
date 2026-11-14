@@ -15,6 +15,7 @@ export function mapDistance(map, x, z) {
 }
 export function visibleMapIds(world, current, position, radius) {
   if (!current.outdoor) return [current.id];
+  if ((current.tg || current.region === 'tierra') && world.around) world.around(Math.round(position.x), Math.round(position.z), Math.ceil(radius) + 2);
   return world.outdoor.filter(m => mapDistance(m, position.x, position.z) < radius).map(m => m.id);
 }
 export function defaultQuality() {

@@ -113,6 +113,14 @@ const GENERAL = [
 ];
 // Mostrador especial de cada ciudad (lo atiende la vendedora del delantal).
 export const SPECIAL = {
+  tg_bahia: { name: 'Bazar del Puerto', items: ['capsulaVeloz', 'capsulaMalla', 'miel', 'guayaba', 'panueloVeloz'] },
+  tg_altamira: { name: 'Almacén de Montaña', items: ['capsulaOcaso', 'capsulaReloj', 'escarchaEterna', 'arepaReserva'] },
+  tg_medano: { name: 'Mercado del Desierto', items: ['capsulaVeloz', 'miel', 'pocimaFuerza', 'pocimaViento', 'chalecoAcolchado'] },
+  tg_cruce: { name: 'Tienda del Cruce', items: ['miel', 'guayaba', 'semillaVital'] },
+  tg_palma: { name: 'Tienda de la Selva', items: ['broteVivo', 'miel', 'guayaba'] },
+  tg_pino: { name: 'Tienda del Pino', items: ['miel', 'arepaReserva'] },
+  tg_viejo: { name: 'Tienda del Muelle', items: ['capsulaMalla', 'miel'] },
+  tg_parador: { name: 'Tienda del Parador', items: ['miel', 'guayaba', 'arepaReserva'] },
   arenal: { name: 'Rincón del Explorador', items: ['miel', 'pocimaFuerza', 'pocimaViento', 'guayaba', 'cintaFuerza'] },
   corola: { name: 'Vivero de Corola', items: ['semillaVital', 'semillaFuerza', 'semillaCoraza', 'semillaViento', 'miel', 'broteVivo', 'arepaReserva'] },
   cobre: { name: 'Taller de Cápsulas', items: ['capsulaVeloz', 'capsulaOcaso', 'capsulaReloj', 'capsulaMalla', 'bobinaDeCobre', 'panueloVeloz', 'chalecoAcolchado'] },

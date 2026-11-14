@@ -16,7 +16,7 @@ import { Menus } from './ui/menus.js';
 import { battleSprite, silhouette } from './art/creatures.js';
 import { tree, house } from './art/objects.js';
 import { sheet, setPlayerLook } from './art/characters.js';
-import { ENCOUNTERS, SPECIES, MOVES, makeCreature, refreshStats, encounterList, expForLevel } from './data/creatures.js';
+import { ENCOUNTERS, SPECIES, MOVES, makeCreature, refreshStats, encounterList, expForLevel, scaledBase } from './data/creatures.js';
 import { refillMoney, cheatOn } from './data/cheats.js';
 import { ITEMS, repelled } from './data/items.js';
 import { GYMS } from './data/gyms.js';
@@ -248,7 +248,7 @@ class Game {
     let roll = Math.random() * list.reduce((t, e) => t + e[3], 0), pick = list[0];
     for (const e of list) { if ((roll -= e[3]) < 0) { pick = e; break; } }
     const [sp, lo, hi] = pick;
-    const level = lo + Math.floor(Math.random() * (hi - lo + 1));
+    const level = Math.max(2, (table.scale ? scaledBase(this.state) : 0) + lo + Math.floor(Math.random() * (hi - lo + 1)));
     if (!force && repelled(this.state, level)) return;
     const foe = makeCreature(sp, level);
     this.ow.scripts++;
@@ -258,7 +258,8 @@ class Game {
   }
   // Combate contra entrenador: t = { name, look, party: [[especie, nivel]], money }
   async trainerBattle(t, bg, opts = {}) {
-    const party = t.party.map(([s, l]) => makeCreature(s, l));
+    // Entrenadores de Tierra Grande: su nivel sube con las medallas del jugador.
+    const party = t.party.map(([s, l]) => makeCreature(s, t.scale ? Math.max(2, scaledBase(this.state) + l + 2) : l));
     const res = await this.battle({ trainer: { ...t, party }, wild: false, canRun: false, canCatch: false, bg: t.bg || bg, ...opts });
     if (res === 'lose' && !opts.noBlackout) await this.blackout();
     return res;

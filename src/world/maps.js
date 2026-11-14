@@ -6,6 +6,7 @@ import { buildRegionMaps } from './maps3.js';
 import { buildNewZones, connectNewZones } from './maps4.js';
 import { buildFarZones, connectFarZones } from './maps5.js';
 import { buildWestZones, connectWestZones } from './maps6.js';
+import { buildAutopista } from './tierra.js';
 
 const S = st => st.story;
 
@@ -250,10 +251,13 @@ export function buildMaps() {
     vecino('vecino2', 'Casa de los Ocampo', 'man', ['¿Sabías que las criaturas suben de nivel ganando combates?', 'Y al subir aprenden movimientos nuevos.'], ['brisal', 18, 16]),
     vecino('vecino3', 'Casa de la playa', 'girl', ['Mi abuela dice que el mar trae criaturas raras en invierno.'], ['arenal', 6, 20])
   ];
-  list.push(...buildStoryMaps(), ...buildRegionMaps(), ...buildNewZones(), ...buildFarZones(), ...buildWestZones());
+  list.push(...buildStoryMaps(), ...buildRegionMaps(), ...buildNewZones(), ...buildFarZones(), ...buildWestZones(), buildAutopista());
   const maps = Object.fromEntries(list.map(m => [m.id, m]));
   connectNewZones(maps);
   connectFarZones(maps);
   connectWestZones(maps);
+  // Sur de Pueblo Llanero → Autopista del Llano → Tierra Grande.
+  maps.sabana.tiles = maps.sabana.tiles.map((row, j) => j >= 16 ? row.slice(0, 20) + 'pppp' + row.slice(24) : row);
+  maps.sabana.objects.push({ kind: 'sign', x: 25, y: 26, text: ['AUTOPISTA DEL LLANO ↓', 'Al sur queda TIERRA GRANDE: ciudades, carreteras y aeropuertos.'] });
   return maps;
 }

@@ -8,6 +8,7 @@ import { SPECIES, ENCOUNTERS, makeCreature } from '../src/data/creatures.js';
 import { LOOKS } from '../src/art/characters.js';
 import { ITEMS, SPECIAL } from '../src/data/items.js';
 import { GYMS, BADGE_IDS, LEAGUE_BADGES, leagueOpen, nextGym, badgeCount, gymOf } from '../src/data/gyms.js';
+import { tgCell, tgDef, tgId } from '../src/world/tierra.js';
 
 const maps = buildMaps();
 const outdoor = Object.values(maps).filter(m => m.outdoor);
@@ -20,6 +21,9 @@ const walkable = (m, x, y) => {
   return !o || o.solid === false || isDoor(o, x, y);
 };
 const at = (gx, gy) => outdoor.find(m => gx >= m.origin[0] && gy >= m.origin[1] && gx < m.origin[0] + m.w && gy < m.origin[1] + m.h);
+// Igual que at(), pero si la casilla cae en Tierra Grande genera ese mapa (sólo para revisar las costuras).
+const tgCache = {};
+const atAll = (gx, gy) => at(gx, gy) || (c => c && (tgCache[tgId(...c)] ??= tgDef(tgId(...c))))(tgCell(gx, gy));
 
 test('los mapas exteriores no se montan y cada borde abierto empata con el mapa vecino', () => {
   for (let i = 0; i < outdoor.length; i++) for (let j = i + 1; j < outdoor.length; j++) {
@@ -32,7 +36,7 @@ test('los mapas exteriores no se montan y cada borde abierto empata con el mapa 
     const out = [];
     if (x === 0) out.push([-1, 0]); if (x === m.w - 1) out.push([1, 0]); if (y === 0) out.push([0, -1]); if (y === m.h - 1) out.push([0, 1]);
     for (const [dx, dy] of out) {
-      const gx = m.origin[0] + x + dx, gy = m.origin[1] + y + dy, n = at(gx, gy);
+      const gx = m.origin[0] + x + dx, gy = m.origin[1] + y + dy, n = atAll(gx, gy);
       assert.ok(n, `${m.id} (${x},${y}) sale a la nada`);
       assert.ok(walkable(n, gx - n.origin[0], gy - n.origin[1]), `${m.id} (${x},${y}) choca con ${n.id}`);
     }
@@ -60,9 +64,11 @@ test('desde Pueblo Brisal se llega caminando a todo el mapa salvo la isla (que e
   }
   const reached = new Set([...seen].map(k => k.split(':')[0]));
   // La Isla Totuma y sus interiores sólo se alcanzan en el barco de Cabo Faro.
+  // (Tierra Grande se genera aparte: su conexión con la Autopista del Llano se revisa en tierra.test.mjs.)
   const barco = ['isla', 'posadaIsla', 'tiendaIsla', 'casaIsla'];
   assert.deepEqual(Object.keys(maps).filter(id => !reached.has(id)), barco);
-  assert.equal(reached.size + barco.length, 116);
+  assert.equal(reached.size + barco.length, 117);
+  assert.ok(reached.has('autopistaLlano'), 'la Autopista del Llano sale de la Sabana');
   assert.ok(maps.cabo.npcs.some(n => n.talk === 'barcoIsla'), 'el capitán de Cabo Faro lleva a la isla');
   assert.ok(maps.isla.npcs.some(n => n.talk === 'barcoVuelta'), 'y trae de vuelta');
 });

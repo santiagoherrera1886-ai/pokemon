@@ -67,7 +67,11 @@ export class Overworld {
 
   // ---------- Carga de mapas ----------
   load(mapId, x, y, dir = 0, banner = true) {
+    const prev = this.map;
     this.map = this.world.get(mapId);
+    // En Tierra Grande los mapas son pedazos de 48 × 48: el cartel sólo sale cuando cambia el nombre de la zona.
+    if (prev && prev.outdoor && this.map.outdoor && prev.name === this.map.name) banner = false;
+    if (this.map.tg || prev?.tg) this.world.trim(this.map.outdoor ? this.map.origin[0] + x : 0, this.map.outdoor ? this.map.origin[1] + y : 0, this.map.tg ? 3 : -1);
     Object.assign(this.player, { x, y, px: x * TS, py: y * TS, dir, moving: null, frame: 0 });
     this.particles = []; this.emotes = [];
     this.refreshNpcs();
@@ -319,6 +323,7 @@ export class Overworld {
     const view = { x0: Math.floor(-ox / TS) - 2, y0: Math.floor(-oy / TS) - 2, x1: Math.ceil((BW - ox) / TS) + 2, y1: Math.ceil((BH - oy) / TS) + 3 };
 
     const lights = [];
+    if (m.outdoor && (m.tg || m.region === 'tierra')) this.world.around(m.origin[0] + p.x, m.origin[1] + p.y, 26);
     const maps = m.outdoor ? this.world.outdoor : [m];
     for (const mm of maps) {
       const dx = m.outdoor ? (mm.origin[0] - m.origin[0]) * TS : 0, dy = m.outdoor ? (mm.origin[1] - m.origin[1]) * TS : 0;
@@ -326,6 +331,7 @@ export class Overworld {
       if (X > BW || Y > BH || X + mm.w * TS < 0 || Y + mm.h * TS < -64) continue;
       g.drawImage(mm.ground(wf), X, Y);
       for (const s of mm.sprites(this.st)) {
+        if (s.img) { const sx = s.x + X, sy = s.y + Y; if (sx > BW || sy > BH || sx + s.img.width < 0 || sy + s.img.height < 0) continue; }
         if (s.shadow) sprites.push({ shadow: [s.shadow[0] + dx, s.shadow[1] + dy, s.shadow[2], s.shadow[3]], base: -2000 });
         else if (s.shadowRect) sprites.push({ shadowRect: [s.shadowRect[0] + dx, s.shadowRect[1] + dy, s.shadowRect[2], s.shadowRect[3]], base: -2000 });
         else if (s.light) lights.push([s.light[0] + dx, s.light[1] + dy, s.light[2]]);

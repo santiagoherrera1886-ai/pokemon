@@ -80,7 +80,7 @@ export class Resources {
       if (m.geometry && this.merged.delete(m.geometry)) m.geometry.dispose();
       if (m.isInstancedMesh) m.dispose();
       if (m.userData.ownedGeometry) m.geometry.dispose();
-      if (m.userData.ownedMaterial) {if(m.material.map && this.textures.delete(m.material.map))m.material.map.dispose();m.material.dispose();}
+      if (m.userData.ownedMaterial) for (const mat of [].concat(m.material)) {if(mat.map && this.textures.delete(mat.map))mat.map.dispose();mat.dispose();}
     });
     group.removeFromParent();
   }

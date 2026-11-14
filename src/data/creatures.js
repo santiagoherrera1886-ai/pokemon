@@ -103,7 +103,16 @@ export function rivalForm(base, level) {
 
 // Los objetos y las tiendas viven en items.js.
 
+// Tierra Grande: los niveles van relativos a una base que sube con las medallas (scale: true).
+export const scaledBase = st => 8 + 5 * Math.min(8, (st?.badges || []).length);
 export const ENCOUNTERS = {
+  tgLlano: { rate: 0.1, scale: true, list: [['pipiolo', 0, 2, 25], ['roedon', 0, 2, 20], ['seton', 0, 2, 15], ['lanin', -2, 0, 10], ['carnerazo', 0, 2, 8], ['chispaz', -2, 0, 10], ['voltaz', 0, 2, 6], ['arrieron', 0, 2, 8], ['fatuin', -1, 1, 12, 'noche']] },
+  tgBosque: { rate: 0.1, scale: true, list: [['capullado', -2, 0, 14], ['alasol', 0, 2, 10], ['verdilago', -2, 0, 12], ['foliaton', 0, 2, 8], ['seton', 0, 2, 12], ['perezon', 0, 2, 10], ['mariposol', 0, 2, 10], ['michin', -2, 0, 8], ['sombrador', 0, 2, 10, 'noche']] },
+  tgSelva: { rate: 0.12, scale: true, list: [['verdilago', -2, 0, 14], ['foliaton', 0, 2, 10], ['serpentil', 0, 2, 14], ['colibron', 0, 2, 14], ['mariposol', 0, 2, 12], ['doradon', 0, 2, 10], ['perezon', 0, 2, 8], ['sierpin', -2, 0, 10]] },
+  tgDesierto: { rate: 0.1, scale: true, list: [['penon', 0, 2, 20], ['magmor', 0, 2, 14], ['gurron', 0, 2, 14], ['serpentil', 0, 2, 14], ['doradon', -1, 1, 10], ['guijarrin', -3, -1, 12], ['fraguon', 2, 4, 2]] },
+  tgSierra: { rate: 0.1, scale: true, list: [['penon', 0, 2, 20], ['carnerazo', 0, 2, 14], ['condorin', -2, 0, 12], ['condoral', 1, 3, 6], ['anteojon', 0, 2, 12], ['ferrox', 0, 2, 10], ['cuarzon', 0, 2, 8]] },
+  tgNevado: { rate: 0.1, scale: true, list: [['nivalmar', 0, 2, 22], ['nivalin', -3, -1, 14], ['condoral', 1, 3, 10], ['anteojon', 0, 2, 10], ['cuarzon', 0, 2, 10], ['glaciel', 3, 5, 3]] },
+  tgCosta: { rate: 0.1, scale: true, list: [['medusin', -2, 0, 14], ['meduson', 0, 2, 8], ['cangrejon', 0, 2, 18], ['charcomar', 0, 2, 5], ['pipiolo', 0, 2, 14], ['doradon', 0, 2, 10], ['nivalin', -2, 0, 8]] },
   sendero1: { rate: 0.12, list: [['pipiu', 2, 4, 50], ['roedin', 2, 4, 40], ['capullin', 2, 3, 10], ['fatuin', 3, 4, 14, 'noche']] },
   lago: { rate: 0.12, list: [['pipiu', 2, 4, 40], ['capullin', 2, 4, 35], ['roedin', 3, 4, 25], ['michin', 3, 4, 12], ['fatuin', 3, 5, 18, 'noche']] },
   ruta2: { rate: 0.12, list: [['pipiu', 4, 6, 30], ['roedin', 4, 6, 25], ['setin', 4, 6, 25], ['capullin', 4, 5, 20], ['verdilago', 4, 6, 16], ['sierpin', 4, 6, 14]] },

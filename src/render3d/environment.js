@@ -2,6 +2,7 @@ import * as T from 'three';
 import {hash} from '../core/pixel.js';
 import {furniture,wallDecoration,building,smallProp} from './models.js';
 import {gymBuilding} from './gyms.js';
+import {tower3d,car3d,plane3d,pump3d} from './vehicles.js';
 import {toonMaterial} from './stylize.js';
 
 // Paleta por bioma: pradera (por defecto), nieve, desierto, volcán y selva.
@@ -118,7 +119,7 @@ export class Environment {
     }return this.wind.get(id);
   }
   build(map,state) {
-    const r=this.r,root=new T.Group(),staticProps=new T.Group(),dynamic=[],glows=[],P=biomeOf(map),ox=map.outdoor?map.origin[0]:0,oz=map.outdoor?map.origin[1]:0;root.name=map.id;
+    const r=this.r,root=new T.Group(),staticProps=new T.Group(),dynamic=[],glows=[],towers=[],P=biomeOf(map),ox=map.outdoor?map.origin[0]:0,oz=map.outdoor?map.origin[1]:0;root.name=map.id;
     const chunks=new Map();
     const getChunk=(x,z)=>{
       const key=`${Math.floor(x/8)},${Math.floor(z/8)}`;
@@ -194,6 +195,13 @@ export class Environment {
       else if(o.kind==='furniture'){model=furniture(r,o);model.position.set(o.x+o.w/2,0,o.y+o.h/2);}
       else if(o.kind==='house'||o.kind==='lab'||o.kind==='big'){model=building(r,o);model.position.set(o.x,0,o.y);}
       else if(o.kind==='gym'){model=gymBuilding(r,o.theme);model.position.set(o.x,0,o.y);}
+      else if(o.kind==='tower'){   // edificio alto: va aparte para poder desvanecerlo cuando tapa al jugador
+        model=tower3d(r,o);model.position.set(o.x,0,o.y);root.add(model);towers.push({model,x0:o.x,x1:o.x+o.w,z0:o.y,z1:o.y+o.h,fade:1});
+        r.shadow(root,o.x+o.w/2,o.y+o.h/2,o.w+.6,o.h+.45);continue;
+      }
+      else if(o.kind==='car'){model=car3d(r,o.color,{lights:false});model.position.set(o.x+.5,0,o.y+1);model.rotation.y=o.dir?Math.PI:0;}
+      else if(o.kind==='plane'){model=plane3d(r,o.color);model.position.set(o.x+1.5,0,o.y+1.5);model.rotation.y=hash(o.x,o.y)*6.28;}
+      else if(o.kind==='pump'){model=pump3d(r);model.position.set(o.x+.5,0,o.y+.5);}
       else {model=smallProp(r,o);model.position.set(o.x+o.w/2,0,o.y+o.h/2);}
       if(o.kind==='lamp'&&map.outdoor){
         const g1=new T.Sprite(this.glowMat);g1.position.set(o.x+.5,1.9,o.y+.5);g1.scale.set(3.4,3.4,1);
@@ -245,10 +253,18 @@ export class Environment {
       }
     }
     root.position.set(...(map.outdoor?[map.origin[0],0,map.origin[1]]:[0,0,0]));
-    return {root,dynamic,lods,map,glows};
+    return {root,dynamic,lods,map,glows,towers};
   }
   update(entry,state,pos,night=false) {
     entry.dynamic.forEach(({model,when})=>model.visible=!!when(state));
+    // Edificios altos entre la cámara (al sur) y el jugador: se vuelven transparentes para no taparlo.
+    for(const t of entry.towers||[]){
+      const ox=entry.root.position.x,oz=entry.root.position.z;
+      const block=pos.x>t.x0+ox-1.5&&pos.x<t.x1+ox+1.5&&t.z1+oz>pos.z+.3&&t.z0+oz<pos.z+15;
+      const want=block?.28:1;if(Math.abs(t.fade-want)<.01)continue;
+      t.fade+=(want-t.fade)*.25;if(Math.abs(t.fade-want)<.02)t.fade=want;
+      for(const m of t.model.userData.mats)m.opacity=t.fade;
+    }
     for(const g of entry.glows)g.visible=night;
     for(const lod of entry.lods){const x=lod.center[0]+entry.root.position.x,z=lod.center[1]+entry.root.position.z;const near=Math.hypot(x-pos.x,z-pos.z)<17;lod.near.visible=near;lod.far.visible=!near;}
   }
