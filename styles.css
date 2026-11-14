@@ -75,6 +75,15 @@ body.premium-active #banner.cave { --zone-a: #4a4458; --zone-b: #786e8c; }
 #fade { position: absolute; inset: 0; background: #000; opacity: 0; }
 #menuBtn { position: absolute; top: 14px; right: 14px; font-family: var(--font); font-size: var(--fs); font-weight: 700; color: #fff; background: rgba(38,34,46,.82); border: 3px solid #fff; border-radius: 10px; padding: .3em .8em; cursor: pointer; }
 #menuBtn:active { transform: translateY(2px); }
+/* Tierra Grande: botón del carro y el indicador de vuelo (pista más cercana). */
+#vehBtn { position: absolute; top: 14px; right: 150px; font-family: var(--font); font-size: var(--fs); font-weight: 700; color: #fff; background: rgba(226,96,63,.9); border: 3px solid #fff; border-radius: 10px; padding: .3em .8em; cursor: pointer; touch-action: none; }
+#vehBtn:active, #vehBtn.on { transform: translateY(2px); filter: brightness(1.15); }
+body.touch #vehBtn { right: 84px; }
+body:not([data-scene="overworld"]) #vehBtn, body:not([data-scene="overworld"]) #flightHud { display: none !important; }
+#flightHud { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); display: flex; align-items: center; gap: .6em; padding: .35em .9em .35em .6em; border-radius: 12px; background: rgba(24,40,64,.78); border: 2px solid rgba(255,255,255,.85); color: #fff; font-family: var(--font); font-size: var(--fs); pointer-events: none; }
+#flightHud b { display: block; font-size: 1em; }
+#flightHud small { display: block; font-size: .78em; opacity: .9; }
+#flightHud .fh-arrow { display: inline-block; font-style: normal; font-size: 1.5em; color: #ffd45a; transition: transform .2s; }
 
 /* HUD de combate */
 .hud { position: absolute; background: #fbfbf0; border: 3px solid var(--ink); border-radius: 6px 18px 6px 18px; padding: .35em .8em .5em; width: min(46vw, 330px); box-shadow: 4px 4px 0 rgba(0,0,0,.25); }
@@ -113,6 +122,15 @@ body.touch.landscape #panel { left: auto; right: 12px; transform: none; bottom: 
 #panel.map-panel { width: min(97vw, 1180px); max-width: none; }
 .map-panel .rmap { position: relative; width: 100%; margin: .2em 0 .5em; border: 3px solid #b89a64; border-radius: 10px; overflow: hidden; background: #efe7d0; }
 .map-panel .rmap canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+.map-panel .rmap.tg { width: min(100%, 68vh); margin-left: auto; margin-right: auto; background: #7fb0d8; }
+.map-panel .rmap.tg canvas { image-rendering: auto; }
+.map-panel .rm-air { position: absolute; transform: translate(-50%, -50%); font-size: 1.15em; color: #24304a; text-shadow: 0 0 3px #fff, 0 0 3px #fff; pointer-events: none; }
+.map-panel .rm-l.big { font-size: 1.05em; font-weight: 800; }
+.map-panel .rm-tabs { display: flex; gap: .4em; justify-content: center; margin-bottom: .3em; }
+.map-panel .rm-tabs button { font-family: var(--font); font-weight: 700; padding: .25em .9em; border-radius: 8px; border: 2px solid #b89a64; background: #f6efdc; color: #5a4a30; cursor: pointer; }
+.map-panel .rm-tabs button.on { background: #b89a64; color: #fff; }
+.map-panel .k-air { font-style: normal; }
+.map-panel .k-road { display: inline-block; width: 18px; height: 5px; background: #f2c84a; border: 1px solid #5a5048; vertical-align: middle; margin-right: .3em; }
 .rm-l { position: absolute; transform: translate(-50%, -50%); max-width: 30%; white-space: nowrap; pointer-events: none; font: 700 .62em var(--round, sans-serif); color: #3a2e1e; text-shadow: 0 0 2px #fff, 0 0 3px #fff, 0 0 4px #fff; }
 .rm-l.town { font-size: .7em; background: rgba(255, 252, 240, .85); padding: .05em .4em; border-radius: 6px; text-shadow: none; box-shadow: 0 1px 0 rgba(0, 0, 0, .2); }
 .rm-l.spot { color: #2a5a8a; font-style: italic; }

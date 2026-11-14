@@ -156,7 +156,7 @@ export function biomeAt(x, y) {
 }
 
 // ---------------------------------------------------------------- Manzanas de las ciudades
-const BLOCK = 24;
+export const BLOCK = 24;
 const PALETTES = {
   costa: { walls: ['#f6efe0', '#f2d9b8', '#e8f0f2', '#f4e0d0', '#fff6e6'], roofs: ['#3f8fb0', '#e07a52', '#4fb39a', '#d8a83a', '#8a6ad0'], towers: ['#9ec6d8', '#e8dcc6', '#c6d6e4', '#f0c8a8', '#a8c8b8'] },
   sierra: { walls: ['#efe6d6', '#e6d2bc', '#f2f2ea', '#dcd6cc'], roofs: ['#8a4a3a', '#5a6a7a', '#3f6a5a', '#a05a3a'], towers: ['#b8c0cc', '#d8d0c4', '#9aa8b6', '#c8bca8'] },

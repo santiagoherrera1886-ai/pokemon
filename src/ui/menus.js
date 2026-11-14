@@ -5,7 +5,8 @@ import { iconURL } from '../art/creatures.js';
 import { itemIcon } from '../art/items.js';
 import { SPECIES, MOVES, TYPES, STARTERS, expForLevel, ENCOUNTERS } from '../data/creatures.js';
 import { GYMS, nextGym, badgeCount, LEAGUE_BADGES } from '../data/gyms.js';
-import { regionMapHTML, drawRegionMap } from './regionmap.js';
+import { regionMapHTML, drawRegionMap, tgMapHTML, drawTGMap } from './regionmap.js';
+import { TG } from '../world/tierra.js';
 import { isHeld, giveHeld, takeHeld } from '../data/held.js';
 import { CHEATS, tryCode, spend, cheatOn } from '../data/cheats.js';
 import { ITEMS, POCKETS, POCKET_ORDER, SPECIAL, VENDING, STAT_NAMES, SEED_MAX, generalStock, lockedStock, shortDesc, sellPrice, pocketItems, canUseOn, useOnCreature, isCapsule } from '../data/items.js';
@@ -102,10 +103,28 @@ export class Menus {
   }
 
   // ---------- Mapa de la región ----------
-  regionMap() {
-    const world = this.game.world;
-    ui.setPanel(`${regionMapHTML(world, this.st)}<button class="bt-back" data-back>VOLVER</button>`, { modal: true, cls: 'list-panel wide-panel map-panel', onBack: () => this.home(true) });
-    drawRegionMap(document.getElementById('rmCanvas'), world, this.st);
+  // Dos mapas: Alborada y Tierra Grande (este sale cuando ya lo has pisado). Abre el de donde estás.
+  regionMap(which) {
+    const world = this.game.world, st = this.st, me = this.tgSpot();
+    const hasTG = !!st.tgSeen;
+    which = which || (me ? 'tg' : 'alborada');
+    const tabs = hasTG ? `<div class="rm-tabs"><button data-act="rm:alborada" class="${which === 'alborada' ? 'on' : ''}">ALBORADA</button><button data-act="rm:tg" class="${which === 'tg' ? 'on' : ''}">TIERRA GRANDE</button></div>` : '';
+    const body = which === 'tg' && hasTG ? tgMapHTML(st, me) : regionMapHTML(world, st);
+    ui.setPanel(`${tabs}${body}<button class="bt-back" data-back>VOLVER</button>`, { modal: true, cls: 'list-panel wide-panel map-panel', onAct: a => a.startsWith('rm:') && this.regionMap(a.slice(3)), onBack: () => this.home(true) });
+    if (which === 'tg' && hasTG) drawTGMap(document.getElementById('rmCanvas'), st, me);
+    else drawRegionMap(document.getElementById('rmCanvas'), world, st);
+  }
+  // Dónde está el jugador en Tierra Grande (casillas; con rumbo si va volando), o null si está en Alborada.
+  tgSpot() {
+    const ow = this.game.ow, m = ow?.map;
+    if (!m) return null;
+    if (ow.flight) return [ow.flight.x, ow.flight.y, ow.flight.heading];
+    if (m.outdoor && m.region === 'tierra') { const p = ow.tgPos(); return p && p[1] >= 0 ? p : [p[0], 0]; }
+    if (String(m.id).startsWith('tgi_')) {
+      const back = m.warps.find(w => String(w.to).startsWith('tg_')), mm = back && /^tg_(\d+)_(\d+)$/.exec(back.to);
+      if (mm) return [+mm[1] * TG.S + back.tx, +mm[2] * TG.S + back.ty];
+    }
+    return null;
   }
 
   // ---------- Equipo ----------
@@ -208,6 +227,14 @@ export class Menus {
     const it = ITEMS[id], st = this.st, game = this.game;
     const back = () => this.bag(it.pocket);
     if (isCapsule(id)) { await ui.say(['Las Cápsulas se lanzan en combate contra criaturas salvajes.']); return back(); }
+    if (it.vehicle === 'car') {
+      const ow = game.ow;
+      if (!ow.map?.outdoor || ow.map.region !== 'tierra' || ow.flight) { await ui.say([it.desc, 'Tu carro te espera en Tierra Grande, al sur de la Sabana por la Autopista del Llano.']); return back(); }
+      ui.closePanel(); ui.hideMsg();
+      ow.toggleCar();
+      return;
+    }
+    if (id === 'licenciaPiloto') { await ui.say([it.desc, 'Hay aeropuertos en el norte, en Altamira, en el desierto, en la selva y en Bahía Dorada. Están en el mapa.']); return back(); }
     if (it.key) { await ui.say([it.desc, 'Funciona con todas las criaturas, una vez por combate. La transformación dura hasta que termina la pelea.']); return back(); }
     if (it.boost) { await ui.say(['Las Pócimas sólo sirven durante un combate.']); return back(); }
     if (it.repel) {
@@ -257,6 +284,7 @@ export class Menus {
   }
 
   async save() {
+    if (this.game.ow?.flight) { await ui.say(['En pleno vuelo no se puede guardar.', 'Aterriza primero en cualquier pista (A encima de ella).']); return this.home(true); }
     const i = await ui.ask('¿Quieres guardar la partida?', ['Sí', 'No']);
     if (i === 0) {
       const ok = saveState(this.st);

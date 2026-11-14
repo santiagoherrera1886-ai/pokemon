@@ -14,7 +14,7 @@ export class DioramaCamera {
     this.dir = new T.Vector3(0, Math.sin(PITCH), Math.cos(PITCH));
     this.dirIn = new T.Vector3(0, Math.sin(PITCH_IN), Math.cos(PITCH_IN));
     this.offset = this.dir.clone().multiplyScalar(20);
-    this.key = null; this.frames = new Map(); this.aspect = 16 / 9; this.distance = 20;
+    this.key = null; this.frames = new Map(); this.aspect = 16 / 9; this.distance = 20; this.viewDir = new T.Vector3();
   }
   interiorFrame(map) {
     if (this.frames.has(map.id)) return this.frames.get(map.id);
@@ -34,20 +34,26 @@ export class DioramaCamera {
     const frame = { target: center, width: (maxX - minX) * 1.14, height: (maxY - minY) * 1.14 };
     this.frames.set(map.id, frame); return frame;
   }
-  update(map, position, dt, battle = false) {
-    const follow = !battle && (map.outdoor || map.dark || map.h > 12);
-    const key = battle ? 'battle' : map.outdoor ? 'outside' : map.id;
+  // view (opcional): { key, h, pitch, y, far } para manejar (más alejada) y volar (mucho más alta y lejos).
+  update(map, position, dt, battle = false, view = null) {
+    const follow = !battle && (view || map.outdoor || map.dark || map.h > 12);
+    const key = view?.key || (battle ? 'battle' : map.outdoor ? 'outside' : map.id);
     const frame = !battle && !follow ? this.interiorFrame(map) : null;
     const a = this.aspect;
     let h = battle ? 7 : follow ? 7.2 : Math.max(frame.width / a, frame.height);
     if (follow && a < 1) h = Math.min(15, 7.6 / a);
     if (battle && a < 1) h = Math.min(15, 9 / a);
-    this.camera.aspect = a; this.camera.updateProjectionMatrix();
-    const target = battle ? new T.Vector3(0, .5, 0) : follow ? new T.Vector3(position.x, .55, position.z - .2) : frame.target;
-    if (this.key !== key) this.focus.copy(target); else this.focus.lerp(target, 1 - Math.exp(-dt * 8));
+    if (view?.h) h = a < 1 ? view.h * 1.5 : view.h;
+    // El zoom se suaviza dentro de una misma vista (subirse o bajarse del carro, despegar).
+    if (this.key !== key || this.hCur === undefined) this.hCur = h; else this.hCur += (h - this.hCur) * (1 - Math.exp(-dt * 4));
+    h = this.hCur;
+    this.camera.aspect = a; this.camera.far = view?.far || 160; this.camera.updateProjectionMatrix();
+    const target = battle ? new T.Vector3(0, .5, 0) : follow ? new T.Vector3(position.x, view?.y ?? .55, position.z - .2) : frame.target;
+    if (this.key !== key) this.focus.copy(target); else this.focus.lerp(target, 1 - Math.exp(-dt * (view?.key === 'flight' ? 14 : 8)));
     this.key = key;
     this.distance = h / (2 * TAN);
-    this.offset.copy(battle ? BATTLE_DIR : follow ? this.dir : this.dirIn).multiplyScalar(this.distance);
+    const dir = view?.pitch ? this.viewDir.set(0, Math.sin(view.pitch), Math.cos(view.pitch)) : battle ? BATTLE_DIR : follow ? this.dir : this.dirIn;
+    this.offset.copy(dir).multiplyScalar(this.distance);
     this.camera.position.copy(this.focus).add(this.offset); this.camera.lookAt(this.focus);
   }
   // Punto 3D sobre el plano del foco que cae en las coordenadas de pantalla (0..1) dadas.

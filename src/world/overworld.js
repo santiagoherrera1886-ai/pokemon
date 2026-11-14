@@ -4,12 +4,17 @@ import { input } from '../core/input.js';
 import { canvas, ellipse } from '../core/pixel.js';
 import { TS, drawTile, drawTallGrassOverlay, VOID } from '../art/tiles.js';
 import { tree } from '../art/objects.js';
-import { sheet } from '../art/characters.js';
+import { sheet, LOOKS } from '../art/characters.js';
+import { driveCar, planeShadow } from '../art/vehicles.js';
 import { ui } from '../ui/ui.js';
+import { TG, tgCell, tgId } from './tierra.js';
+import { markSeen } from './flightmap.js';
+import { Flight, renderFlight2D } from './flight.js';
+import { Traffic, dir4 } from './traffic.js';
 
 const DIRS = { down: 0, up: 1, left: 2, right: 3 };
 const DXY = [[0, 1], [0, -1], [-1, 0], [1, 0]];
-const WALK = 16, RUN = 8, NPC_WALK = 18;
+const WALK = 16, RUN = 8, NPC_WALK = 18, DRIVE = 4, TURBO = 2;
 
 export const NAMES = {
   mom: 'Mamá', rival: 'Nico', prof: 'Prof. Ceiba', nurse: 'Enfermera Malva', clerk: 'Dependiente', vendor: 'Vendedora', rivalMom: 'Mamá de Nico', aide: 'Ayudante',
@@ -61,9 +66,18 @@ export class Overworld {
     this.emotes = [];
     this.player = new Actor({ id: 'player', look: 'player', x: 0, y: 0 });
     [this.grassTile] = canvas(16, 16);
+    this.vehicle = null;          // 'car' mientras maneja
+    this.flight = null;           // vuelo en curso (ver flight.js)
+    this.traffic = new Traffic();
   }
   get st() { return this.game.state; }
   get locked() { return this.scripts > 0 || ui.busy || this.game.fading; }
+  // Posición del jugador en casillas de Tierra Grande (o null si no está en Tierra Grande).
+  tgPos() {
+    const m = this.map;
+    if (!m || !m.outdoor || m.region !== 'tierra') return null;
+    return [m.origin[0] + this.player.px / TS - TG.X, m.origin[1] + this.player.py / TS - TG.Y];
+  }
 
   // ---------- Carga de mapas ----------
   load(mapId, x, y, dir = 0, banner = true) {
@@ -77,10 +91,16 @@ export class Overworld {
     this.refreshNpcs();
     Object.assign(this.st, { map: mapId, x, y, dir });
     this.st.visited = this.st.visited || {};
-    this.st.visited[mapId] = true;
+    // Los pedazos de Tierra Grande van en un mapa de bits aparte (son miles): así la partida no se infla.
+    if (this.map.tg) markSeen(this.st, this.map.origin[0] - TG.X + x, this.map.origin[1] - TG.Y + y, 1);
+    else this.st.visited[mapId] = true;
+    this.flight = null;
+    if (this.vehicle && (!this.map.outdoor || this.map.region !== 'tierra')) this.vehicle = null;
+    if (!prev || prev.region !== this.map.region || !this.map.outdoor) this.traffic.clear();
     if (banner) ui.banner(this.map.name, this.map.dark ? 'cave' : !this.map.outdoor ? 'inside' : this.map.encounters ? 'route' : 'town');
     this.game.refreshHome?.();
-    this.game.requestAutosave?.();
+    if (!this.vehicle) this.game.requestAutosave?.();
+    this.vehicleUI();
   }
   refreshNpcs() {
     const keep = new Map((this.npcs || []).map(n => [n.id, n]));
@@ -111,6 +131,7 @@ export class Overworld {
   update() {
     this.frame++;
     const p = this.player;
+    if (this.flight) { this.updateParticles(); this.updateFlight(); return; }
     if (p.moving && p.tick()) {
       if (this.scripts === 0) this.arrive();
       else Object.assign(this.st, { x: p.x, y: p.y });
@@ -120,9 +141,13 @@ export class Overworld {
       else if (n.wander && !this.locked) this.wander(n);
     }
     this.updateParticles();
+    const tp = this.tgPos();
+    if (tp) this.traffic.update(tp[0], tp[1]);
     if (p.moving || this.locked) return;
 
     if (input.hit('start')) { this.game.openMenu(); return; }
+    if (input.hit('c')) { this.toggleCar(); return; }
+    if (this.vehicle === 'car') { if (input.hit('a')) this.toggleCar(); else this.drive(); return; }
     if (input.hit('a')) { this.interact(); return; }
     const d = input.dir();
     if (!d) { this.turnTimer = 0; this.wasWalking = false; return; }
@@ -155,6 +180,97 @@ export class Overworld {
     if (!this.blocked(tx, ty, n) && this.map.inside(tx, ty) && !this.map.warpAt(tx, ty)) n.startMove(dir, NPC_WALK);
   }
 
+  // ---------- Carro ----------
+  // C (o el botón CARRO): subirse o bajarse. Sólo afuera en Tierra Grande y con las llaves de Doña Rueda.
+  toggleCar() {
+    if (this.vehicle === 'car') {
+      this.vehicle = null; this.wasWalking = false;
+      this.vehicleUI(); this.game.requestAutosave?.();
+      return true;
+    }
+    if (!this.st.bag?.llavesCarro) return false;
+    if (!this.map.outdoor || this.map.region !== 'tierra') { this.game.toast?.('Tu carro te espera en Tierra Grande'); return false; }
+    if (this.player.moving) return false;
+    this.vehicle = 'car'; this.turnTimer = 0;
+    this.vehicleUI();
+    return true;
+  }
+  drive() {
+    const p = this.player, d = input.dir();
+    if (!d) { this.wasWalking = false; return; }
+    const dir = DIRS[d], [dx, dy] = DXY[dir], tx = p.x + dx, ty = p.y + dy;
+    p.dir = dir;
+    const [m] = this.resolve(tx, ty);
+    if (m && m.region !== 'tierra') {
+      if (this.frame - (this.carWarn ?? -999) > 150) { this.game.toast?.('El carro no sale de Tierra Grande: bájate con A para seguir a pie'); this.carWarn = this.frame; }
+      return;
+    }
+    if (this.blocked(tx, ty, p)) return;
+    p.startMove(dir, input.held('b') ? TURBO : DRIVE);
+    this.wasWalking = true;
+  }
+
+  // ---------- Avioneta ----------
+  async takeoff(ap) {
+    this.scripts++;
+    try {
+      await this.game.fadeOut();
+      this.vehicle = null; this.player.moving = null; this.traffic.clear();
+      this.flight = new Flight(ap, this.st.planeColor || '#f6f2ea');
+      this.vehicleUI();
+      await this.game.fadeIn();
+    } finally { this.scripts--; }
+    ui.banner('¡A volar!', 'route');
+    this.game.toast?.('Cruceta: hacia dónde ir · B: turbo · A encima de una pista: aterrizar');
+  }
+  updateFlight() {
+    const f = this.flight;
+    if (this.locked) return;
+    if (input.hit('start')) { this.game.openMenu(); return; }
+    if (input.hit('a')) {
+      const ap = f.tryLand();
+      if (ap) ui.banner('Aterrizando en ' + ap.name, 'town');
+      else if (f.flying) this.game.toast?.('Para aterrizar, vuela encima de una pista y oprime A (la flecha te dice dónde queda la más cercana)');
+    }
+    const res = f.update({ up: input.held('up'), down: input.held('down'), left: input.held('left'), right: input.held('right') }, input.held('b'));
+    f.mark(this.st);
+    if (f.edgeWarned === 1) { f.edgeWarned = 2; this.game.toast?.('Ahí se acaba Tierra Grande: la avioneta da la vuelta sola'); }
+    if (res === 'landed') this.land(f.landAt);
+    else if (this.frame % 6 === 0) this.flightHud();
+  }
+  async land(ap) {
+    this.scripts++;
+    try {
+      await this.game.fadeOut();
+      const [ax, ay] = ap.arrive, [i, j] = tgCell(TG.X + ax, TG.Y + ay);
+      this.flight = null;
+      this.load(tgId(i, j), ax - i * TG.S, ay - j * TG.S, 0, true);
+      await this.game.fadeIn();
+    } finally { this.scripts--; }
+    this.game.toast?.('¡Aterrizaste en ' + ap.name + '!');
+  }
+  // Indicador de vuelo (HTML, sirve igual en pixel y en 3D): pista más cercana con flecha y distancia.
+  flightHud() {
+    let el = document.getElementById('flightHud');
+    if (!this.flight) { if (el) el.classList.add('hidden'); return; }
+    if (!el) { el = document.createElement('div'); el.id = 'flightHud'; document.getElementById('ui').appendChild(el); }
+    const [ap, d, ang] = this.flight.nearest(), km = (d * 1.5 / 1000).toFixed(1).replace('.', ',');
+    const deg = Math.round((ang * 180 / Math.PI + 360) % 360), turbo = this.flight.speed > .7;
+    el.innerHTML = `<i class="fh-arrow" style="transform:rotate(${deg}deg)">➤</i><span><b>${ap.name}</b><small>${d < 30 ? 'Debajo de ti: ¡oprime A!' : km + ' km'} · ${turbo ? 'TURBO' : 'B: turbo'}</small></span>`;
+    el.classList.remove('hidden');
+  }
+  // Botón flotante del carro (para pantallas táctiles y ratón) y el indicador de vuelo.
+  vehicleUI() {
+    if (typeof document === 'undefined') return;
+    const btn = document.getElementById('vehBtn');
+    if (btn) {
+      const show = !this.flight && this.game.scene === 'overworld' && !!this.st.bag?.llavesCarro && this.map?.outdoor && this.map.region === 'tierra';
+      btn.classList.toggle('hidden', !show);
+      btn.innerHTML = this.vehicle === 'car' ? '🚶 <span>BAJAR</span>' : '🚗 <span>CARRO</span>';
+    }
+    this.flightHud();
+  }
+
   arrive() {
     const p = this.player;
     if (!this.map.inside(p.x, p.y)) {
@@ -169,6 +285,7 @@ export class Overworld {
 
   async afterStep(stepped) {
     const p = this.player, m = this.map;
+    if (this.vehicle) return;   // en carro no se entra a las casas ni salen criaturas ni entrenadores
     const w = m.warpAt(p.x, p.y);
     if (w && (w.needDir === undefined || w.needDir === p.dir) && (!w.when || w.when(this.st))) { await this.warp(w.to, w.tx, w.ty, w.face); return; }
     if (await this.checkTriggers()) return;
@@ -308,6 +425,7 @@ export class Overworld {
 
   // ---------- Dibujo ----------
   render(r) {
+    if (this.flight) return renderFlight2D(r, this.flight, this.frame, this.game.hour());
     const p = this.player, m = this.map, BW = r.bw, BH = r.bh;
     let camX = Math.round(p.px) + 8, camY = Math.round(p.py) + 8;
     if (!m.outdoor) {
@@ -348,6 +466,17 @@ export class Overworld {
       }
     }
     for (const a of [...this.npcs, p]) sprites.push({ actor: a, base: a.py + 16 + (a === p ? 0.5 : 0) });
+    // Tráfico de Tierra Grande (de adorno) y sombras de avionetas que pasan.
+    if (m.region === 'tierra' && m.outdoor) {
+      const tx = (TG.X - m.origin[0]) * TS, ty = (TG.Y - m.origin[1]) * TS;
+      for (const c of this.traffic.cars) {
+        const img = driveCar(c.color, dir4(c.h)), X = tx + c.x * TS, Y = ty + c.y * TS;
+        if (X + ox < -40 || Y + oy < -40 || X + ox > BW + 40 || Y + oy > BH + 40) continue;
+        sprites.push({ shadowRect: [X - img.width / 2 + 2, Y - img.height / 2 + 4, img.width - 4, img.height - 4], base: -2000 });
+        sprites.push({ img, x: X - img.width / 2, y: Y - img.height / 2 - 2, base: Y + 8 });
+      }
+      for (const s of this.traffic.shadows) sprites.push({ plane: s, x: tx + s.x * TS, y: ty + s.y * TS, base: 1e9 });
+    }
     sprites.sort((a, b) => a.base - b.base);
     g.fillStyle = 'rgba(16,24,40,0.22)';
     for (const s of sprites) {
@@ -357,6 +486,7 @@ export class Overworld {
     for (const s of sprites) {
       if (s.shadow || s.shadowRect) continue;
       if (s.actor) this.drawActor(g, s.actor, ox, oy);
+      else if (s.plane) { const sh = planeShadow(); g.save(); g.translate(Math.round(s.x + ox), Math.round(s.y + oy)); g.rotate(s.plane.h + Math.PI / 2); g.scale(1.6, 1.6); g.drawImage(sh, -sh.width / 2, -sh.height / 2); g.restore(); }
       else g.drawImage(s.img, Math.round(s.x + ox), Math.round(s.y + oy));
     }
     const hr = this.game.hour();
@@ -391,6 +521,12 @@ export class Overworld {
 
   drawActor(g, a, ox, oy) {
     const X = Math.round(a.px + ox), Y = Math.round(a.py + oy);
+    if (a === this.player && this.vehicle === 'car') {
+      const look = LOOKS.player || {}, img = driveCar(this.st.carColor || '#e2603f', a.dir, { hat: look.hat, hair: look.hair });
+      g.fillStyle = 'rgba(16,20,32,.28)'; g.fillRect(X + 8 - img.width / 2 + 2, Y + 8 - img.height / 2 + 4, img.width - 4, img.height - 4);
+      g.drawImage(img, X + 8 - img.width / 2, Y + 6 - img.height / 2);
+      return;
+    }
     g.fillStyle = 'rgba(16,20,32,.28)';
     g.beginPath(); g.ellipse(X + 8, Y + 14, 5.5, 2.5, 0, 0, Math.PI * 2); g.fill();
     const f = sheet(a.look)[a.dir][a.frame];

@@ -14,6 +14,21 @@ const DRAW = {
     px(g, 2, 8, dark, 1, 3); px(g, 4, 5, light, 3, 1); px(g, 7, 13, dark, 3, 1);
     ellipse(g, 8, 4, 3, 2, '#ff9a5a'); px(g, 7, 3, '#ffe8c8', 2, 1);
   },
+  // Llaves del carro: llave plateada con un control remoto del color del carro.
+  carkey(g, c) {
+    px(g, 2, 3, c, 7, 6); px(g, 2, 3, shadeHex(c, .4), 7, 1); px(g, 3, 8, shadeHex(c, -.35), 6, 1);
+    px(g, 4, 5, '#f6f2ea', 3, 2);                                   // botón
+    px(g, 9, 5, '#9aa0aa', 2, 2);                                   // argolla
+    px(g, 10, 6, '#c9cdd2', 5, 2); px(g, 12, 8, '#c9cdd2', 1, 2); px(g, 14, 8, '#c9cdd2', 1, 3);   // llave
+    px(g, 10, 6, '#eef0f2', 5, 1);
+  },
+  // Licencia de piloto: carné azul con una avioneta y la foto.
+  license(g, c) {
+    px(g, 1, 3, CREAM, 14, 10); px(g, 1, 3, c, 14, 3); px(g, 1, 3, shadeHex(c, .4), 14, 1);
+    px(g, 3, 7, '#c8a888', 4, 5); px(g, 4, 8, '#8a5a3a', 2, 2);      // foto
+    px(g, 9, 9, c, 5, 1); px(g, 11, 7, c, 1, 4); px(g, 10, 11, c, 3, 1);   // avioneta
+    px(g, 8, 4, '#ffffff', 5, 1);
+  },
   // Equipables
   ribbon(g, c) {
     const dark = shadeHex(c, -.38), light = shadeHex(c, .4);

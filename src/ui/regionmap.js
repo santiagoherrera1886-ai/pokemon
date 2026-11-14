@@ -2,6 +2,8 @@
 // cuadrito), con los ocho gimnasios numerados, la Liga, el Lago Espejo, la Cueva Eco y dónde estás tú.
 // Las zonas que todavía no visitas se ven como en un mapa viejo: sólo la silueta, sin detalle.
 import { GYMS, badgeCount, LEAGUE_BADGES, nextGym } from '../data/gyms.js';
+import { TG, SIZE, CITIES, AIRPORTS, ROADS, RIVERS, ENTRY_X } from '../world/tierra.js';
+import { overviewCanvas, OV, seenCount } from '../world/flightmap.js';
 
 const PX = 3;   // píxeles por casilla en el lienzo (luego el CSS lo escala sin suavizar)
 const PAPER = '#efe7d0';
@@ -33,7 +35,7 @@ function outdoorSpot(world, st) {
 }
 
 function bounds(world) {
-  const ms = world.outdoor;
+  const ms = world.base || world.outdoor;   // sólo Alborada: Tierra Grande tiene su propio mapa
   const x0 = Math.min(...ms.map(m => m.origin[0])) - 3, y0 = Math.min(...ms.map(m => m.origin[1])) - 3;
   const x1 = Math.max(...ms.map(m => m.origin[0] + m.w)) + 3, y1 = Math.max(...ms.map(m => m.origin[1] + m.h)) + 3;
   return { x0, y0, w: x1 - x0, h: y1 - y0 };
@@ -47,7 +49,7 @@ export function regionMapHTML(world, st) {
   const label = (gx, gy) => { const t = (gx - B.x0) / B.w; return pos(gx, gy) + (t < .1 ? ';transform:translate(0,-50%)' : t > .9 ? ';transform:translate(-100%,-50%)' : ''); };
   const visited = st.visited || {}, esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const out = [];
-  for (const m of world.outdoor) {
+  for (const m of world.base || world.outdoor) {
     const cx = m.origin[0] + m.w / 2, cy = m.origin[1] + m.h / 2, seen = visited[m.id] ? '' : ' fog';
     if (m.encounters && !['lago', 'volcan', 'manglar', 'isla'].includes(m.id)) out.push(`<span class="rm-l route${seen}" style="${label(cx, cy)}">${esc(m.name)}</span>`);
     else out.push(`<span class="rm-l town${['lago', 'volcan', 'manglar', 'isla'].includes(m.id) ? ' spot' : ''}${seen}" style="${label(cx, m.origin[1] + m.h - 2.5)}">${esc(m.name)}</span>`);
@@ -80,7 +82,7 @@ export function drawRegionMap(canvas, world, st) {
   for (let y = 0; y < B.h; y += 10) g.fillRect(0, y * PX, canvas.width, 1);
   // Túnel de la Cueva Eco entre la Ruta 3 y Pueblo Cobre.
   g.fillStyle = '#6a5442'; g.fillRect((92 - B.x0) * PX, (-71 - B.y0) * PX, 8 * PX, 4 * PX);
-  for (const m of world.outdoor) {
+  for (const m of world.base || world.outdoor) {
     const ox = (m.origin[0] - B.x0) * PX, oy = (m.origin[1] - B.y0) * PX;
     for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) {
       const c = m.tiles[y][x];
@@ -99,5 +101,54 @@ export function drawRegionMap(canvas, world, st) {
       g.fillStyle = 'rgba(239,231,208,.62)';
       g.fillRect(ox, oy, m.w * PX, m.h * PX);
     }
+  }
+}
+
+// ---------------------------------------------------------------- Tierra Grande
+// El terreno sólo se ve donde ya has estado (a pie, en carro o volando); las carreteras, las ciudades y los
+// aeropuertos salen siempre, como en un mapa de carreteras.
+const TGK = 2;   // el lienzo va a 2 píxeles por píxel del mapa chiquito (1 píxel cada 4 casillas)
+export function tgMapHTML(st, me) {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const pos = (x, y) => `left:${(x / SIZE * 100).toFixed(2)}%;top:${(y / SIZE * 100).toFixed(2)}%`;
+  const out = [];
+  // Las etiquetas pegadas a un borde se corren hacia adentro para que no se corten.
+  const label = (x, y) => pos(x, y) + (x / SIZE < .14 ? ';transform:translate(0,-50%)' : x / SIZE > .8 ? ';transform:translate(-100%,-50%)' : '');
+  for (const c of CITIES) out.push(`<span class="rm-l town${c.kind === 'grande' ? ' big' : ''}" style="${label((c.x0 + c.x1) / 2, c.y1 + 30)}">${esc(c.name)}</span>`);
+  for (const a of AIRPORTS) out.push(`<span class="rm-air" style="${pos(a.x0 + 60, a.y0 + 4)}" title="${esc(a.name)}">✈</span>`);
+  out.push(`<span class="rm-l spot" style="${pos(ENTRY_X, 60)}">↑ Sabana</span>`);
+  if (me) out.push(`<span class="rm-me" style="${pos(me[0], me[1])}" title="Estás aquí"></span>`);
+  const pct = Math.round(seenCount(st) / (TG.N * TG.N) * 100);
+  return `<h3 class="ph">MAPA DE TIERRA GRANDE <small>${pct}% explorado</small></h3>
+    <div class="rmap tg" style="aspect-ratio:1 / 1"><canvas id="rmCanvas" width="${TG.N * OV * TGK}" height="${TG.N * OV * TGK}"></canvas>${out.join('')}</div>
+    <div class="rm-key"><span><i class="k-air">✈</i>Aeropuerto</span><span><i class="k-road"></i>Autopista</span><span><i class="k-me"></i>Tú</span><span>Lo que no has visitado sale en blanco</span></div>`;
+}
+export function drawTGMap(canvas, st, me) {
+  if (!canvas) return;
+  const g = canvas.getContext('2d'), W = canvas.width, k = W / SIZE;
+  g.fillStyle = '#7fb0d8'; g.fillRect(0, 0, W, W);             // mar
+  g.fillStyle = PAPER;
+  g.beginPath(); g.ellipse(W / 2, W / 2, W * .47, W * .47, 0, 0, Math.PI * 2); g.fill();
+  const ov = overviewCanvas(st);
+  if (ov) { g.imageSmoothingEnabled = false; g.drawImage(ov, 0, 0, W, W); }
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  for (const r of RIVERS) { g.strokeStyle = '#5aa6de'; g.lineWidth = Math.max(2, r.w * k * 1.2); g.beginPath(); r.line.forEach(([x, y], i) => i ? g.lineTo(x * k, y * k) : g.moveTo(x * k, y * k)); g.stroke(); }
+  for (const r of ROADS) {
+    const wide = r.w >= 6;
+    for (const [col, w] of [['#5a5048', wide ? 6 : 4], [wide ? '#f2c84a' : '#f6f2ea', wide ? 3.4 : 2]]) {
+      g.strokeStyle = col; g.lineWidth = w; g.beginPath(); r.line.forEach(([x, y], i) => i ? g.lineTo(x * k, y * k) : g.moveTo(x * k, y * k)); g.stroke();
+    }
+  }
+  for (const c of CITIES) {
+    g.fillStyle = 'rgba(200,102,90,.55)'; g.fillRect(c.x0 * k, c.y0 * k, (c.x1 - c.x0) * k, (c.y1 - c.y0) * k);
+    g.strokeStyle = '#8a3a30'; g.lineWidth = 2; g.strokeRect(c.x0 * k, c.y0 * k, (c.x1 - c.x0) * k, (c.y1 - c.y0) * k);
+  }
+  for (const a of AIRPORTS) { g.fillStyle = '#4a4e58'; g.fillRect(a.x0 * k, a.y0 * k - 1, (a.x1 - a.x0) * k, Math.max(3, 8 * k)); }
+  // Volando: flecha con el rumbo de la avioneta.
+  if (me && me[2] !== undefined) {
+    g.save(); g.translate(me[0] * k, me[1] * k); g.rotate(me[2]);
+    g.fillStyle = '#e04848'; g.strokeStyle = '#fff'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(26, 0); g.lineTo(-10, -12); g.lineTo(-4, 0); g.lineTo(-10, 12); g.closePath(); g.fill(); g.stroke();
+    g.restore();
   }
 }

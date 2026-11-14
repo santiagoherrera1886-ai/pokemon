@@ -62,6 +62,7 @@ class Game {
     this.frame++;
     ui.update();
     if (this.scene === 'overworld') { this.ow.update(); this.state.playTime++; if (this.autosavePending) this.tryAutosave(); }
+    if (this.frame % 10 === 0 && typeof document !== 'undefined' && document.body.dataset.scene !== this.scene) { document.body.dataset.scene = this.scene; this.ow.vehicleUI?.(); }
     if (this.state) refillMoney(this.state);   // código de plata infinita
     const w = this.waiters; this.waiters = [];
     w.forEach(r => r());
@@ -153,6 +154,7 @@ class Game {
   requestAutosave() { if (this.state.options?.autosave !== false && this.scene === 'overworld') this.autosavePending = true; }
   tryAutosave() {
     if (this.ow.scripts || this.ow.locked || ui.dialog || this.fading || this.ow.player.moving) return;
+    if (this.ow.flight) { this.autosavePending = false; return; }   // en el aire no se guarda: se guarda al aterrizar
     this.autosavePending = false;
     if (saveState(this.state)) cloud.pushSoon();
   }

@@ -3,6 +3,7 @@ import { ui } from '../ui/ui.js';
 import { SPECIES, RIVAL_PICK, makeCreature, rivalForm } from '../data/creatures.js';
 import { ITEMS, SPECIAL } from '../data/items.js';
 import { gymOf, hasBadge, badgeCount, nextGym, leagueOpen, LEAGUE_BADGES } from '../data/gyms.js';
+import { AIRPORTS } from '../world/tierra.js';
 
 const N = { mom: 'Mamá', nico: 'Nico', prof: 'Prof. Ceiba', aide: 'Ayudante', kid: 'Niño', nurse: 'Enfermera Malva', clerk: 'Dependiente', vendor: 'Vendedora', rivalMom: 'Mamá de Nico', guard: 'Guardia', grunt: 'Recluta Eclipse', bruma: 'Bruma', umbra: 'Umbra', aurora: 'Campeona Aurora', courier: 'Mensajera', sailor: 'Capitán' };
 
@@ -383,6 +384,34 @@ const S = {
     await say(N.guard, 'Al oeste del lago hay todo un valle de palmas gigantes.', 'Pero las criaturas de allá no son para principiantes. Trae la Medalla Marea.');
   },
   // El barco de Cabo Faro a la Isla Totuma (ida y vuelta).
+  // ---------- Tierra Grande ----------
+  // Doña Rueda, en el Parador del Llano: presta el carro (y uno escoge el color).
+  async llavesCarro(ow, game) {
+    const st = game.state, who = 'Doña Rueda';
+    if (st.bag.llavesCarro) return say(who, '¿Cómo va ese carrito? Cuídemelo, que es de la familia.', 'Acuérdese: C (o el botón CARRO) para subirse y bajarse, y B sostenido para el turbo.');
+    await say(who, '¡Bienvenido a Tierra Grande, mijo! Aquí todo queda lejísimos.', 'Las ciudades están a horas de camino... pero no se preocupe.', 'Le presto este carrito. Es viejito pero no se vara nunca.');
+    const i = await ui.ask('¿De qué color lo quiere?', ['Rojo', 'Azul', 'Amarillo', 'Verde'], { name: who, cancel: false });
+    st.carColor = ['#d8443a', '#3a6ad8', '#f0c030', '#2a9a5a'][Math.max(0, i)];
+    st.bag.llavesCarro = 1;
+    await ui.say(['¡Recibiste las LLAVES DEL CARRO!', 'Pulsa C (o el botón CARRO) para subirte y bajarte. Mantén B para ir en turbo.', 'En carro no salen criaturas salvajes ni te paran los entrenadores.']);
+    await say(who, 'Y si quiere ir más lejos todavía, en los aeropuertos prestan avionetas. El más cerca es la Pista Norte, aquí al este.');
+    ow.vehicleUI();
+  },
+  // Controladora de cada aeropuerto: da la Licencia de Piloto la primera vez y deja despegar.
+  async aeropuerto(ow, game, npc) {
+    const st = game.state, who = 'Controladora', ap = AIRPORTS.find(a => a.id === npc?.arg) || AIRPORTS[0];
+    if (!st.bag.licenciaPiloto) {
+      await say(who, `Bienvenido al ${ap.name}.`, 'Aquí prestamos avionetas para volar por todo Tierra Grande.', 'Sólo necesita la Licencia de Piloto... y como es su primera vez, se la regalo.');
+      st.bag.licenciaPiloto = 1;
+      await ui.say(['¡Recibiste la LICENCIA DE PILOTO!', 'En el aire, la avioneta gira hacia donde apuntes con la cruceta. B es turbo.', 'Para aterrizar, vuela encima de cualquier pista y oprime A. Arriba verás una flecha hacia la más cercana.']);
+      const c = await ui.ask('¿De qué color quiere la avioneta?', ['Blanca', 'Naranja', 'Azul'], { name: who, cancel: false });
+      st.planeColor = ['#f6f2ea', '#e2603f', '#3a6ad8'][Math.max(0, c)];
+    }
+    const i = await ui.ask('¿Despegamos?', ['¡Sí, a volar!', 'Ahora no'], { name: who });
+    if (i !== 0) return say(who, 'Cuando quiera. La avioneta lo espera en la pista.');
+    await say(who, `Torre del ${ap.name} a avioneta: pista libre. ¡Buen vuelo!`);
+    await ow.takeoff(ap);
+  },
   async barcoIsla(ow, game) {
     const st = game.state;
     if (badgeCount(st) < LEAGUE_BADGES) return say(N.sailor, 'Mar adentro está la Isla Totuma, pero el mar de allá no es para cualquiera.', `Zarpo con quien tenga las ${LEAGUE_BADGES} medallas. Llevas ${badgeCount(st)}.`);

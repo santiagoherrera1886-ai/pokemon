@@ -17,6 +17,9 @@ import {QUALITY,normalizeQuality,actorPosition,visibleMapIds} from './policy.js'
 import {ui} from '../ui/ui.js';
 import {hash} from '../core/pixel.js';
 import {Stylizer} from './stylize.js';
+import {FlightView} from './flight3d.js';
+import {car3d} from './vehicles.js';
+import {TG} from '../world/tierra.js';
 
 const rnd3=()=>Math.random()-.5;
 export class PremiumRenderer {
@@ -64,13 +67,52 @@ export class PremiumRenderer {
     list.forEach(([x,z],i)=>{const hh=hash(x,z,3);dummy.position.set(x+.5+hh*.6,1.5+hh*.5,z+.5+hash(z,x,4)*.6);dummy.scale.set(1.45+hh*.3,1.5+hh*.5,1.4);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});mesh.computeBoundingSphere();this.backdrop.add(mesh);
     const floor=this.r.mesh(this.backdrop,'box',P.floor,[cx,-.13,cz],[70,.1,70]);floor.castShadow=false;
   }
-  clearWorld(){for(const e of this.maps.values())this.r.release(e.root);this.maps.clear();for(const a of this.actors.values()){detachHero(a);this.r.release(a.root);}this.actors.clear();this.backdropCell='';this.currentMap=null;}
+  clearWorld(){for(const e of this.maps.values())this.r.release(e.root);this.maps.clear();for(const a of this.actors.values()){detachHero(a);this.r.release(a.root);}this.actors.clear();this.backdropCell='';this.currentMap=null;this.clearTraffic();if(this.playerCar){this.r.release(this.playerCar);this.playerCar=null;}if(this.flightView){this.flightView.dispose();this.flightView=null;}}
+  // Tráfico de Tierra Grande: un carro 3D por cada carro del tráfico y una sombra por cada avioneta que pasa.
+  clearTraffic(){for(const m of (this.trafficModels||new Map()).values())this.r.release(m);this.trafficModels=new Map();for(const m of (this.planeShadows||new Map()).values())m.removeFromParent();this.planeShadows=new Map();}
+  syncTraffic(ow,m){
+    this.trafficModels=this.trafficModels||new Map();this.planeShadows=this.planeShadows||new Map();
+    const on=m.outdoor&&m.region==='tierra',cars=on?ow.traffic.cars:[],shadows=on?ow.traffic.shadows:[];
+    for(const [c,model]of this.trafficModels)if(!cars.includes(c)){this.r.release(model);this.trafficModels.delete(c);}
+    for(const c of cars){
+      let model=this.trafficModels.get(c);
+      if(!model){model=car3d(this.r,c.color);this.worldRoot.add(model);this.trafficModels.set(c,model);}
+      model.position.set(TG.X+c.x,0,TG.Y+c.y);model.rotation.y=Math.PI/2-c.h;
+    }
+    for(const [s,mesh]of this.planeShadows)if(!shadows.includes(s)){mesh.removeFromParent();this.planeShadows.delete(s);}
+    for(const s of shadows){
+      let mesh=this.planeShadows.get(s);
+      if(!mesh){mesh=this.r.shadow(this.worldRoot,0,0,5.5,4.2);this.planeShadows.set(s,mesh);}
+      mesh.position.set(TG.X+s.x,.03,TG.Y+s.y);mesh.rotation.z=-s.h;
+    }
+  }
+  // Carro del jugador: reemplaza al muñeco mientras maneja; gira suave hacia donde va.
+  updatePlayerCar(actor,m,dt){
+    const color=this.game.state.carColor||'#e2603f';
+    if(this.playerCar&&this.playerCar.userData.color!==color){this.r.release(this.playerCar);this.playerCar=null;}
+    if(!this.playerCar){this.playerCar=car3d(this.r,color);this.playerCar.userData.color=color;this.worldRoot.add(this.playerCar);this.playerCar.rotation.y=[0,Math.PI,-Math.PI/2,Math.PI/2][actor.dir];}
+    const p=actorPosition(actor,m),want=[0,Math.PI,-Math.PI/2,Math.PI/2][actor.dir],car=this.playerCar;
+    let d=want-car.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));car.rotation.y+=d*Math.min(1,dt*14);
+    car.position.set(p.x,0,p.z);car.visible=true;
+  }
+  // Vuelo: escena propia (flight3d.js) y cámara alta que se va alejando al despegar.
+  flightWorld(dt){
+    const g=this.game,f=g.ow.flight,hour=g.hour(),night=hour>=19||hour<5;
+    if(!this.flightView)this.flightView=new FlightView(this.r,this.scene);
+    this.worldRoot.visible=false;this.battleRoot.visible=false;this.particles.visible=false;this.flightView.root.visible=true;
+    this.scene.background.set(night?'#1e2a48':'#9fd0f2');this.scene.fog.color.set(night?'#2a3550':'#d4e8f2');this.scene.fog.near=55+f.alt*45;this.scene.fog.far=150+f.alt*150;
+    this.styleOpts={focusY:.5,tilt:.22,night:night?.55:0,bloom:.28,lift:.1,grade:[1.04,1.01,.97],sat:1.12};
+    const pos=this.flightView.update(f,dt,this.time.value,this.quality);
+    this.camera.update(g.ow.map,pos,dt,false,{key:'flight',h:9+f.alt*27,pitch:(38+14*f.alt)*Math.PI/180,y:pos.y,far:380});
+    this.lights.update(this.camera.focus,false,hour,false);
+  }
   // Protagonista GLB (prototipo, opcional): se monta sobre el muñeco esculpido cuando la opción está encendida.
   heroOn(){return this.game.graphics?.hero==='glb';}
   // Pantalla de inicio: escena propia (lago al amanecer) con cielo en degradé, niebla cálida y sol bajo.
   title(dt){
     if(!this.titleScene){this.titleScene=new TitleScene(this.r);this.scene.add(this.titleScene.root);this.savedFill=this.lights.fill.position.clone();}
     const ts=this.titleScene,t=this.time.value;
+    if(this.flightView)this.flightView.root.visible=false;
     this.worldRoot.visible=false;this.battleRoot.visible=false;this.particles.visible=true;this.canvas.style.filter='';
     this.scene.background=ts.background;this.scene.fog.color.set('#f6d8bd');this.scene.fog.near=22;this.scene.fog.far=75;
     ts.update(this.camera.camera,this.camera.aspect,t,dt);
@@ -136,6 +178,8 @@ export class PremiumRenderer {
   clearBattle(){this.movefx?.clear();this.r.release(this.battleRoot);this.battleRoot=new T.Group();this.scene.add(this.battleRoot);this.battleKey=null;this.creatures=null;}
   world(dt){
     const g=this.game,ow=g.ow,m=ow.map;if(!m)return;
+    if(ow.flight){this.flightWorld(dt);return;}
+    if(this.flightView){this.flightView.dispose();this.flightView=null;}
     const p=actorPosition(ow.player,m);this.worldRoot.visible=true;this.battleRoot.visible=false;
     const hour=g.hour(),night=m.outdoor&&(hour>=19||hour<5);
     // Niebla (Ruta 7 y Pueblo Niebla) y frío de nevado (Ruta 9 y Ciudad Escarcha): sólo cambian la bruma y el tono.
@@ -153,9 +197,11 @@ export class PremiumRenderer {
       const rig=this.actors.get(id),talking=!!ui.dialog&&!actor.moving;
       animateCharacter(rig,actor,m,this.time.value,dt,talking);
       if(rig.hero)updateHero(rig,{moving:!!actor.moving,running:!!actor.moving&&actor.moving.dur<=10,talking},dt);
+      if(actor===ow.player){const driving=ow.vehicle==='car';rig.root.visible=!driving;if(driving)this.updatePlayerCar(actor,m,dt);else if(this.playerCar)this.playerCar.visible=false;}
     }
+    this.syncTraffic(ow,m);
     for(const [id,rig]of this.actors)if(!active.has(id)){detachHero(rig);this.r.release(rig.root);this.actors.delete(id);}
-    this.camera.update(m,p,dt);this.lights.update(this.camera.focus,!m.outdoor,hour,m.dark);
+    this.camera.update(m,p,dt,false,ow.vehicle==='car'?{h:10.5}:null);this.lights.update(this.camera.focus,!m.outdoor,hour,m.dark);
     this.particles.visible=!m.outdoor;this.particles.geometry.setDrawRange(0,12);
     this.ambient.update(m,night,this.camera.focus,this.time.value,this.webgl.domElement.height,1/Math.tan(this.camera.camera.fov*Math.PI/360)*.5,this.settings.particles/72);
     this.particles.position.set(p.x,0,p.z);this.particles.rotation.y=this.time.value*.015;
@@ -183,6 +229,7 @@ export class PremiumRenderer {
       this.fxLayer=new T.Group();this.battleRoot.add(this.fxLayer);
       this.movefx=this.movefx||new MoveFX(this.r,this.fxLayer);this.movefx.parent=this.fxLayer;b.fxEvents.length=0;
     }
+    if(this.flightView)this.flightView.root.visible=false;
     this.worldRoot.visible=false;this.battleRoot.visible=true;this.particles.visible=false;this.scene.background.set({cave:'#2a2a2e',eclipse:'#2a2236',league:'#2e2c4e',lake:'#a8daf0',beach:'#9fd8f4',mountain:'#b8dcf0'}[terrain]||'#a8d8ee');this.scene.fog.color.copy(this.scene.background);this.scene.fog.near=14;this.scene.fog.far=40;this.styleOpts={focusY:.5,tilt:.3,night:0,bloom:.3,lift:.1,grade:[1.05,1.01,.95],sat:1.12};
     const f=b.fx,time=this.time.value;
     for(const side of ['foe','ally']){

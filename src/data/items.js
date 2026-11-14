@@ -96,7 +96,9 @@ export const ITEMS = {
   velaDeNiebla: charm('Vela de Niebla', 'fantasma', 'Su llama es morada y no da calor.'),
 
   // Clave: no se gastan ni se venden.
-  brazaleteAlba: item('clave', 'band')('Brazalete Alba', 0, 'Despierta la Forma Alba una vez por combate. En LUCHAR, toca FORMA ALBA antes de escoger el ataque.', '#f0c040', { key: true })
+  brazaleteAlba: item('clave', 'band')('Brazalete Alba', 0, 'Despierta la Forma Alba una vez por combate. En LUCHAR, toca FORMA ALBA antes de escoger el ataque.', '#f0c040', { key: true }),
+  llavesCarro: item('clave', 'carkey')('Llaves del Carro', 0, 'El carro que te prestó Doña Rueda. Afuera en Tierra Grande, úsalas (o pulsa C) para subirte y bajarte. Mantén B para ir en turbo.', '#e2603f', { key: true, vehicle: 'car' }),
+  licenciaPiloto: item('clave', 'license')('Licencia de Piloto', 0, 'Con ella, la controladora de cualquier aeropuerto de Tierra Grande te deja despegar. En el aire, oprime A encima de una pista para aterrizar.', '#3f7fc8', { key: true })
 };
 export const isCapsule = id => ITEMS[id]?.pocket === 'capsulas';
 export const sellPrice = id => Math.floor((ITEMS[id]?.price || 0) / 2);

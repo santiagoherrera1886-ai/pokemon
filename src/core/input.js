@@ -1,9 +1,10 @@
-// Entrada unificada: teclado + controles táctiles. Botones lógicos: up down left right a b start.
+// Entrada unificada: teclado + controles táctiles. Botones lógicos: up down left right a b start c (carro).
 const KEYMAP = {
   ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
   KeyZ: 'a', KeyE: 'a', Enter: 'a', Space: 'a',
   KeyX: 'b', ShiftLeft: 'b', ShiftRight: 'b', Backspace: 'b',
-  Escape: 'start', KeyM: 'start', Tab: 'start'
+  Escape: 'start', KeyM: 'start', Tab: 'start',
+  KeyC: 'c', KeyQ: 'c'
 };
 
 class Input {
