@@ -7,7 +7,6 @@ import {DioramaCamera} from './camera.js';
 import {Lighting} from './lighting.js';
 import {character,animateCharacter,creature} from './actors.js';
 import {attachHero,updateHero,detachHero} from './hero-model.js';
-import {disposeFaces} from './faces.js';
 import {capsuleModel} from './models.js';
 import {TitleScene} from './title.js';
 import {MoveFX} from './movefx.js';
@@ -284,5 +283,5 @@ export class PremiumRenderer {
     this.slowTime=raw>.04?this.slowTime+Math.min(raw,1):Math.max(0,this.slowTime-raw*.5);
     if(this.slowTime>1.5&&this.degrade<5){this.degrade++;this.slowTime=0;if(this.degrade===2){this.style.samples=0;this.style.target?.dispose();this.style.target=null;}if(this.degrade>=3)this.adaptive=Math.max(.55,this.adaptive-.15);this.sizeKey='';}
   }
-  dispose(){removeEventListener('resize',this.onResize);this.style.dispose();if(this.titleScene)detachHero(this.titleScene.player);this.clearWorld();disposeFaces();this.clearBattle();this.r.release(this.backdrop);this.particles.geometry.dispose();this.particles.material.dispose();this.ambient.dispose();this.environment.dispose();this.lights.dispose();this.r.dispose();this.webgl.dispose();this.canvas.remove();}
+  dispose(){removeEventListener('resize',this.onResize);this.style.dispose();if(this.titleScene)detachHero(this.titleScene.player);this.clearWorld();this.clearBattle();this.r.release(this.backdrop);this.particles.geometry.dispose();this.particles.material.dispose();this.ambient.dispose();this.environment.dispose();this.lights.dispose();this.r.dispose();this.webgl.dispose();this.canvas.remove();}
 }
