@@ -43,13 +43,13 @@ test('the level code is a switch like the others', () => withTestCodes(() => {
 
 test('the legendary code gives every legendary once, to the party first and then to the box', () => withTestCodes(() => {
   assert.deepEqual([...LEGENDS].sort(), Object.keys(SPECIES).filter(k => SPECIES[k].legendary).sort());
-  assert.equal(LEGENDS.length, 5);
+  assert.equal(LEGENDS.length, 9, 'cinco leyendas de Alborada y cuatro míticos de Tierra Grande');
   const st = { money: 0, party: [makeCreature('brotelo', 10), makeCreature('pipiu', 5), makeCreature('roedin', 5)], box: [makeCreature('glaciel', 60)], dex: {} };
   const r = tryCode(st, 'Leyenda prueba');
   assert.ok(r.ok && !r.on, 'no queda prendido');
   assert.equal(st.cheats, undefined, 'no se guarda como interruptor');
   assert.deepEqual([...r.given].sort(), LEGENDS.filter(k => k !== 'glaciel').sort(), 'no repite la que ya tenía');
-  assert.equal(st.party.length, 6); assert.equal(st.box.length, 2);
+  assert.equal(st.party.length, 6); assert.equal(st.box.length, 1 + LEGENDS.length - 1 - 3);
   for (const c of [...st.party.slice(3), ...st.box.slice(1)]) { assert.ok(SPECIES[c.sp].legendary); assert.equal(c.level, LEGEND_LEVEL); assert.equal(st.dex[c.sp], 2); }
   const again = tryCode(st, 'LEYENDAPRUEBA');
   assert.equal(again.given.length, 0); assert.match(again.msg, /Ya tienes/);

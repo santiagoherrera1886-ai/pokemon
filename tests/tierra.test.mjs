@@ -121,3 +121,23 @@ test('Doña Rueda da las llaves en el Parador y cada aeropuerto tiene su control
   }
   assert.equal(tgId(3, 4), 'tg_3_4');
 });
+
+test('las 40 especies nuevas salen en Tierra Grande (o evolucionan de una que sale) y tienen modelo y sprite', async () => {
+  const NEW = ['chiguirin', 'chiguiron', 'garcilla', 'garzon', 'becerrin', 'torazo', 'lechucin', 'lechuzon', 'cucarrin', 'cucarron', 'guacarin', 'guacamaron', 'anguilin', 'temblon', 'alacrin', 'alacranzo', 'cactin', 'espinon', 'llamita', 'llamaron', 'frailin', 'frailejon', 'careyin', 'careyon', 'bufeito', 'bufeon', 'semaforin', 'semaforton', 'caimancito', 'caimanazo', 'pintin', 'tigrillo', 'jaguaron', 'lagartijin', 'iguanon', 'draguana', 'mohan', 'madremonte', 'tunjo', 'esmeraldon'];
+  assert.equal(new Set(NEW).size, 40);
+  const tg = Object.entries(ENCOUNTERS).filter(([k]) => k.startsWith('tg')).flatMap(([, t]) => t.list.map(e => e[0]));
+  const wild = new Set(tg);
+  for (const id of NEW) {
+    assert.ok(SPECIES[id], id);
+    const from = Object.keys(SPECIES).find(k => SPECIES[k].evo?.[0] === id);
+    assert.ok(wild.has(id) || (from && wild.has(from)), `${id} no sale en Tierra Grande`);
+  }
+  const { ALL_SPECIES } = await import('../src/render3d/creatures3d.js');
+  const { ATLAS_SPECIES } = await import('../src/art/bruma-sprites.js');
+  for (const id of NEW) { assert.ok(ALL_SPECIES.includes(id), `${id}: modelo 3D`); assert.ok(ATLAS_SPECIES.includes(id), `${id}: sprite`); }
+  // Los parques de las ciudades tienen pasto alto y su propia tabla.
+  const c = CITIES.find(c => c.id === 'bahia');
+  let grass = 0;
+  for (let y = c.y0; y < c.y1; y += 2) for (let x = c.x0; x < c.x1; x += 2) if (tileAt(x, y) === 'g') grass++;
+  assert.ok(grass > 0 && ENCOUNTERS.tgCiudad, 'pasto alto en los parques de Bahía Dorada');
+});

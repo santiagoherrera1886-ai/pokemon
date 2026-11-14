@@ -93,5 +93,6 @@ test('the 18 types all have wild or legendary species, learnsets use real moves 
   // Las criaturas nocturnas sólo salen de noche.
   assert.ok(encounterList('lago', 23).some(e => e[0] === 'fatuin'));
   assert.ok(!encounterList('lago', 12).some(e => e[0] === 'fatuin'));
-  assert.equal(Object.values(SPECIES).filter(s => s.legendary).length, 5);
+  assert.equal(Object.values(SPECIES).filter(s => s.legendary).length, 9);
+  assert.equal(Object.keys(SPECIES).length, 120, '80 de Alborada y 40 de Tierra Grande');
 });

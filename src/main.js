@@ -254,7 +254,7 @@ class Game {
     if (!force && repelled(this.state, level)) return;
     const foe = makeCreature(sp, level);
     this.ow.scripts++;
-    const res = await this.battle({ foe, wild: true, canRun: true, canCatch: true, bg });
+    const res = await this.battle({ foe, wild: true, canRun: true, canCatch: true, bg, legendary: !!SPECIES[sp].legendary });
     if (res === 'lose') await this.blackout();
     this.ow.scripts--;
   }

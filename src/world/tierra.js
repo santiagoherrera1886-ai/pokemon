@@ -305,6 +305,7 @@ function cityTile(c, x, y) {
     const ring = bx === 0 || by === 0 || bx === 19 || by === 19;
     if (ring) return (bx + by) % 3 === 0 ? 'T' : '.';
     if ((bx > 3 && bx < 7 && by > 3 && by < 7) || (bx > 12 && bx < 16 && by > 12 && by < 16)) return 'F';
+    if ((bx > 12 && bx < 17 && by > 2 && by < 7) || (bx > 2 && bx < 7 && by > 12 && by < 17)) return 'g';   // pasto alto: ahí salen criaturas de ciudad
     return '.';
   }
   if (plan.type === 'plaza') return (bx + by) % 2 ? '.' : '.';
@@ -353,13 +354,13 @@ const TRAINER_LOOK = { Excursionista: 'hiker', Campista: 'kid', 'Chica del campo
 const FIRST = ['Mateo', 'Sara', 'Juanjo', 'Valen', 'Camilo', 'Luisa', 'Andrés', 'Mafe', 'Tomás', 'Isa', 'Simón', 'Majo', 'Nico', 'Laura', 'Pipe', 'Dani'];
 // Equipos de entrenadores por bioma: [especie, nivel relativo]. Se completan con las especies nuevas.
 export const TG_TEAMS = {
-  llano: [['pipiolo', 0], ['roedon', 1], ['seton', 0], ['carnerazo', 1], ['voltaz', 0]],
-  bosque: [['capullado', 0], ['seton', 1], ['foliaton', 0], ['perezon', 1], ['alasol', 0]],
-  selva: [['foliaton', 0], ['serpentil', 1], ['mariposol', 0], ['colibron', 1], ['doradon', 0]],
-  desierto: [['penon', 1], ['magmor', 0], ['serpentil', 0], ['gurron', 1]],
-  sierra: [['penon', 0], ['condoral', 1], ['carnerazo', 0], ['anteojon', 1], ['ferrox', 0]],
-  nevado: [['nivalmar', 1], ['condoral', 0], ['penon', 1], ['anteojon', 0]],
-  playa: [['meduson', 0], ['cangrejon', 1], ['charcomar', 0], ['pipiolo', 1]]
+  llano: [['pipiolo', 0], ['roedon', 1], ['seton', 0], ['carnerazo', 1], ['voltaz', 0], ['chiguiron', 1], ['becerrin', 0], ['torazo', 1], ['garcilla', 0]],
+  bosque: [['capullado', 0], ['seton', 1], ['foliaton', 0], ['perezon', 1], ['alasol', 0], ['lechuzon', 1], ['cucarron', 1], ['cucarrin', 0]],
+  selva: [['foliaton', 0], ['serpentil', 1], ['mariposol', 0], ['colibron', 1], ['doradon', 0], ['guacamaron', 1], ['temblon', 1], ['tigrillo', 0], ['caimancito', 0], ['caimanazo', 1]],
+  desierto: [['penon', 1], ['magmor', 0], ['serpentil', 0], ['gurron', 1], ['alacranzo', 1], ['espinon', 1], ['iguanon', 0], ['cactin', 0]],
+  sierra: [['penon', 0], ['condoral', 1], ['carnerazo', 0], ['anteojon', 1], ['ferrox', 0], ['llamaron', 1], ['llamita', 0]],
+  nevado: [['nivalmar', 1], ['condoral', 0], ['penon', 1], ['anteojon', 0], ['frailejon', 1], ['frailin', 0]],
+  playa: [['meduson', 0], ['cangrejon', 1], ['charcomar', 0], ['pipiolo', 1], ['careyon', 1], ['garzon', 1], ['bufeon', 0]]
 };
 export function tgMap(i, j) {
   if (i < 0 || j < 0 || i >= TG.N || j >= TG.N) return null;
@@ -377,7 +378,7 @@ export function tgMap(i, j) {
   const biome = mapBiome(x0, y0);
   const name = city ? city.name : ap ? ap.name : road ? road.name : AREA[biome](QUAD(mid[0], mid[1]));
   b.meta({ name, outdoor: true, origin: [TG.X + x0, TG.Y + y0], tg: [i, j], region: 'tierra', biome: BIOME3D[biome], snow: biome === 'nevado' || undefined,
-    paved: roadTiles > 0 || undefined, encounters: city ? undefined : TG_ENCOUNTER[biome], battleBg: BG[biome], zone: biome });
+    paved: roadTiles > 0 || undefined, encounters: city ? (city.kind === 'parador' ? undefined : 'tgCiudad') : TG_ENCOUNTER[biome], battleBg: city ? 'grass' : BG[biome], zone: biome });
   // Edificios, parques y gente de las manzanas que caen en este mapa.
   for (let by = Math.floor(y0 / BLOCK); by < (y0 + S) / BLOCK; by++) for (let bx = Math.floor(x0 / BLOCK); bx < (x0 + S) / BLOCK; bx++) {
     const c = cityAt(bx * BLOCK + 12, by * BLOCK + 12);
