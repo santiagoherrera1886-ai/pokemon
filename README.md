@@ -87,6 +87,39 @@ Diez familias de tres etapas, con diseños propios inspirados en las láminas de
 
 En pixel clásico, todas las especies usan sprites sacados de sus modelos 3D (`src/art/bruma-sprites.png`), así se ven igual en los dos modos; el pixel art original queda de respaldo mientras carga el atlas. Si cambias un modelo, se regeneran con `node scripts/sprites.cjs`.
 
+## Tierra Grande (mundo abierto)
+
+Al sur de la Sabana, la **Autopista del Llano** baja a Tierra Grande: un territorio de **4.032 × 4.032 casillas** (unos 6 × 6 km a escala de casa) que se genera solo y siempre sale igual (`src/world/tierra.js`). Tiene llano, bosque, selva, desierto, sierra, páramo nevado y costa; tres ciudades grandes (Bahía Dorada, Altamira y Ciudad Médano), cuatro pueblos y el Parador del Llano, autopistas y carreteras que unen todo, dos ríos y cinco aeropuertos. Las ciudades tienen torres, edificios con letreros, casas, parques, plazas, parqueaderos, posada y tienda con mostrador propio. Los entrenadores y las criaturas salvajes de Tierra Grande suben de nivel con tus medallas.
+
+- **Carro:** Doña Rueda, en el Parador del Llano, te presta uno (escoges el color). **C** o el botón **CARRO** para subirte y bajarte; **B** sostenido es turbo. En carro no salen criaturas ni te frenan los entrenadores, y el carro no sale de Tierra Grande.
+- **Avioneta:** la controladora de cualquier aeropuerto te da la Licencia de Piloto y te deja despegar. En el aire, la avioneta gira hacia donde apuntes con la cruceta, **B** es turbo y **A** encima de cualquier pista aterriza; arriba hay una flecha hacia la pista más cercana. En pleno vuelo no se guarda.
+- **Tráfico de adorno** en carreteras y calles (frena si te le paras enfrente) y sombras de avionetas que pasan.
+- **Mapa:** en VER MAPA hay pestañas Alborada / Tierra Grande. En Tierra Grande, las carreteras, ciudades y aeropuertos salen siempre y el terreno se va llenando con lo que exploras (se guarda en la partida como un mapa de bits).
+
+### Las 40 criaturas de Tierra Grande
+
+| Familia | Tipos | Dónde aparece |
+|---|---|---|
+| Chigüirín → Chigüirón (chigüiro) | Normal → Normal/Agua | Llano |
+| Garcilla → Garzón (garza) | Agua/Volador | Llano, costa |
+| Becerrín → Torazo (toro) | Lucha → Lucha/Tierra | Llano |
+| Lechucín → Lechuzón (lechuza) | Siniestro/Volador | Bosque, de noche |
+| Cucarrín → Cucarrón (escarabajo cornudo) | Bicho/Acero | Bosque, parques |
+| Guacarín → Guacamarón (guacamaya) | Fuego/Volador | Selva |
+| Anguilín → Temblón (anguila eléctrica) | Agua/Eléctrico | Selva |
+| Bufeíto → Bufeón (delfín rosado de río) | Agua/Psíquico | Selva, costa |
+| Caimancito → Caimanazo (caimán) | Agua/Siniestro | Selva |
+| Pintín → Tigrillo → Jaguarón (felinos) | Siniestro → Siniestro/Lucha | Selva |
+| Alacrín → Alacranzo (alacrán) | Veneno/Tierra | Desierto |
+| Cactín → Espinón (cactus) | Planta/Tierra | Desierto |
+| Lagartijín → Iguanón → Draguana (iguana dragón) | Tierra → Tierra/Dragón → Dragón/Tierra | Desierto |
+| Llamita → Llamarón (llama de fuego) | Normal/Fuego | Sierra, páramo |
+| Frailín → Frailejón (frailejón) | Planta/Hielo | Páramo nevado |
+| Careyín → Careyón (tortuga carey) | Agua/Roca | Costa |
+| Semaforín → Semafortón (semáforo) | Eléctrico/Acero | Parques de las ciudades |
+
+**Míticos (muy raros):** Mohán (Agua/Fantasma, selva de noche), Madremonte (Planta/Fantasma, bosque), Tunjo (Acero/Psíquico, desierto y sierra) y Esmeraldón (Roca/Hada, sierra). Cuentan como leyendas. Los modelos están en `src/render3d/fauna2.js`; con estas, el Registro llega a **120 especies**.
+
 ## Personaje y partidas
 
 - **Creador de personaje:** al empezar escoges chico o chica, tono de piel, peinado (corto, puntas, rizos, rapado, largo, cola, moño o melena), color de pelo, gorra (o sin gorra), chaqueta, pantalón o falda y morral. Se ve igual en 3D y en pixel clásico, y se cambia cuando quieras en **Opciones → Mi avatar**.
@@ -134,6 +167,7 @@ La tienda muestra íconos en pixel art, descripción de cada objeto, cantidad x1
 | Hablar, investigar, aceptar | Z, E, Enter o Espacio | A |
 | Correr (después de recibir las zapatillas), cancelar | X o Shift | B |
 | Menú | Esc o M | Botón ☰ |
+| Subirse o bajarse del carro (Tierra Grande) | C o Q | Botón CARRO |
 
 ## Gráficos
 
@@ -175,7 +209,14 @@ src/data/creatures.js especies, movimientos, tipos y encuentros (de día y de no
 src/data/alba.js      Forma Alba: brazalete, multiplicadores y limpieza al terminar el combate
 src/data/gyms.js      los ocho gimnasios: medalla, líder, ciudad, regalo, siguiente destino y la regla de la Liga
 src/render3d/gyms.js  el edificio 3D de cada gimnasio según su tipo
-src/ui/regionmap.js   mapa de la región con gimnasios, Liga y posición del jugador
+src/ui/regionmap.js   mapa de la región con gimnasios, Liga y posición del jugador; mapa de Tierra Grande
+src/world/tierra.js   generador de Tierra Grande: biomas, ciudades, carreteras, ríos, aeropuertos y mapas de 48 × 48
+src/world/flightmap.js vista desde el aire por pedazos (vuelo en pixel, suelo del vuelo en 3D y mapa del menú)
+src/world/flight.js   la avioneta: despegue, vuelo, aterrizaje y la vista de vuelo en pixel
+src/world/traffic.js  tráfico de adorno en carreteras y calles
+src/render3d/flight3d.js vuelo en 3D: suelo con textura, árboles y edificios instanciados, nubes
+src/render3d/vehicles.js modelos 3D de torres, carros, avionetas y surtidores
+src/render3d/fauna2.js las 40 criaturas de Tierra Grande
 src/render3d/iniciales.js modelos de las tres líneas iniciales con el acabado HD de la lámina
 src/render3d/people.js    personajes 3D: complexión, ropa, pelo y animación de cada diseño (tabla DESIGN)
 src/render3d/faces.js     cabeza torneada y cara pintada (ojos abiertos y cerrados para parpadear)
@@ -190,6 +231,7 @@ src/core/state.js     estado de la partida y tres ranuras de guardado
 src/core/cloud.js     respaldo opcional de las partidas en un gist privado de GitHub
 tests/e2e.cjs         prueba que juega toda la historia en Chromium real
 tests/region.test.mjs mapas conectados, puertas, guardias, gimnasios, entrenadores y encuentros
+tests/tierra.test.mjs Tierra Grande: determinismo, bordes, carreteras a todas partes, puertas y criaturas
 fonts/                Pixelify Sans, Fredoka y Nunito (licencia SIL OFL, incluida), servidas localmente
 ```
 
@@ -201,15 +243,16 @@ npx playwright install chromium
 npm test
 ```
 
-La prueba juega **la historia entera** con teclas reales: camina con una ruta calculada sobre las colisiones del juego (sin teletransportes), entra y sale de edificios, pelea con Nico, los entrenadores, los ocho líderes (recorre la Ruta 6 a la Ruta 11 de una ciudad a otra), Bruma, Umbra, Espejalba, Nico en la Liga y la Campeona Aurora (usando la Forma Alba en cada combate desde la primera medalla), encuentra a Fraguón en la Cueva Eco después de la Liga, usa la posada, compra y vende en la tienda, compra en el mostrador especial y en la máquina, usa el viaje rápido, guarda y continúa tras recargar, prueba las opciones y los controles táctiles en un celular, crea una chica en el editor de personaje, usa dos ranuras y conecta el respaldo de GitHub contra una API simulada, y falla si aparece cualquier error de JavaScript. Las capturas quedan en `tests/screenshots/`.
+La prueba juega **la historia entera** con teclas reales: camina con una ruta calculada sobre las colisiones del juego (sin teletransportes), entra y sale de edificios, pelea con Nico, los entrenadores, los ocho líderes (recorre la Ruta 6 a la Ruta 11 de una ciudad a otra), Bruma, Umbra, Espejalba, Nico en la Liga y la Campeona Aurora (usando la Forma Alba en cada combate desde la primera medalla), encuentra a Fraguón en la Cueva Eco después de la Liga, baja por la Autopista del Llano a Tierra Grande (carro, avioneta con despegue y aterrizaje, mapa y una criatura nueva en un parque), usa la posada, compra y vende en la tienda, compra en el mostrador especial y en la máquina, usa el viaje rápido, guarda y continúa tras recargar, prueba las opciones y los controles táctiles en un celular, crea una chica en el editor de personaje, usa dos ranuras y conecta el respaldo de GitHub contra una API simulada, y falla si aparece cualquier error de JavaScript. Las capturas quedan en `tests/screenshots/`.
 
-Para que la prueba sea rápida y no dependa del azar, después de elegir inicial sube su nivel, le recarga los PP en algunos puntos y, en la región del este, entrena al equipo antes de cada líder y da por vencidos a los entrenadores de ruta (ya probados antes). Todo lo demás es entrada real. Las pruebas unitarias (`tests/region.test.mjs`) revisan que los 69 mapas se alcancen caminando, que los bordes empaten sin cortes, que cada puerta tenga regreso y que los líderes vayan subiendo de nivel.
+Para que la prueba sea rápida y no dependa del azar, después de elegir inicial sube su nivel, le recarga los PP en algunos puntos y, en la región del este, entrena al equipo antes de cada líder y da por vencidos a los entrenadores de ruta (ya probados antes). Todo lo demás es entrada real. Las pruebas unitarias (`tests/region.test.mjs`) revisan que los 117 mapas hechos a mano se alcancen caminando (y `tests/tierra.test.mjs`, que desde la entrada de Tierra Grande se llegue por carretera a todas las ciudades y aeropuertos), que los bordes empaten sin cortes, que cada puerta tenga regreso y que los líderes vayan subiendo de nivel.
 
 ## Pendiente
 
 - Música y efectos de sonido.
 - Revisión visual del protagonista GLB (prototipo técnico) antes de usarlo por defecto; los GLB de Brotelo, Brasín y Charquín todavía no existen (sólo hay conceptos), por eso en el juego siguen siendo modelos esculpidos.
-- Más zonas opcionales después de la Liga (por ahora, después de ser campeón quedan las leyendas de la Bruma).
+- Tierra Grande todavía no tiene gimnasios ni historia propia: es para explorar, entrenar y completar el Registro.
+- El tráfico es de adorno (no choca) y las ciudades no tienen interiores aparte de la posada y la tienda.
 
 ## Sobre `original/pokediamond`
 

@@ -468,6 +468,69 @@ async function run() {
     await sleep(600); await settle();
     log('leyenda de la Bruma (Fraguón) OK');
 
+    // ------------------------------------------------ Tierra Grande: autopista, carro, avioneta, mapa y criaturas nuevas
+    await page.evaluate(() => { __game.ow.load('autopistaLlano', 14, 26, 0, false); });
+    await sleep(600); await settle();
+    for (let i = 0; i < 5; i++) await step('ArrowDown');
+    s = await st(); assert.ok(/^tg_40_0$/.test(s.map), 'la Autopista del Llano baja caminando a Tierra Grande: ' + s.map);
+    await page.evaluate(() => { __game.ow.load('tg_40_5', 17, 10, 1, false); });   // frente a la gasolinera, al lado de Doña Rueda
+    await sleep(800); await settle();
+    const rueda = await page.evaluate(() => { const n = __game.ow.npc('tgLlaves'); return n && [n.x, n.y]; });
+    assert.ok(rueda, 'Doña Rueda está en el Parador del Llano');
+    await talkTo(rueda[0], rueda[1]); await settle(300000, { answer: 1 });
+    s = await st(); assert.ok(s.bag.llavesCarro, 'Doña Rueda presta el carro');
+    assert.equal(await page.evaluate(() => __game.state.carColor), '#3a6ad8', 'el carro sale del color escogido');
+    // Por una calle de Villa Cruce, en turbo.
+    await page.evaluate(() => { __game.ow.load('tg_40_30', 30, 3, 3, false); });
+    await sleep(800); await settle();
+    await tap('c');
+    assert.equal(await page.evaluate(() => __game.ow.vehicle), 'car', 'C sube al carro');
+    const car0 = await page.evaluate(() => __game.ow.tgPos());
+    await page.keyboard.down('x'); await page.keyboard.down('ArrowRight'); await sleep(1500); await page.keyboard.up('ArrowRight'); await page.keyboard.up('x');
+    await settle();
+    const car1 = await page.evaluate(() => __game.ow.tgPos());
+    assert.ok(car1[0] - car0[0] >= 8, `el carro avanza rápido por la calle (${car0[0]} → ${car1[0]})`);
+    await shot('tierra-grande-carro');
+    await tap('z');
+    assert.equal(await page.evaluate(() => __game.ow.vehicle), null, 'A baja del carro');
+    // Avioneta: licencia, despegue, vuelo, mapa en el aire y aterrizaje en otro aeropuerto.
+    await page.evaluate(() => { __game.ow.load('tg_43_7', 8, 25, 1, false); });
+    await sleep(800); await settle();
+    const ctl = await page.evaluate(() => { const n = __game.ow.npcs.find(n => n.talk === 'aeropuerto'); return n && [n.x, n.y]; });
+    await talkTo(ctl[0], ctl[1]); await settle();
+    assert.ok(await page.evaluate(() => !!__game.ow.flight && __game.state.bag.licenciaPiloto === 1), 'la controladora da la licencia y deja despegar');
+    await page.waitForFunction(() => __game.ow.flight?.phase === 'cruise', {}, { timeout: 60000 });
+    const fly0 = await page.evaluate(() => [__game.ow.flight.x, __game.ow.flight.y]);
+    await page.keyboard.down('ArrowDown'); await sleep(1500); await page.keyboard.up('ArrowDown');
+    const fly1 = await page.evaluate(() => [__game.ow.flight.x, __game.ow.flight.y, __game.ow.flight.heading]);
+    assert.ok(Math.hypot(fly1[0] - fly0[0], fly1[1] - fly0[1]) > 20 && fly1[2] > .3, 'la avioneta vuela y gira hacia donde apunta la cruceta');
+    await shot('tierra-grande-vuelo');
+    await tap('Escape'); await choose('map');
+    assert.ok(await page.$('#panel .rm-tabs') && await page.$('#panel .rmap.tg canvas'), 'el mapa muestra Tierra Grande');
+    await page.click('#panel [data-act="rm:alborada"]'); await sleep(200);
+    assert.ok(await page.$('#panel .rmap:not(.tg)'), 'y se puede cambiar a Alborada');
+    await page.click('#panel [data-back]'); await sleep(150);
+    await choose('save'); await settle();
+    assert.ok(await page.evaluate(() => !!__game.ow.flight), 'en pleno vuelo no se guarda (y el vuelo sigue)');
+    await page.evaluate(() => { const f = __game.ow.flight; f.x = 3300; f.y = 676; f.heading = 0; });
+    await tap('z');
+    await page.waitForFunction(() => !__game.ow.flight && __game.ow.scripts === 0 && !__game.fading, {}, { timeout: 60000 });
+    await settle();
+    assert.equal(await page.evaluate(() => __game.ow.map.name), 'Aeropuerto de Altamira', 'aterriza en la pista de abajo');
+    assert.ok(await page.evaluate(() => (__game.state.tgSeen || '').length > 100), 'lo explorado queda guardado en la partida');
+    // Una criatura nueva en el parque de una ciudad (encuentro forzado y captura con el código de prueba apagado: sólo se mira que exista).
+    await page.evaluate(() => { __game.ow.load('tg_40_30', 30, 3, 3, false); });
+    await sleep(500); await settle();
+    const fauna = await page.evaluate(async () => { const { encounterList } = await import('/src/data/creatures.js'); return encounterList('tgCiudad', 12).map(e => e[0]); });
+    assert.ok(fauna.includes('semaforin'), 'los parques de la ciudad tienen Semaforín');
+    await page.evaluate(() => __game.maybeEncounter('tgCiudad', 'grass', { force: true }));
+    await page.waitForFunction(() => __game.scene === 'battle', {}, { timeout: 30000 });
+    await sleep(1500); await shot('tierra-grande-criatura-nueva');
+    await settle();
+    log('Tierra Grande: autopista, carro, avioneta, mapa y criaturas nuevas OK');
+    await page.evaluate(([m, x, y]) => { __game.ow.load(m, x, y, 0, false); }, [home.map, home.x, home.y]);
+    await sleep(600); await settle();
+
     // ------------------------------------------------ Códigos secretos (con claves de prueba: las reales no van en el repositorio)
     await page.evaluate(async () => { const m = await import('/src/data/cheats.js'); m.CHEATS.evolve.print = m.codePrint('EVOPRUEBA'); m.CHEATS.money.print = m.codePrint('PLATAPRUEBA'); m.CHEATS.level.print = m.codePrint('NIVELPRUEBA'); m.CHEATS.legend.print = m.codePrint('LEYENDAPRUEBA'); });
     const tryCode = async code => {
