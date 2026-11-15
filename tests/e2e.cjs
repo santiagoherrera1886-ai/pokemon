@@ -391,7 +391,7 @@ async function run() {
     log('Ruta 12 y Pueblo Guadua OK');
 
     // ------------------------------------------------ Occidente: Ruta 22 y el Valle de las Palmas
-    await page.evaluate(() => { const g = __game; g.ow.load('lago', 3, 10, 2, false); g.ow.scripts = 1; });
+    await page.evaluate(() => { __game.ow.load('lago', 3, 10, 2, false); });
     await settle();
     await walkTo(7, 15, 'palmar');
     s = await st(); assert.equal(s.map, 'palmar', 'del lago se llega al Valle de las Palmas');
