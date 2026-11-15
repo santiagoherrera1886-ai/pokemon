@@ -397,6 +397,9 @@ async function run() {
     s = await st(); assert.equal(s.map, 'palmar', 'del lago se llega al Valle de las Palmas');
     await shot('valle-de-las-palmas');
     log('Ruta 22 y Valle de las Palmas OK');
+    // De vuelta a Pueblo Guadua, donde la prueba sigue hacia Corola.
+    await page.evaluate(() => { __game.ow.load('guadua', 14, 15, 0, false); });
+    await sleep(600); await settle();
 
     // ------------------------------------------------ Región del este: los cinco gimnasios que faltan
     // Entrenamiento exprés: el equipo sube de nivel, evoluciona y aprende lo de su nivel, como si hubiera
