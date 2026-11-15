@@ -528,6 +528,63 @@ async function run() {
     await sleep(1500); await shot('tierra-grande-criatura-nueva');
     await settle();
     log('Tierra Grande: autopista, carro, avioneta, mapa y criaturas nuevas OK');
+
+    // ------------------------------------------------ Vida en Tierra Grande: motel, casa propia con muebles y pareja
+    await page.evaluate(() => { __game.state.money = 99999; __game.state.party.forEach(c => { c.hp = 1; }); __game.ow.load('tgi_motel_descanso', 6, 7, 1, false); });
+    await sleep(600); await settle();
+    await walkTo(2, 4); await face('ArrowUp'); await talk(); await settle(300000, { answer: 2 });
+    s = await st();
+    assert.ok(s.party.every(c => c.hp === c.max), 'dormir en el motel cura al equipo');
+    assert.ok(await page.evaluate(() => __game.state.day === 1 && __game.state.lastHeal.map === 'tgi_motel_descanso' && Number.isFinite(__game.state.clockShift)), 'dormir hasta mañana pasa el día, adelanta el reloj y deja el motel como regreso');
+    assert.equal(s.money, 99999 - 300, 'la pieza vale $300');
+    // Casa: comprar un lote en Villa Cruce, construir, entrar, amoblar y dormir.
+    const lot = await page.evaluate(async () => {
+      const t = await import('/src/world/tierra.js'), c = t.CITIES.find(c => c.id === 'cruce');
+      for (let by = c.y0 / 24; by * 24 < c.y1 - 4; by++) for (let bx = c.x0 / 24; bx * 24 < c.x1 - 4; bx++) if (t.blockPlan(c, bx, by).type === 'lote') {
+        const gx = bx * 24 + 4 + 13, gy = by * 24 + 4 + 14, i = Math.floor(gx / 48), j = Math.floor(gy / 48);
+        __game.ow.load(`tg_${i}_${j}`, gx - i * 48, gy - j * 48, 1, false);
+        return `cruce_${bx}_${by}`;
+      }
+    });
+    await sleep(800); await settle();
+    await talk(); await settle(300000, { answer: 0 });
+    assert.ok(await page.evaluate(l => __game.state.houses?.[l]?.model === 'sencilla', lot), 'el lote se compra y la casa queda construida');
+    const casaDoor = await page.evaluate(l => __game.ow.map.warps.find(w => w.to === `tgi_casa_${l}`), lot);
+    await walkTo(casaDoor.x, casaDoor.y + 1); await step('ArrowUp'); await settle();
+    s = await st(); assert.equal(s.map, `tgi_casa_${lot}`, 'se entra a la casa propia');
+    await shot('casa-propia-vacia');
+    await walkTo(2, 3); await face('ArrowUp'); await talk(); await settle(300000, { answer: 0 });
+    const nFurn = await page.evaluate(async l => { const { FURNITURE } = await import('/src/world/hogar.js'); return [__game.state.houses[l].furniture.length, FURNITURE.length]; }, lot);
+    assert.equal(nFurn[0], nFurn[1], 'el catálogo vende todos los muebles y quedan en la casa');
+    await walkTo(1, 3); await face('ArrowLeft'); await talk(); await settle(300000, { answer: 0 });
+    assert.equal(await page.evaluate(() => __game.state.lastHeal.map), `tgi_casa_${lot}`, 'la cama de la casa deja la casa como regreso');
+    await shot('casa-propia-amoblada');
+    // Pareja: con el cariño y las citas listas, Valentina acepta y te acompaña.
+    await page.evaluate(async () => {
+      const { CANDIDATES, candidateSpot } = await import('/src/world/hogar.js'), { CITIES } = await import('/src/world/tierra.js');
+      const st = __game.state; st.romance = { valentina: { pts: 80, dates: 3, talk: -1, gift: -1, date: -1, met: true } }; st.bag.ramoFlores = 1;
+      const [gx, gy] = candidateSpot(CITIES.find(c => c.id === CANDIDATES.valentina.city)), i = Math.floor(gx / 48), j = Math.floor(gy / 48);
+      __game.ow.load(`tg_${i}_${j}`, gx - i * 48, gy - j * 48 + 2, 1, false);
+    });
+    await sleep(800); await settle();
+    const vale = await page.evaluate(() => { const n = __game.ow.npcs.find(n => n.cand === 'valentina'); return [n.x, n.y]; });
+    await talkTo(vale[0], vale[1]);
+    await page.waitForSelector('#panel .choice'); await page.click('#panel [data-act="1"]');   // dar un regalo
+    await settle(300000, { answer: 0 });
+    await talkTo(vale[0], vale[1]);
+    await page.waitForSelector('#panel .choice'); await page.click('#panel [data-act="3"]');   // pedirle que sea tu novia
+    await settle(300000, { answer: 0 });
+    assert.ok(await page.evaluate(() => __game.state.pareja?.id === 'valentina' && !!__game.ow.follower), 'Valentina acepta y te acompaña');
+    const p0 = await page.evaluate(() => [__game.ow.player.x, __game.ow.player.y]);
+    for (const k of ['ArrowDown', 'ArrowDown', 'ArrowDown']) await step(k);
+    const fol = await page.evaluate(() => { const f = __game.ow.follower, p = __game.ow.player; return Math.abs(f.x - p.x) + Math.abs(f.y - p.y); });
+    assert.ok(fol <= 1, 'la pareja camina detrás de ti');
+    await shot('pareja-acompana');
+    assert.ok(await page.evaluate(() => !__game.ow.npcs.some(n => n.cand === 'valentina')), 'mientras te acompaña no se queda parada en su ciudad');
+    void p0;
+    // Para el resto de la prueba, la pareja se queda esperando en su ciudad (así no queda en el camino).
+    await page.evaluate(() => { __game.state.pareja.follow = false; __game.ow.setFollower(); __game.ow.refreshNpcs(); });
+    log('motel, casa propia con muebles y pareja OK');
     await page.evaluate(([m, x, y]) => { __game.ow.load(m, x, y, 0, false); }, [home.map, home.x, home.y]);
     await sleep(600); await settle();
 

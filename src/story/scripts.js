@@ -3,7 +3,8 @@ import { ui } from '../ui/ui.js';
 import { SPECIES, RIVAL_PICK, makeCreature, rivalForm } from '../data/creatures.js';
 import { ITEMS, SPECIAL } from '../data/items.js';
 import { gymOf, hasBadge, badgeCount, nextGym, leagueOpen, LEAGUE_BADGES } from '../data/gyms.js';
-import { AIRPORTS } from '../world/tierra.js';
+import { AIRPORTS, CITIES } from '../world/tierra.js';
+import { VIDA } from './vida.js';
 
 const N = { mom: 'Mamá', nico: 'Nico', prof: 'Prof. Ceiba', aide: 'Ayudante', kid: 'Niño', nurse: 'Enfermera Malva', clerk: 'Dependiente', vendor: 'Vendedora', rivalMom: 'Mamá de Nico', guard: 'Guardia', grunt: 'Recluta Eclipse', bruma: 'Bruma', umbra: 'Umbra', aurora: 'Campeona Aurora', courier: 'Mensajera', sailor: 'Capitán' };
 
@@ -215,6 +216,9 @@ const S = {
     const places = [['Pueblo Brisal', 'brisal', 5, 8], ['Villa Arenal', 'arenal', 18, 8], ['Ciudad Corola', 'corola', 6, 16], ['Pueblo Cobre', 'cobre', 6, 17], ['Ciudad Marea', 'marea', 22, 8], ['Pueblo Guadua', 'guadua', 7, 12], ['Puerto Caracol', 'caracol', 7, 8], ['Cabo Faro', 'cabo', 6, 16], ['Valle de las Palmas', 'palmar', 7, 15], ['Pueblo Llanero', 'sabana', 7, 13],
       ['Ciudad Voltio', 'voltio', 6, 16], ['Pueblo Niebla', 'niebla', 6, 19], ['Villa Cafetal', 'cafetal', 6, 12], ['Ciudad Escarcha', 'escarcha', 6, 17], ['Ciudad Albor', 'albor', 14, 13], ['Liga Alborada', 'ruta5', 7, 7]]
       .filter(p => st.visited && st.visited[p[1]]).map(([name, map, x, y]) => ({ name, map, x, y }));
+    // Tierra Grande: las ciudades donde ya entraste a la posada, y tus casas.
+    for (const c of CITIES) if (st.visited?.[`tgi_posada_${c.id}`]) places.push({ name: c.name, map: `tgi_posada_${c.id}`, x: 6, y: 7 });
+    for (const lot of Object.keys(st.houses || {})) { const c = CITIES.find(c => c.id === lot.split('_')[0]); places.push({ name: `Tu casa · ${c ? c.name : 'Tierra Grande'}`, map: `tgi_casa_${lot}`, x: 6, y: 8 }); }
     await say(N.courier, '¡Hola! ¿A dónde te llevo?');
     const i = await game.menus.travel(places);
     if (i < 0) return say(N.courier, '¡Cuando quieras!');
@@ -494,3 +498,5 @@ const S = {
     game.toast('¡Eres campeón de Alborada!');
   }
 };
+// Moteles, casas propias y pareja (Tierra Grande).
+Object.assign(S, VIDA);

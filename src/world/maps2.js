@@ -1,10 +1,11 @@
 // Mapas de la historia completa: Ruta 2 a la Liga Alborada.
 import { MapBuilder } from './builder.js';
 import { leagueOpen } from '../data/gyms.js';
+import { gameHour } from '../core/clock.js';
 
 const S = st => st.story;
 // De noche (19:00 a 4:59, o la hora fija de las opciones).
-const isNight = st => { const h = st.options?.forceHour ?? new Date().getHours(); return h >= 19 || h < 5; };
+const isNight = st => { const h = gameHour(st); return h >= 19 || h < 5; };
 const has = (st, b) => (st.badges || []).includes(b);
 const T = (name, look, party, money, intro, defeat, after, extra = {}) => ({ name, look, party, money, intro: [].concat(intro), defeat: [].concat(defeat), after: [].concat(after || defeat), ...extra });
 

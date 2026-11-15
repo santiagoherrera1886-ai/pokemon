@@ -5,6 +5,7 @@
 // se crean cuando el jugador se acerca y se pueden olvidar y volver a crear idénticos.
 import { MapBuilder } from './builder.js';
 import { posadaGen, tiendaGen } from './maps2.js';
+import { motelGen, casaPropiaGen, houseShape, LOT_DOOR, CANDIDATES, candidateSpot } from './hogar.js';
 
 export const TG = { S: 48, N: 84, X: -2016, Y: 100 };   // tamaño de cada mapa, mapas por lado y origen global
 export const SIZE = TG.S * TG.N;                          // 4.032 casillas por lado
@@ -40,7 +41,14 @@ export const CITIES = [
   { id: 'palma', name: 'Pueblo Palma', x0: 504, y0: 1800, x1: 696, y1: 1944, kind: 'pueblo', palette: 'selva' },
   { id: 'pino', name: 'Pueblo Pino', x0: 888, y0: 648, x1: 1056, y1: 792, kind: 'pueblo', palette: 'llano' },
   { id: 'viejo', name: 'Puerto Viejo', x0: 2976, y0: 3336, x1: 3192, y1: 3480, kind: 'pueblo', palette: 'costa' },
-  { id: 'parador', name: 'Parador del Llano', x0: 1896, y0: 192, x1: 2016, y1: 264, kind: 'parador', palette: 'llano' }
+  { id: 'parador', name: 'Parador del Llano', x0: 1896, y0: 192, x1: 2016, y1: 264, kind: 'parador', palette: 'llano' },
+  // Moteles de carretera: dos manzanas pegadas a la vía (el motel y su patio con parqueadero y piscina).
+  { id: 'descanso', name: 'Motel El Descanso', x0: 1944, y0: 912, x1: 1992, y1: 936, kind: 'motel', palette: 'llano' },
+  { id: 'ceiba', name: 'Motel La Ceiba', x0: 1824, y0: 2400, x1: 1872, y1: 2424, kind: 'motel', palette: 'llano' },
+  { id: 'caminoreal', name: 'Motel Camino Real', x0: 2496, y0: 1584, x1: 2544, y1: 1608, kind: 'motel', palette: 'desierto' },
+  { id: 'brisa', name: 'Motel Brisa Marina', x0: 2256, y0: 3408, x1: 2304, y1: 3432, kind: 'motel', palette: 'costa' },
+  { id: 'pinos', name: 'Motel Los Pinos', x0: 816, y0: 1368, x1: 864, y1: 1392, kind: 'motel', palette: 'llano' },
+  { id: 'palmera', name: 'Motel La Palmera', x0: 840, y0: 2616, x1: 888, y1: 2640, kind: 'motel', palette: 'selva' }
 // Cuatro casillas más al este y al sur: así cada ciudad queda rodeada de calle por los cuatro lados y
 // cualquier carretera que llegue por cualquier borde empata con una calle (y no con la pared de una manzana).
 ].map(c => ({ ...c, x1: c.x1 + 4, y1: c.y1 + 4 }));
@@ -88,6 +96,14 @@ export const ROADS = [
   { name: 'Acceso Aeropuerto Bahía Dorada', w: 4, pts: [[1152, 3190], [984, 3190]] },
   { name: 'Acceso Pista de la Selva', w: 4, pts: [[668, 2236], [790, 2236]] }
 ].map(r => ({ ...r, line: smooth(r.pts) }));
+// Entrada de cada motel: un tramo corto desde su calle hasta el punto más cercano de la vía principal.
+for (const c of CITIES.filter(c => c.kind === 'motel')) {
+  const cx = (c.x0 + c.x1) / 2, cy = (c.y0 + c.y1) / 2;
+  let best = null, bd = Infinity;
+  for (const r of ROADS) if (!r.name.startsWith('Acceso')) for (const [x, y] of r.line) { const d = Math.hypot(x - cx, y - cy); if (d < bd) { bd = d; best = [x, y]; } }
+  const ex = Math.max(c.x0 + 2, Math.min(c.x1 - 3, best[0])), ey = Math.max(c.y0 + 2, Math.min(c.y1 - 3, best[1]));
+  ROADS.push({ name: 'Acceso ' + c.name, w: 4, pts: [[ex, ey], best], line: smooth([[ex, ey], best]) });
+}
 export const RIVERS = [
   { name: 'Río Grande', w: 9, line: smooth([[3060, 260], [2800, 900], [2560, 1350], [2350, 2000], [2250, 2600], [2130, 3200], [2160, 4100]], 24) },
   { name: 'Río Verde', w: 7, line: smooth([[250, 1100], [420, 1700], [470, 2300], [640, 3000], [600, 4100]], 24) }
@@ -176,7 +192,10 @@ export function blockPlan(c, bx, by) {
   const centerBlock = Math.floor(cx / BLOCK) === bx && Math.floor(cy / BLOCK) === by;
   const r = h2(bx, by, 977), P = PALETTES[c.palette] || PALETTES.llano;
   let type;
-  if (c.kind === 'parador') type = (bx * BLOCK - c.x0) / BLOCK === 2 && (by * BLOCK - c.y0) / BLOCK === 1 ? 'posada' : (bx * BLOCK - c.x0) / BLOCK === 3 ? 'parqueadero' : 'gasolina';
+  const lotPick = h2(bx, by, 4242);
+  if (c.kind === 'motel') type = bx * BLOCK === c.x0 ? 'motel' : 'motelpatio';
+  else if (!centerBlock && ((c.kind === 'pueblo' && lotPick < .1) || (c.kind === 'grande' && dist > .55 && lotPick < .025))) type = 'lote';
+  else if (c.kind === 'parador') type = (bx * BLOCK - c.x0) / BLOCK === 2 && (by * BLOCK - c.y0) / BLOCK === 1 ? 'posada' : (bx * BLOCK - c.x0) / BLOCK === 3 ? 'parqueadero' : 'gasolina';
   else if (centerBlock) type = 'posada';
   else if (c.kind === 'grande') type = dist < .4 ? (r < .7 ? 'torres' : r < .85 ? 'plaza' : 'parqueadero') : dist < .75 ? (r < .55 ? 'edificios' : r < .75 ? 'parque' : r < .85 ? 'parqueadero' : 'casas') : (r < .6 ? 'casas' : r < .8 ? 'parque' : 'edificios');
   else type = r < .55 ? 'casas' : r < .72 ? 'edificios' : r < .87 ? 'parque' : 'plaza';
@@ -210,6 +229,23 @@ export function blockPlan(c, bx, by) {
     O.push({ kind: 'big', x: 11, y: 3, w: 8, h: 5, solid: true, opt: { wall: '#eef4fa', roof: '#3f7fc8', sign: 'TIENDA', doorCol: 4 }, door: [15, 7], to: 'tienda' });
     O.push({ kind: 'sign', x: 9, y: 14, w: 1, h: 1, solid: true, text: [`${c.name}.`, c.kind === 'grande' ? 'Ciudad de Tierra Grande.' : c.kind === 'parador' ? 'Descanse, llene el tanque y siga.' : 'Pueblo de Tierra Grande.'] });
     for (const [x, y] of [[2, 12], [17, 12]]) O.push({ kind: 'lamp', x, y, w: 1, h: 1, solid: true });
+  } else if (type === 'lote') {
+    // Lote en venta: el letrero, la casa que se construya (su forma sale de la partida) y la piscina de la casona.
+    const lot = `${c.id}_${bx}_${by}`;
+    O.push({ kind: 'sign', x: 13, y: 13, w: 1, h: 1, solid: true, script: 'lote', lot, sale: true, text: ['SE VENDE', 'Lote para construir tu casa. Habla con el letrero.'] });
+    O.push({ kind: 'house', x: 7, y: 7, w: 6, h: 5, solid: true, lot, door: LOT_DOOR, to: 'casa', enter: [6, 8], opt: { doorCol: 3 } });
+    O.push({ kind: 'pool', x: 1, y: 13, w: 5, h: 4, solid: true, lot, pool: true });
+    for (const [x, y] of [[1, 1], [17, 1], [17, 16]]) O.push({ kind: 'tree', x, y, w: 1, h: 1, solid: true, variant: (x + y) % 3 });
+  } else if (type === 'motel') {
+    O.push({ kind: 'big', x: 1, y: 4, w: 16, h: 6, solid: true, opt: { wall: '#f8e8cc', roof: '#c8485a', sign: 'MOTEL', doorCol: 3 }, door: [4, 9], to: 'motel', enter: [6, 7] });
+    O.push({ kind: 'sign', x: 18, y: 12, w: 1, h: 1, solid: true, text: [c.name.toUpperCase(), 'Piezas limpias, agua caliente y parqueadero.', 'Se recibe a toda hora. La noche vale $300.'] });
+    for (const [x, y] of [[0, 12], [17, 2]]) O.push({ kind: 'lamp', x, y, w: 1, h: 1, solid: true });
+    for (const [x, y] of [[1, 15], [8, 15], [15, 15]]) O.push({ kind: 'palm', x, y, w: 1, h: 1, solid: true });
+  } else if (type === 'motelpatio') {
+    for (let k = 0; k < 5; k++) if (R(200 + k) < .7) O.push({ kind: 'car', x: 2 + k * 3, y: 1, w: 1, h: 2, solid: true, color: pick(CAR_COLORS, R(210 + k)), dir: 0 });
+    O.push({ kind: 'pool', x: 6, y: 9, w: 7, h: 5, solid: true });
+    for (const [x, y] of [[3, 10], [15, 10], [3, 16], [15, 16]]) O.push({ kind: 'palm', x, y, w: 1, h: 1, solid: true });
+    O.push({ kind: 'bench', x: 9, y: 16, w: 1, h: 1, solid: true });
   } else if (type === 'gasolina') {
     O.push({ kind: 'big', x: 3, y: 3, w: 10, h: 5, solid: true, opt: { wall: '#fff4e0', roof: '#f0b030', sign: 'GASOLINA', doorCol: 5 } });
     for (const x of [4, 8, 12]) O.push({ kind: 'pump', x, y: 12, w: 1, h: 1, solid: true });
@@ -301,6 +337,7 @@ function cityTile(c, x, y) {
   if (lx < 4 || ly < 4) return 'p';
   const plan = blockPlan(c, Math.floor(x / BLOCK), Math.floor(y / BLOCK)), bx = lx - 4, by = ly - 4;
   if (plan.type === 'parqueadero' || plan.type === 'gasolina') return 'p';
+  if (plan.type === 'motelpatio') return by < 6 ? 'p' : '.';
   if (plan.type === 'parque') {
     const ring = bx === 0 || by === 0 || bx === 19 || by === 19;
     if (ring) return (bx + by) % 3 === 0 ? 'T' : '.';
@@ -386,10 +423,16 @@ export function tgMap(i, j) {
     const plan = blockPlan(c, bx, by), ox = bx * BLOCK + 4 - x0, oy = by * BLOCK + 4 - y0;
     for (const o of plan.objects) {
       const obj = { ...o, x: o.x + ox, y: o.y + oy, opt: o.opt && { ...o.opt } };
+      // Lotes: el letrero se ve mientras no hayas construido; la casa y su puerta, después (forma según el modelo).
+      const lot = o.lot, built = lot && (st => !!st.houses?.[lot]);
+      if (lot && o.sale) obj.when = st => !st.houses?.[lot];
+      if (lot && o.kind === 'house') { obj.when = built; obj.dyn = st => houseShape(st.houses?.[lot], ox, oy); obj.dynKey = st => JSON.stringify(st.houses?.[lot] || 0); }
+      if (lot && o.pool) obj.when = st => st.houses?.[lot]?.model === 'casona';
       if (o.to) {
-        const door = [o.door[0] + ox, o.door[1] + oy], inner = `tgi_${o.to}_${c.id}`;
-        obj.door = door; delete obj.to;
-        b.warp(door[0], door[1], inner, o.to === 'posada' ? 6 : 5, o.to === 'posada' ? 7 : 6, { face: 1, needDir: 1 });
+        const door = [o.door[0] + ox, o.door[1] + oy], inner = o.to === 'casa' ? `tgi_casa_${lot}` : `tgi_${o.to}_${c.id}`;
+        const [ex, ey] = o.enter || (o.to === 'posada' ? [6, 7] : [5, 6]);
+        obj.door = door; delete obj.to; delete obj.enter;
+        b.warp(door[0], door[1], inner, ex, ey, { face: 1, needDir: 1, ...(built ? { when: built } : {}) });
       }
       if (o.kind === 'house' || o.kind === 'big' || o.kind === 'tower') obj.door = obj.door || [obj.x + (obj.opt?.doorCol ?? Math.floor(obj.w / 2)), obj.y + obj.h - 1];
       b.obj(obj);
@@ -402,6 +445,12 @@ export function tgMap(i, j) {
       const tx = Math.max(1, Math.min(S - 2, nx)), ty = Math.max(1, Math.min(S - 2, oy + (k ? -2 : 21)));
       if (ty >= 0 && ty < S) b.npc({ id: `tgn_${bx}_${by}_${k}`, look: pick(LOOK_POOL, h2(bx, by, 30 + k)), x: tx, y: ty, dir: Math.floor(h2(bx, by, 40 + k) * 4), wander: 2, talk: pick(LINES, h2(bx, by, 50 + k)) });
     }
+  }
+  // Las personas con las que se puede salir: frente a la posada de su ciudad (no están si andan contigo).
+  for (const [id, P] of Object.entries(CANDIDATES)) {
+    const c = CITIES.find(c => c.id === P.city), [gx, gy] = candidateSpot(c), lx = gx - x0, ly = gy - y0;
+    if (lx < 0 || ly < 0 || lx >= S || ly >= S) continue;
+    b.npc({ id: 'tgCita_' + id, look: P.look, x: lx, y: ly, dir: 0, talk: 'cita', cand: id, name: P.name, when: st => !(st.pareja?.id === id && st.pareja.follow) });
   }
   // Parador del Llano: aquí te dan las llaves del carro.
   const par = CITIES.find(c => c.id === 'parador');
@@ -439,6 +488,21 @@ export function tgMap(i, j) {
 }
 // Interiores de posadas y tiendas de cada ciudad: la puerta de regreso sale del plano de la manzana.
 export function tgInterior(id) {
+  const casa = /^tgi_casa_([a-z]+)_(\d+)_(\d+)$/.exec(id);
+  if (casa) {
+    const c = CITIES.find(c => c.id === casa[1]), bx = +casa[2], by = +casa[3];
+    if (!c || blockPlan(c, bx, by).type !== 'lote') return null;
+    const gx = bx * BLOCK + 4 + LOT_DOOR[0], gy = by * BLOCK + 4 + LOT_DOOR[1];
+    return casaPropiaGen(id, `${c.id}_${bx}_${by}`, [tgId(Math.floor(gx / TG.S), Math.floor(gy / TG.S)), gx % TG.S, gy % TG.S + 1]);
+  }
+  const motel = /^tgi_motel_(\w+)$/.exec(id);
+  if (motel) {
+    const c = CITIES.find(c => c.id === motel[1] && c.kind === 'motel');
+    if (!c) return null;
+    const bx = c.x0 / BLOCK, by = c.y0 / BLOCK, o = blockPlan(c, bx, by).objects.find(o => o.to === 'motel');
+    const gx = bx * BLOCK + 4 + o.door[0], gy = by * BLOCK + 4 + o.door[1];
+    return motelGen(id, c.name, [tgId(Math.floor(gx / TG.S), Math.floor(gy / TG.S)), gx % TG.S, gy % TG.S + 1], c.id);
+  }
   const m = /^tgi_(posada|tienda)_(\w+)$/.exec(id);
   if (!m) return null;
   const c = CITIES.find(c => c.id === m[2]);

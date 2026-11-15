@@ -126,6 +126,10 @@ body.touch.landscape #panel { left: auto; right: 12px; transform: none; bottom: 
 .map-panel .rmap.tg canvas { image-rendering: auto; }
 .map-panel .rm-air { position: absolute; transform: translate(-50%, -50%); font-size: 1.15em; color: #24304a; text-shadow: 0 0 3px #fff, 0 0 3px #fff; pointer-events: none; }
 .map-panel .rm-l.big { font-size: 1.05em; font-weight: 800; }
+.map-panel .rm-motel, .map-panel .k-motel { display: inline-grid; place-items: center; width: 1.3em; height: 1.3em; border-radius: 4px; background: #c8485a; color: #fff; font: 800 .75em var(--font); font-style: normal; }
+.map-panel .rm-motel { position: absolute; transform: translate(-50%, -50%); pointer-events: none; box-shadow: 0 0 0 2px #fff; }
+.map-panel .rm-home, .map-panel .k-home { font-style: normal; color: #2a7a4a; font-weight: 900; }
+.map-panel .rm-home { position: absolute; transform: translate(-50%, -50%); font-size: 1.4em; text-shadow: 0 0 3px #fff, 0 0 3px #fff; pointer-events: none; }
 .map-panel .rm-tabs { display: flex; gap: .4em; justify-content: center; margin-bottom: .3em; }
 .map-panel .rm-tabs button { font-family: var(--font); font-weight: 700; padding: .25em .9em; border-radius: 8px; border: 2px solid #b89a64; background: #f6efdc; color: #5a4a30; cursor: pointer; }
 .map-panel .rm-tabs button.on { background: #b89a64; color: #fff; }

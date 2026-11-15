@@ -36,7 +36,14 @@ export const LOOKS = {
   lass: { skin: '#f8d0a8', hair: '#d8803a', style: 'long', shirt: '#f08ab0', accent: '#ffffff', pants: '#5a6ab8', shoes: '#ffffff' },
   sailor: { skin: '#d8a880', hair: '#2a2020', style: 'cap', hat: '#ffffff', hatBand: '#3a6ad8', shirt: '#ffffff', accent: '#3a6ad8', pants: '#2a3a6a', shoes: '#2a2a32' },
   guard: { skin: '#e8b890', hair: '#2a2020', style: 'cap', hat: '#3a5a8a', hatBand: '#f0c040', shirt: '#3a5a8a', accent: '#f0c040', pants: '#2a3a5a', shoes: '#1a1a22' },
-  courier: { skin: '#f0c8a0', hair: '#8a4a2e', style: 'cap', hat: '#f0a020', hatBand: '#ffffff', shirt: '#f0a020', accent: '#ffffff', pants: '#3a5a8a', shoes: '#3a3a44' }
+  courier: { skin: '#f0c8a0', hair: '#8a4a2e', style: 'cap', hat: '#f0a020', hatBand: '#ffffff', shirt: '#f0a020', accent: '#ffffff', pants: '#3a5a8a', shoes: '#3a3a44' },
+  // Tierra Grande: personas adultas con las que se puede salir (ver world/hogar.js).
+  valentina: { skin: '#f0c8a0', hair: '#4a2a1e', style: 'long', shirt: '#3fb0a0', accent: '#ffffff', pants: '#2f6a8a', shoes: '#f8f8f8', coat: '#f8f8f8', lashes: true, eyes: '#5a3a24' },
+  julian: { skin: '#d8a880', hair: '#2a1e16', style: 'short', shirt: '#c84a3a', accent: '#f6eedc', pants: '#3a4a6a', shoes: '#4a3a2a', scarf: '#8a6a4a', bag: '#5a7a4a', eyes: '#4a3020' },
+  mariana: { skin: '#c8906a', hair: '#1e1612', style: 'curly', shirt: '#e8743a', accent: '#f6e2b0', pants: '#7a4a9a', shoes: '#5a3a2a', skirt: true, lashes: true, scarf: '#f0c040', eyes: '#3a2414' },
+  samuel: { skin: '#a8724e', hair: '#1a1410', style: 'buzz', shirt: '#f6f2ea', accent: '#c8402a', pants: '#3a3a44', shoes: '#2a2a32', apron: '#c8402a', eyes: '#2a1a10' },
+  luciana: { skin: '#f4d2b0', hair: '#c8903a', style: 'tail', shirt: '#5aa860', accent: '#f6eedc', pants: '#6a5a3a', shoes: '#4a3a2a', lashes: true, bag: '#8a6a3a', eyes: '#3a6a4a' },
+  felipe: { skin: '#f0c8a0', hair: '#6a3a1a', style: 'curly', shirt: '#3a5ab8', accent: '#f0c040', pants: '#2a2a32', shoes: '#5a3a20', coat: '#2a2a32', eyes: '#4a3a2a' }
 };
 
 function head(g, L, dir) {

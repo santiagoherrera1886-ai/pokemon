@@ -11,9 +11,10 @@ export const POCKETS = {
   campo: { name: 'Campo', color: '#3f7fc8' },
   cuidado: { name: 'Cuidado', color: '#9a5cc0' },
   equipo: { name: 'Equipables', color: '#d0603a' },
+  regalos: { name: 'Regalos', color: '#e0608a' },
   clave: { name: 'Clave', color: '#c89a2a' }
 };
-export const POCKET_ORDER = ['capsulas', 'medicinas', 'batalla', 'campo', 'cuidado', 'equipo', 'clave'];
+export const POCKET_ORDER = ['capsulas', 'medicinas', 'batalla', 'campo', 'cuidado', 'equipo', 'regalos', 'clave'];
 // En combate sólo se abren estos bolsillos.
 export const BATTLE_POCKETS = ['capsulas', 'medicinas', 'batalla'];
 
@@ -95,6 +96,13 @@ export const ITEMS = {
   escamaAntigua: charm('Escama Antigua', 'dragon', 'De un dragón que nadie ha vuelto a ver.'),
   velaDeNiebla: charm('Vela de Niebla', 'fantasma', 'Su llama es morada y no da calor.'),
 
+  // Regalos: para la persona que te gusta (háblale y escoge "Dar un regalo").
+  ramoFlores: item('regalos', 'flowers')('Ramo de Flores', 800, 'Flores frescas de Tierra Grande. A casi todo el mundo le alegran el día.', '#e86a9a', { gift: true }),
+  chocolates: item('regalos', 'choco')('Caja de Chocolates', 600, 'Chocolates rellenos de arequipe, en caja de corazón.', '#7a4a2a', { gift: true }),
+  peluche: item('regalos', 'plush')('Peluche de Puchamon', 1500, 'Un peluche suavecito de un Puchamon famoso.', '#f0b040', { gift: true }),
+  cafe: item('regalos', 'coffee')('Café de Origen', 500, 'Café de las montañas de Altamira, recién tostado.', '#6a3a1a', { gift: true }),
+  mochila: item('regalos', 'mochila')('Mochila Tejida', 2500, 'Mochila tejida a mano, de muchos colores.', '#e0603a', { gift: true }),
+
   // Clave: no se gastan ni se venden.
   brazaleteAlba: item('clave', 'band')('Brazalete Alba', 0, 'Despierta la Forma Alba una vez por combate. En LUCHAR, toca FORMA ALBA antes de escoger el ataque.', '#f0c040', { key: true }),
   llavesCarro: item('clave', 'carkey')('Llaves del Carro', 0, 'El carro que te prestó Doña Rueda. Afuera en Tierra Grande, úsalas (o pulsa C) para subirte y bajarte. Mantén B para ir en turbo.', '#e2603f', { key: true, vehicle: 'car' }),
@@ -115,14 +123,14 @@ const GENERAL = [
 ];
 // Mostrador especial de cada ciudad (lo atiende la vendedora del delantal).
 export const SPECIAL = {
-  tg_bahia: { name: 'Bazar del Puerto', items: ['capsulaVeloz', 'capsulaMalla', 'miel', 'guayaba', 'panueloVeloz'] },
-  tg_altamira: { name: 'Almacén de Montaña', items: ['capsulaOcaso', 'capsulaReloj', 'escarchaEterna', 'arepaReserva'] },
-  tg_medano: { name: 'Mercado del Desierto', items: ['capsulaVeloz', 'miel', 'pocimaFuerza', 'pocimaViento', 'chalecoAcolchado'] },
-  tg_cruce: { name: 'Tienda del Cruce', items: ['miel', 'guayaba', 'semillaVital'] },
-  tg_palma: { name: 'Tienda de la Selva', items: ['broteVivo', 'miel', 'guayaba'] },
-  tg_pino: { name: 'Tienda del Pino', items: ['miel', 'arepaReserva'] },
-  tg_viejo: { name: 'Tienda del Muelle', items: ['capsulaMalla', 'miel'] },
-  tg_parador: { name: 'Tienda del Parador', items: ['miel', 'guayaba', 'arepaReserva'] },
+  tg_bahia: { name: 'Bazar del Puerto', items: ['capsulaVeloz', 'capsulaMalla', 'miel', 'guayaba', 'panueloVeloz', 'ramoFlores', 'chocolates', 'peluche', 'cafe', 'mochila'] },
+  tg_altamira: { name: 'Almacén de Montaña', items: ['capsulaOcaso', 'capsulaReloj', 'escarchaEterna', 'arepaReserva', 'ramoFlores', 'chocolates', 'peluche', 'cafe', 'mochila'] },
+  tg_medano: { name: 'Mercado del Desierto', items: ['capsulaVeloz', 'miel', 'pocimaFuerza', 'pocimaViento', 'chalecoAcolchado', 'ramoFlores', 'chocolates', 'peluche', 'cafe', 'mochila'] },
+  tg_cruce: { name: 'Tienda del Cruce', items: ['miel', 'guayaba', 'semillaVital', 'ramoFlores', 'chocolates', 'peluche', 'cafe', 'mochila'] },
+  tg_palma: { name: 'Tienda de la Selva', items: ['broteVivo', 'miel', 'guayaba', 'ramoFlores', 'chocolates', 'peluche', 'cafe', 'mochila'] },
+  tg_pino: { name: 'Tienda del Pino', items: ['miel', 'arepaReserva', 'ramoFlores', 'chocolates', 'peluche', 'cafe', 'mochila'] },
+  tg_viejo: { name: 'Tienda del Muelle', items: ['capsulaMalla', 'miel', 'ramoFlores', 'chocolates', 'peluche', 'cafe', 'mochila'] },
+  tg_parador: { name: 'Tienda del Parador', items: ['miel', 'guayaba', 'arepaReserva', 'ramoFlores', 'chocolates', 'peluche', 'cafe', 'mochila'] },
   arenal: { name: 'Rincón del Explorador', items: ['miel', 'pocimaFuerza', 'pocimaViento', 'guayaba', 'cintaFuerza'] },
   corola: { name: 'Vivero de Corola', items: ['semillaVital', 'semillaFuerza', 'semillaCoraza', 'semillaViento', 'miel', 'broteVivo', 'arepaReserva'] },
   cobre: { name: 'Taller de Cápsulas', items: ['capsulaVeloz', 'capsulaOcaso', 'capsulaReloj', 'capsulaMalla', 'bobinaDeCobre', 'panueloVeloz', 'chalecoAcolchado'] },

@@ -20,6 +20,7 @@ import { ENCOUNTERS, SPECIES, MOVES, makeCreature, refreshStats, encounterList, 
 import { refillMoney, cheatOn } from './data/cheats.js';
 import { ITEMS, repelled } from './data/items.js';
 import { GYMS } from './data/gyms.js';
+import { gameHour } from './core/clock.js';
 
 class Game {
   constructor() {
@@ -70,7 +71,7 @@ class Game {
   }
   nextFrame() { return new Promise(r => this.waiters.push(r)); }
   async frames(n) { for (let i = 0; i < n; i++) await this.nextFrame(); }
-  hour() { return this.state.options?.forceHour ?? new Date().getHours(); }
+  hour() { return gameHour(this.state); }
 
   render() {
     const r = this.renderer;

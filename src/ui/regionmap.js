@@ -114,14 +114,22 @@ export function tgMapHTML(st, me) {
   const out = [];
   // Las etiquetas pegadas a un borde se corren hacia adentro para que no se corten.
   const label = (x, y) => pos(x, y) + (x / SIZE < .14 ? ';transform:translate(0,-50%)' : x / SIZE > .8 ? ';transform:translate(-100%,-50%)' : '');
-  for (const c of CITIES) out.push(`<span class="rm-l town${c.kind === 'grande' ? ' big' : ''}" style="${label((c.x0 + c.x1) / 2, c.y1 + 30)}">${esc(c.name)}</span>`);
+  for (const c of CITIES) {
+    if (c.kind === 'motel') { out.push(`<span class="rm-motel" style="${pos((c.x0 + c.x1) / 2, (c.y0 + c.y1) / 2)}" title="${esc(c.name)}">M</span>`); continue; }
+    out.push(`<span class="rm-l town${c.kind === 'grande' ? ' big' : ''}" style="${label((c.x0 + c.x1) / 2, c.y1 + 30)}">${esc(c.name)}</span>`);
+  }
+  // Tus casas.
+  for (const lot of Object.keys(st.houses || {})) {
+    const [, bx, by] = lot.split('_').map(Number);
+    if (bx >= 0) out.push(`<span class="rm-home" style="${pos(bx * 24 + 14, by * 24 + 14)}" title="Tu casa">⌂</span>`);
+  }
   for (const a of AIRPORTS) out.push(`<span class="rm-air" style="${pos(a.x0 + 60, a.y0 + 4)}" title="${esc(a.name)}">✈</span>`);
   out.push(`<span class="rm-l spot" style="${pos(ENTRY_X, 60)}">↑ Sabana</span>`);
   if (me) out.push(`<span class="rm-me" style="${pos(me[0], me[1])}" title="Estás aquí"></span>`);
   const pct = Math.round(seenCount(st) / (TG.N * TG.N) * 100);
   return `<h3 class="ph">MAPA DE TIERRA GRANDE <small>${pct}% explorado</small></h3>
     <div class="rmap tg" style="aspect-ratio:1 / 1"><canvas id="rmCanvas" width="${TG.N * OV * TGK}" height="${TG.N * OV * TGK}"></canvas>${out.join('')}</div>
-    <div class="rm-key"><span><i class="k-air">✈</i>Aeropuerto</span><span><i class="k-road"></i>Autopista</span><span><i class="k-me"></i>Tú</span><span>Lo que no has visitado sale en blanco</span></div>`;
+    <div class="rm-key"><span><i class="k-air">✈</i>Aeropuerto</span><span><i class="k-road"></i>Autopista</span><span><i class="k-me"></i>Tú</span><span><i class="k-motel">M</i>Motel</span><span><i class="k-home">⌂</i>Tu casa</span><span>Lo que no has visitado sale en blanco</span></div>`;
 }
 export function drawTGMap(canvas, st, me) {
   if (!canvas) return;

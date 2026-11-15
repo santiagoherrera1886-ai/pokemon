@@ -55,7 +55,7 @@ test('desde la entrada se llega por carretera a todas las ciudades y a todos los
 });
 
 test('las puertas de posadas y tiendas llevan a su interior y el regreso cae frente a la puerta', () => {
-  for (const c of CITIES) for (const kind of ['posada', 'tienda']) {
+  for (const c of CITIES.filter(c => c.kind !== 'motel')) for (const kind of ['posada', 'tienda']) {
     const id = `tgi_${kind}_${c.id}`, inner = tgInterior(id);
     assert.ok(inner, `${c.name} tiene ${kind}`);
     const back = inner.warps.find(w => w.to.startsWith('tg_'));
@@ -140,4 +140,81 @@ test('las 40 especies nuevas salen en Tierra Grande (o evolucionan de una que sa
   let grass = 0;
   for (let y = c.y0; y < c.y1; y += 2) for (let x = c.x0; x < c.x1; x += 2) if (tileAt(x, y) === 'g') grass++;
   assert.ok(grass > 0 && ENCOUNTERS.tgCiudad, 'pasto alto en los parques de Bahía Dorada');
+});
+
+test('moteles junto a la vía: recepción, camas y la puerta que vuelve al frente del motel', async () => {
+  const { MOTEL_PRICE } = await import('../src/world/hogar.js');
+  const motels = CITIES.filter(c => c.kind === 'motel');
+  assert.ok(motels.length >= 5 && MOTEL_PRICE > 0);
+  for (const c of motels) {
+    const inner = tgInterior('tgi_motel_' + c.id);
+    assert.ok(inner && inner.npcs.some(n => n.talk === 'motel' && n.arg === c.id), `${c.name}: recepcionista`);
+    assert.ok(inner.objects.filter(o => o.script === 'motelCama').length === 2, `${c.name}: dos camas`);
+    const back = inner.warps.find(w => w.to.startsWith('tg_')), out = tgDef(back.to);
+    assert.ok(walkTile(out.tiles[back.ty][back.tx]), `${c.name}: sale a una casilla caminable`);
+    const warp = out.warps.find(w => w.x === back.tx && w.y === back.ty - 1);
+    assert.ok(warp && warp.to === 'tgi_motel_' + c.id, `${c.name}: la puerta entra al motel`);
+  }
+});
+
+test('lotes en venta: letrero, casa de cualquier modelo con la puerta en el mismo sitio, e interior amoblable', async () => {
+  const { HOUSE_MODELS, FURNITURE, LOT_DOOR } = await import('../src/world/hogar.js');
+  const { GameMap } = await import('../src/world/world.js').catch(() => ({}));
+  let lots = 0;
+  for (const c of CITIES.filter(c => c.kind === 'pueblo' || c.kind === 'grande')) {
+    let n = 0;
+    for (let by = c.y0 / 24; by * 24 < c.y1 - 4; by++) for (let bx = c.x0 / 24; bx * 24 < c.x1 - 4; bx++) if (blockPlan(c, bx, by).type === 'lote') n++;
+    assert.ok(n >= 1, `${c.name} tiene al menos un lote (tiene ${n})`);
+    lots += n;
+  }
+  assert.ok(lots >= 15, `lotes en total: ${lots}`);
+  // Un lote de Bahía Dorada: sin casa se ve el letrero; con casa, la casa y su puerta (para los tres modelos).
+  const c = CITIES.find(c => c.id === 'bahia');
+  let bx, by;
+  outer: for (by = c.y0 / 24; by * 24 < c.y1 - 4; by++) for (bx = c.x0 / 24; bx * 24 < c.x1 - 4; bx++) if (blockPlan(c, bx, by).type === 'lote') break outer;
+  const lot = `bahia_${bx}_${by}`, gx = bx * 24 + 4, gy = by * 24 + 4, [i, j] = tgCell(TG.X + gx, TG.Y + gy), m = tgMap(i, j);
+  const sign = m.objects.find(o => o.lot === lot && o.sale), house = m.objects.find(o => o.lot === lot && o.kind === 'house');
+  const door = m.warps.find(w => w.to === `tgi_casa_${lot}`);
+  assert.ok(sign && house && door && sign.script === 'lote');
+  const empty = {}, built = model => ({ houses: { [lot]: { model, wall: '#f6eedc', roof: '#d8504a', furniture: [] } } });
+  assert.ok(sign.when(empty) && !house.when(empty) && !door.when(empty), 'sin construir: sólo el letrero');
+  for (const model of Object.keys(HOUSE_MODELS)) {
+    const st = built(model), shape = house.dyn(st);
+    assert.ok(!sign.when(st) && house.when(st) && door.when(st), `${model}: casa y puerta`);
+    assert.deepEqual([shape.x + shape.opt.doorCol, shape.y + shape.h - 1], [door.x, door.y], `${model}: la puerta cae en la puerta del lote`);
+    assert.deepEqual([door.x - (gx - i * TG.S), door.y - (gy - j * TG.S)], LOT_DOOR);
+    assert.ok(walkTile(m.tiles[door.y + 1][door.x]), `${model}: frente a la puerta se puede caminar`);
+  }
+  // Interior: cama, computador con el catálogo y cada mueble en su sitio, sin tapar el camino a la cama.
+  const inner = tgInterior(`tgi_casa_${lot}`);
+  assert.ok(inner.objects.some(o => o.script === 'camaCasa') && inner.objects.some(o => o.script === 'catalogo'));
+  const back = inner.warps[0];
+  assert.equal(back.to, tgId(i, j)); assert.deepEqual([back.tx, back.ty], [door.x, door.y + 1]);
+  const all = { houses: { [lot]: { model: 'casona', furniture: FURNITURE.map(f => f.id) } } };
+  const solid = new Set();
+  for (const o of inner.objects) if (o.kind === 'furniture' && (!o.when || o.when(all)) && o.solid !== false) for (let y = o.y; y < o.y + o.h; y++) for (let x = o.x; x < o.x + o.w; x++) {
+    assert.ok(!solid.has(x + ',' + y), `dos muebles en (${x},${y})`); solid.add(x + ',' + y);
+  }
+  for (const f of FURNITURE) assert.ok(inner.objects.some(o => o.when && o.when(all) && !o.when({ houses: { [lot]: { furniture: [] } } })), f.id);
+  const seen = new Set(), q = [[6, 8]];
+  while (q.length) { const [x, y] = q.pop(), k = x + ',' + y; if (seen.has(k) || x < 0 || y < 2 || x >= inner.w || y > 8 || solid.has(k)) continue; seen.add(k); q.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]); }
+  assert.ok(seen.has('1,3') || seen.has('0,4'), 'con todos los muebles se llega a la cama');
+  assert.ok(seen.has('2,3') || seen.has('3,3'), 'y al computador');
+  void GameMap;
+});
+
+test('las personas con las que se sale viven en su ciudad, son de los looks del juego y hay regalos a la venta', async () => {
+  const { CANDIDATES, GIFTS, candidateSpot } = await import('../src/world/hogar.js');
+  const { LOOKS } = await import('../src/art/characters.js').catch(() => ({ LOOKS: null }));
+  assert.equal(Object.keys(CANDIDATES).length, 6);
+  for (const [id, P] of Object.entries(CANDIDATES)) {
+    const c = CITIES.find(c => c.id === P.city), [gx, gy] = candidateSpot(c), m = tgMap(...tgCell(TG.X + gx, TG.Y + gy));
+    const n = m.npcs.find(n => n.cand === id);
+    assert.ok(n && n.talk === 'cita' && cityAt(gx, gy) === c, `${P.name} está en ${c.name}`);
+    assert.ok(walkTile(m.tiles[n.y][n.x]) && !m.objects.some(o => n.x >= o.x && n.y >= o.y && n.x < o.x + (o.w || 1) && n.y < o.y + (o.h || 1) && o.solid !== false), `${P.name} no está encima de nada`);
+    assert.ok(n.when({}) && !n.when({ pareja: { id, follow: true } }), `${P.name} se va contigo cuando te acompaña`);
+    if (LOOKS) assert.ok(LOOKS[P.look], `${P.name}: look`);
+    for (const g of [...P.loves, ...P.likes]) assert.ok(GIFTS.includes(g), `${P.name}: ${g}`);
+  }
+  for (const g of GIFTS) { assert.ok(ITEMS[g]?.gift && ITEMS[g].pocket === 'regalos', g); assert.ok(Object.values(SPECIAL).some(s => s.items.includes(g)), `${g} se vende`); }
 });

@@ -11,6 +11,7 @@ import { TG, tgCell, tgId } from './tierra.js';
 import { markSeen } from './flightmap.js';
 import { Flight, renderFlight2D } from './flight.js';
 import { Traffic, dir4 } from './traffic.js';
+import { CANDIDATES } from './hogar.js';
 
 const DIRS = { down: 0, up: 1, left: 2, right: 3 };
 const DXY = [[0, 1], [0, -1], [-1, 0], [1, 0]];
@@ -69,6 +70,7 @@ export class Overworld {
     this.vehicle = null;          // 'car' mientras maneja
     this.flight = null;           // vuelo en curso (ver flight.js)
     this.traffic = new Traffic();
+    this.follower = null;         // la pareja, cuando te acompaña (camina detrás de ti)
   }
   get st() { return this.game.state; }
   get locked() { return this.scripts > 0 || ui.busy || this.game.fading; }
@@ -101,6 +103,26 @@ export class Overworld {
     this.game.refreshHome?.();
     if (!this.vehicle) this.game.requestAutosave?.();
     this.vehicleUI();
+    this.setFollower();
+  }
+  // ---------- Pareja ----------
+  // Si tu pareja te acompaña, aparece una casilla detrás de ti (o encima, si atrás hay pared) y te sigue paso a paso.
+  setFollower() {
+    const st = this.st, P = st?.pareja?.follow && CANDIDATES[st.pareja.id];
+    if (!P || !this.map) { this.follower = null; return; }
+    const p = this.player, [dx, dy] = DXY[p.dir], bx = p.x - dx, by = p.y - dy;
+    const ok = this.map.inside(bx, by) && !this.blocked(bx, by, p);
+    this.follower = new Actor({ id: 'pareja_' + st.pareja.id, look: P.look, x: ok ? bx : p.x, y: ok ? by : p.y, dir: p.dir, map: this.map.id, name: P.name });
+  }
+  updateFollower() {
+    const f = this.follower, p = this.player;
+    if (!f || this.vehicle) return;
+    if (f.moving) f.tick();
+    if (f.moving || !p.moving) return;
+    const tx = p.moving.fx, ty = p.moving.fy, dx = tx - f.x, dy = ty - f.y;
+    if (!dx && !dy) return;
+    if (Math.abs(dx) + Math.abs(dy) === 1) f.startMove(dx > 0 ? 3 : dx < 0 ? 2 : dy > 0 ? 0 : 1, p.moving.dur);
+    else Object.assign(f, { x: tx, y: ty, px: tx * TS, py: ty * TS, moving: null });
   }
   refreshNpcs() {
     const keep = new Map((this.npcs || []).map(n => [n.id, n]));
@@ -140,6 +162,7 @@ export class Overworld {
       if (n.moving) n.tick();
       else if (n.wander && !this.locked) this.wander(n);
     }
+    this.updateFollower();
     this.updateParticles();
     const tp = this.tgPos();
     if (tp) this.traffic.update(tp[0], tp[1]);
@@ -185,7 +208,7 @@ export class Overworld {
   toggleCar() {
     if (this.vehicle === 'car') {
       this.vehicle = null; this.wasWalking = false;
-      this.vehicleUI(); this.game.requestAutosave?.();
+      this.vehicleUI(); this.game.requestAutosave?.(); this.setFollower();
       return true;
     }
     if (!this.st.bag?.llavesCarro) return false;
@@ -357,6 +380,8 @@ export class Overworld {
   async interact() {
     const p = this.player;
     let [fx, fy] = this.facing();
+    const f = this.follower;
+    if (f && !this.vehicle && f.x === fx && f.y === fy && !f.moving) { f.dir = [1, 0, 3, 2][p.dir]; await this.run('pareja'); return; }
     let target = this.npcs.find(n => n.x === fx && n.y === fy);
     const [m, lx, ly] = this.resolve(fx, fy);
     const obj = m && m.objectAt(lx, ly, this.st);
@@ -465,7 +490,7 @@ export class Overworld {
         sprites.push({ img: tree((((gx * 3 + gy * 7) % 3) + 3) % 3), x: tx * TS - 3, y: ty * TS - 16, base: ty * TS + 16 });
       }
     }
-    for (const a of [...this.npcs, p]) sprites.push({ actor: a, base: a.py + 16 + (a === p ? 0.5 : 0) });
+    for (const a of [...this.npcs, p, ...(this.follower && !this.vehicle ? [this.follower] : [])]) sprites.push({ actor: a, base: a.py + 16 + (a === p ? 0.5 : 0) });
     // Tráfico de Tierra Grande (de adorno) y sombras de avionetas que pasan.
     if (m.region === 'tierra' && m.outdoor) {
       const tx = (TG.X - m.origin[0]) * TS, ty = (TG.Y - m.origin[1]) * TS;
@@ -511,6 +536,11 @@ export class Overworld {
     }
     for (const e of this.emotes) {
       const X = Math.round(e.actor.px + ox) + 4, Y = Math.round(e.actor.py + oy) - 22 - (e.t > 40 ? (50 - e.t) : 10) * 0.4;
+      if (e.text === '♥') {   // corazón de pixel que sube
+        const H = ['.##.##.', '#######', '#######', '.#####.', '..###..', '...#...'];
+        H.forEach((row, j) => [...row].forEach((c, i) => { if (c === '#') { g.fillStyle = j < 1 && (i === 1 || i === 4) ? '#ff9ab0' : '#e84860'; g.fillRect(X - 1 + i, Y + j - (50 - e.t) * .3, 1, 1); } }));
+        continue;
+      }
       g.fillStyle = '#26222e'; g.fillRect(X - 1, Y - 1, 10, 12);
       g.fillStyle = '#ffffff'; g.fillRect(X, Y, 8, 10);
       g.fillStyle = '#e04848'; g.fillRect(X + 3, Y + 1, 2, 5); g.fillRect(X + 3, Y + 7, 2, 2);

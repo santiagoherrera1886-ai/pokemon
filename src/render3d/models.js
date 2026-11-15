@@ -43,6 +43,25 @@ export function furniture(r, o) {
       break;
     case 'chair':
       legs(.65,.65,.38);b(LIGHTWOOD,0,.43,0,.65,.12,.65);b(WOOD,0,.74,-.27,.65,.55,.1);b('#d6a074',0,.79,-.21,.5,.29,.04);break;
+    case 'hammock': {
+      for(const x of [-.92,.92])b(WOOD,x,.55,0,.1,1.1,.1);
+      const cols=['#e04848','#f0c040','#3ab0a0','#3a6ad8'];
+      for(let i=0;i<9;i++){const t=i/8,x=-.8+t*1.6,y=.75-Math.sin(t*Math.PI)*.32;b(cols[i%4],x,y,0,.2,.06,.62);}
+      break;}
+    case 'aquarium':
+      b(WOOD,0,.3,0,1.8,.6,.6);b(LIGHTWOOD,0,.62,0,1.86,.06,.66);
+      r.mesh(g,'box',r.mat('#7fd0f2',{transparent:true,opacity:.55,roughness:.1,emissive:'#7fd0f2',emissiveIntensity:.15}),[0,.98,0],[1.7,.66,.5]);
+      for(const [x,y,c] of [[-.4,1.0,'#f08a3a'],[.3,.9,'#f0c040'],[.05,1.12,'#e86a8a']])ball(c,x,y,0,.08,.05,.04);
+      for(const x of [-.65,.6])r.mesh(g,'cone','#4a9a4a',[x,.9,0],[.06,.3,.06]);break;
+    case 'guitar':
+      ball('#c8803a',0,.4,0,.26,.26,.09);ball('#c8803a',0,.68,0,.2,.2,.08);ball('#3a2418',0,.42,.06,.08,.08,.02);
+      b('#5a3a20',0,1.0,0,.07,.62,.04);b('#3a2418',0,1.34,0,.12,.14,.05);break;
+    case 'rug':
+      b('#c84a4a',0,.015,0,w-.1,.03,d-.1,false);b('#f0c040',0,.025,0,w-.5,.03,d-.5,false);b('#3ab0a0',0,.035,0,w-.9,.03,d-.9,false);break;
+    case 'plush':
+      ball('#f0b040',0,.32,0,.32,.3,.28);ball('#f6c860',0,.72,.02,.26,.24,.24);
+      for(const x of [-.16,.16]){r.mesh(g,'cone','#f0b040',[x,.98,0],[.07,.16,.07]);ball('#2a1a10',x*.6,.76,.22,.035,.045,.02);}
+      ball('#fbe6b0',0,.3,.2,.2,.18,.1);break;
     case 'sofa':
       b('#9f5453',0,.28,0,w-.1,.4,.8);b('#c4776c',0,.68,-.28,w-.1,.65,.27);
       for(const x of [-1,1]){b('#b9655e',x*(w/2-.18),.56,0,.28,.55,.9);b('#e39682',x*w*.2,.5,.1,w*.36,.22,.62);}
@@ -151,9 +170,17 @@ export function building(r,o) {
   const gloss=c=>r.mat(c,{roughness:.42});
   const roof=opt.roof||'#648d96', wall=opt.wall||CREAM, trim=opt.trim||shade(wall,-.12);
   const dc=(opt.doorCol ?? Math.floor(w/2))+.5, zc=d/2-.3, zf=d-.65;      // centro de la puerta, centro y frente de las paredes
+  const UP=!lab&&opt.floors===2?1.95:0;                                       // casa de dos pisos: todo lo de arriba sube un piso
   // Cimiento, paredes, zócalo y moldura superior
   b('#a3a493',w/2,.1,zc,w+.04,.2,d-.5);
   b(wall,w/2,1.13,zc,w-.15,1.95,d-.7);
+  if(UP){
+    b(wall,w/2,1.13+UP,zc,w-.15,1.95,d-.7);b(shade(wall,-.16),w/2,2.1,zf+.04,w-.1,.08,.08);
+    for(const x of [.1,w-.1])b(trim,x,1.13+UP,zf,.2,1.95,.18);
+    for(let i=0;i<w;i++){const x=i+.5;b(WHITE_TRIM,x,1.33+UP,zf+.04,.66,.8,.1);r.mesh(g,'soft',r.mat('#a9dbe4',{emissive:'#d7c78a',emissiveIntensity:.2,roughness:.15}),[x,1.34+UP,zf+.09],[.52,.64,.03]);b(WHITE_TRIM,x,1.34+UP,zf+.11,.035,.64,.02,false);}
+    // Balcón sobre la puerta.
+    b(LIGHTWOOD,dc,2.2,zf+.45,1.9,.08,.8);for(let k=0;k<6;k++)b(WOOD,dc-.85+k*.34,2.45,zf+.82,.05,.42,.05);b(WOOD,dc,2.68,zf+.82,1.9,.06,.06);
+  }
   b(shade(wall,-.07),w/2,.42,zf+.02,w-.12,.44,.06);
   b(shade(wall,-.16),w/2,.66,zf+.04,w-.1,.06,.07);
   b(WHITE_TRIM,w/2,2.06,zf+.03,w-.08,.1,.09);
@@ -196,20 +223,20 @@ export function building(r,o) {
     geometry.setIndex(Array.from({length:6},(_,i)=>[i*3,i*3+2,i*3+1]).flat());
     geometry.computeVertexNormals();
     geometry.rotateY(Math.PI/2);
-    const roofMesh=new T.Mesh(geometry,r.mat(shade(roof,-.35)));roofMesh.scale.set((w+.44)/(d-.24),1,(d-.24)/(w+.44));roofMesh.position.set(w/2,2.16,zc);roofMesh.castShadow=true;roofMesh.receiveShadow=true;roofMesh.userData.ownedGeometry=true;g.add(roofMesh);
+    const roofMesh=new T.Mesh(geometry,r.mat(shade(roof,-.35)));roofMesh.scale.set((w+.44)/(d-.24),1,(d-.24)/(w+.44));roofMesh.position.set(w/2,2.16+UP,zc);roofMesh.castShadow=true;roofMesh.receiveShadow=true;roofMesh.userData.ownedGeometry=true;g.add(roofMesh);
     // Tejas en franjas gruesas y redondeadas, con una ranura oscura entre franja y franja.
     const run=D,rise=H,L=Math.hypot(run,rise),theta=Math.atan2(rise,run),N=5,len=L/N;
     const nx=0,ny=Math.cos(theta),nz=Math.sin(theta);
     for(const side of [1,-1])for(let j=0;j<N;j++){
-      const k=(j+.55)/N,y=2.16+rise*(1-k)+ny*.06,z=zc+side*(run*k+nz*.06);
+      const k=(j+.55)/N,y=2.16+UP+rise*(1-k)+ny*.06,z=zc+side*(run*k+nz*.06);
       const strip=r.mesh(g,'soft',gloss(j%2?roof:shade(roof,.07)),[w/2,y,z],[w+.52,.09,len*.9]);strip.rotation.x=side*theta;
       if(side===1){const lip=r.mesh(g,'soft',gloss(shade(roof,-.12)),[w/2,y-Math.sin(theta)*len*.45-.035,z+Math.cos(theta)*len*.45],[w+.5,.06,.07]);lip.rotation.x=theta;}
     }
     // Canal del alero, cumbrera y remates
-    for(const side of [1,-1])b(shade(roof,-.3),w/2,2.13,zc+side*(D+.07),w+.62,.16,.18);
-    const ridge=r.mesh(g,'cylinder',gloss(shade(roof,-.16)),[w/2,3.16,zc],[.14,w+.6,.14]);ridge.rotation.z=Math.PI/2;
-    for(const x of [-.3,w+.3])ball(shade(roof,-.22),x,3.16,zc,.17);
-    if(opt.chimney){b('#b9785e',w-.95,2.95,zc-.25,.5,1.05,.5);for(let k=0;k<3;k++)b('#a6684f',w-.95,2.6+k*.26,zc-.005,.52,.03,.02,false);b('#e3b69a',w-.95,3.5,zc-.25,.64,.13,.64);b('#544c47',w-.95,3.57,zc-.25,.4,.02,.4,false);}
+    for(const side of [1,-1])b(shade(roof,-.3),w/2,2.13+UP,zc+side*(D+.07),w+.62,.16,.18);
+    const ridge=r.mesh(g,'cylinder',gloss(shade(roof,-.16)),[w/2,3.16+UP,zc],[.14,w+.6,.14]);ridge.rotation.z=Math.PI/2;
+    for(const x of [-.3,w+.3])ball(shade(roof,-.22),x,3.16+UP,zc,.17);
+    if(opt.chimney){b('#b9785e',w-.95,2.95+UP,zc-.25,.5,1.05,.5);for(let k=0;k<3;k++)b('#a6684f',w-.95,2.6+UP+k*.26,zc-.005,.52,.03,.02,false);b('#e3b69a',w-.95,3.5+UP,zc-.25,.64,.13,.64);b('#544c47',w-.95,3.57+UP,zc-.25,.4,.02,.4,false);}
   }
   // Letrero luminoso del local sobre el alero, inclinado hacia la cámara alta, con patas al techo (ver signs.js).
   if(opt.sign||lab){
@@ -231,6 +258,11 @@ export function smallProp(r,o) {
   const g=new T.Group(),b=(c,x,y,z,w,h,d)=>r.box(g,c,x,y,z,w,h,d,true);
   if(o.kind==='fence'){for(const x of [-.34,.34]){b('#eee0be',x,.38,0,.12,.76,.14);r.mesh(g,'cone','#eee0be',[x,.82,0],[.095,.16,.095]);}for(const y of [.31,.59])b('#eee0be',0,y,0,1,.09,.09);}
   if(o.kind==='sign')g.add(postSign(r,(o.text||[])[0]||''));
+  if(o.kind==='pool'){   // piscina: borde de baldosa y agua que brilla un poco (el grupo va centrado en el objeto)
+    const W=o.w||4,D=o.h||3;b('#f2ede2',0,.06,0,W,.12,D);
+    r.mesh(g,'box',r.mat('#2f8fd0',{roughness:.08,emissive:'#3aa8f0',emissiveIntensity:.25}),[0,.1,0],[W-.5,.06,D-.5]);
+    for(const x of [-.12,.12])b('#c8ccd2',W/2-.6+x,.35,-D/2+.35,.04,.5,.04);
+  }
   if(o.kind==='mailbox'){b('#667f79',0,.4,0,.11,.8,.11);b('#cb6a5a',0,.85,0,.65,.37,.42);b('#f4db96',.34,1,0,.04,.3,.04);b('#f4db96',.4,1.12,0,.14,.1,.04);}
   if(o.kind==='rock')r.mesh(g,'leaf','#96a6a0',[0,.3,0],[.44,.4,.42]);
   if(o.kind==='bush')r.mesh(g,'leaf','#6caa69',[0,.3,0],[.48,.45,.48]);

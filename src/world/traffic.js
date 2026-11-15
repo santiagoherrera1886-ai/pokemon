@@ -46,7 +46,7 @@ export class Traffic {
     if (this.t % 1500 === 700) { const a = rnd() * Math.PI * 2; this.shadows.push({ x: px - Math.cos(a) * 45 + (rnd() - .5) * 12, y: py - Math.sin(a) * 45 + (rnd() - .5) * 12, h: a, life: 160 }); }
   }
   spawn(px, py) {
-    const city = CITIES.find(c => px > c.x0 - 30 && px < c.x1 + 30 && py > c.y0 - 30 && py < c.y1 + 30);
+    const city = CITIES.find(c => (c.kind === 'grande' || c.kind === 'pueblo') && px > c.x0 - 30 && px < c.x1 + 30 && py > c.y0 - 30 && py < c.y1 + 30);
     if (city && rnd() < .7) {
       // En la ciudad: por una calle (vertical u horizontal), en su carril, lejos del jugador.
       for (let tries = 0; tries < 6; tries++) {

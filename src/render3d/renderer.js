@@ -85,6 +85,24 @@ export class PremiumRenderer {
       mesh.position.set(TG.X+s.x,.03,TG.Y+s.y);mesh.rotation.z=-s.h;
     }
   }
+  // Corazones (♥) sobre la cabeza de quien los siente: un sprite por emoción, sube y se desvanece.
+  syncEmotes(ow,m){
+    this.emoteSprites=this.emoteSprites||new Map();
+    if(!this.heartMat){
+      const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');
+      g.fillStyle='#e84860';g.beginPath();g.moveTo(32,56);g.bezierCurveTo(4,36,4,8,22,8);g.bezierCurveTo(30,8,32,16,32,18);g.bezierCurveTo(32,16,34,8,42,8);g.bezierCurveTo(60,8,60,36,32,56);g.fill();
+      g.fillStyle='rgba(255,255,255,.6)';g.beginPath();g.ellipse(21,19,6,4,-.6,0,Math.PI*2);g.fill();
+      const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;this.heartTex=t;this.heartMat=new T.SpriteMaterial({map:t,transparent:true,depthTest:false});
+    }
+    const live=new Set();
+    for(const e of ow.emotes){
+      if(e.text!=='♥')continue;live.add(e);
+      let sp=this.emoteSprites.get(e);
+      if(!sp){sp=new T.Sprite(this.heartMat.clone());sp.renderOrder=10;this.worldRoot.add(sp);this.emoteSprites.set(e,sp);}
+      const p=actorPosition(e.actor,m),k=(50-e.t)/50;sp.position.set(p.x,1.9+k*.6,p.z);sp.scale.setScalar(.42+Math.sin(k*Math.PI)*.12);sp.material.opacity=Math.min(1,e.t/12);
+    }
+    for(const [e,sp]of this.emoteSprites)if(!live.has(e)){sp.removeFromParent();sp.material.dispose();this.emoteSprites.delete(e);}
+  }
   // Carro del jugador: reemplaza al muñeco mientras maneja; gira suave hacia donde va.
   updatePlayerCar(actor,m,dt){
     const color=this.game.state.carColor||'#e2603f';
@@ -190,7 +208,7 @@ export class PremiumRenderer {
     for(const e of this.maps.values())this.environment.update(e,g.state,p,night);
     this.backdrop.visible=!!m.outdoor;if(m.outdoor)this.updateBackdrop(p);
     const active=new Set();
-    for(const actor of [...ow.npcs,ow.player]){
+    for(const actor of [...ow.npcs,ow.player,...(ow.follower&&ow.vehicle!=='car'?[ow.follower]:[])]){
       const id=actor.id,look=actor.look;active.add(id);
       if(!this.actors.has(id)){const rig=character(this.r,look);this.actors.set(id,rig);this.worldRoot.add(rig.root);if(actor===ow.player&&this.heroOn())attachHero(rig);}
       const rig=this.actors.get(id),talking=!!ui.dialog&&!actor.moving;
@@ -199,6 +217,7 @@ export class PremiumRenderer {
       if(actor===ow.player){const driving=ow.vehicle==='car';rig.root.visible=!driving;if(driving)this.updatePlayerCar(actor,m,dt);else if(this.playerCar)this.playerCar.visible=false;}
     }
     this.syncTraffic(ow,m);
+    this.syncEmotes(ow,m);
     for(const [id,rig]of this.actors)if(!active.has(id)){detachHero(rig);this.r.release(rig.root);this.actors.delete(id);}
     this.camera.update(m,p,dt,false,ow.vehicle==='car'?{h:10.5}:null);this.lights.update(this.camera.focus,!m.outdoor,hour,m.dark);
     this.particles.visible=!m.outdoor;this.particles.geometry.setDrawRange(0,12);

@@ -7,6 +7,7 @@ import { SPECIES, MOVES, TYPES, STARTERS, expForLevel, ENCOUNTERS } from '../dat
 import { GYMS, nextGym, badgeCount, LEAGUE_BADGES } from '../data/gyms.js';
 import { regionMapHTML, drawRegionMap, tgMapHTML, drawTGMap } from './regionmap.js';
 import { TG } from '../world/tierra.js';
+import { CANDIDATES } from '../world/hogar.js';
 import { isHeld, giveHeld, takeHeld } from '../data/held.js';
 import { CHEATS, tryCode, spend, cheatOn } from '../data/cheats.js';
 import { ITEMS, POCKETS, POCKET_ORDER, SPECIAL, VENDING, STAT_NAMES, SEED_MAX, generalStock, lockedStock, shortDesc, sellPrice, pocketItems, canUseOn, useOnCreature, isCapsule } from '../data/items.js';
@@ -200,7 +201,7 @@ export class Menus {
         <div class="tc-data"><b>${esc(st.name)}</b>
           <span>Dinero <em>${money(st.money)}</em></span><span>Tiempo de juego <em>${playTimeText(st.playTime)}</em></span>
           <span>Registro <em>${dex.filter(v => v === 2).length} atrapadas · ${dex.length} vistas</em></span>
-          <span>Equipo <em>${st.party.map(c => esc(c.name)).join(', ') || '—'}</em></span></div></div>
+          <span>Equipo <em>${st.party.map(c => esc(c.name)).join(', ') || '—'}</em></span>${st.pareja ? `<span>Pareja <em>${esc(CANDIDATES[st.pareja.id]?.name || '')} ♥</em></span>` : ''}${Object.keys(st.houses || {}).length ? `<span>Casas <em>${Object.keys(st.houses).length}</em></span>` : ''}</div></div>
       <div class="tc-badges">${GYMS.map(g => `<div class="${(st.badges || []).includes(g.badge) ? 'on' : ''}" style="--c:${g.color}"><i></i><small>${esc(g.name)}</small></div>`).join('')}${st.story >= 12 ? '<div class="on champ" style="--c:#f0c040"><i></i><small>Campeón</small></div>' : ''}</div>
       </div><button class="bt-back" data-back>VOLVER</button>`,
     { modal: true, cls: 'list-panel wide-panel', onBack: () => this.home(true) });
@@ -234,6 +235,7 @@ export class Menus {
       ow.toggleCar();
       return;
     }
+    if (it.gift) { await ui.say([it.desc, 'Es un regalo: háblale a esa persona especial y escoge "Dar un regalo".']); return back(); }
     if (id === 'licenciaPiloto') { await ui.say([it.desc, 'Hay aeropuertos en el norte, en Altamira, en el desierto, en la selva y en Bahía Dorada. Están en el mapa.']); return back(); }
     if (it.key) { await ui.say([it.desc, 'Funciona con todas las criaturas, una vez por combate. La transformación dura hasta que termina la pelea.']); return back(); }
     if (it.boost) { await ui.say(['Las Pócimas sólo sirven durante un combate.']); return back(); }

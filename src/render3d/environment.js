@@ -188,6 +188,7 @@ export class Environment {
       }
       if((code==='s'||code==='p')&&n>.7)C.pebbles.push({p:[x+.2+n*.5,.042,z+.2+hash(z,x)*.5],s:[.07,.035,.05]});
     }
+    map.visibleObjects?.(state);   // aplica la forma y los colores de las casas propias (dyn) antes de armar
     for(const o of map.objects){
       if(o.kind==='tree'){getChunk(o.x,o.y).trees.push(o);continue;}
       let model;
@@ -210,7 +211,7 @@ export class Environment {
       }
       if(o.when){r.batch(model);root.add(model);dynamic.push({model,when:o.when});model.visible=!!o.when(state);}
       else staticProps.add(model);
-      if(o.solid&&o.kind!=='deco')r.shadow(root,o.x+o.w/2,o.y+o.h/2,o.w+.6,o.h+.45);
+      if(o.solid&&o.kind!=='deco'&&o.kind!=='pool'){const sh=r.shadow(root,o.x+o.w/2,o.y+o.h/2,o.w+.6,o.h+.45);if(o.when){sh.visible=!!o.when(state);dynamic.push({model:sh,when:o.when});}}
     }
     if(!map.outdoor&&!map.dark){
       const wall=map.wallColor||(map.style?'#c4ded7':'#eadbc2');

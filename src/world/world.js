@@ -1,7 +1,7 @@
 // Mapas en tiempo de ejecución: consultas de tiles, colisiones, sprites de objetos y suelo pre-renderizado.
 import { canvas } from '../core/pixel.js';
 import { drawTile, SOLID, TS } from '../art/tiles.js';
-import { tree, bush, rock, fence, sign, mailbox, briefcase, lamp, house, lab, furniture, palm, pine, boulder, crystal, statue, fountain, bench, boat, bigBuilding, caveMouth } from '../art/objects.js';
+import { tree, bush, rock, fence, sign, mailbox, briefcase, lamp, house, lab, furniture, palm, pine, boulder, crystal, statue, fountain, bench, boat, bigBuilding, caveMouth, pool } from '../art/objects.js';
 import { buildMaps } from './maps.js';
 import { tgDef, tgCell, tgId, TG, tileAt } from './tierra.js';
 import { tower, parkedCar, parkedPlane, pump } from '../art/vehicles.js';
@@ -28,7 +28,11 @@ export class GameMap {
   // Fuera del mapa: en Tierra Grande se mira la casilla vecina del mundo (así no hay costuras entre pedazos).
   at(x, y) { return (y < 0 || x < 0 || y >= this.h || x >= this.w) ? (this.tg ? tileAt(this.tg[0] * TG.S + x, this.tg[1] * TG.S + y) : undefined) : this.tiles[y][x]; }
   inside(x, y) { return x >= 0 && y >= 0 && x < this.w && y < this.h; }
-  visibleObjects(st) { return this.objects.filter(o => !o.when || o.when(st)); }
+  // Objetos que dependen de la partida: `when` decide si están y `dyn` les cambia forma y colores (casas propias).
+  visibleObjects(st) {
+    if (this.hasDyn !== false) { let any = false; for (const o of this.objects) if (o.dyn) { any = true; Object.assign(o, o.dyn(st || {})); } this.hasDyn = any; }
+    return this.objects.filter(o => !o.when || o.when(st));
+  }
   objectAt(x, y, st) {
     return this.visibleObjects(st).find(o => o.kind !== 'deco' && x >= o.x && y >= o.y && x < o.x + o.w && y < o.y + o.h);
   }
@@ -79,11 +83,12 @@ export class GameMap {
         case 'mailbox': push(mailbox(), X, Y - 4, Y + 16); sh(X + 8, Y + 15, 4, 1); break;
         case 'lamp': push(lamp(), X, Y - 16, Y + 16); sh(X + 9, Y + 15, 4, 1); out.push({ light: [X + 8, Y - 10, 34], base: 9e9 }); break;
         case 'briefcase': push(briefcase(), X, Y, Y + 15); break;
-        case 'house': out.push({ light: [X + o.w * 8, Y + o.h * TS - 10, 26 + o.w * 4], base: 9e9 }); push(house(o.w, o.h, o.opt), X - 1, Y - TS, Y + o.h * TS); rs(X + 3, Y + o.h * TS - 3, o.w * TS, 5); rs(X + o.w * TS, Y + 4, 4, o.h * TS - 2); break;
+        case 'pool': push(pool(o.w, o.h), X, Y, -1000); break;
+        case 'house': out.push({ light: [X + o.w * 8, Y + o.h * TS - 10, 26 + o.w * 4], base: 9e9 }); push(house(o.w, o.h, o.opt), X - 1, Y - TS - (o.opt?.floors === 2 ? TS : 0), Y + o.h * TS); rs(X + 3, Y + o.h * TS - 3, o.w * TS, 5); rs(X + o.w * TS, Y + 4, 4, o.h * TS - 2); break;
         case 'lab': push(lab(o.w, o.h), X - 1, Y - TS, Y + o.h * TS); rs(X + 3, Y + o.h * TS - 3, o.w * TS, 5); rs(X + o.w * TS, Y + 4, 4, o.h * TS - 2); break;
         case 'big': push(bigBuilding(o.w, o.h, o.opt), X - 1, Y - TS, Y + o.h * TS); rs(X + 3, Y + o.h * TS - 3, o.w * TS, 5); rs(X + o.w * TS, Y + 4, 4, o.h * TS - 2); break;
         case 'gym': push(bigBuilding(o.w, o.h, o.opt), X - 1, Y - TS, Y + o.h * TS); rs(X + 3, Y + o.h * TS - 3, o.w * TS, 5); rs(X + o.w * TS, Y + 4, 4, o.h * TS - 2); break;
-        case 'furniture': push(furniture(o.name, o.arg), X + (o.sx || 0), Y + (o.sy || 0), Y + o.h * TS); break;
+        case 'furniture': push(furniture(o.name, o.arg), X + (o.sx || 0), Y + (o.sy || 0), o.flat ? -1000 : Y + o.h * TS); break;
         case 'deco': out.push({ img: furniture(o.name), x: o.px, y: o.py, base: -1000 }); break;
         case 'tower': { const img = tower(o.w, o.h, o.floors, o.opt); push(img, X - 1, Y + o.h * TS - img.height, Y + o.h * TS); rs(X + 3, Y + o.h * TS - 3, o.w * TS, 5); rs(X + o.w * TS, Y + 4, 6, o.h * TS - 2); break; }
         case 'car': push(parkedCar(o.color, o.dir), X - 1, Y - 2, Y + o.h * TS); sh(X + 8, Y + o.h * TS - 2, 8, 3); break;
@@ -94,7 +99,7 @@ export class GameMap {
     this._spr = out; this._sprKey = this.spriteKey(st);
     return out;
   }
-  spriteKey(st) { return this.objects.map(o => o.when ? (o.when(st) ? 1 : 0) : 2).join(''); }
+  spriteKey(st) { return this.objects.map(o => (o.when ? (o.when(st) ? 1 : 0) : 2) + (o.dynKey ? o.dynKey(st) : '')).join(''); }
 }
 
 export class World {

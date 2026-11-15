@@ -77,11 +77,12 @@ export function chunkData(cx, cy) {
       const cc = cityAt(bx * BLOCK + 12, by * BLOCK + 12); if (!cc) continue;
       const plan = blockPlan(cc, bx, by), ox = bx * BLOCK + 4, oy = by * BLOCK + 4;
       for (const o of plan.objects) {
+        if (o.lot) continue;   // las casas de los lotes dependen de la partida: desde el aire se ve el lote
         const gx = ox + o.x, gy = oy + o.y;
         if (gx >= x0 + CH || gy >= y0 + CH || gx + o.w <= x0 || gy + o.h <= y0) continue;
-        const h = o.kind === 'tower' ? o.floors * 1.05 + .5 : o.kind === 'big' ? 2.4 : o.kind === 'house' ? 1.8 : o.kind === 'car' ? .7 : o.kind === 'statue' || o.kind === 'fountain' ? 1 : o.kind === 'pump' ? 1 : 0;
+        const h = o.kind === 'tower' ? o.floors * 1.05 + .5 : o.kind === 'big' ? 2.4 : o.kind === 'house' ? 1.8 : o.kind === 'car' ? .7 : o.kind === 'statue' || o.kind === 'fountain' ? 1 : o.kind === 'pump' ? 1 : o.kind === 'pool' ? .08 : 0;
         if (!h) continue;
-        const wall = o.opt?.wall || o.color || '#d8d0c0', roof = o.opt?.roof || (o.kind === 'car' ? o.color : o.kind === 'statue' ? '#b8b4a8' : o.kind === 'fountain' ? '#7ac0e8' : o.kind === 'pump' ? '#e04848' : wall);
+        const wall = o.kind === 'pool' ? '#f2ede2' : o.opt?.wall || o.color || '#d8d0c0', roof = o.kind === 'pool' ? '#2f8fd0' : o.opt?.roof || (o.kind === 'car' ? o.color : o.kind === 'statue' ? '#b8b4a8' : o.kind === 'fountain' ? '#7ac0e8' : o.kind === 'pump' ? '#e04848' : wall);
         buildings.push({ kind: o.kind, x: gx, y: gy, w: o.w, h: o.h, height: h, wall, roof });
       }
     }

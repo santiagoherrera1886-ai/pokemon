@@ -96,6 +96,12 @@ Al sur de la Sabana, la **Autopista del Llano** baja a Tierra Grande: un territo
 - **Tráfico de adorno** en carreteras y calles (frena si te le paras enfrente) y sombras de avionetas que pasan.
 - **Mapa:** en VER MAPA hay pestañas Alborada / Tierra Grande. En Tierra Grande, las carreteras, ciudades y aeropuertos salen siempre y el terreno se va llenando con lo que exploras (se guarda en la partida como un mapa de bits).
 
+### Moteles, casas propias y pareja
+
+- **Moteles de carretera** (seis, junto a las autopistas, marcados con una M en el mapa): la pieza vale $300. Puedes descansar un rato, dormir hasta la noche o hasta la mañana; dormir cura al equipo, guarda la partida, deja el motel como lugar de regreso y adelanta el reloj del juego (de noche salen las criaturas nocturnas).
+- **Casas propias:** en las ciudades y pueblos de Tierra Grande hay lotes con un letrero de SE VENDE. Escoges el modelo (casa sencilla $12.000, de dos pisos $28.000 o casona con piscina $55.000) y los colores de las paredes y el techo, y los obreros la construyen en una noche. Adentro, en el computador, compras muebles (cocina, nevera, televisor, consola, comedor, sofá, biblioteca, hamaca, acuario, guitarra, alfombra, peluche gigante, matas y un cuadro) que aparecen en su sitio en 2D y en 3D; en la cama duermes, curas al equipo y guardas. La Mensajera también te lleva a tus casas y a las posadas de Tierra Grande que conozcas.
+- **Pareja:** en seis ciudades vive alguien con quien puedes salir (Valentina en Bahía Dorada, Julián en Altamira, Mariana en Ciudad Médano, Samuel en Villa Cruce, Luciana en Pueblo Palma y Felipe en Pueblo Pino). Conversa con esa persona, dale regalos (flores, chocolates, café, peluches o mochilas, que se venden en el mostrador especial de las tiendas de Tierra Grande; cada quien tiene sus favoritos) e invítala a salir: arepas, atardecer, paseo en carro o vuelo en avioneta. Con suficiente cariño y tres citas le puedes pedir que sea tu novia o tu novio; desde ahí te acompaña caminando detrás de ti, y le puedes pedir que te espere en su ciudad. Todo es de citas, regalos y paseos, apto para cualquier edad.
+
 ### Las 40 criaturas de Tierra Grande
 
 | Familia | Tipos | Dónde aparece |
@@ -217,6 +223,9 @@ src/world/traffic.js  tráfico de adorno en carreteras y calles
 src/render3d/flight3d.js vuelo en 3D: suelo con textura, árboles y edificios instanciados, nubes
 src/render3d/vehicles.js modelos 3D de torres, carros, avionetas y surtidores
 src/render3d/fauna2.js las 40 criaturas de Tierra Grande
+src/world/hogar.js    moteles, casas propias (modelos, muebles e interiores) y las personas con las que se puede salir
+src/story/vida.js     guiones del motel, el lote, la cama, el catálogo de muebles, las citas y la pareja
+src/core/clock.js     reloj del juego (hora real más lo que hayas dormido)
 src/render3d/iniciales.js modelos de las tres líneas iniciales con el acabado HD de la lámina
 src/render3d/people.js    personajes 3D chibi: cabeza grande, ojos con brillo, pelo y ropa según el look de cada uno
 src/render3d/hero-model.js protagonista GLB opcional (prototipo) con su esqueleto y clips
@@ -242,7 +251,7 @@ npx playwright install chromium
 npm test
 ```
 
-La prueba juega **la historia entera** con teclas reales: camina con una ruta calculada sobre las colisiones del juego (sin teletransportes), entra y sale de edificios, pelea con Nico, los entrenadores, los ocho líderes (recorre la Ruta 6 a la Ruta 11 de una ciudad a otra), Bruma, Umbra, Espejalba, Nico en la Liga y la Campeona Aurora (usando la Forma Alba en cada combate desde la primera medalla), encuentra a Fraguón en la Cueva Eco después de la Liga, baja por la Autopista del Llano a Tierra Grande (carro, avioneta con despegue y aterrizaje, mapa y una criatura nueva en un parque), usa la posada, compra y vende en la tienda, compra en el mostrador especial y en la máquina, usa el viaje rápido, guarda y continúa tras recargar, prueba las opciones y los controles táctiles en un celular, crea una chica en el editor de personaje, usa dos ranuras y conecta el respaldo de GitHub contra una API simulada, y falla si aparece cualquier error de JavaScript. Las capturas quedan en `tests/screenshots/`.
+La prueba juega **la historia entera** con teclas reales: camina con una ruta calculada sobre las colisiones del juego (sin teletransportes), entra y sale de edificios, pelea con Nico, los entrenadores, los ocho líderes (recorre la Ruta 6 a la Ruta 11 de una ciudad a otra), Bruma, Umbra, Espejalba, Nico en la Liga y la Campeona Aurora (usando la Forma Alba en cada combate desde la primera medalla), encuentra a Fraguón en la Cueva Eco después de la Liga, baja por la Autopista del Llano a Tierra Grande (carro, avioneta con despegue y aterrizaje, mapa y una criatura nueva en un parque, duerme en un motel, compra un lote, construye y amobla una casa, y sale con Valentina hasta que te acompaña), usa la posada, compra y vende en la tienda, compra en el mostrador especial y en la máquina, usa el viaje rápido, guarda y continúa tras recargar, prueba las opciones y los controles táctiles en un celular, crea una chica en el editor de personaje, usa dos ranuras y conecta el respaldo de GitHub contra una API simulada, y falla si aparece cualquier error de JavaScript. Las capturas quedan en `tests/screenshots/`.
 
 Para que la prueba sea rápida y no dependa del azar, después de elegir inicial sube su nivel, le recarga los PP en algunos puntos y, en la región del este, entrena al equipo antes de cada líder y da por vencidos a los entrenadores de ruta (ya probados antes). Todo lo demás es entrada real. Las pruebas unitarias (`tests/region.test.mjs`) revisan que los 117 mapas hechos a mano se alcancen caminando (y `tests/tierra.test.mjs`, que desde la entrada de Tierra Grande se llegue por carretera a todas las ciudades y aeropuertos), que los bordes empaten sin cortes, que cada puerta tenga regreso y que los líderes vayan subiendo de nivel.
 
@@ -250,7 +259,7 @@ Para que la prueba sea rápida y no dependa del azar, después de elegir inicial
 
 - Música y efectos de sonido.
 - Revisión visual del protagonista GLB (prototipo técnico) antes de usarlo por defecto; los GLB de Brotelo, Brasín y Charquín todavía no existen (sólo hay conceptos), por eso en el juego siguen siendo modelos esculpidos.
-- Tierra Grande todavía no tiene gimnasios ni historia propia: es para explorar, entrenar y completar el Registro.
+- Tierra Grande todavía no tiene gimnasios ni historia propia: es para explorar, entrenar, completar el Registro, tener casa y pareja.
 - El tráfico es de adorno (no choca) y las ciudades no tienen interiores aparte de la posada y la tienda.
 
 ## Sobre `original/pokediamond`

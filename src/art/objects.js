@@ -244,10 +244,12 @@ function door(g, x, y, color = '#9a5a2e', w = 12, h = 17) {
 export function house(w, h, opt = {}) {
   const key = 'house' + w + h + JSON.stringify(opt);
   return memo(key, () => {
-    const W = w * 16, H = (h + 1) * 16;
+    // opt.floors = 2: casa de dos pisos (16 px más alta, con una fila de ventanas arriba y un balcón).
+    const F = opt.floors === 2 ? 2 : 1, H1 = (h + 1) * 16;
+    const W = w * 16, H = H1 + (F - 1) * 16;
     const [c, g] = canvas(W + 2, H + 1);
     const roof = opt.roof || '#d8504a', wall = opt.wall || '#f6eedc';
-    const roofH = Math.round(H * 0.52), fy = roofH - 2, fh = H - fy;
+    const roofH = Math.round(H1 * 0.52), fy = roofH - 2, fh = H - fy;
     // Fachada
     px(g, 3, fy, wall, W - 4, fh - 2);
     for (let y = fy + 4; y < H - 3; y += 4) px(g, 3, y, shadeHex(wall, -0.06), W - 4, 1);
@@ -268,15 +270,32 @@ export function house(w, h, opt = {}) {
     const dc = opt.doorCol ?? Math.floor(w / 2);
     const dx = dc * 16 + 2;
     door(g, dx, H - 21, opt.doorColor);
-    const wy = fy + 7;
+    const wy = fy + 7 + (F - 1) * 16;
     const spots = [];
     for (let i = 0; i < w; i++) if (i !== dc && Math.abs(i - dc) >= 1) spots.push(i);
     spots.forEach(i => { if (i !== 0 || w > 4) windowAt(g, i * 16 + 3, wy, 11, 9, opt.flowers !== false); });
+    if (F === 2) {
+      for (let i = 0; i < w; i++) if (i !== 0 || w > 4) windowAt(g, i * 16 + 3, fy + 6, 11, 9, false);
+      px(g, 3, fy + 18, shadeHex(wall, -0.22), W - 4, 2);                       // entrepiso
+      px(g, dx - 6, fy + 15, '#8a6a4a', 28, 2); for (let x = dx - 5; x < dx + 22; x += 4) px(g, x, fy + 9, '#8a6a4a', 1, 6);   // balcón
+    }
     if (opt.sign) {
       px(g, dx - 6, fy - 1, '#ffffff', 24, 8); px(g, dx - 6, fy - 1, opt.signColor || '#3a6ad8', 24, 1);
       tinyText(g, opt.sign, dx - 6 + Math.round((24 - opt.sign.length * 4) / 2) + 1, fy + 1, opt.signColor || '#3a6ad8');
     }
     outline(c, OUT);
+    return c;
+  });
+}
+
+// Piscina vista desde arriba: borde de baldosa, agua con brillos y una escalerita.
+export function pool(w, h) {
+  return memo('pool' + w + h, () => {
+    const W = w * 16, H = h * 16, [c, g] = canvas(W, H);
+    px(g, 0, 0, '#f2ede2', W, H); px(g, 0, H - 2, '#d6cfbf', W, 2);
+    px(g, 3, 3, '#2f8fd0', W - 6, H - 6); px(g, 3, 3, '#1f6fb0', W - 6, 3);
+    for (let y = 8; y < H - 6; y += 7) for (let x = 6 + (y % 14 ? 0 : 5); x < W - 9; x += 12) px(g, x, y, '#8fd4f6', 5, 1);
+    px(g, W - 9, 4, '#c8ccd2', 1, 6); px(g, W - 6, 4, '#c8ccd2', 1, 6); for (let y = 5; y < 10; y += 2) px(g, W - 9, y, '#c8ccd2', 4, 1);
     return c;
   });
 }
@@ -304,6 +323,12 @@ export function lab(w, h) {
 
 // ---------- Muebles ----------
 const F = {
+  // Muebles de las casas propias.
+  hammock: () => { const [c, g] = canvas(32, 22); px(g, 1, 2, '#8a5a30', 2, 18); px(g, 29, 2, '#8a5a30', 2, 18); for (let i = 0; i < 26; i++) { const y = 8 + Math.round(Math.sin(i / 25 * Math.PI) * 6); px(g, 3 + i, y, ['#e04848', '#f0c040', '#3ab0a0', '#3a6ad8'][Math.floor(i / 3) % 4], 1, 4); } px(g, 3, 6, '#f6eedc', 2, 1); px(g, 27, 6, '#f6eedc', 2, 1); outline(c, OUT); return c; },
+  aquarium: () => { const [c, g] = canvas(32, 28); px(g, 2, 18, '#5a3a20', 28, 9); px(g, 3, 19, '#7a5a3a', 26, 2); px(g, 2, 2, '#a8dcf2', 28, 16); px(g, 3, 3, '#5ab0e0', 26, 14); px(g, 3, 3, '#8ad0f0', 26, 3); px(g, 5, 13, '#4a9a4a', 2, 4); px(g, 22, 11, '#4a9a4a', 2, 6); px(g, 12, 9, '#f08a3a', 4, 2); px(g, 18, 6, '#f0c040', 3, 2); px(g, 3, 16, '#e8d8a0', 26, 1); outline(c, OUT); return c; },
+  guitar: () => { const [c, g] = canvas(16, 26); ellipse(g, 8, 19, 5, 5, '#c8803a'); ellipse(g, 8, 13, 4, 4, '#c8803a'); ellipse(g, 8, 18, 2, 2, '#3a2418'); px(g, 7, 1, '#5a3a20', 2, 12); px(g, 6, 0, '#3a2418', 4, 3); px(g, 7, 22, '#3a2418', 3, 1); outline(c, OUT); return c; },
+  rug: () => { const [c, g] = canvas(48, 32); px(g, 2, 2, '#c84a4a', 44, 28); px(g, 5, 5, '#f0c040', 38, 22); px(g, 8, 8, '#3ab0a0', 32, 16); px(g, 12, 12, '#f6eedc', 24, 8); for (let x = 2; x < 46; x += 3) { px(g, x, 0, '#f6eedc', 1, 2); px(g, x, 30, '#f6eedc', 1, 2); } return c; },
+  plush: () => { const [c, g] = canvas(16, 22); ellipse(g, 8, 14, 7, 7, '#f0b040'); ellipse(g, 8, 7, 6, 5, '#f6c860'); px(g, 3, 1, '#f0b040', 3, 4); px(g, 10, 1, '#f0b040', 3, 4); px(g, 5, 6, '#2a1a10', 2, 2); px(g, 9, 6, '#2a1a10', 2, 2); px(g, 7, 9, '#e86a6a', 2, 1); px(g, 4, 13, '#fbe6b0', 8, 6); outline(c, OUT); return c; },
   bed: () => { const [c, g] = canvas(16, 30); px(g, 1, 2, '#8a5a30', 14, 26); px(g, 2, 3, '#f8f8f8', 12, 7); px(g, 3, 4, '#ffffff', 6, 3); px(g, 2, 10, '#4a8ad8', 12, 16); px(g, 2, 10, '#78aaf0', 12, 2); for (let y = 13; y < 26; y += 3) px(g, 2, y, '#3a74c0', 12, 1); outline(c, OUT); return c; },
   tv: () => { const [c, g] = canvas(16, 20); px(g, 1, 10, '#8a5a30', 14, 8); px(g, 2, 1, '#3a3a44', 12, 10); px(g, 3, 2, '#6ac0e8', 10, 7); px(g, 4, 3, '#b0e6ff', 3, 2); px(g, 3, 12, '#5a3a20', 4, 2); outline(c, OUT); return c; },
   plant: () => { const [c, g] = canvas(16, 24); px(g, 4, 16, '#c86a3a', 8, 7); px(g, 5, 17, '#e08a4a', 6, 2); ellipse(g, 8, 10, 6, 6, '#3c8c3c'); ellipse(g, 7, 9, 4, 4, '#5cb04c'); px(g, 5, 6, '#94d870', 2, 2); outline(c, OUT); return c; },

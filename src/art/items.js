@@ -14,6 +14,33 @@ const DRAW = {
     px(g, 2, 8, dark, 1, 3); px(g, 4, 5, light, 3, 1); px(g, 7, 13, dark, 3, 1);
     ellipse(g, 8, 4, 3, 2, '#ff9a5a'); px(g, 7, 3, '#ffe8c8', 2, 1);
   },
+  // Regalos
+  flowers(g, c) {
+    px(g, 6, 9, '#4a9a3a', 1, 6); px(g, 8, 8, '#4a9a3a', 1, 7); px(g, 10, 9, '#4a9a3a', 1, 6);
+    px(g, 4, 11, '#f6eedc', 9, 4); px(g, 5, 12, '#e8d8b8', 7, 1);                 // papel
+    for (const [x, y, k] of [[5, 5, c], [8, 3, '#f6d040'], [11, 5, c], [7, 7, '#f6a8c8'], [10, 7, '#f6d040']]) { ellipse(g, x, y, 2, 2, k); px(g, x, y, '#fff4c8'); }
+  },
+  choco(g, c) {
+    px(g, 3, 5, '#d84a5a', 10, 8); px(g, 3, 5, '#f06a7a', 10, 2); px(g, 7, 5, '#f6d040', 2, 8);   // caja con cinta
+    px(g, 3, 8, '#f6d040', 10, 2); ellipse(g, 8, 4, 2, 1, '#f6d040');
+    px(g, 4, 11, c, 2, 2); px(g, 10, 11, c, 2, 2);
+  },
+  plush(g, c) {
+    ellipse(g, 8, 10, 5, 4, c); ellipse(g, 8, 5, 4, 3, shadeHex(c, .2));
+    px(g, 4, 1, c, 2, 3); px(g, 10, 1, c, 2, 3);
+    px(g, 6, 5, OUT, 1, 1); px(g, 10, 5, OUT, 1, 1); px(g, 8, 7, '#e86a6a', 1, 1);
+    px(g, 6, 10, '#fbe6b0', 4, 3);
+  },
+  coffee(g, c) {
+    px(g, 4, 3, '#c8a878', 8, 11); px(g, 4, 3, '#e0c898', 8, 2); px(g, 5, 7, CREAM, 6, 4);   // bolsa
+    ellipse(g, 8, 9, 2, 1, c); px(g, 6, 1, '#a88858', 4, 2);
+  },
+  mochila(g, c) {
+    px(g, 4, 1, '#3a6ad8', 1, 5); px(g, 11, 1, '#3a6ad8', 1, 5); px(g, 4, 1, '#3a6ad8', 8, 1);   // cargadera
+    px(g, 3, 5, c, 10, 10);
+    for (const [y, k] of [[6, '#f6d040'], [8, '#3ab0a0'], [10, '#f6eedc'], [12, '#3a6ad8']]) px(g, 3, y, k, 10, 1);
+    px(g, 3, 14, shadeHex(c, -.3), 10, 1);
+  },
   // Llaves del carro: llave plateada con un control remoto del color del carro.
   carkey(g, c) {
     px(g, 2, 3, c, 7, 6); px(g, 2, 3, shadeHex(c, .4), 7, 1); px(g, 3, 8, shadeHex(c, -.35), 6, 1);
