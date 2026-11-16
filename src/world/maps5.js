@@ -71,7 +71,7 @@ function ruta18() {
   put(b, 'J', [[4, 11], [13, 10], [22, 11], [30, 10], [36, 11], [18, 3], [29, 6]]);
   b.obj({ kind: 'sign', x: 3, y: 7, text: ['RUTA 18 · PLAYA LARGA', 'Oeste: Puerto Caracol · Este: Ruta 19 y Ciudad Marea'] });
   b.obj({ kind: 'sign', x: 37, y: 7, text: ['CUIDADO', 'En el banco de arena de la Ruta 19 hay criaturas fuertes.'] });
-  b.npc({ id: 'r18nino', look: 'kid', x: 14, y: 7, dir: 0, sight: 1, trainer: T('Niño Mateo', 'kid', [['pipiu', 10], ['medusin', 10]], 400, ['¡Hice un castillo de arena y tú casi lo pisas!'], ['Se cayó el castillo.'], ['La playa sigue y sigue hasta Ciudad Marea.']) });
+  b.npc({ id: 'r18nino', look: 'kid', x: 14, y: 7, dir: 0, sight: 1, trainer: T('Niño Martín', 'kid', [['pipiu', 10], ['medusin', 10]], 400, ['¡Hice un castillo de arena y tú casi lo pisas!'], ['Se cayó el castillo.'], ['La playa sigue y sigue hasta Ciudad Marea.']) });
   b.npc({ id: 'r18nada', look: 'swimmer', x: 26, y: 10, dir: 1, sight: 1, trainer: T('Nadadora Irene', 'swimmer', [['nivalin', 11], ['medusin', 11], ['roedin', 10]], 440, ['¡Salí del agua sólo para ganarte!'], ['Vuelvo al agua.'], ['Las criaturas de Agua le temen al Eléctrico y a la Planta.']) });
   return b.build();
 }

@@ -388,7 +388,7 @@ const LINES = [
 ];
 const TITLES = { llano: ['Excursionista', 'Campista', 'Chica del campo'], bosque: ['Cazabichos', 'Excursionista', 'Guardabosque'], selva: ['Explorador', 'Cazabichos', 'Botánica'], desierto: ['Arqueóloga', 'Motociclista', 'Excursionista'], sierra: ['Montañista', 'Excursionista', 'Escaladora'], nevado: ['Esquiadora', 'Montañista', 'Escalador'], playa: ['Nadadora', 'Pescador', 'Surfista'] };
 const TRAINER_LOOK = { Excursionista: 'hiker', Campista: 'kid', 'Chica del campo': 'lass', Cazabichos: 'bugkid', Guardabosque: 'man', Explorador: 'hiker', Botánica: 'lass', Arqueóloga: 'girl', Motociclista: 'courier', Montañista: 'hiker', Escaladora: 'lass', Esquiadora: 'girl', Escalador: 'man', Nadadora: 'swimmer', Pescador: 'sailor', Surfista: 'swimmer' };
-const FIRST = ['Mateo', 'Sara', 'Juanjo', 'Valen', 'Camilo', 'Luisa', 'Andrés', 'Mafe', 'Tomás', 'Isa', 'Simón', 'Majo', 'Nico', 'Laura', 'Pipe', 'Dani'];
+const FIRST = ['Martín', 'Sara', 'Juanjo', 'Valen', 'Camilo', 'Luisa', 'Andrés', 'Mafe', 'Tomás', 'Isa', 'Simón', 'Majo', 'Nico', 'Lucía', 'Pipe', 'Dani'];
 // Equipos de entrenadores por bioma: [especie, nivel relativo]. Se completan con las especies nuevas.
 export const TG_TEAMS = {
   llano: [['pipiolo', 0], ['roedon', 1], ['seton', 0], ['carnerazo', 1], ['voltaz', 0], ['chiguiron', 1], ['becerrin', 0], ['torazo', 1], ['garcilla', 0]],
