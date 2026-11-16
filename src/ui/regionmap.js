@@ -3,7 +3,7 @@
 // Las zonas que todavía no visitas se ven como en un mapa viejo: sólo la silueta, sin detalle.
 import { GYMS, badgeCount, LEAGUE_BADGES, nextGym } from '../data/gyms.js';
 import { TG, SIZE, CITIES, AIRPORTS, ROADS, RIVERS, ENTRY_X } from '../world/tierra.js';
-import { overviewCanvas, OV, seenCount } from '../world/flightmap.js';
+import { overviewCanvas, fullOverview, OV, seenCount } from '../world/flightmap.js';
 
 const PX = 3;   // píxeles por casilla en el lienzo (luego el CSS lo escala sin suavizar)
 const PAPER = '#efe7d0';
@@ -40,6 +40,9 @@ function bounds(world) {
   const x1 = Math.max(...ms.map(m => m.origin[0] + m.w)) + 3, y1 = Math.max(...ms.map(m => m.origin[1] + m.h)) + 3;
   return { x0, y0, w: x1 - x0, h: y1 - y0 };
 }
+
+// Casilla global de Alborada que queda en la fracción (fx, fy) del mapa (modo desarrollador: tocar para ir).
+export function regionPoint(world, fx, fy) { const B = bounds(world); return [Math.floor(B.x0 + fx * B.w), Math.floor(B.y0 + fy * B.h)]; }
 
 // HTML del mapa: el lienzo más las etiquetas (en HTML para que se lean bien a cualquier tamaño).
 export function regionMapHTML(world, st) {
@@ -108,7 +111,7 @@ export function drawRegionMap(canvas, world, st) {
 // El terreno sólo se ve donde ya has estado (a pie, en carro o volando); las carreteras, las ciudades y los
 // aeropuertos salen siempre, como en un mapa de carreteras.
 const TGK = 2;   // el lienzo va a 2 píxeles por píxel del mapa chiquito (1 píxel cada 4 casillas)
-export function tgMapHTML(st, me) {
+export function tgMapHTML(st, me, reveal = false) {
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const pos = (x, y) => `left:${(x / SIZE * 100).toFixed(2)}%;top:${(y / SIZE * 100).toFixed(2)}%`;
   const out = [];
@@ -127,17 +130,18 @@ export function tgMapHTML(st, me) {
   out.push(`<span class="rm-l spot" style="${pos(ENTRY_X, 60)}">↑ Sabana</span>`);
   if (me) out.push(`<span class="rm-me" style="${pos(me[0], me[1])}" title="Estás aquí"></span>`);
   const pct = Math.round(seenCount(st) / (TG.N * TG.N) * 100);
-  return `<h3 class="ph">MAPA DE TIERRA GRANDE <small>${pct}% explorado</small></h3>
+  return `<h3 class="ph">MAPA DE TIERRA GRANDE <small>${reveal ? 'mapa completo' : pct + '% explorado'}</small></h3>
     <div class="rmap tg" style="aspect-ratio:1 / 1"><canvas id="rmCanvas" width="${TG.N * OV * TGK}" height="${TG.N * OV * TGK}"></canvas>${out.join('')}</div>
-    <div class="rm-key"><span><i class="k-air">✈</i>Aeropuerto</span><span><i class="k-road"></i>Autopista</span><span><i class="k-me"></i>Tú</span><span><i class="k-motel">M</i>Motel</span><span><i class="k-home">⌂</i>Tu casa</span><span>Lo que no has visitado sale en blanco</span></div>`;
+    <div class="rm-key"><span><i class="k-air">✈</i>Aeropuerto</span><span><i class="k-road"></i>Autopista</span><span><i class="k-me"></i>Tú</span><span><i class="k-motel">M</i>Motel</span><span><i class="k-home">⌂</i>Tu casa</span>${reveal ? '' : '<span>Lo que no has visitado sale en blanco</span>'}</div>`;
 }
-export function drawTGMap(canvas, st, me) {
-  if (!canvas) return;
+// reveal (modo desarrollador): todo el terreno, sin niebla. Devuelve false mientras ese mapa completo se siga pintando.
+export function drawTGMap(canvas, st, me, reveal = false) {
+  if (!canvas) return true;
   const g = canvas.getContext('2d'), W = canvas.width, k = W / SIZE;
   g.fillStyle = '#7fb0d8'; g.fillRect(0, 0, W, W);             // mar
   g.fillStyle = PAPER;
   g.beginPath(); g.ellipse(W / 2, W / 2, W * .47, W * .47, 0, 0, Math.PI * 2); g.fill();
-  const ov = overviewCanvas(st);
+  const fullMap = reveal ? fullOverview() : null, ov = fullMap ? fullMap.canvas : overviewCanvas(st);
   if (ov) { g.imageSmoothingEnabled = false; g.drawImage(ov, 0, 0, W, W); }
   g.lineCap = 'round'; g.lineJoin = 'round';
   for (const r of RIVERS) { g.strokeStyle = '#5aa6de'; g.lineWidth = Math.max(2, r.w * k * 1.2); g.beginPath(); r.line.forEach(([x, y], i) => i ? g.lineTo(x * k, y * k) : g.moveTo(x * k, y * k)); g.stroke(); }
@@ -159,4 +163,5 @@ export function drawTGMap(canvas, st, me) {
     g.beginPath(); g.moveTo(26, 0); g.lineTo(-10, -12); g.lineTo(-4, 0); g.lineTo(-10, 12); g.closePath(); g.fill(); g.stroke();
     g.restore();
   }
+  return !fullMap || fullMap.done;
 }

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CHEATS, MONEY_MAX, LEGENDS, LEGEND_LEVEL, normalizeCode, codePrint, tryCode, spend, refillMoney, cleanCheats, cheatOn } from '../src/data/cheats.js';
+import { CHEATS, MONEY_MAX, LEGENDS, LEGEND_LEVEL, normalizeCode, codePrint, tryCode, spend, refillMoney, cleanCheats, cheatOn, devOn, devToggle, DEV_DEFAULTS } from '../src/data/cheats.js';
 import { SPECIES, makeCreature } from '../src/data/creatures.js';
 
 // Las claves reales no se escriben aquí (el repositorio es público): se prueban con claves de prueba.
@@ -8,6 +8,7 @@ const withTestCodes = fn => {
   const saved = Object.fromEntries(Object.entries(CHEATS).map(([k, c]) => [k, c.print]));
   CHEATS.evolve.print = codePrint('EVOPRUEBA'); CHEATS.money.print = codePrint('PLATAPRUEBA');
   CHEATS.level.print = codePrint('NIVELPRUEBA'); CHEATS.legend.print = codePrint('LEYENDAPRUEBA');
+  CHEATS.dev.print = codePrint('DEVPRUEBA');
   try { fn(); } finally { for (const [k, p] of Object.entries(saved)) CHEATS[k].print = p; }
 };
 
@@ -53,4 +54,21 @@ test('the legendary code gives every legendary once, to the party first and then
   for (const c of [...st.party.slice(3), ...st.box.slice(1)]) { assert.ok(SPECIES[c.sp].legendary); assert.equal(c.level, LEGEND_LEVEL); assert.equal(st.dex[c.sp], 2); }
   const again = tryCode(st, 'LEYENDAPRUEBA');
   assert.equal(again.given.length, 0); assert.match(again.msg, /Ya tienes/);
+}));
+
+test('developer mode: a switch with its own options (calm and fast by default, walls off)', () => withTestCodes(() => {
+  const st = { money: 10 };
+  for (const k of ['calm', 'fast', 'ghost']) assert.equal(devOn(st, k), false, `${k}: apagado sin el código`);
+  const r = tryCode(st, 'Dev prueba');
+  assert.ok(r.ok && r.on && r.id === 'dev' && cheatOn(st, 'dev'));
+  for (const k of Object.keys(DEV_DEFAULTS)) assert.equal(devOn(st, k), DEV_DEFAULTS[k], k);
+  assert.deepEqual(DEV_DEFAULTS, { calm: true, fast: true, ghost: false });
+  assert.equal(devToggle(st, 'ghost'), true); assert.ok(devOn(st, 'ghost'));
+  assert.equal(devToggle(st, 'calm'), false); assert.ok(!devOn(st, 'calm'));
+  assert.equal(st.money, 10, 'el modo desarrollador no toca la plata');
+  assert.deepEqual(cleanCheats({ dev: true }), { dev: true }, 'queda guardado en la partida');
+  tryCode(st, 'DEV PRUEBA');
+  assert.ok(!cheatOn(st, 'dev') && !devOn(st, 'ghost'), 'al apagarlo, ningún interruptor sigue activo');
+  tryCode(st, 'devprueba');
+  assert.ok(devOn(st, 'ghost') && !devOn(st, 'calm'), 'al prenderlo otra vez recuerda cómo lo dejaste');
 }));

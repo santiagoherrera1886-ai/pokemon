@@ -186,9 +186,9 @@ export const seenCount = st => { let n = 0; for (const v of bits(st)) for (let k
 // Mapa chiquito de todo Tierra Grande: 6 píxeles por mapa de 48 (1 píxel cada 8 casillas).
 export const OV = 6;
 let overview = null, overviewOwner = null;
-function paintCell(i, j) {
-  if (!overview) return;
-  const g = overview.getContext('2d'), img = g.createImageData(OV, OV);
+function paintCell(i, j, cv = overview) {
+  if (!cv) return;
+  const g = cv.getContext('2d'), img = g.createImageData(OV, OV);
   for (let y = 0; y < OV; y++) for (let x = 0; x < OV; x++) {
     const gx = i * TG.S + x * 8 + 4, gy = j * TG.S + y * 8 + 4, t = tileAt(gx, gy), c = groundColor(t, gx, gy), k = (y * OV + x) * 4;
     img.data[k] = c[0]; img.data[k + 1] = c[1]; img.data[k + 2] = c[2]; img.data[k + 3] = 255;
@@ -204,6 +204,17 @@ export function overviewCanvas(st) {
     for (let j = 0; j < TG.N; j++) for (let i = 0; i < TG.N; i++) if (seenCell(st, i, j)) paintCell(i, j);
   }
   return overview;
+}
+
+// Mapa completo, sin niebla (modo desarrollador). Pintarlo todo de una congela la pantalla un par de segundos
+// en un celular, así que se pinta por partes: cada llamada avanza `budget` milisegundos y dice si ya terminó.
+let full = null, fullNext = 0;
+export function fullOverview(budget = 12) {
+  if (typeof document === 'undefined') return null;
+  if (!full) { full = document.createElement('canvas'); full.width = full.height = TG.N * OV; }
+  const t0 = performance.now();
+  while (fullNext < CELLS && performance.now() - t0 < budget) { paintCell(fullNext % TG.N, Math.floor(fullNext / TG.N), full); fullNext++; }
+  return { canvas: full, done: fullNext >= CELLS };
 }
 
 // Aeropuerto más cercano a (x, y): [aeropuerto, distancia en casillas, ángulo en radianes (0 = este)].

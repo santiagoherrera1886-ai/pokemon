@@ -5,11 +5,12 @@ import { iconURL } from '../art/creatures.js';
 import { itemIcon } from '../art/items.js';
 import { SPECIES, MOVES, TYPES, STARTERS, expForLevel, ENCOUNTERS } from '../data/creatures.js';
 import { GYMS, nextGym, badgeCount, LEAGUE_BADGES } from '../data/gyms.js';
-import { regionMapHTML, drawRegionMap, tgMapHTML, drawTGMap } from './regionmap.js';
-import { TG } from '../world/tierra.js';
+import { regionMapHTML, drawRegionMap, tgMapHTML, drawTGMap, regionPoint } from './regionmap.js';
+import { TG, SIZE } from '../world/tierra.js';
+import { devPlaces, findFree, spotOf, devGo, devReturn, devCar, devPlane, devMoney } from './dev.js';
 import { CANDIDATES } from '../world/hogar.js';
 import { isHeld, giveHeld, takeHeld } from '../data/held.js';
-import { CHEATS, tryCode, spend, cheatOn } from '../data/cheats.js';
+import { CHEATS, tryCode, spend, cheatOn, devOn, devToggle } from '../data/cheats.js';
 import { ITEMS, POCKETS, POCKET_ORDER, SPECIAL, VENDING, STAT_NAMES, SEED_MAX, generalStock, lockedStock, shortDesc, sellPrice, pocketItems, canUseOn, useOnCreature, isCapsule } from '../data/items.js';
 import { saveState, listSaves, SLOTS, loadState, storeState, parseState, playTimeText } from '../core/state.js';
 import { cloud, TOKEN_URL } from '../core/cloud.js';
@@ -96,24 +97,88 @@ export class Menus {
         <button data-act="save" class="hb hb-save">${SVG.save}<b>GUARDAR</b><small>Ranura ${st.slot || 1}</small></button>
         <button data-act="options" class="hb hb-opt">${SVG.options}<b>OPCIONES</b><small>Gráficos y más</small></button>
       </div>
+      ${cheatOn(st, 'dev') ? '<button data-act="dev" class="home-dev">🛠️ MODO DESARROLLADOR</button>' : ''}
       <button class="bt-back" data-back>CERRAR</button></div>`,
     { modal: true, cls: 'home-panel', focus: 1, onAct: a => this.open(a), onBack: () => ui.closePanel() });   // el cursor arranca en EQUIPO
   }
   open(what) {
-    ({ party: () => this.party(), bag: () => this.bag(), dex: () => this.dex(), card: () => this.card(), save: () => this.save(), options: () => this.options(), map: () => this.regionMap() })[what]();
+    ({ party: () => this.party(), bag: () => this.bag(), dex: () => this.dex(), card: () => this.card(), save: () => this.save(), options: () => this.options(), map: () => this.regionMap(), dev: () => this.dev() })[what]();
   }
 
   // ---------- Mapa de la región ----------
   // Dos mapas: Alborada y Tierra Grande (este sale cuando ya lo has pisado). Abre el de donde estás.
-  regionMap(which) {
-    const world = this.game.world, st = this.st, me = this.tgSpot();
-    const hasTG = !!st.tgSeen;
+  // En modo desarrollador los dos se ven completos (sin niebla) y tocando cualquier punto vas para allá.
+  regionMap(which, from = 'home') {
+    const world = this.game.world, st = this.st, me = this.tgSpot(), dev = cheatOn(st, 'dev');
+    const hasTG = !!st.tgSeen || dev;
     which = which || (me ? 'tg' : 'alborada');
+    const vst = dev ? { ...st, visited: { ...st.visited, ...Object.fromEntries(world.base.map(m => [m.id, true])) } } : st;
     const tabs = hasTG ? `<div class="rm-tabs"><button data-act="rm:alborada" class="${which === 'alborada' ? 'on' : ''}">ALBORADA</button><button data-act="rm:tg" class="${which === 'tg' ? 'on' : ''}">TIERRA GRANDE</button></div>` : '';
-    const body = which === 'tg' && hasTG ? tgMapHTML(st, me) : regionMapHTML(world, st);
-    ui.setPanel(`${tabs}${body}<button class="bt-back" data-back>VOLVER</button>`, { modal: true, cls: 'list-panel wide-panel map-panel', onAct: a => a.startsWith('rm:') && this.regionMap(a.slice(3)), onBack: () => this.home(true) });
-    if (which === 'tg' && hasTG) drawTGMap(document.getElementById('rmCanvas'), st, me);
-    else drawRegionMap(document.getElementById('rmCanvas'), world, st);
+    const body = which === 'tg' && hasTG ? tgMapHTML(st, me, dev) : regionMapHTML(world, vst);
+    const tip = dev ? '<p class="dev-tip">MODO DESARROLLADOR: toca cualquier punto del mapa para ir allá.</p>' : '';
+    ui.setPanel(`${tabs}${tip}${body}<button class="bt-back" data-back>VOLVER</button>`, { modal: true, cls: 'list-panel wide-panel map-panel', onAct: a => a.startsWith('rm:') && this.regionMap(a.slice(3), from), onBack: () => from === 'dev' ? this.dev() : this.home(true) });
+    const cv = document.getElementById('rmCanvas');
+    if (which === 'tg' && hasTG) {
+      // El mapa completo se pinta por partes: se redibuja hasta que termine (o hasta que se cierre el panel).
+      const paint = () => { if (cv && cv.isConnected && !drawTGMap(cv, st, me, dev)) requestAnimationFrame(paint); };
+      paint();
+    } else drawRegionMap(cv, world, vst);
+    const box = cv && cv.closest('.rmap');
+    if (!dev || !box) return;
+    box.classList.add('dev-pick');
+    box.addEventListener('click', async e => {
+      const r = box.getBoundingClientRect(), fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height;
+      if (!(fx >= 0 && fy >= 0 && fx <= 1 && fy <= 1)) return;
+      const tg = which === 'tg' && hasTG, [gx, gy] = tg ? [TG.X + Math.floor(fx * SIZE), TG.Y + Math.floor(fy * SIZE)] : regionPoint(world, fx, fy);
+      const spot = findFree(world, st, gx, gy, tg ? 40 : 12);
+      if (!spot) { this.game.toast('Ahí no hay dónde pararse: toca más cerca de tierra firme'); return; }
+      const i = await ui.ask(`¿Ir a ${world.get(spot.map)?.name || 'ese punto'}?`, ['Sí, ir', 'No, otro punto']);
+      if (i === 0) await devGo(this.game, spot); else this.regionMap(which, from);
+    });
+  }
+
+  // ---------- Modo desarrollador ----------
+  // Se prende con su clave en Opciones › Códigos. Atajos para recorrer todo el mapa y revisar lo nuevo.
+  dev() {
+    const st = this.st, game = this.game, o = st.options, ow = game.ow, yn = k => devOn(st, k) ? 'SÍ' : 'NO';
+    const inTG = !!(ow.map?.outdoor && ow.map.region === 'tierra');
+    ui.setPanel(`<h3 class="ph">MODO DESARROLLADOR</h3><div class="opts dev-opts">
+      <button data-act="map">🗺️ Ir con el mapa: toca donde quieras</button>
+      <button data-act="places">📍 Ir a un lugar de la lista</button>
+      ${st.devBack ? '<button data-act="back">↩️ Volver a donde estaba</button>' : ''}
+      <button data-act="car">🚗 Carro ya${inTG || ow.flight ? '' : ' (te deja en el Parador del Llano)'}</button>
+      <button data-act="plane">✈️ Avioneta: despegar ya${inTG ? ' desde aquí' : ' (desde la Pista Norte)'}</button>
+      <button data-act="ghost">Atravesar paredes: <b>${yn('ghost')}</b></button>
+      <button data-act="calm">Paseo tranquilo (sin criaturas, entrenadores ni eventos): <b>${yn('calm')}</b></button>
+      <button data-act="fast">Caminar rápido (con B, todavía más): <b>${yn('fast')}</b></button>
+      <button data-act="hour">Hora del día: <b>${o.forceHour === undefined ? 'REAL' : o.forceHour === 12 ? 'SIEMPRE DÍA' : 'SIEMPRE NOCHE'}</b></button>
+      <button data-act="money">💰 Sumar $50.000 (para construir casas)</button></div>
+      <p class="hint">La partida se guarda donde quedes: con «Volver a donde estaba» regresas a tu historia. Para apagar este modo, escribe la clave otra vez en Opciones › Códigos.</p>
+      <button class="bt-back" data-back>CERRAR</button>`,
+    { modal: true, cls: 'list-panel graphics-options dev-panel', onBack: () => { ui.closePanel(); game.menus.home(false); }, onAct: async a => {
+      if (a === 'map') return this.regionMap(inTG || ow.flight || String(ow.map?.id).startsWith('tgi_') ? 'tg' : 'alborada', 'dev');
+      if (a === 'places') return this.devPlacesList();
+      if (a === 'back') return devReturn(game);
+      if (a === 'car') return devCar(game);
+      if (a === 'plane') return devPlane(game);
+      if (a === 'ghost' || a === 'calm' || a === 'fast') devToggle(st, a);
+      if (a === 'hour') o.forceHour = o.forceHour === undefined ? 12 : o.forceHour === 12 ? 22 : undefined;
+      if (a === 'money') { devMoney(game); game.toast(`Ahora tienes ${money(st.money)}`); }
+      this.dev();
+      ui.focusAct(a);
+    } });
+  }
+  devPlacesList() {
+    const game = this.game, { tg, al } = devPlaces(game.world);
+    const row = (p, k) => `<button data-act="${k}"><b>${esc(p.name)}</b></button>`;
+    ui.setPanel(`<h3 class="ph">IR A UN LUGAR</h3><div class="ilist dev-places">
+      <div class="sec" style="--c:#e2603f"><i></i>Tierra Grande</div>${tg.map((p, i) => row(p, 't' + i)).join('')}
+      <div class="sec" style="--c:#3f7fc8"><i></i>Alborada</div>${al.map((p, i) => row(p, 'a' + i)).join('')}</div>
+      <button class="bt-back" data-back>VOLVER</button>`,
+    { modal: true, cls: 'list-panel', onBack: () => this.dev(), onAct: a => {
+      const p = (a[0] === 't' ? tg : al)[+a.slice(1)];
+      if (p) devGo(game, spotOf(game.world, this.st, p));
+    } });
   }
   // Dónde está el jugador en Tierra Grande (casillas; con rumbo si va volando), o null si está en Alborada.
   tgSpot() {
@@ -343,6 +408,7 @@ export class Menus {
       if (a !== 'try') return;
       const input = document.getElementById('ccode'), r = tryCode(st, input?.value);
       input?.blur();   // sin esto, la Z se escribe en la caja en vez de pasar el mensaje
+      this.game.ow?.vehicleUI?.();   // el botón DEV aparece (o se va) de una
       await ui.say([r.msg]);
       this.codes();
     } });
@@ -451,6 +517,7 @@ export class Menus {
           ${saves.length ? '<button data-act="continue" class="primary">CONTINUAR</button>' : ''}
           <button data-act="new">NUEVA PARTIDA</button>
           <button data-act="files" class="soft">PARTIDAS Y GITHUB${cloud.linked ? ' ☁' : ''}</button>
+          <p class="title-news"><b>NUEVO · v3</b> Tierra Grande: carros, aviones, casas, moteles, pareja y 40 Puchamon más. Con una medalla, la Mensajera de cualquier posada te lleva.</p>
           <p class="hint">Juego original sin ROM · guardado en tu navegador${cloud.linked ? ` y en GitHub (${esc(cloud.login)})` : ''}</p></div>`,
         { modal: true, cls: 'title-panel', onAct: a => {
           if (a === 'continue') return saves.length === 1 ? resolve({ type: 'continue', slot: saves[0].slot }) : pick('continue');

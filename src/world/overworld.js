@@ -12,10 +12,11 @@ import { markSeen } from './flightmap.js';
 import { Flight, renderFlight2D } from './flight.js';
 import { Traffic, dir4 } from './traffic.js';
 import { CANDIDATES } from './hogar.js';
+import { cheatOn, devOn } from '../data/cheats.js';
 
 const DIRS = { down: 0, up: 1, left: 2, right: 3 };
 const DXY = [[0, 1], [0, -1], [-1, 0], [1, 0]];
-const WALK = 16, RUN = 8, NPC_WALK = 18, DRIVE = 4, TURBO = 2;
+const WALK = 16, RUN = 8, NPC_WALK = 18, DRIVE = 4, TURBO = 2, DEV_RUN = 4;
 
 export const NAMES = {
   mom: 'Mamá', rival: 'Nico', prof: 'Prof. Ceiba', nurse: 'Enfermera Malva', clerk: 'Dependiente', vendor: 'Vendedora', rivalMom: 'Mamá de Nico', aide: 'Ayudante',
@@ -148,6 +149,11 @@ export class Overworld {
     return false;
   }
   facing(actor = this.player) { const [dx, dy] = DXY[actor.dir]; return [actor.x + dx, actor.y + dy]; }
+  // Modo desarrollador, atravesar paredes: sólo frena donde ya no hay mapa (fuera del mundo o de la pieza).
+  ghostBlocked(x, y) {
+    const [m, lx, ly] = this.resolve(x, y);
+    return !m || !m.inside(lx, ly) || m.at(lx, ly) === undefined;
+  }
 
   // ---------- Actualización ----------
   update() {
@@ -181,13 +187,14 @@ export class Overworld {
     const [dx, dy] = DXY[dir];
     const tx = p.x + dx, ty = p.y + dy;
     p.dir = dir;
-    if (this.blocked(tx, ty, p)) {
+    if (devOn(this.st, 'ghost') ? this.ghostBlocked(tx, ty) : this.blocked(tx, ty, p)) {
       this.wasWalking = false;
       p.frame = (this.frame >> 3) % 2 ? 1 + p.step : 0;
       return;
     }
-    const run = input.held('b') && this.st.shoes;
-    p.startMove(dir, run ? RUN : WALK);
+    // Modo desarrollador, caminar rápido: camina al paso de correr y con B va el doble (sin necesitar las zapatillas).
+    const fast = devOn(this.st, 'fast'), run = input.held('b') && (this.st.shoes || fast);
+    p.startMove(dir, fast ? (run ? DEV_RUN : RUN) : run ? RUN : WALK);
     if (run && this.frame % 2 === 0) this.dust(p);
     this.wasWalking = true;
   }
@@ -228,7 +235,7 @@ export class Overworld {
       if (this.frame - (this.carWarn ?? -999) > 150) { this.game.toast?.('El carro no sale de Tierra Grande: bájate con A para seguir a pie'); this.carWarn = this.frame; }
       return;
     }
-    if (this.blocked(tx, ty, p)) return;
+    if (devOn(this.st, 'ghost') ? this.ghostBlocked(tx, ty) : this.blocked(tx, ty, p)) return;
     p.startMove(dir, input.held('b') ? TURBO : DRIVE);
     this.wasWalking = true;
   }
@@ -291,6 +298,7 @@ export class Overworld {
       btn.classList.toggle('hidden', !show);
       btn.innerHTML = this.vehicle === 'car' ? '🚶 <span>BAJAR</span>' : '🚗 <span>CARRO</span>';
     }
+    document.getElementById('devBtn')?.classList.toggle('hidden', !cheatOn(this.st, 'dev'));
     this.flightHud();
   }
 
@@ -311,6 +319,7 @@ export class Overworld {
     if (this.vehicle) return;   // en carro no se entra a las casas ni salen criaturas ni entrenadores
     const w = m.warpAt(p.x, p.y);
     if (w && (w.needDir === undefined || w.needDir === p.dir) && (!w.when || w.when(this.st))) { await this.warp(w.to, w.tx, w.ty, w.face); return; }
+    if (devOn(this.st, 'calm')) return;   // modo desarrollador, paseo tranquilo: sin eventos, entrenadores ni criaturas
     if (await this.checkTriggers()) return;
     if (await this.checkTrainers()) return;
     if (stepped && this.st.repel > 0) await this.game.repelStep();

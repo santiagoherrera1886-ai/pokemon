@@ -168,6 +168,7 @@ async function run() {
     await page.evaluate(mode=>{localStorage.clear();localStorage.setItem('alborada-graphics-v1',JSON.stringify({mode,quality:'low'}));},GRAPHICS_MODE);
     await page.reload(); await sleep(700);
     await shot('titulo');
+    assert.match(await page.textContent('#panel .title-news'), /Tierra Grande/, 'el título avisa lo nuevo de la versión');
     await page.click('#panel [data-act="new"]');
     await page.fill('#pname', 'Santi');
     await page.click('#panel [data-act="ok"]');
@@ -350,6 +351,7 @@ async function run() {
     await walkTo(22, 7, 'marea');
     await talkTo(10, 5);
     for (let i = 0; i < 20 && !(await page.$('#panel .ilist')); i++) { await tap('z', 40); await sleep(120); }
+    assert.ok((await page.$$eval('#panel .ilist button', b => b.map(e => e.textContent))).includes('Tierra Grande · Parador del Llano'), 'la Mensajera también lleva a Tierra Grande');
     await page.click('#panel .ilist [data-act="0"]');
     await settle();
     s = await st(); assert.equal(s.map, 'brisal', 'el viaje rápido debe llevar a Brisal');
@@ -634,6 +636,73 @@ async function run() {
     await page.evaluate(([p, b]) => { const s = __game.state; s.party.length = Math.min(s.party.length, p); s.box = (s.box || []).slice(0, b); __ui.closePanel(); }, [prevTeam.party, prevTeam.box]);
     await settle();
     log('códigos: plata infinita, evolución libre, subir de nivel y legendarios OK');
+
+    // ------------------------------------------------ Modo desarrollador (clave de prueba): ir a cualquier parte del mapa
+    await page.evaluate(async () => { const m = await import('/src/data/cheats.js'); m.CHEATS.dev.print = m.codePrint('DEVPRUEBA'); });
+    const devFrom = await st();
+    const devPanel = async () => { await settle(); await page.click('#devBtn'); await page.waitForSelector('#panel.dev-panel'); await sleep(120); };
+    const devIdle = () => page.waitForFunction(() => __game.scene === 'overworld' && !__game.ow.locked && !__game.ow.player.moving && !__ui.dialog, null, { timeout: 30000 });
+    assert.ok(await page.evaluate(() => document.getElementById('devBtn').classList.contains('hidden')), 'sin el código no hay botón DEV');
+    await page.evaluate(() => { __ui.closePanel(); __game.menus.codes(); }); await page.waitForSelector('#ccode');
+    await tryCode('dev prueba');
+    await page.evaluate(() => { __ui.closePanel(); __game.menus.home(false); });
+    assert.ok(await page.evaluate(() => !document.getElementById('devBtn').classList.contains('hidden')), 'con el código aparece el botón DEV');
+    // Lista de lugares: Parador del Llano, y de una al carro.
+    await devPanel(); await page.click('#panel [data-act="places"]'); await page.waitForSelector('#panel .dev-places');
+    await page.click('#panel [data-act="t0"]'); await devIdle();
+    s = await st(); assert.equal(s.map, 'tg_40_5', 'el primer lugar de la lista es el Parador del Llano');
+    await devPanel(); await page.click('#panel [data-act="car"]');
+    await page.waitForFunction(() => __game.ow.vehicle === 'car'); await devIdle();
+    assert.ok(await page.evaluate(() => !!__game.state.bag.llavesCarro), 'el carro ya trae las llaves');
+    await shot('dev-carro');
+    // Mapa completo: tocar Villa Cruce y confirmar.
+    await devPanel(); await page.click('#panel [data-act="map"]'); await page.waitForSelector('#panel .rmap.dev-pick');
+    const cruce = await page.evaluate(async () => { const { CITIES, SIZE } = await import('/src/world/tierra.js'); const c = CITIES.find(c => c.id === 'cruce'); return [(c.x0 + c.x1) / 2, (c.y0 + c.y1) / 2, SIZE]; });
+    await sleep(600); await shot('dev-mapa');
+    const bb = await (await page.$('#panel .rmap')).boundingBox();
+    await page.mouse.click(bb.x + bb.width * cruce[0] / cruce[2], bb.y + bb.height * cruce[1] / cruce[2]);
+    await page.waitForSelector('#panel .choice[data-act="0"]'); await page.click('#panel .choice[data-act="0"]');
+    await page.waitForFunction(() => __game.state.map.startsWith('tg_') && __game.state.map !== 'tg_40_5'); await devIdle();
+    const atCruce = await page.evaluate(() => __game.ow.tgPos());
+    assert.ok(Math.hypot(atCruce[0] - cruce[0], atCruce[1] - cruce[1]) < 40, `tocar el mapa lleva a Villa Cruce (quedó en ${atCruce.map(Math.round)})`);
+    // Atravesar paredes: desde una casilla libre con un edificio encima, camina hacia arriba y se mete.
+    await page.evaluate(() => __game.ow.toggleCar());
+    await devPanel(); await page.click('#panel [data-act="ghost"]'); await page.click('#panel [data-back]'); await devIdle();
+    const wall = await page.evaluate(() => {
+      const ow = __game.ow, p = ow.player, m = ow.map;
+      for (let r = 0; r < 14; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+        const x = p.x + dx, y = p.y + dy;
+        if (y < 3 || !m.inside(x, y) || ow.blocked(x, y, p) || m.warpAt(x, y)) continue;
+        if (m.objectAt(x, y - 1, __game.state)?.solid && m.objectAt(x, y - 2, __game.state)?.solid && !m.warpAt(x, y - 1) && !m.warpAt(x, y - 2)) return [x, y];
+      }
+      return null;
+    });
+    assert.ok(wall, 'hay un edificio cerca para probar');
+    await page.evaluate(([x, y]) => __game.ow.load(__game.state.map, x, y, 1, false), wall); await devIdle();
+    await step('ArrowUp'); await devIdle(); await step('ArrowUp'); await devIdle();
+    s = await st(); assert.ok(s.y <= wall[1] - 2, `atraviesa la pared del edificio (y ${wall[1]} → ${s.y})`);
+    // Paseo tranquilo: ni con la suerte a favor sale una criatura.
+    const calm = await page.evaluate(async () => {
+      const ow = __game.ow, r = Math.random; Math.random = () => 0;
+      const m = ow.map, enc = m.encounters; m.encounters = m.encounters || 'tgCiudad';
+      try { await ow.afterStep(true); return __game.scene; } finally { Math.random = r; m.encounters = enc; }
+    });
+    assert.equal(calm, 'overworld', 'con paseo tranquilo no salen criaturas');
+    // Avioneta: despega desde ahí mismo; y «Volver a donde estaba» regresa a la historia.
+    await devPanel(); await page.click('#panel [data-act="plane"]');
+    await page.waitForFunction(() => !!__game.ow.flight); await sleep(800);
+    await shot('dev-avioneta');
+    assert.ok(await page.evaluate(() => !!__game.state.bag.licenciaPiloto), 'la avioneta ya trae la licencia');
+    await page.waitForFunction(() => !__game.ow.locked);
+    await devPanel(); await page.click('#panel [data-act="back"]');
+    await page.waitForFunction(m => __game.state.map === m && !__game.ow.flight, devFrom.map); await devIdle();
+    s = await st(); assert.deepEqual([s.map, s.x, s.y], [devFrom.map, devFrom.x, devFrom.y], 'vuelve a donde estaba');
+    // Se apaga con la misma clave: sin botón y sin atravesar paredes.
+    await page.evaluate(() => { __ui.closePanel(); __game.menus.codes(); }); await page.waitForSelector('#ccode');
+    await tryCode('dev prueba');
+    await page.evaluate(() => { __ui.closePanel(); __game.menus.home(false); }); await settle();
+    assert.ok(await page.evaluate(async () => { const { devOn } = await import('/src/data/cheats.js'); return document.getElementById('devBtn').classList.contains('hidden') && !devOn(__game.state, 'ghost') && !devOn(__game.state, 'calm'); }), 'apagado, todo vuelve a la normalidad');
+    log('modo desarrollador: lugares, carro, mapa completo, atravesar paredes, paseo tranquilo, avioneta y volver OK');
 
     // Opción de perspectiva y hora del día
     await tap('Escape'); await page.click('#panel [data-act="options"]'); await page.click('#panel [data-act="persp"]'); await sleep(300);

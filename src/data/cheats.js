@@ -22,9 +22,15 @@ export const CHEATS = {
   evolve: { print: '143d0f2012e239', name: 'Evolución libre', on: 'Código aceptado: ahora puedes evolucionar cualquier criatura desde su ficha (EVOLUCIONAR).', off: 'Evolución libre apagada.' },
   money: { print: '10ec4785594157', name: 'Plata infinita', on: `Código aceptado: tu billetera queda llena para siempre ($${MONEY_MAX.toLocaleString('es-CO')}).`, off: 'Plata infinita apagada. Te quedas con lo que tienes.' },
   level: { print: '8308c66b3bb1e', name: 'Subir de nivel', on: 'Código aceptado: en la ficha de cada criatura aparecen SUBIR 1 NIVEL y SUBIR 10 NIVELES.', off: 'Subir de nivel apagado.' },
-  legend: { print: '93b8953577db9', name: 'Legendarios', action: true }
+  legend: { print: '93b8953577db9', name: 'Legendarios', action: true },
+  dev: { print: '13cf29fafa13e7', name: 'Modo desarrollador', on: 'Código aceptado: MODO DESARROLLADOR. Toca el botón DEV (o entra al menú) para ir a cualquier parte del mapa, atravesar paredes y pasear sin criaturas.', off: 'Modo desarrollador apagado. Todo vuelve a la normalidad.' }
 };
 export const cheatOn = (st, id) => !!(st && st.cheats && st.cheats[id]);
+
+// Modo desarrollador: interruptores propios (se guardan en st.devOpts). Por defecto: paseo tranquilo y caminar rápido.
+export const DEV_DEFAULTS = { calm: true, fast: true, ghost: false };
+export const devOn = (st, k) => cheatOn(st, 'dev') && !!(st.devOpts && k in st.devOpts ? st.devOpts[k] : DEV_DEFAULTS[k]);
+export function devToggle(st, k) { st.devOpts = { ...(st.devOpts || {}), [k]: !devOn(st, k) }; return st.devOpts[k]; }
 
 export function tryCode(st, text) {
   const n = normalizeCode(text);

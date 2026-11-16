@@ -38,6 +38,7 @@ class Game {
     ui.restoreHook = () => this.restoreBottom();
     input.bindTouch(document);
     document.getElementById('menuBtn').addEventListener('click', () => { if (this.scene === 'overworld' && !this.ow.locked) this.openMenu(); });
+    document.getElementById('devBtn').addEventListener('click', () => { if (this.scene === 'overworld' && !this.ow.locked) this.menus.dev(); });
     this.state = newState();
     this.graphics = new Graphics(this);
     this.graphics.applyArt();
