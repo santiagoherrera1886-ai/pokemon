@@ -414,7 +414,11 @@ async function run() {
         c.moves = movesFor(sp, lv).map(m => ({ id: m, pp: MOVES[m].pp }));
       }
     }, lv);
-    await page.evaluate(() => { for (const id of ['ruta6', 'ruta7', 'ruta8', 'ruta9', 'ruta10', 'ruta11', 'gym4', 'gym5', 'gym6', 'gym7', 'gym8']) for (const n of __game.world.get(id).npcs) if (n.trainer && !n.badge) __game.state.flags['t_' + n.id] = true; });
+    // (También los de las rutas al aire libre que se agregaron después: el camino más corto puede pasar por ellas.)
+    await page.evaluate(() => {
+      const ids = ['ruta6', 'ruta7', 'ruta8', 'ruta9', 'ruta10', 'ruta11', 'gym4', 'gym5', 'gym6', 'gym7', 'gym8', ...(__game.world.base || []).filter(m => m.outdoor).map(m => m.id)];
+      for (const id of ids) for (const n of __game.world.get(id).npcs) if (n.trainer && !n.badge) __game.state.flags['t_' + n.id] = true;
+    });
     await walkTo(6, 15, 'corola');                                         // posada de Corola: la Mensajera lleva a Marea
     await talkTo(10, 5);
     for (let i = 0; i < 20 && !(await page.$('#panel .ilist')); i++) { await tap('z', 40); await sleep(120); }
@@ -526,7 +530,7 @@ async function run() {
     await sleep(500); await settle();
     const fauna = await page.evaluate(async () => { const { encounterList } = await import('/src/data/creatures.js'); return encounterList('tgCiudad', 12).map(e => e[0]); });
     assert.ok(fauna.includes('semaforin'), 'los parques de la ciudad tienen Semaforín');
-    await page.evaluate(() => __game.maybeEncounter('tgCiudad', 'grass', { force: true }));
+    await page.evaluate(() => { __game.maybeEncounter('tgCiudad', 'grass', { force: true }); });   // sin esperar: el combate lo resuelve settle
     await page.waitForFunction(() => __game.scene === 'battle', {}, { timeout: 30000 });
     await sleep(1500); await shot('tierra-grande-criatura-nueva');
     await settle();
