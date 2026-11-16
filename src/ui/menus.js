@@ -8,6 +8,7 @@ import { GYMS, nextGym, badgeCount, LEAGUE_BADGES } from '../data/gyms.js';
 import { regionMapHTML, drawRegionMap, tgMapHTML, drawTGMap, regionPoint } from './regionmap.js';
 import { TG, SIZE } from '../world/tierra.js';
 import { devPlaces, findFree, spotOf, devGo, devReturn, devCar, devPlane, devMoney } from './dev.js';
+import { BUILD } from '../core/version.js';
 import { CANDIDATES } from '../world/hogar.js';
 import { isHeld, giveHeld, takeHeld } from '../data/held.js';
 import { CHEATS, tryCode, spend, cheatOn, devOn, devToggle } from '../data/cheats.js';
@@ -97,12 +98,12 @@ export class Menus {
         <button data-act="save" class="hb hb-save">${SVG.save}<b>GUARDAR</b><small>Ranura ${st.slot || 1}</small></button>
         <button data-act="options" class="hb hb-opt">${SVG.options}<b>OPCIONES</b><small>Gráficos y más</small></button>
       </div>
-      ${cheatOn(st, 'dev') ? '<button data-act="dev" class="home-dev">🛠️ MODO DESARROLLADOR</button>' : ''}
+      <div class="home-row">${cheatOn(st, 'dev') ? '<button data-act="dev" class="home-dev">🛠️ MODO DESARROLLADOR</button>' : ''}<button data-act="codes" class="home-codes">🔑 CÓDIGOS</button></div>
       <button class="bt-back" data-back>CERRAR</button></div>`,
     { modal: true, cls: 'home-panel', focus: 1, onAct: a => this.open(a), onBack: () => ui.closePanel() });   // el cursor arranca en EQUIPO
   }
   open(what) {
-    ({ party: () => this.party(), bag: () => this.bag(), dex: () => this.dex(), card: () => this.card(), save: () => this.save(), options: () => this.options(), map: () => this.regionMap(), dev: () => this.dev() })[what]();
+    ({ party: () => this.party(), bag: () => this.bag(), dex: () => this.dex(), card: () => this.card(), save: () => this.save(), options: () => this.options(), map: () => this.regionMap(), dev: () => this.dev(), codes: () => this.codes('home') })[what]();
   }
 
   // ---------- Mapa de la región ----------
@@ -379,6 +380,7 @@ export class Menus {
       <button data-act="full">Pantalla completa del navegador</button>
       <button data-act="title">Volver al título</button></div>
       <p class="hint">Teclado: flechas/WASD mover · Z/E/Enter = A · X/Shift = B (correr) · Esc/M = menú</p>
+      <p class="hint ver">Versión ${BUILD.version}${BUILD.sha !== 'dev' ? ` · ${BUILD.sha}` : ''}</p>
       <button class="bt-back" data-back>VOLVER</button>`,
     { modal: true, cls: 'list-panel graphics-options', onBack: () => this.home(true), onAct: async a => {
       if (a === 'graphics') { await graphics.setMode(graphics.mode === 'premium' ? 'classic' : 'premium'); }
@@ -399,18 +401,19 @@ export class Menus {
   }
 
   // ---------- Códigos secretos ----------
-  codes() {
+  codes(from = 'options') {
     const st = this.st, active = Object.keys(CHEATS).filter(k => cheatOn(st, k));
     ui.setPanel(`<h3 class="ph">CÓDIGOS</h3><div class="name-entry code-entry"><label for="ccode">Escribe un código secreto</label><input id="ccode" maxlength="40" autocomplete="off" autocapitalize="characters" spellcheck="false"><button data-act="try" class="primary">PROBAR</button></div>
       <div class="code-list">${active.length ? active.map(k => `<span>✓ ${CHEATS[k].name}</span>`).join('') : '<span class="none">Ningún código activo</span>'}</div>
       <p class="hint">Para apagar un código, escríbelo otra vez.</p><button class="bt-back" data-back>VOLVER</button>`,
-    { modal: true, cls: 'list-panel', onBack: () => this.options(), onAct: async a => {
+    { modal: true, cls: 'list-panel', onBack: () => from === 'home' ? this.home(true) : this.options(), onAct: async a => {
       if (a !== 'try') return;
       const input = document.getElementById('ccode'), r = tryCode(st, input?.value);
       input?.blur();   // sin esto, la Z se escribe en la caja en vez de pasar el mensaje
       this.game.ow?.vehicleUI?.();   // el botón DEV aparece (o se va) de una
       await ui.say([r.msg]);
-      this.codes();
+      if (r.id === 'dev' && r.on) return this.dev();   // recién prendido: el panel se abre solo
+      this.codes(from);
     } });
     setTimeout(() => { const el = document.getElementById('ccode'); if (!el) return; el.focus(); el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); ui.panel.els[0].click(); } }); }, 30);
   }
@@ -518,7 +521,7 @@ export class Menus {
           <button data-act="new">NUEVA PARTIDA</button>
           <button data-act="files" class="soft">PARTIDAS Y GITHUB${cloud.linked ? ' ☁' : ''}</button>
           <p class="title-news"><b>NUEVO · v3</b> Tierra Grande: carros, aviones, casas, moteles, pareja y 40 Puchamon más. Con una medalla, la Mensajera de cualquier posada te lleva.</p>
-          <p class="hint">Juego original sin ROM · guardado en tu navegador${cloud.linked ? ` y en GitHub (${esc(cloud.login)})` : ''}</p></div>`,
+          <p class="hint">Juego original sin ROM · guardado en tu navegador${cloud.linked ? ` y en GitHub (${esc(cloud.login)})` : ''} · versión ${BUILD.version}${BUILD.sha !== 'dev' ? ` (${BUILD.sha})` : ''}</p></div>`,
         { modal: true, cls: 'title-panel', onAct: a => {
           if (a === 'continue') return saves.length === 1 ? resolve({ type: 'continue', slot: saves[0].slot }) : pick('continue');
           if (a === 'new') return saves.length ? pick('new') : nameStep(1);

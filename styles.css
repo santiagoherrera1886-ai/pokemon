@@ -83,7 +83,12 @@ body:not([data-scene="overworld"]) #vehBtn, body:not([data-scene="overworld"]) #
 /* Modo desarrollador: botón DEV debajo del menú, entrada en el menú principal y mapa para tocar e ir. */
 #devBtn { position: absolute; top: 64px; right: 14px; font-family: var(--font); font-size: var(--fs); font-weight: 700; color: #fff; background: rgba(104, 64, 200, .9); border: 3px solid #fff; border-radius: 10px; padding: .3em .8em; cursor: pointer; }
 #devBtn:active { transform: translateY(2px); }
-.home-dev { display: block; width: 100%; margin-top: .5em; background: #6840c8 !important; color: #fff !important; font-weight: 700; letter-spacing: .06em; }
+.home-row { display: flex; gap: .5em; margin-top: .5em; }
+.home-row button { flex: 1; font-weight: 700; letter-spacing: .06em; }
+.home-dev { flex: 2 !important; background: #6840c8 !important; color: #fff !important; }
+/* Aviso de versión nueva: arriba al centro, encima de todo. */
+#updBtn { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 40; max-width: 92%; font-family: var(--font); font-size: var(--fs); font-weight: 700; color: #1d2a12; background: #ffe48a; border: 3px solid #fff; border-radius: 12px; padding: .35em .9em; box-shadow: 0 6px 18px rgba(0,0,0,.35); cursor: pointer; animation: pop .35s ease; }
+#updBtn:active { transform: translate(-50%, 2px); }
 .dev-tip { margin: 0 0 .4em; padding: .35em .6em; border-radius: 8px; background: #6840c8; color: #fff; font-size: .72em; font-weight: 700; text-align: center; }
 .rmap.dev-pick { cursor: crosshair; }
 .dev-panel .opts button { font-size: .8em; }

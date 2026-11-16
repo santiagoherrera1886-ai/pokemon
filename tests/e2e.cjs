@@ -643,10 +643,19 @@ async function run() {
     const devPanel = async () => { await settle(); await page.click('#devBtn'); await page.waitForSelector('#panel.dev-panel'); await sleep(120); };
     const devIdle = () => page.waitForFunction(() => __game.scene === 'overworld' && !__game.ow.locked && !__game.ow.player.moving && !__ui.dialog, null, { timeout: 30000 });
     assert.ok(await page.evaluate(() => document.getElementById('devBtn').classList.contains('hidden')), 'sin el código no hay botón DEV');
-    await page.evaluate(() => { __ui.closePanel(); __game.menus.codes(); }); await page.waitForSelector('#ccode');
-    await tryCode('dev prueba');
-    await page.evaluate(() => { __ui.closePanel(); __game.menus.home(false); });
+    // La clave se escribe desde el botón CÓDIGOS del menú principal; recién prendido, el panel se abre solo.
+    await page.evaluate(() => { __ui.closePanel(); __game.menus.home(false); }); await settle();
+    await tap('Escape'); await page.waitForSelector('#panel .home-codes');
+    assert.equal(await page.$('#panel .home-dev'), null, 'sin el código no hay entrada de desarrollador en el menú');
+    await page.click('#panel [data-act="codes"]'); await page.waitForSelector('#ccode');
+    await page.fill('#ccode', 'dev prueba'); await page.click('#panel [data-act="try"]');
+    for (let i = 0; i < 80 && await page.evaluate(() => !!__ui.dialog || !document.querySelector('#panel.dev-panel')); i++) { if (await page.evaluate(() => !!__ui.dialog)) await tap('z', 40); await sleep(150); }
+    await page.waitForSelector('#panel.dev-panel');
     assert.ok(await page.evaluate(() => !document.getElementById('devBtn').classList.contains('hidden')), 'con el código aparece el botón DEV');
+    await page.click('#panel [data-back]'); await settle();
+    await tap('Escape'); await page.waitForSelector('#panel .home-dev');
+    await page.click('#panel [data-act="dev"]'); await page.waitForSelector('#panel.dev-panel');
+    await page.click('#panel [data-back]'); await settle();
     // Lista de lugares: Parador del Llano, y de una al carro.
     await devPanel(); await page.click('#panel [data-act="places"]'); await page.waitForSelector('#panel .dev-places');
     await page.click('#panel [data-act="t0"]'); await devIdle();
@@ -704,8 +713,10 @@ async function run() {
     assert.ok(await page.evaluate(async () => { const { devOn } = await import('/src/data/cheats.js'); return document.getElementById('devBtn').classList.contains('hidden') && !devOn(__game.state, 'ghost') && !devOn(__game.state, 'calm'); }), 'apagado, todo vuelve a la normalidad');
     log('modo desarrollador: lugares, carro, mapa completo, atravesar paredes, paseo tranquilo, avioneta y volver OK');
 
-    // Opción de perspectiva y hora del día
-    await tap('Escape'); await page.click('#panel [data-act="options"]'); await page.click('#panel [data-act="persp"]'); await sleep(300);
+    // Opción de perspectiva y hora del día (y la versión del juego al pie de las opciones)
+    await tap('Escape'); await page.click('#panel [data-act="options"]');
+    assert.match(await page.textContent('#panel .hint.ver'), /Versión \d/, 'las opciones dicen la versión');
+    await page.click('#panel [data-act="persp"]'); await sleep(300);
     await page.click('#panel [data-act="hour"]'); await page.click('#panel [data-act="hour"]'); await sleep(200);
     await page.click('#panel [data-back]'); await page.click('#panel [data-back]'); await settle();
     await walkTo(5, 7); await sleep(300);

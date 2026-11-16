@@ -21,6 +21,7 @@ import { refillMoney, cheatOn } from './data/cheats.js';
 import { ITEMS, repelled } from './data/items.js';
 import { GYMS } from './data/gyms.js';
 import { gameHour } from './core/clock.js';
+import { watchUpdates } from './core/update.js';
 
 class Game {
   constructor() {
@@ -39,6 +40,9 @@ class Game {
     input.bindTouch(document);
     document.getElementById('menuBtn').addEventListener('click', () => { if (this.scene === 'overworld' && !this.ow.locked) this.openMenu(); });
     document.getElementById('devBtn').addEventListener('click', () => { if (this.scene === 'overworld' && !this.ow.locked) this.menus.dev(); });
+    // Versión nueva publicada mientras el juego estaba abierto: botón para recargar (guarda antes si se puede).
+    watchUpdates(() => document.getElementById('updBtn').classList.remove('hidden'));
+    document.getElementById('updBtn').addEventListener('click', () => this.updateNow());
     this.state = newState();
     this.graphics = new Graphics(this);
     this.graphics.applyArt();
@@ -164,6 +168,16 @@ class Game {
   applyOptions() {
     this.renderer.perspective = !!this.state.options.perspective;
     ui.speed = this.state.options.textSpeed;
+  }
+
+  updateNow() {
+    if (this.scene !== 'title' && this.scene !== 'overworld') return this.toast('Termina el combate y vuelve a tocar');
+    if (this.scene === 'overworld') {
+      if (this.ow.flight) return this.toast('Aterriza primero y vuelve a tocar');
+      if (this.ow.scripts || ui.dialog || this.fading) return this.toast('Termina lo que estás haciendo y vuelve a tocar');
+      saveState(this.state);
+    }
+    location.reload();
   }
 
   // ---------- Servicios para guiones ----------

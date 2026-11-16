@@ -25,5 +25,15 @@ if (!process.argv.includes('--vendor-only')) {
   const out = path.join(root, 'dist');
   fs.rmSync(out, {recursive:true, force:true}); fs.mkdirSync(out);
   for (const name of ['index.html', 'styles.css', 'retro-bruma.css', 'src', 'vendor', 'fonts', 'assets']) fs.cpSync(path.join(root, name), path.join(out, name), {recursive:true});
-  console.log('Puchamon: distribución estática preparada en dist/');
+  // Versión publicada: el commit (Vercel lo da en VERCEL_GIT_COMMIT_SHA; en local se le pregunta a git).
+  // Va en src/core/version.js (lo que el juego tiene cargado) y en version.json (lo que hay publicado ahora).
+  let sha = process.env.VERCEL_GIT_COMMIT_SHA || '';
+  if (!sha) { try { sha = require('node:child_process').execSync('git rev-parse HEAD', { cwd: root, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim(); } catch { sha = ''; } }
+  // Sin commit a la mano, una marca de la hora del build: igual sirve para notar que hay una versión nueva.
+  sha = sha ? sha.slice(0, 7) : 't' + Date.now().toString(36).slice(-6);
+  const versionSrc = fs.readFileSync(path.join(root, 'src/core/version.js'), 'utf8');
+  const version = (/version: '([^']+)'/.exec(versionSrc) || [])[1] || '0';
+  fs.writeFileSync(path.join(out, 'src/core/version.js'), versionSrc.replace("sha: 'dev'", `sha: '${sha}'`));
+  fs.writeFileSync(path.join(out, 'version.json'), JSON.stringify({ version, sha, builtAt: new Date().toISOString() }) + '\n');
+  console.log(`Puchamon: distribución estática preparada en dist/ (versión ${version} · ${sha})`);
 }
