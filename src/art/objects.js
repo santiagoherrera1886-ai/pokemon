@@ -289,6 +289,16 @@ export function house(w, h, opt = {}) {
 }
 
 // Piscina vista desde arriba: borde de baldosa, agua con brillos y una escalerita.
+// Puente de tablas (w × h casillas) con barandas: las tablas van atravesadas al sentido del camino.
+export function bridge(w, h) {
+  const [c, g] = canvas(w * 16, h * 16), along = w < h;
+  px(g, 0, 0, '#9a6a3e', w * 16, h * 16);
+  if (along) for (let y = 0; y < h * 16; y += 4) { px(g, 1, y, y % 8 ? '#b98856' : '#a8774a', w * 16 - 2, 3); px(g, 1, y + 3, '#7a5232', w * 16 - 2, 1); }
+  else for (let x = 0; x < w * 16; x += 4) { px(g, x, 1, x % 8 ? '#b98856' : '#a8774a', 3, h * 16 - 2); px(g, x + 3, 1, '#7a5232', 1, h * 16 - 2); }
+  if (along) { px(g, 0, 0, '#6a4428', 2, h * 16); px(g, w * 16 - 2, 0, '#6a4428', 2, h * 16); }
+  else { px(g, 0, 0, '#6a4428', w * 16, 2); px(g, 0, h * 16 - 2, '#6a4428', w * 16, 2); }
+  return c;
+}
 export function pool(w, h) {
   return memo('pool' + w + h, () => {
     const W = w * 16, H = h * 16, [c, g] = canvas(W, H);

@@ -263,6 +263,15 @@ export function smallProp(r,o) {
     r.mesh(g,'box',r.mat('#2f8fd0',{roughness:.08,emissive:'#3aa8f0',emissiveIntensity:.25}),[0,.1,0],[W-.5,.06,D-.5]);
     for(const x of [-.12,.12])b('#c8ccd2',W/2-.6+x,.35,-D/2+.35,.04,.5,.04);
   }
+  if(o.kind==='bridge'){   // puente de tablas sobre el agua, con barandas a los lados (va centrado en el objeto)
+    const W=o.w||2,D=o.h||2,along=W<D,len=along?D:W,wid=along?W:D,n=Math.max(3,Math.round(len*3));
+    for(let i=0;i<n;i++){const t=-len/2+(i+.5)*len/n,c=i%2?'#a8774a':'#b98856';if(along)b(c,0,.1,t,wid+.1,.09,len/n-.04);else b(c,t,.1,0,len/n-.04,.09,wid+.1);}
+    for(const s of [-1,1]){
+      const off=s*(wid/2+.08);
+      if(along){b('#8a5e38',off,.42,0,.08,.08,len);for(let i=0;i<=Math.round(len);i++)b('#7a5232',off,.27,-len/2+i*len/Math.round(len),.1,.34,.1);}
+      else{b('#8a5e38',0,.42,off,len,.08,.08);for(let i=0;i<=Math.round(len);i++)b('#7a5232',-len/2+i*len/Math.round(len),.27,off,.1,.34,.1);}
+    }
+  }
   if(o.kind==='mailbox'){b('#667f79',0,.4,0,.11,.8,.11);b('#cb6a5a',0,.85,0,.65,.37,.42);b('#f4db96',.34,1,0,.04,.3,.04);b('#f4db96',.4,1.12,0,.14,.1,.04);}
   if(o.kind==='rock')r.mesh(g,'leaf','#96a6a0',[0,.3,0],[.44,.4,.42]);
   if(o.kind==='bush')r.mesh(g,'leaf','#6caa69',[0,.3,0],[.48,.45,.48]);

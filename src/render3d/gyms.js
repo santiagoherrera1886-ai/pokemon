@@ -27,7 +27,8 @@ export const GYM_THEMES = {
   fantasma:  { sign: '#6a3a9a', medal: '#8a6ad0', name: 'Mansión' },
   lucha:     { sign: '#c8402a', medal: '#e06040', name: 'Hacienda' },
   hielo:     { sign: '#2f8ac8', medal: '#8ad8f0', name: 'Palacio' },
-  dragon:    { sign: '#a83a3a', medal: '#6a5ae0', name: 'Templo' }
+  dragon:    { sign: '#a83a3a', medal: '#6a5ae0', name: 'Templo' },
+  hada:      { sign: '#c8508a', medal: '#ec86c4', name: 'Pabellón' }
 };
 
 function kit(r, g) {
@@ -423,6 +424,43 @@ const BUILD = {
   }
 };
 
+// Pabellón de Hada (gimnasio extra de Ciudad Cascada): base de mármol blanco, muros rosa pastel, cúpula de
+// vidrio con prismas, torres de cristal de colores y un arcoíris sobre la entrada. Diseño propio.
+BUILD.hada = function (r, g, k) {
+  const marble = '#fbf6f0', pink = '#f6c8dc', lilac = '#d8c4f2', gold = '#f2d27a';
+  const RAINBOW = ['#ff7a8a', '#ffb05a', '#ffe27a', '#8fe08a', '#7ac8f0', '#9a8af0', '#d68af0'];
+  k.box('#efe6dc', 5, .12, 3.5, 9.9, .24, 6.4);
+  k.box(marble, 5, .4, 3.5, 9.4, .32, 5.9);
+  // Cuerpo con muros pastel y columnas blancas
+  k.box(pink, 5, 1.55, 3.4, 8.6, 2.0, 5.2);
+  k.box(marble, 5, 2.62, 3.4, 8.9, .16, 5.5);
+  for (let i = 0; i <= 6; i++) { const x = .9 + i * 8.2 / 6; k.cyl(marble, x, 1.55, FRONT - .2, .16, 2.1); k.cyl(gold, x, 2.55, FRONT - .2, .2, .08); }
+  // Ventanas redondas de vidrio de colores
+  for (const [x, c] of [[2.0, '#ffb6d0'], [3.3, '#c8b6ff'], [6.7, '#b6e6ff'], [8.0, '#c8ffd0']]) { const w = k.cyl(k.glass(c, .55), x, 1.75, FRONT - .02, .42, .06); w.rotation.x = Math.PI / 2; const f = k.cyl(marble, x, 1.75, FRONT - .05, .5, .05); f.rotation.x = Math.PI / 2; }
+  // Cúpula de vidrio con prismas adentro
+  k.cyl(marble, 5, 2.78, 3.4, 2.2, .2);
+  r.mesh(g, 'dome', k.glass('#f6d8ff', .3), [5, 2.85, 3.4], [2.05, 1.7, 2.05]);
+  for (let i = 0; i < 5; i++) { const a = i * 1.26, c = k.cone(k.glow(RAINBOW[i + 1], .7), 5 + Math.cos(a) * .7, 3.25, 3.4 + Math.sin(a) * .7, .16, .8); c.rotation.z = Math.cos(a) * .25; }
+  k.ball(k.glow('#fff4fa', 1.1), 5, 4.65, 3.4, .22);
+  // Torres de cristal en las esquinas
+  for (const [x, z, c] of [[.9, 1.2, '#ffc0d8'], [9.1, 1.2, '#c0d8ff'], [.9, 5.6, '#d8c0ff'], [9.1, 5.6, '#c0ffd8']]) {
+    k.cyl(marble, x, 1.4, z, .42, 2.8);
+    k.cone(k.glass(c, .55), x, 3.35, z, .46, 1.2);
+    k.ball(k.glow(c, .9), x, 4.05, z, .12);
+  }
+  // Arcoíris sobre la entrada
+  for (let i = 0; i < RAINBOW.length; i++) {
+    const R = 2.05 - i * .14, arc = new T.Mesh(new T.TorusGeometry(R, .075, 8, 36, Math.PI), r.mat(RAINBOW[i], { emissive: RAINBOW[i], emissiveIntensity: .25, roughness: .4 }));
+    arc.position.set(5, 1.0, FRONT + .62); g.add(arc);
+  }
+  for (const sx of [-1, 1]) { k.box('#ffffff', 5 + sx * 2.05, .5, FRONT + .62, .42, 1.0, .42); k.ball('#ffffff', 5 + sx * 2.05, 1.05, FRONT + .62, .32, .2, .32); }
+  // Canteros de flores
+  for (const [x, z] of [[1.4, FRONT + .6], [8.6, FRONT + .6]]) { k.box('#e8dccf', x, .2, z, 1.5, .4, .8); for (let i = 0; i < 5; i++) k.ball(RAINBOW[(i * 2) % 7], x - .55 + i * .27, .48, z + (i % 2 ? .15 : -.12), .12); }
+  entrance(k, { frame: marble, door: lilac, step: '#e8dccf' }, { lamps: false });
+  sign(r, g, 'hada', 3.6, FRONT + .3, -.25, .85);
+  medal(k, GYM_THEMES.hada.medal, 5, 4.15, 5.3, .7);
+};
+
 // Construye el gimnasio del tipo pedido. El origen es la esquina noroeste de su terreno (como building()).
 export function gymBuilding(r, theme) {
   const g = new T.Group(), k = kit(r, g);
@@ -430,4 +468,4 @@ export function gymBuilding(r, theme) {
   g.userData.theme = theme;
   return g;
 }
-export const GYM_ORDER = ['planta', 'roca', 'agua', 'electrico', 'fantasma', 'lucha', 'hielo', 'dragon'];
+export const GYM_ORDER = ['planta', 'roca', 'agua', 'electrico', 'fantasma', 'lucha', 'hielo', 'dragon', 'hada'];

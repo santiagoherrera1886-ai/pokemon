@@ -29,6 +29,7 @@ export const LOOKS = {
   velia: { skin: '#f4e4e8', hair: '#4a2e6a', style: 'long', shirt: '#4a3a6a', accent: '#c8b0f0', pants: '#2a2232', shoes: '#1a1622', scarf: '#8a6ad0' },
   tinto: { skin: '#c89070', hair: '#3a2a20', style: 'cap', brim: true, mustache: '#2a1e16', hat: '#f4efe2', hatBand: '#1a1a1a', shirt: '#f4efe2', accent: '#c8402a', pants: '#5a4030', shoes: '#3a2a1a', scarf: '#c8402a', bag: '#7a5030' },
   nevada: { skin: '#f8e4dc', hair: '#e2f2fc', style: 'bob', shirt: '#8ad8f0', accent: '#ffffff', pants: '#2f8ac8', shoes: '#ffffff', scarf: '#ffffff' },
+  amaranta: { skin: '#f4d2b8', hair: '#c8508a', style: 'long', shirt: '#f6b4d8', accent: '#ffffff', pants: '#8a6ad0', shoes: '#ffffff', scarf: '#ffe07a', lashes: true, eyes: '#8a4ad0' },
   sabino: { skin: '#d8b090', hair: '#f0f0f4', style: 'bald', shirt: '#a83a3a', accent: '#f0c040', pants: '#5a3a2a', shoes: '#3a2a1a', coat: '#efe2c6' },
   hiker: { skin: '#d8a880', hair: '#5a3a2a', style: 'short', shirt: '#c86a3a', accent: '#f0d070', pants: '#6a5a3a', shoes: '#3a2a1a', bag: '#8a6a3a' },
   bugkid: { skin: '#f8d0a8', hair: '#3a2a20', style: 'cap', hat: '#5cb04c', hatBand: '#f8e070', shirt: '#f8f0d0', accent: '#5cb04c', pants: '#6a8ab8', shoes: '#f0f0f0' },
@@ -37,7 +38,7 @@ export const LOOKS = {
   sailor: { skin: '#d8a880', hair: '#2a2020', style: 'cap', hat: '#ffffff', hatBand: '#3a6ad8', shirt: '#ffffff', accent: '#3a6ad8', pants: '#2a3a6a', shoes: '#2a2a32' },
   guard: { skin: '#e8b890', hair: '#2a2020', style: 'cap', hat: '#3a5a8a', hatBand: '#f0c040', shirt: '#3a5a8a', accent: '#f0c040', pants: '#2a3a5a', shoes: '#1a1a22' },
   courier: { skin: '#f0c8a0', hair: '#8a4a2e', style: 'cap', hat: '#f0a020', hatBand: '#ffffff', shirt: '#f0a020', accent: '#ffffff', pants: '#3a5a8a', shoes: '#3a3a44' },
-  // Tierra Grande: personas adultas con las que se puede salir (ver world/hogar.js).
+  // Personas adultas del sur con las que se puede salir (ver world/hogar.js).
   valentina: { skin: '#f0c8a0', hair: '#4a2a1e', style: 'long', shirt: '#3fb0a0', accent: '#ffffff', pants: '#2f6a8a', shoes: '#f8f8f8', coat: '#f8f8f8', lashes: true, eyes: '#5a3a24' },
   julian: { skin: '#d8a880', hair: '#2a1e16', style: 'short', shirt: '#c84a3a', accent: '#f6eedc', pants: '#3a4a6a', shoes: '#4a3a2a', scarf: '#8a6a4a', bag: '#5a7a4a', eyes: '#4a3020' },
   mariana: { skin: '#c8906a', hair: '#1e1612', style: 'curly', shirt: '#e8743a', accent: '#f6e2b0', pants: '#7a4a9a', shoes: '#5a3a2a', skirt: true, lashes: true, scarf: '#f0c040', eyes: '#3a2414' },

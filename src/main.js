@@ -68,7 +68,7 @@ class Game {
     this.frame++;
     ui.update();
     if (this.scene === 'overworld') { this.ow.update(); this.state.playTime++; if (this.autosavePending) this.tryAutosave(); }
-    if (this.frame % 10 === 0 && typeof document !== 'undefined' && document.body.dataset.scene !== this.scene) { document.body.dataset.scene = this.scene; this.ow.vehicleUI?.(); }
+    if (this.frame % 10 === 0 && typeof document !== 'undefined' && document.body.dataset.scene !== this.scene) { document.body.dataset.scene = this.scene; this.ow.devUI?.(); }
     if (this.state) refillMoney(this.state);   // código de plata infinita
     const w = this.waiters; this.waiters = [];
     w.forEach(r => r());
@@ -276,7 +276,7 @@ class Game {
   }
   // Combate contra entrenador: t = { name, look, party: [[especie, nivel]], money }
   async trainerBattle(t, bg, opts = {}) {
-    // Entrenadores de Tierra Grande: su nivel sube con las medallas del jugador.
+    // Entrenadores con scale: su nivel sube con las medallas del jugador.
     const party = t.party.map(([s, l]) => makeCreature(s, t.scale ? Math.max(2, scaledBase(this.state) + l + 2) : l));
     const res = await this.battle({ trainer: { ...t, party }, wild: false, canRun: false, canCatch: false, bg: t.bg || bg, ...opts });
     if (res === 'lose' && !opts.noBlackout) await this.blackout();

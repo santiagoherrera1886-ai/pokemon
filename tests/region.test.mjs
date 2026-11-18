@@ -7,8 +7,9 @@ import { SOLID } from '../src/art/tiles.js';
 import { SPECIES, ENCOUNTERS, makeCreature } from '../src/data/creatures.js';
 import { LOOKS } from '../src/art/characters.js';
 import { ITEMS, SPECIAL } from '../src/data/items.js';
-import { GYMS, BADGE_IDS, LEAGUE_BADGES, leagueOpen, nextGym, badgeCount, gymOf } from '../src/data/gyms.js';
-import { tgCell, tgDef, tgId } from '../src/world/tierra.js';
+import { GYMS, EXTRA_GYMS, BADGE_IDS, LEAGUE_BADGES, leagueOpen, nextGym, badgeCount, gymOf } from '../src/data/gyms.js';
+import { LOTS, MOTEL_DOORS } from '../src/world/maps7.js';
+import { CANDIDATES } from '../src/world/hogar.js';
 
 const maps = buildMaps();
 const outdoor = Object.values(maps).filter(m => m.outdoor);
@@ -21,9 +22,7 @@ const walkable = (m, x, y) => {
   return !o || o.solid === false || isDoor(o, x, y);
 };
 const at = (gx, gy) => outdoor.find(m => gx >= m.origin[0] && gy >= m.origin[1] && gx < m.origin[0] + m.w && gy < m.origin[1] + m.h);
-// Igual que at(), pero si la casilla cae en Tierra Grande genera ese mapa (sólo para revisar las costuras).
-const tgCache = {};
-const atAll = (gx, gy) => at(gx, gy) || (c => c && (tgCache[tgId(...c)] ??= tgDef(tgId(...c))))(tgCell(gx, gy));
+const atAll = at;
 
 test('los mapas exteriores no se montan y cada borde abierto empata con el mapa vecino', () => {
   for (let i = 0; i < outdoor.length; i++) for (let j = i + 1; j < outdoor.length; j++) {
@@ -64,11 +63,11 @@ test('desde Pueblo Brisal se llega caminando a todo el mapa salvo la isla (que e
   }
   const reached = new Set([...seen].map(k => k.split(':')[0]));
   // La Isla Totuma y sus interiores sólo se alcanzan en el barco de Cabo Faro.
-  // (Tierra Grande se genera aparte: su conexión con la Autopista del Llano se revisa en tierra.test.mjs.)
   const barco = ['isla', 'posadaIsla', 'tiendaIsla', 'casaIsla'];
   assert.deepEqual(Object.keys(maps).filter(id => !reached.has(id)), barco);
-  assert.equal(reached.size + barco.length, 117);
-  assert.ok(reached.has('autopistaLlano'), 'la Autopista del Llano sale de la Sabana');
+  assert.equal(reached.size + barco.length, Object.keys(maps).length);
+  for (const id of ['ruta26', 'ribera', 'ruta27', 'cano', 'ruta29', 'cascada', 'ruta28', 'caleta', 'guacharo', 'gym9']) assert.ok(reached.has(id), `se llega caminando a ${id}`);
+  assert.ok(!Object.keys(maps).some(id => /^tg|autopista/i.test(id)), 'ya no queda nada del mapa gigante');
   assert.ok(maps.cabo.npcs.some(n => n.talk === 'barcoIsla'), 'el capitán de Cabo Faro lleva a la isla');
   assert.ok(maps.isla.npcs.some(n => n.talk === 'barcoVuelta'), 'y trae de vuelta');
 });
@@ -78,7 +77,7 @@ test('cada puerta lleva a un piso caminable y el regreso cae frente a la puerta'
     const t = maps[w.to];
     assert.ok(t, `${m.id} → ${w.to}`);
     assert.ok(!SOLID.has(t.tiles[w.ty][w.tx]), `${m.id} → ${w.to} (${w.tx},${w.ty}) cae en una pared`);
-    if (t.outdoor && !m.outdoor && w.to !== 'cobre' && w.to !== 'ruta3') {
+    if (t.outdoor && !m.outdoor && !m.dark) {   // de las cuevas se sale a la boca, no a una puerta
       const front = t.objects.some(o => isDoor(o, w.tx, w.ty - 1));
       assert.ok(front, `al salir de ${m.id} se queda frente a una puerta de ${w.to}`);
     }
@@ -102,8 +101,8 @@ test('ocho gimnasios con su edificio, su líder, su medalla y su regalo', () => 
   assert.equal(GYMS.length, 8);
   assert.equal(LEAGUE_BADGES, 8);
   assert.equal(new Set(BADGE_IDS).size, 8);
-  const gymMaps = Object.values(maps).filter(m => m.npcs.some(n => n.badge));
-  assert.equal(gymMaps.length, 8, 'ocho interiores con líder');
+  const gymMaps = Object.values(maps).filter(m => m.npcs.some(n => BADGE_IDS.includes(n.badge)));
+  assert.equal(gymMaps.length, 8, 'ocho interiores con líder de la Liga');
   for (const g of GYMS) {
     const city = maps[g.map];
     assert.ok(city && city.outdoor, g.map);
@@ -203,4 +202,62 @@ test('en cada gimnasio nuevo los entrenadores alcanzan a ver el pasillo central'
       assert.ok(seesCenter, `${id}: ${n.trainer.name} en (${n.x},${n.y}) no ve el pasillo`);
     }
   }
+});
+
+test('gimnasio extra del sur: Medalla Arcoíris, no cuenta para la Liga y despierta cuatro leyendas', () => {
+  assert.equal(EXTRA_GYMS.length, 1);
+  const g = EXTRA_GYMS[0], city = maps[g.map], inside = maps[g.inside];
+  assert.ok(city.objects.some(o => o.kind === 'gym' && o.theme === 'hada'), 'edificio de Hada en Ciudad Cascada');
+  const leader = inside.npcs.find(n => n.badge === g.badge);
+  assert.ok(leader && leader.trainer.name.includes(g.leader) && LOOKS[leader.look], 'Amaranta, con su apariencia');
+  assert.equal(gymOf('arcoiris'), g);
+  assert.ok(!BADGE_IDS.includes('arcoiris'), 'no es medalla de la Liga');
+  assert.equal(badgeCount({ badges: ['arcoiris'] }), 0);
+  assert.ok(ITEMS[g.gift[0]] && g.gift[1] > 0, 'regalo válido');
+  const legends = Object.values(maps).flatMap(m => m.objects.filter(o => o.legend && ['mohan', 'madremonte', 'tunjo', 'esmeraldon'].includes(o.legend)).map(o => [m.id, o]));
+  assert.deepEqual(legends.map(([, o]) => o.legend).sort(), ['esmeraldon', 'madremonte', 'mohan', 'tunjo']);
+  const day = { flags: {}, badges: [], options: { forceHour: 12 } }, night = { flags: {}, badges: ['arcoiris'], options: { forceHour: 22 } };
+  for (const [, o] of legends) assert.ok(!o.when(day), `${o.legend} no sale sin la Medalla Arcoíris`);
+  for (const [, o] of legends) assert.ok(o.when(night), `${o.legend} sale con la medalla`);
+});
+
+test('el sur trae casas, moteles y parejas a pueblos hechos a mano', () => {
+  assert.equal(Object.keys(LOTS).length, 8, 'ocho lotes en venta');
+  for (const [id, L] of Object.entries(LOTS)) {
+    const m = maps[L.map], sign = m.objects.find(o => o.lot === id && o.sale), house = m.objects.find(o => o.lot === id && o.kind === 'house');
+    assert.ok(sign && house, `${id}: letrero y casa`);
+    assert.deepEqual(house.door, L.door);
+    assert.ok(m.warps.some(w => w.x === L.door[0] && w.y === L.door[1] && w.to === 'casa_' + id && w.when), `${id}: la puerta sólo abre con la casa construida`);
+    assert.ok(maps['casa_' + id], `${id}: interior`);
+    // Con cualquier modelo la puerta queda en el mismo sitio.
+    for (const model of ['sencilla', 'dospisos', 'casona']) {
+      Object.assign(house, house.dyn({ houses: { [id]: { model } } }));
+      assert.deepEqual([house.x + house.opt.doorCol, house.y + house.h - 1], L.door, `${id}: puerta de la ${model}`);
+    }
+  }
+  assert.equal(Object.keys(MOTEL_DOORS).length, 3, 'tres moteles');
+  for (const [id, [map, x, y]] of Object.entries(MOTEL_DOORS)) {
+    const inside = maps['motel_' + id];
+    assert.ok(inside && inside.npcs.some(n => n.talk === 'motel' && n.arg === id), `${id}: recepción`);
+    assert.ok(maps[map].warps.some(w => w.x === x && w.y === y - 1 && w.to === 'motel_' + id), `${id}: puerta`);
+  }
+  for (const [id, P] of Object.entries(CANDIDATES)) {
+    const m = maps[P.home.map];
+    assert.ok(m && ['ribera', 'cascada', 'caleta'].includes(m.id), `${P.name} vive en el sur`);
+    assert.ok(m.npcs.some(n => n.cand === id && n.x === P.home.x && n.y === P.home.y && n.talk === 'cita'), `${P.name} está en su pueblo`);
+    assert.ok(LOOKS[P.look], `${P.name} tiene apariencia`);
+  }
+  for (const town of ['ribera', 'cascada', 'caleta']) assert.ok(['ramoFlores', 'chocolates', 'peluche', 'cafe', 'mochila'].every(i => SPECIAL[town].items.includes(i)), `${town} vende los regalos`);
+});
+
+test('las 40 especies del sur salen en las rutas nuevas (o evolucionan de una que sale) y las leyendas tienen su sitio', () => {
+  const NEW = 'chiguirin chiguiron garcilla garzon becerrin torazo lechucin lechuzon cucarrin cucarron guacarin guacamaron anguilin temblon alacrin alacranzo cactin espinon llamita llamaron frailin frailejon careyin careyon bufeito bufeon semaforin semaforton caimancito caimanazo pintin tigrillo jaguaron lagartijin iguanon draguana'.split(' ');
+  const wild = new Set(Object.values(ENCOUNTERS).flatMap(t => t.list.map(e => e[0])));
+  const from = {}; for (const [id, s] of Object.entries(SPECIES)) if (s.evo) from[s.evo[0]] = id;
+  for (const sp of NEW) {
+    let k = sp, ok = wild.has(k);
+    while (!ok && from[k]) { k = from[k]; ok = wild.has(k); }
+    assert.ok(ok, `${sp} se puede conseguir`);
+  }
+  for (const key of ['ruta26', 'ruta27', 'ruta28', 'ruta29', 'cano', 'guacharo', 'cascadaParque', 'caleta']) assert.ok(ENCOUNTERS[key], key);
 });

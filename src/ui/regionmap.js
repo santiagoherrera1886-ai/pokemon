@@ -1,9 +1,8 @@
 // Mapa de la región de Alborada: se dibuja con los mismos tiles de los mapas exteriores (cada casilla es un
 // cuadrito), con los ocho gimnasios numerados, la Liga, el Lago Espejo, la Cueva Eco y dónde estás tú.
 // Las zonas que todavía no visitas se ven como en un mapa viejo: sólo la silueta, sin detalle.
-import { GYMS, badgeCount, LEAGUE_BADGES, nextGym } from '../data/gyms.js';
-import { TG, SIZE, CITIES, AIRPORTS, ROADS, RIVERS, ENTRY_X } from '../world/tierra.js';
-import { overviewCanvas, fullOverview, OV, seenCount } from '../world/flightmap.js';
+import { GYMS, EXTRA_GYMS, badgeCount, LEAGUE_BADGES, nextGym } from '../data/gyms.js';
+import { LOTS, MOTEL_DOORS, MOTEL_NAMES } from '../world/maps7.js';
 
 const PX = 3;   // píxeles por casilla en el lienzo (luego el CSS lo escala sin suavizar)
 const PAPER = '#efe7d0';
@@ -35,7 +34,7 @@ function outdoorSpot(world, st) {
 }
 
 function bounds(world) {
-  const ms = world.base || world.outdoor;   // sólo Alborada: Tierra Grande tiene su propio mapa
+  const ms = world.base || world.outdoor;
   const x0 = Math.min(...ms.map(m => m.origin[0])) - 3, y0 = Math.min(...ms.map(m => m.origin[1])) - 3;
   const x1 = Math.max(...ms.map(m => m.origin[0] + m.w)) + 3, y1 = Math.max(...ms.map(m => m.origin[1] + m.h)) + 3;
   return { x0, y0, w: x1 - x0, h: y1 - y0 };
@@ -54,10 +53,11 @@ export function regionMapHTML(world, st) {
   const out = [];
   for (const m of world.base || world.outdoor) {
     const cx = m.origin[0] + m.w / 2, cy = m.origin[1] + m.h / 2, seen = visited[m.id] ? '' : ' fog';
-    if (m.encounters && !['lago', 'volcan', 'manglar', 'isla'].includes(m.id)) out.push(`<span class="rm-l route${seen}" style="${label(cx, cy)}">${esc(m.name)}</span>`);
-    else out.push(`<span class="rm-l town${['lago', 'volcan', 'manglar', 'isla'].includes(m.id) ? ' spot' : ''}${seen}" style="${label(cx, m.origin[1] + m.h - 2.5)}">${esc(m.name)}</span>`);
+    if (m.encounters && !['lago', 'volcan', 'manglar', 'isla', 'cascada', 'caleta', 'cano'].includes(m.id)) out.push(`<span class="rm-l route${seen}" style="${label(cx, cy)}">${esc(m.name)}</span>`);
+    else out.push(`<span class="rm-l town${['lago', 'volcan', 'manglar', 'isla', 'cano'].includes(m.id) ? ' spot' : ''}${seen}" style="${label(cx, m.origin[1] + m.h - 2.5)}">${esc(m.name)}</span>`);
   }
   out.push(`<span class="rm-l spot" style="${label(95.5, -66)}">Cueva Eco</span>`);
+  out.push(`<span class="rm-l spot${visited.guacharo ? '' : ' fog'}" style="${label(4, 126)}">Cueva Guácharo</span>`);
   const next = nextGym(st);
   GYMS.forEach((g, i) => {
     const m = world.get(g.map), o = m && m.objects.find(o => o.kind === 'gym');
@@ -65,6 +65,19 @@ export function regionMapHTML(world, st) {
     const won = (st.badges || []).includes(g.badge);
     out.push(`<span class="rm-gym${won ? ' on' : ''}${next === g && st.story >= 6 ? ' next' : ''}" style="${pos(m.origin[0] + o.x + o.w / 2, m.origin[1] + o.y + o.h / 2)};--c:${g.color}" title="Gimnasio de ${esc(g.city)} · ${esc(g.leader)} · Medalla ${esc(g.name)}">${i + 1}</span>`);
   });
+  // Gimnasio extra del sur (estrella), moteles y tus casas.
+  for (const g of EXTRA_GYMS) {
+    const m = world.get(g.map), o = m && m.objects.find(o => o.kind === 'gym');
+    if (o) out.push(`<span class="rm-gym extra${(st.badges || []).includes(g.badge) ? ' on' : ''}" style="${pos(m.origin[0] + o.x + o.w / 2, m.origin[1] + o.y + o.h / 2)};--c:${g.color}" title="Gimnasio extra de ${esc(g.city)} · ${esc(g.leader)} · Medalla ${esc(g.name)}">✦</span>`);
+  }
+  for (const [id, [map, x, y]] of Object.entries(MOTEL_DOORS)) {
+    const m = world.get(map);
+    if (m) out.push(`<span class="rm-motel" style="${pos(m.origin[0] + x + .5, m.origin[1] + y - 2)}" title="${esc(MOTEL_NAMES[id])}">M</span>`);
+  }
+  for (const lot of Object.keys(st.houses || {})) {
+    const L = LOTS[lot], m = L && world.get(L.map);
+    if (m) out.push(`<span class="rm-home" style="${pos(m.origin[0] + L.door[0] + .5, m.origin[1] + L.door[1] - 2)}" title="Tu casa en ${esc(L.name)}">⌂</span>`);
+  }
   const r5 = world.get('ruta5'), liga = r5 && r5.objects.find(o => o.kind === 'big');
   if (liga) out.push(`<span class="rm-liga" style="${pos(r5.origin[0] + liga.x + liga.w / 2, r5.origin[1] + liga.y + liga.h / 2)}" title="Liga Alborada">★</span>`);
   const me = outdoorSpot(world, st);
@@ -72,7 +85,7 @@ export function regionMapHTML(world, st) {
   const n = badgeCount(st);
   return `<h3 class="ph">MAPA DE ALBORADA <small>${n}/${LEAGUE_BADGES} medallas</small></h3>
     <div class="rmap" style="aspect-ratio:${B.w} / ${B.h}"><canvas id="rmCanvas" width="${B.w * PX}" height="${B.h * PX}"></canvas>${out.join('')}</div>
-    <div class="rm-key"><span><i class="k-gym on"></i>Gimnasio ganado</span><span><i class="k-gym"></i>Gimnasio por ganar</span><span><i class="k-liga">★</i>Liga</span><span><i class="k-me"></i>Tú</span></div>`;
+    <div class="rm-key"><span><i class="k-gym on"></i>Gimnasio ganado</span><span><i class="k-gym"></i>Gimnasio por ganar</span><span><i class="k-extra">✦</i>Gimnasio extra</span><span><i class="k-liga">★</i>Liga</span><span><i class="k-motel">M</i>Motel</span><span><i class="k-home">⌂</i>Tu casa</span><span><i class="k-me"></i>Tú</span></div>`;
 }
 
 export function drawRegionMap(canvas, world, st) {
@@ -85,6 +98,7 @@ export function drawRegionMap(canvas, world, st) {
   for (let y = 0; y < B.h; y += 10) g.fillRect(0, y * PX, canvas.width, 1);
   // Túnel de la Cueva Eco entre la Ruta 3 y Pueblo Cobre.
   g.fillStyle = '#6a5442'; g.fillRect((92 - B.x0) * PX, (-71 - B.y0) * PX, 8 * PX, 4 * PX);
+  if (visited.guacharo) { g.fillRect((-8 - B.x0) * PX, (127 - B.y0) * PX, 30 * PX, 3 * PX); g.fillRect((19 - B.x0) * PX, (127 - B.y0) * PX, 3 * PX, 14 * PX); }
   for (const m of world.base || world.outdoor) {
     const ox = (m.origin[0] - B.x0) * PX, oy = (m.origin[1] - B.y0) * PX;
     for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) {
@@ -94,7 +108,7 @@ export function drawRegionMap(canvas, world, st) {
     }
     for (const o of m.objects) {
       if (!['house', 'lab', 'big', 'gym'].includes(o.kind)) continue;
-      const gym = o.kind === 'gym' && GYMS.find(G => G.map === m.id);
+      const gym = o.kind === 'gym' && (GYMS.find(G => G.map === m.id) || EXTRA_GYMS.find(G => G.map === m.id));
       g.fillStyle = gym ? gym.color : (o.opt && o.opt.roof) || '#c8665a';
       g.fillRect(ox + o.x * PX, oy + o.y * PX, o.w * PX, o.h * PX);
       g.fillStyle = 'rgba(0,0,0,.28)';
@@ -105,63 +119,4 @@ export function drawRegionMap(canvas, world, st) {
       g.fillRect(ox, oy, m.w * PX, m.h * PX);
     }
   }
-}
-
-// ---------------------------------------------------------------- Tierra Grande
-// El terreno sólo se ve donde ya has estado (a pie, en carro o volando); las carreteras, las ciudades y los
-// aeropuertos salen siempre, como en un mapa de carreteras.
-const TGK = 2;   // el lienzo va a 2 píxeles por píxel del mapa chiquito (1 píxel cada 4 casillas)
-export function tgMapHTML(st, me, reveal = false) {
-  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-  const pos = (x, y) => `left:${(x / SIZE * 100).toFixed(2)}%;top:${(y / SIZE * 100).toFixed(2)}%`;
-  const out = [];
-  // Las etiquetas pegadas a un borde se corren hacia adentro para que no se corten.
-  const label = (x, y) => pos(x, y) + (x / SIZE < .14 ? ';transform:translate(0,-50%)' : x / SIZE > .8 ? ';transform:translate(-100%,-50%)' : '');
-  for (const c of CITIES) {
-    if (c.kind === 'motel') { out.push(`<span class="rm-motel" style="${pos((c.x0 + c.x1) / 2, (c.y0 + c.y1) / 2)}" title="${esc(c.name)}">M</span>`); continue; }
-    out.push(`<span class="rm-l town${c.kind === 'grande' ? ' big' : ''}" style="${label((c.x0 + c.x1) / 2, c.y1 + 30)}">${esc(c.name)}</span>`);
-  }
-  // Tus casas.
-  for (const lot of Object.keys(st.houses || {})) {
-    const [, bx, by] = lot.split('_').map(Number);
-    if (bx >= 0) out.push(`<span class="rm-home" style="${pos(bx * 24 + 14, by * 24 + 14)}" title="Tu casa">⌂</span>`);
-  }
-  for (const a of AIRPORTS) out.push(`<span class="rm-air" style="${pos(a.x0 + 60, a.y0 + 4)}" title="${esc(a.name)}">✈</span>`);
-  out.push(`<span class="rm-l spot" style="${pos(ENTRY_X, 60)}">↑ Sabana</span>`);
-  if (me) out.push(`<span class="rm-me" style="${pos(me[0], me[1])}" title="Estás aquí"></span>`);
-  const pct = Math.round(seenCount(st) / (TG.N * TG.N) * 100);
-  return `<h3 class="ph">MAPA DE TIERRA GRANDE <small>${reveal ? 'mapa completo' : pct + '% explorado'}</small></h3>
-    <div class="rmap tg" style="aspect-ratio:1 / 1"><canvas id="rmCanvas" width="${TG.N * OV * TGK}" height="${TG.N * OV * TGK}"></canvas>${out.join('')}</div>
-    <div class="rm-key"><span><i class="k-air">✈</i>Aeropuerto</span><span><i class="k-road"></i>Autopista</span><span><i class="k-me"></i>Tú</span><span><i class="k-motel">M</i>Motel</span><span><i class="k-home">⌂</i>Tu casa</span>${reveal ? '' : '<span>Lo que no has visitado sale en blanco</span>'}</div>`;
-}
-// reveal (modo desarrollador): todo el terreno, sin niebla. Devuelve false mientras ese mapa completo se siga pintando.
-export function drawTGMap(canvas, st, me, reveal = false) {
-  if (!canvas) return true;
-  const g = canvas.getContext('2d'), W = canvas.width, k = W / SIZE;
-  g.fillStyle = '#7fb0d8'; g.fillRect(0, 0, W, W);             // mar
-  g.fillStyle = PAPER;
-  g.beginPath(); g.ellipse(W / 2, W / 2, W * .47, W * .47, 0, 0, Math.PI * 2); g.fill();
-  const fullMap = reveal ? fullOverview() : null, ov = fullMap ? fullMap.canvas : overviewCanvas(st);
-  if (ov) { g.imageSmoothingEnabled = false; g.drawImage(ov, 0, 0, W, W); }
-  g.lineCap = 'round'; g.lineJoin = 'round';
-  for (const r of RIVERS) { g.strokeStyle = '#5aa6de'; g.lineWidth = Math.max(2, r.w * k * 1.2); g.beginPath(); r.line.forEach(([x, y], i) => i ? g.lineTo(x * k, y * k) : g.moveTo(x * k, y * k)); g.stroke(); }
-  for (const r of ROADS) {
-    const wide = r.w >= 6;
-    for (const [col, w] of [['#5a5048', wide ? 6 : 4], [wide ? '#f2c84a' : '#f6f2ea', wide ? 3.4 : 2]]) {
-      g.strokeStyle = col; g.lineWidth = w; g.beginPath(); r.line.forEach(([x, y], i) => i ? g.lineTo(x * k, y * k) : g.moveTo(x * k, y * k)); g.stroke();
-    }
-  }
-  for (const c of CITIES) {
-    g.fillStyle = 'rgba(200,102,90,.55)'; g.fillRect(c.x0 * k, c.y0 * k, (c.x1 - c.x0) * k, (c.y1 - c.y0) * k);
-    g.strokeStyle = '#8a3a30'; g.lineWidth = 2; g.strokeRect(c.x0 * k, c.y0 * k, (c.x1 - c.x0) * k, (c.y1 - c.y0) * k);
-  }
-  for (const a of AIRPORTS) { g.fillStyle = '#4a4e58'; g.fillRect(a.x0 * k, a.y0 * k - 1, (a.x1 - a.x0) * k, Math.max(3, 8 * k)); }
-  // Volando: flecha con el rumbo de la avioneta.
-  if (me && me[2] !== undefined) {
-    g.save(); g.translate(me[0] * k, me[1] * k); g.rotate(me[2]);
-    g.fillStyle = '#e04848'; g.strokeStyle = '#fff'; g.lineWidth = 2;
-    g.beginPath(); g.moveTo(26, 0); g.lineTo(-10, -12); g.lineTo(-4, 0); g.lineTo(-10, 12); g.closePath(); g.fill(); g.stroke();
-    g.restore();
-  }
-  return !fullMap || fullMap.done;
 }

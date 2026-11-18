@@ -11,7 +11,7 @@ const T = (name, look, party, money, intro, defeat, after, extra = {}) => ({ nam
 
 // ---------------------------------------------------------------- Interiores reutilizables
 function interior(id, w, h, opt) {
-  const b = new MapBuilder(id, w, h, opt.floor || 'o').meta({ name: opt.name, outdoor: false, floor: opt.floor || 'o', style: opt.style, wallColor: opt.wallColor, wallDark: opt.wallDark, floorColors: opt.floorColors, battleBg: opt.battleBg, voidColor: opt.voidColor });
+  const b = new MapBuilder(id, w, h, opt.floor || 'o').meta({ name: opt.name, outdoor: false, floor: opt.floor || 'o', style: opt.style, wallColor: opt.wallColor, wallDark: opt.wallDark, floorColors: opt.floorColors, rugColor: opt.rugColor, battleBg: opt.battleBg, voidColor: opt.voidColor });
   b.rect(0, 0, w, 2, 'W');
   return b;
 }
@@ -62,7 +62,9 @@ const GYM_ROOMS = {
   fantasma: { floorColors: ['#5a4a6a', '#4e4060', '#423652'], wallColor: '#4a3a5a', wallDark: '#2e2440', bg: 'eclipse', tip: 'Siniestro y Fantasma le pegan duro a Fantasma. Lo Normal ni le hace cosquillas.' },
   lucha: { floorColors: ['#e8d4b4', '#dcc49e', '#c8ac82'], wallColor: '#f2e2c4', wallDark: '#d4bc94', bg: 'mountain', tip: 'Volador, Psíquico y Hada aguantan bien los golpes de Lucha.' },
   hielo: { floorColors: ['#eaf6fc', '#d8eef8', '#c2e2f2'], wallColor: '#eef8fc', wallDark: '#c8e2ee', bg: 'mountain', tip: 'Fuego, Lucha, Roca y Acero rompen el hielo.' },
-  dragon: { floorColors: ['#f0e2c0', '#e6d4aa', '#d4bf8e'], wallColor: '#e8d4b0', wallDark: '#c8ae80', bg: 'league', tip: 'Hielo, Hada y Dragón son la debilidad de los dragones.' }
+  dragon: { floorColors: ['#f0e2c0', '#e6d4aa', '#d4bf8e'], wallColor: '#e8d4b0', wallDark: '#c8ae80', bg: 'league', tip: 'Hielo, Hada y Dragón son la debilidad de los dragones.' },
+  // Gimnasio extra de Ciudad Cascada: piso de colores pastel, prismas de cristal y una alfombra arcoíris.
+  hada: { floorColors: ['#fbe6f2', '#f2dcf6', '#e6d8fa'], wallColor: '#fdf0f8', wallDark: '#e8c8e0', rugColor: '#e88ab8', bg: 'gym', tip: 'El Hada le teme al Acero y al Veneno. Los dragones aquí no sirven de nada.' }
 };
 export function gymGen(id, name, theme, back, leader, trainers) {
   const T2 = GYM_ROOMS[theme];
@@ -77,6 +79,7 @@ export function gymGen(id, name, theme, back, leader, trainers) {
   if (theme === 'lucha') for (const [x, y] of [[1, 6], [2, 6], [10, 6], [11, 6], [1, 10], [11, 10]]) b.furniture('boxes', x, y, 1, 1, { sy: -2, text: ['Un bulto de café de la hacienda. ¡Pesa una tonelada!'] });
   if (theme === 'hielo') for (const [x, y] of [[2, 5], [10, 5], [3, 9], [9, 9], [1, 11], [11, 11]]) b.obj({ kind: 'crystal', x, y });
   if (theme === 'dragon') { b.rect(6, 4, 1, 11, 'r'); for (const [x, y] of [[2, 5], [10, 5], [2, 9], [10, 9]]) b.obj({ kind: 'statue', x, y, text: ['Un dragón de piedra antiguo. Tiene los ojos de oro.'] }); }
+  if (theme === 'hada') { b.rect(6, 4, 1, 11, 'r'); for (const [x, y] of [[1, 5], [11, 5], [1, 11], [11, 11], [3, 7], [9, 9]]) b.obj({ kind: 'crystal', x, y }); }
   b.npc({ id: id + 'Lider', x: 6, y: 3, dir: 0, ...leader });
   trainers.forEach((t, i) => b.npc({ id: id + 'T' + i, ...t }));
   b.npc({ id: id + 'Guia', look: 'man', x: 10, y: 13, dir: 2, talk: [`¡Hola, retador! El gimnasio de tipo ${{ electrico: 'ELÉCTRICO', dragon: 'DRAGÓN' }[theme] || theme.toUpperCase()} es duro.`, T2.tip] });

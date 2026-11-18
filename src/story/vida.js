@@ -1,11 +1,11 @@
-// Guiones de la vida en Tierra Grande: moteles, casas propias (lote, construcción, cama y muebles) y pareja
+// Guiones de la vida en el sur de Alborada: moteles, casas propias (lote, construcción, cama y muebles) y pareja
 // (conversar, regalos, citas y noviazgo). Todo apto para cualquier edad: citas, paseos y regalos.
 import { ui } from '../ui/ui.js';
 import { ITEMS } from '../data/items.js';
 import { saveState } from '../core/state.js';
 import { cloud } from '../core/cloud.js';
 import { shiftTo } from '../core/clock.js';
-import { CITIES } from '../world/tierra.js';
+import { MOTEL_NAMES } from '../world/maps7.js';
 import { HOUSE_MODELS, WALL_COLORS, ROOF_COLORS, FURNITURE, MOTEL_PRICE, WAKE, CANDIDATES, GIFTS, LOVE, dayOf, romanceOf, houseOf } from '../world/hogar.js';
 
 const say = (who, ...pages) => ui.say(pages, { name: who || undefined });
@@ -38,24 +38,22 @@ async function rest(ow, game, where, { price = 0, who } = {}) {
 // Una cita: escoges el plan, se ve la escena y sube el cariño.
 async function date(ow, game, id) {
   const st = game.state, P = CANDIDATES[id], R = romanceOf(st, id);
-  const plans = [['arepas', 'Comer arepas en la plaza'], ['atardecer', 'Ver el atardecer']];
-  if (st.bag.llavesCarro) plans.push(['carro', 'Pasear en carro']);
-  if (st.bag.licenciaPiloto) plans.push(['avioneta', 'Volar en avioneta']);
+  const plans = [['arepas', 'Comer arepas en la plaza'], ['atardecer', 'Ver el atardecer'], ['cascada', 'Ir a ver la cascada'], ['playa', 'Caminar por la playa']];
   const i = await ui.ask('¿Qué plan le propones?', [...plans.map(p => p[1]), 'Mejor otro día'], { name: P.name });
   if (i < 0 || i >= plans.length) return false;
   const k = plans[i][0], n = P.name;
   const scene = {
-    arepas: [`${n} pidió una arepa de huevo y tú una de queso con mantequilla.`, '"¡Esta es la mejor arepa de Tierra Grande!", dice entre risas.', 'Se quedaron hablando hasta que cerraron el puesto.'],
+    arepas: [`${n} pidió una arepa de huevo y tú una de queso con mantequilla.`, '"¡Esta es la mejor arepa del sur!", dice entre risas.', 'Se quedaron hablando hasta que cerraron el puesto.'],
     atardecer: ['Caminaron hasta un mirador a ver el atardecer.', 'El cielo se puso naranja, después rosado y después se llenó de estrellas.', `${n} te tomó de la mano un ratico.`],
-    carro: ['Salieron por la autopista con las ventanas abiertas y la radio prendida.', `${n} sacó la mano por la ventana para sentir el viento.`, '"¡Más rápido!", te dijo... y luego "¡No, no tan rápido!".'],
-    avioneta: ['Despegaron juntos y vieron Tierra Grande desde arriba.', `${n} señaló su ciudad, chiquitica allá abajo.`, '"Nunca había visto el mar y la sierra al mismo tiempo", te dijo.']
+    cascada: ['Fueron hasta el pie de la cascada de Ciudad Cascada.', 'El agua caía tan fuerte que les salpicaba la cara y se reían como niños.', `"Aquí el arcoíris sale todos los días", te dijo ${n}.`],
+    playa: ['Caminaron descalzos por la orilla de Caleta Sol.', `${n} encontró un caracol rosado y te lo regaló.`, 'Se sentaron en la arena hasta que la marea les mojó los pies.']
   }[k];
   await game.fadeOut();
   await game.frames(20);
   await game.fadeIn();
   await ui.say(scene);
   R.pts += LOVE.date; R.dates++; R.date = dayOf(st);
-  ow.emote(ow.follower && st.pareja?.id === id ? ow.follower : ow.npc('tgCita_' + id) || ow.player, '♥');
+  ow.emote(ow.follower && st.pareja?.id === id ? ow.follower : ow.npc('cita_' + id) || ow.player, '♥');
   await say(n, R.dates === 1 ? '¡Me la pasé muy bien! Repitamos pronto.' : '¡Qué día tan bonito! Gracias por invitarme.');
   return true;
 }
@@ -63,8 +61,8 @@ async function date(ow, game, id) {
 export const VIDA = {
   // ---------- Moteles ----------
   async motel(ow, game, npc) {
-    const c = CITIES.find(c => c.id === npc?.arg), who = 'Recepcionista';
-    await say(who, `¡Bienvenido al ${c ? c.name : 'motel'}!`, `La pieza vale ${money(MOTEL_PRICE)} la noche, con desayuno incluido.`);
+    const name = MOTEL_NAMES[npc?.arg], who = 'Recepcionista';
+    await say(who, `¡Bienvenido al ${name || 'motel'}!`, `La pieza vale ${money(MOTEL_PRICE)} la noche, con desayuno incluido.`);
     await rest(ow, game, { map: ow.map.id, x: 11, y: 4 }, { price: MOTEL_PRICE, who });
   },
   async motelCama(ow) { await ui.say(['Una cama tendida, con toallitas en forma de cisne.', 'Para quedarte, paga la pieza en la recepción.']); },
@@ -86,7 +84,7 @@ export const VIDA = {
     if (ok !== 0) return;
     st.money -= M.price;
     st.houses = st.houses || {};
-    st.houses[lot] = { model: key, wall: WALL_COLORS[w][1], roof: ROOF_COLORS[r][1], furniture: [], city: lot.split('_')[0] };
+    st.houses[lot] = { model: key, wall: WALL_COLORS[w][1], roof: ROOF_COLORS[r][1], furniture: [] };
     await game.fadeOut();
     game.graphics?.engine?.clearWorld?.();   // el 3D vuelve a armar el mapa, ya con la casa
     await game.frames(40);
@@ -138,12 +136,12 @@ export const VIDA = {
     }
     if (i === 1) {
       const have = GIFTS.filter(g => (st.bag[g] || 0) > 0);
-      if (!have.length) return ui.say(['No tienes regalos.', 'En las tiendas de Tierra Grande venden flores, chocolates, café, peluches y mochilas.']);
+      if (!have.length) return ui.say(['No tienes regalos.', 'En las tiendas del sur (Pueblo Ribera, Ciudad Cascada y Caleta Sol) venden flores, chocolates, café, peluches y mochilas.']);
       if (R.gift === day) return say(who, 'Hoy ya me diste algo. ¡Me vas a malcriar!');
       const g = await ui.ask('¿Qué le regalas?', [...have.map(g => `${ITEMS[g].name} (${st.bag[g]})`), 'Nada'], { name: who });
       if (g < 0 || g >= have.length) return;
       const it = have[g]; st.bag[it]--; R.gift = day;
-      if (P.loves.includes(it)) { R.pts += LOVE.love; ow.emote(ow.npc('tgCita_' + id) || ow.player, '♥'); return say(who, `¡¿${ITEMS[it].name}?! ¿Cómo sabías? ¡Me encanta!`); }
+      if (P.loves.includes(it)) { R.pts += LOVE.love; ow.emote(ow.npc('cita_' + id) || ow.player, '♥'); return say(who, `¡¿${ITEMS[it].name}?! ¿Cómo sabías? ¡Me encanta!`); }
       if (P.likes.includes(it)) { R.pts += LOVE.like; return say(who, '¡Gracias! Qué detalle tan lindo.'); }
       R.pts += LOVE.gift; return say(who, 'Ay, gracias... muy amable.');
     }
@@ -172,13 +170,12 @@ export const VIDA = {
     const st = game.state, id = st.pareja?.id, P = CANDIDATES[id];
     if (!P) return;
     const R = romanceOf(st, id), day = dayOf(st);
-    const chat = [['¡Qué bueno andar contigo!'], ['¿Para dónde vamos hoy?'], ['Me encanta Tierra Grande, pero más contigo.'], ['¿Ya probaste las arepas de Villa Cruce?'], ['Tus Puchamon te quieren mucho, se nota.']][(day + st.party.length) % 5];
-    const i = await ui.ask(chat[0], ['Seguir juntos', 'Salir en una cita', 'Que me espere en su ciudad', 'Terminar'], { name: P.name });
+    const chat = [['¡Qué bueno andar contigo!'], ['¿Para dónde vamos hoy?'], ['Me encanta Alborada, pero más contigo.'], ['¿Ya probaste las arepas de Pueblo Ribera?'], ['Tus Puchamon te quieren mucho, se nota.']][(day + st.party.length) % 5];
+    const i = await ui.ask(chat[0], ['Seguir juntos', 'Salir en una cita', 'Que me espere en su pueblo', 'Terminar'], { name: P.name });
     if (i === 1) { if (R.date === day) return say(P.name, 'Hoy ya salimos, ¡mañana otra vez!'); return date(ow, game, id); }
     if (i === 2) {
       st.pareja.follow = false; ow.setFollower(); ow.refreshNpcs();
-      const c = CITIES.find(c => c.id === P.city);
-      return say(P.name, `Listo. Te espero en ${c.name}, frente a la posada.`);
+      return say(P.name, `Listo. Te espero en ${P.town}, en el sitio de siempre.`);
     }
     if (i === 3) {
       const ok = await ui.ask('¿Seguro que quieres terminar?', ['Sí', 'No, me equivoqué']);

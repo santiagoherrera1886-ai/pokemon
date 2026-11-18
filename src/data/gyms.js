@@ -12,7 +12,11 @@ export const GYMS = [
 ];
 export const LEAGUE_BADGES = GYMS.length;
 export const BADGE_IDS = GYMS.map(g => g.badge);
-export const gymOf = badge => GYMS.find(g => g.badge === badge);
+// Gimnasio extra del sur (Ciudad Cascada): no cuenta para la Liga. Su medalla despierta las leyendas del sur.
+export const EXTRA_GYMS = [
+  { badge: 'arcoiris', name: 'Arcoíris', type: 'hada', color: '#ec86c4', city: 'Ciudad Cascada', map: 'cascada', inside: 'gym9', leader: 'Amaranta', who: 'la líder Amaranta', gift: ['tonicoMax', 3], extra: true, next: 'las leyendas del sur (el caño de noche, la selva y la Cueva Guácharo)' }
+];
+export const gymOf = badge => GYMS.find(g => g.badge === badge) || EXTRA_GYMS.find(g => g.badge === badge);
 export const hasBadge = (st, b) => (st.badges || []).includes(b);
 export const badgeCount = st => BADGE_IDS.filter(b => hasBadge(st, b)).length;
 // Siguiente gimnasio por ganar en orden, o null si ya tiene las ocho medallas.

@@ -1,4 +1,4 @@
-// Las 40 especies de Tierra Grande, con el mismo acabado de figura que el resto (diseños originales):
+// Las 40 especies del sur de Alborada, con el mismo acabado de figura que el resto (diseños originales):
 //   Llano:     Chigüirín → Chigüirón (chigüiro) · Garcilla → Garzón (garza) · Becerrín → Torazo (toro de lidia del llano)
 //   Bosque:    Lechucín → Lechuzón (lechuza) · Cucarrín → Cucarrón (escarabajo cornudo)
 //   Selva:     Guacarín → Guacamarón (guacamaya) · Anguilín → Temblón (anguila eléctrica) · Bufeíto → Bufeón (delfín rosado)

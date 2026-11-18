@@ -87,44 +87,46 @@ Diez familias de tres etapas, con diseños propios inspirados en las láminas de
 
 En pixel clásico, todas las especies usan sprites sacados de sus modelos 3D (`src/art/bruma-sprites.png`), así se ven igual en los dos modos; el pixel art original queda de respaldo mientras carga el atlas. Si cambias un modelo, se regeneran con `node scripts/sprites.cjs`.
 
-## Tierra Grande (mundo abierto)
+## El sur de Alborada (zona nueva hecha a mano)
 
-Al sur de Pueblo Llanero (la Sabana, en el occidente), la **Autopista del Llano** baja a Tierra Grande; con una medalla, la Mensajera de cualquier posada también te lleva al Parador del Llano. Tierra Grande es un territorio de **4.032 × 4.032 casillas** (unos 6 × 6 km a escala de casa) que se genera solo y siempre sale igual (`src/world/tierra.js`). Tiene llano, bosque, selva, desierto, sierra, páramo nevado y costa; tres ciudades grandes (Bahía Dorada, Altamira y Ciudad Médano), cuatro pueblos y el Parador del Llano, autopistas y carreteras que unen todo, dos ríos y cinco aeropuertos. Las ciudades tienen torres, edificios con letreros, casas, parques, plazas, parqueaderos, posada y tienda con mostrador propio. Los entrenadores y las criaturas salvajes de Tierra Grande suben de nivel con tus medallas.
+Al sur de Pueblo Llanero baja la **Ruta 26** hasta el río. Todo el sur está hecho a mano, con el mismo detalle del resto de Alborada (`src/world/maps7.js`), y reemplaza al mapa gigante que había antes:
 
-- **Carro:** Doña Rueda, en el Parador del Llano, te presta uno (escoges el color). **C** o el botón **CARRO** para subirte y bajarte; **B** sostenido es turbo. En carro no salen criaturas ni te frenan los entrenadores, y el carro no sale de Tierra Grande.
-- **Avioneta:** la controladora de cualquier aeropuerto te da la Licencia de Piloto y te deja despegar. En el aire, la avioneta gira hacia donde apuntes con la cruceta, **B** es turbo y **A** encima de cualquier pista aterriza; arriba hay una flecha hacia la pista más cercana. En pleno vuelo no se guarda.
-- **Tráfico de adorno** en carreteras y calles (frena si te le paras enfrente) y sombras de avionetas que pasan.
-- **Mapa:** en VER MAPA hay pestañas Alborada / Tierra Grande. En Tierra Grande, las carreteras, ciudades y aeropuertos salen siempre y el terreno se va llenando con lo que exploras (se guarda en la partida como un mapa de bits).
+- **Ruta 26** (del llano al río, con puente y el Motel El Viajero) → **Pueblo Ribera** (pueblo junto al río, con plaza y fuente) → **Ruta 27** (orillas del río) → **Caño de los Colores** (el río de cinco colores, con matas rojas, amarillas y verdes en el fondo) → **Ciudad Cascada** (bajo una gran cascada, con parque, avenida y el gimnasio extra) → **Ruta 28 · Bosque de Niebla** (con el Motel La Neblina) → **Caleta Sol** (playa, muelle y el Motel Brisa Marina).
+- **Ruta 29 · Selva del Caño** sube del caño al Manglar y cierra la vuelta por el occidente.
+- **Cueva Guácharo**: atajo oscuro entre el Caño de los Colores y la Ruta 28.
+- **Gimnasio extra de Ciudad Cascada** (tipo Hada, pabellón con arcoíris): la líder Amaranta da la **Medalla Arcoíris**, que no hace falta para la Liga. Con esa medalla aparecen las cuatro leyendas del sur.
+- Puentes de madera de verdad (2D y 3D) donde el camino cruza el agua.
 
 ### Moteles, casas propias y pareja
 
-- **Moteles de carretera** (seis, junto a las autopistas, marcados con una M en el mapa): la pieza vale $300. Puedes descansar un rato, dormir hasta la noche o hasta la mañana; dormir cura al equipo, guarda la partida, deja el motel como lugar de regreso y adelanta el reloj del juego (de noche salen las criaturas nocturnas).
-- **Casas propias:** en las ciudades y pueblos de Tierra Grande hay lotes con un letrero de SE VENDE. Escoges el modelo (casa sencilla $12.000, de dos pisos $28.000 o casona con piscina $55.000) y los colores de las paredes y el techo, y los obreros la construyen en una noche. Adentro, en el computador, compras muebles (cocina, nevera, televisor, consola, comedor, sofá, biblioteca, hamaca, acuario, guitarra, alfombra, peluche gigante, matas y un cuadro) que aparecen en su sitio en 2D y en 3D; en la cama duermes, curas al equipo y guardas. La Mensajera también te lleva a tus casas y a las posadas de Tierra Grande que conozcas.
-- **Pareja:** en seis ciudades vive alguien con quien puedes salir (Valentina en Bahía Dorada, Julián en Altamira, Mariana en Ciudad Médano, Samuel en Villa Cruce, Luciana en Pueblo Palma y Felipe en Pueblo Pino). Conversa con esa persona, dale regalos (flores, chocolates, café, peluches o mochilas, que se venden en el mostrador especial de las tiendas de Tierra Grande; cada quien tiene sus favoritos) e invítala a salir: arepas, atardecer, paseo en carro o vuelo en avioneta. Con suficiente cariño y tres citas le puedes pedir que sea tu novia o tu novio; desde ahí te acompaña caminando detrás de ti, y le puedes pedir que te espere en su ciudad. Todo es de citas, regalos y paseos, apto para cualquier edad.
+- **Moteles** (tres: El Viajero en la Ruta 26, La Neblina en la Ruta 28 y Brisa Marina en Caleta Sol; con una M en el mapa): la pieza vale $300. Puedes descansar un rato, dormir hasta la noche o hasta la mañana; dormir cura al equipo, guarda la partida, deja el motel como lugar de regreso y adelanta el reloj del juego (de noche salen las criaturas nocturnas).
+- **Casas propias:** ocho lotes con letrero de SE VENDE (tres en Pueblo Ribera, dos en Ciudad Cascada y tres en Caleta Sol). Escoges el modelo (casa sencilla $12.000, de dos pisos $28.000 o casona con piscina $55.000) y los colores de las paredes y el techo, y los obreros la construyen en una noche. Adentro, en el computador, compras muebles (cocina, nevera, televisor, consola, comedor, sofá, biblioteca, hamaca, acuario, guitarra, alfombra, peluche gigante, matas y un cuadro) que aparecen en su sitio en 2D y en 3D; en la cama duermes, curas al equipo y guardas. Tus casas salen en el mapa y la Mensajera te lleva a ellas.
+- **Pareja:** en los pueblos del sur vive gente con quien puedes salir: Samuel y Felipe en Pueblo Ribera, Valentina y Luciana en Ciudad Cascada, Mariana y Julián en Caleta Sol. Conversa, dale regalos (flores, chocolates, café, peluches o mochilas, que se venden en el mostrador especial de las tiendas del sur; cada quien tiene sus favoritos) e invítala a salir: arepas, atardecer, ir a ver la cascada o caminar por la playa. Con suficiente cariño y tres citas le puedes pedir que sea tu novia o tu novio; desde ahí te acompaña caminando detrás de ti, y le puedes pedir que te espere en su pueblo. Todo es de citas, regalos y paseos, apto para cualquier edad.
+- Las partidas que quedaron en el mapa gigante vuelven a Pueblo Llanero; las casas que tenían allá pasan a los lotes nuevos con el mismo modelo, colores y muebles.
 
-### Las 40 criaturas de Tierra Grande
+### Las 40 criaturas del sur
 
 | Familia | Tipos | Dónde aparece |
 |---|---|---|
-| Chigüirín → Chigüirón (chigüiro) | Normal → Normal/Agua | Llano |
-| Garcilla → Garzón (garza) | Agua/Volador | Llano, costa |
-| Becerrín → Torazo (toro) | Lucha → Lucha/Tierra | Llano |
-| Lechucín → Lechuzón (lechuza) | Siniestro/Volador | Bosque, de noche |
-| Cucarrín → Cucarrón (escarabajo cornudo) | Bicho/Acero | Bosque, parques |
-| Guacarín → Guacamarón (guacamaya) | Fuego/Volador | Selva |
-| Anguilín → Temblón (anguila eléctrica) | Agua/Eléctrico | Selva |
-| Bufeíto → Bufeón (delfín rosado de río) | Agua/Psíquico | Selva, costa |
-| Caimancito → Caimanazo (caimán) | Agua/Siniestro | Selva |
-| Pintín → Tigrillo → Jaguarón (felinos) | Siniestro → Siniestro/Lucha | Selva |
-| Alacrín → Alacranzo (alacrán) | Veneno/Tierra | Desierto |
-| Cactín → Espinón (cactus) | Planta/Tierra | Desierto |
-| Lagartijín → Iguanón → Draguana (iguana dragón) | Tierra → Tierra/Dragón → Dragón/Tierra | Desierto |
-| Llamita → Llamarón (llama de fuego) | Normal/Fuego | Sierra, páramo |
-| Frailín → Frailejón (frailejón) | Planta/Hielo | Páramo nevado |
-| Careyín → Careyón (tortuga carey) | Agua/Roca | Costa |
-| Semaforín → Semafortón (semáforo) | Eléctrico/Acero | Parques de las ciudades |
+| Chigüirín → Chigüirón (chigüiro) | Normal → Normal/Agua | Ruta 26, Ruta 27, parque de Ciudad Cascada |
+| Garcilla → Garzón (garza) | Agua/Volador | Ruta 26, Ruta 27, Caleta Sol |
+| Becerrín → Torazo (toro) | Lucha → Lucha/Tierra | Ruta 26, Bosque de Niebla |
+| Lechucín → Lechuzón (lechuza) | Siniestro/Volador | De noche, y en la Cueva Guácharo |
+| Cucarrín → Cucarrón (escarabajo cornudo) | Bicho/Acero | Selva del Caño |
+| Guacarín → Guacamarón (guacamaya) | Fuego/Volador | Selva del Caño |
+| Anguilín → Temblón (anguila eléctrica) | Agua/Eléctrico | Ruta 27, Caño de los Colores |
+| Bufeíto → Bufeón (delfín rosado de río) | Agua/Psíquico | Ruta 27, Caño de los Colores |
+| Caimancito → Caimanazo (caimán) | Agua/Siniestro | Ruta 27, Caño de los Colores |
+| Pintín → Tigrillo → Jaguarón (felinos) | Siniestro → Siniestro/Lucha | Selva del Caño |
+| Alacrín → Alacranzo (alacrán) | Veneno/Tierra | Caño de los Colores, Cueva Guácharo |
+| Cactín → Espinón (cactus) | Planta/Tierra | Ruta 26, Caño de los Colores |
+| Lagartijín → Iguanón → Draguana (iguana dragón) | Tierra → Tierra/Dragón → Dragón/Tierra | Selva del Caño, Caño de los Colores |
+| Llamita → Llamarón (llama de fuego) | Normal/Fuego | Ruta 26, Bosque de Niebla |
+| Frailín → Frailejón (frailejón) | Planta/Hielo | Bosque de Niebla |
+| Careyín → Careyón (tortuga carey) | Agua/Roca | Caleta Sol |
+| Semaforín → Semafortón (semáforo) | Eléctrico/Acero | Parque de Ciudad Cascada |
 
-**Míticos (muy raros):** Mohán (Agua/Fantasma, selva de noche), Madremonte (Planta/Fantasma, bosque), Tunjo (Acero/Psíquico, desierto y sierra) y Esmeraldón (Roca/Hada, sierra). Cuentan como leyendas. Los modelos están en `src/render3d/fauna2.js`; con estas, el Registro llega a **120 especies**.
+**Leyendas del sur (con la Medalla Arcoíris):** Mohán (Agua/Fantasma, en el Caño de los Colores de noche), Madremonte (Planta/Fantasma, en lo tupido de la Selva del Caño), Tunjo (Acero/Psíquico, en la sala dorada de la Cueva Guácharo) y Esmeraldón (Roca/Hada, en la veta verde de la misma cueva), a nivel 50. Los modelos están en `src/render3d/fauna2.js`; con estas, el Registro llega a **120 especies**.
 
 ## Personaje y partidas
 
@@ -144,7 +146,7 @@ Al sur de Pueblo Llanero (la Sabana, en el occidente), la **Autopista del Llano*
 - **Códigos secretos** (Opciones › Códigos): hay claves para plata infinita, para evolucionar cualquier criatura desde su ficha, para subir de nivel (botones SUBIR 1 NIVEL y SUBIR 10 NIVELES en la ficha) y para recibir las cinco leyendas. Los de plata, evolución y nivel se guardan en la partida y se apagan escribiendo la misma clave otra vez; el de las leyendas las entrega una sola vez. En el código del juego sólo quedan las huellas de las claves, no el texto.
 - **Códigos** también tiene botón propio en el menú principal (🔑 CÓDIGOS), debajo de las seis opciones.
 - **Versión y aviso de actualización:** el título y las opciones dicen la versión y el commit publicado. Si se publica una versión nueva mientras el juego está abierto (por ejemplo, una pestaña que lleva días abierta en el iPad), arriba sale **Hay una versión nueva · toca aquí para actualizar**: guarda la partida y recarga. El build escribe el commit en `src/core/version.js` y en `version.json` (`scripts/build.cjs`), y `vercel.json` pide revalidar los archivos en cada visita.
-- **Modo desarrollador** (también con clave, en Códigos; al prenderlo, el panel se abre solo): sirve para revisar el mapa sin jugar la historia hasta allá. Aparece el botón **DEV** (debajo de MENÚ) y una entrada en el menú principal con: ir a cualquier punto tocando el mapa (Alborada y Tierra Grande se ven completos, sin niebla), una lista de lugares (ciudades, aeropuertos, moteles, lotes en venta y las personas con las que se puede salir), carro y avioneta al instante, atravesar paredes, paseo tranquilo (sin criaturas, entrenadores ni eventos), caminar rápido, hora del día, plata para construir y **Volver a donde estaba** (la partida se guarda donde quedes). Se apaga escribiendo la clave otra vez. Código: `src/ui/dev.js` y `src/world/devmap.js`.
+- **Modo desarrollador** (también con clave, en Códigos; al prenderlo, el panel se abre solo): sirve para revisar el mapa sin jugar la historia hasta allá. Aparece el botón **DEV** (debajo de MENÚ) y una entrada en el menú principal con: ir a cualquier punto tocando el mapa (Alborada se ve completa, sin niebla), una lista de lugares (lo nuevo del sur: pueblos, gimnasio extra, cueva, moteles, lotes en venta y las personas con las que se puede salir; y todos los mapas de Alborada), atravesar paredes, paseo tranquilo (sin criaturas, entrenadores ni eventos), caminar rápido, hora del día, plata para construir y **Volver a donde estaba** (la partida se guarda donde quedes). Se apaga escribiendo la clave otra vez. Código: `src/ui/dev.js` y `src/world/devmap.js`.
 
 ## Tiendas y objetos
 
@@ -176,7 +178,6 @@ La tienda muestra íconos en pixel art, descripción de cada objeto, cantidad x1
 | Hablar, investigar, aceptar | Z, E, Enter o Espacio | A |
 | Correr (después de recibir las zapatillas), cancelar | X o Shift | B |
 | Menú | Esc o M | Botón ☰ |
-| Subirse o bajarse del carro (Tierra Grande) | C o Q | Botón CARRO |
 
 ## Gráficos
 
@@ -218,14 +219,9 @@ src/data/creatures.js especies, movimientos, tipos y encuentros (de día y de no
 src/data/alba.js      Forma Alba: brazalete, multiplicadores y limpieza al terminar el combate
 src/data/gyms.js      los ocho gimnasios: medalla, líder, ciudad, regalo, siguiente destino y la regla de la Liga
 src/render3d/gyms.js  el edificio 3D de cada gimnasio según su tipo
-src/ui/regionmap.js   mapa de la región con gimnasios, Liga y posición del jugador; mapa de Tierra Grande
-src/world/tierra.js   generador de Tierra Grande: biomas, ciudades, carreteras, ríos, aeropuertos y mapas de 48 × 48
-src/world/flightmap.js vista desde el aire por pedazos (vuelo en pixel, suelo del vuelo en 3D y mapa del menú)
-src/world/flight.js   la avioneta: despegue, vuelo, aterrizaje y la vista de vuelo en pixel
-src/world/traffic.js  tráfico de adorno en carreteras y calles
-src/render3d/flight3d.js vuelo en 3D: suelo con textura, árboles y edificios instanciados, nubes
-src/render3d/vehicles.js modelos 3D de torres, carros, avionetas y surtidores
-src/render3d/fauna2.js las 40 criaturas de Tierra Grande
+src/ui/regionmap.js   mapa de la región con gimnasios, Liga, moteles, tus casas y posición del jugador
+src/render3d/fauna2.js las 40 criaturas del sur
+src/world/maps7.js    el sur de Alborada: Ruta 26 a 29, Pueblo Ribera, Caño de los Colores, Ciudad Cascada, Caleta Sol, Cueva Guácharo, gimnasio extra, lotes y moteles
 src/world/hogar.js    moteles, casas propias (modelos, muebles e interiores) y las personas con las que se puede salir
 src/story/vida.js     guiones del motel, el lote, la cama, el catálogo de muebles, las citas y la pareja
 src/core/clock.js     reloj del juego (hora real más lo que hayas dormido)
@@ -242,7 +238,6 @@ src/core/state.js     estado de la partida y tres ranuras de guardado
 src/core/cloud.js     respaldo opcional de las partidas en un gist privado de GitHub
 tests/e2e.cjs         prueba que juega toda la historia en Chromium real
 tests/region.test.mjs mapas conectados, puertas, guardias, gimnasios, entrenadores y encuentros
-tests/tierra.test.mjs Tierra Grande: determinismo, bordes, carreteras a todas partes, puertas y criaturas
 fonts/                Pixelify Sans, Fredoka y Nunito (licencia SIL OFL, incluida), servidas localmente
 ```
 
@@ -254,15 +249,14 @@ npx playwright install chromium
 npm test
 ```
 
-La prueba juega **la historia entera** con teclas reales: camina con una ruta calculada sobre las colisiones del juego (sin teletransportes), entra y sale de edificios, pelea con Nico, los entrenadores, los ocho líderes (recorre la Ruta 6 a la Ruta 11 de una ciudad a otra), Bruma, Umbra, Espejalba, Nico en la Liga y la Campeona Aurora (usando la Forma Alba en cada combate desde la primera medalla), encuentra a Fraguón en la Cueva Eco después de la Liga, baja por la Autopista del Llano a Tierra Grande (carro, avioneta con despegue y aterrizaje, mapa y una criatura nueva en un parque, duerme en un motel, compra un lote, construye y amobla una casa, y sale con Valentina hasta que te acompaña), prueba el modo desarrollador con una clave de prueba (lista de lugares, carro, tocar el mapa para ir, atravesar paredes, paseo tranquilo, avioneta y volver a donde estaba), usa la posada, compra y vende en la tienda, compra en el mostrador especial y en la máquina, usa el viaje rápido, guarda y continúa tras recargar, prueba las opciones y los controles táctiles en un celular, crea una chica en el editor de personaje, usa dos ranuras y conecta el respaldo de GitHub contra una API simulada, y falla si aparece cualquier error de JavaScript. Las capturas quedan en `tests/screenshots/`.
+La prueba juega **la historia entera** con teclas reales: camina con una ruta calculada sobre las colisiones del juego (sin teletransportes), entra y sale de edificios, pelea con Nico, los entrenadores, los ocho líderes (recorre la Ruta 6 a la Ruta 11 de una ciudad a otra), Bruma, Umbra, Espejalba, Nico en la Liga y la Campeona Aurora (usando la Forma Alba en cada combate desde la primera medalla), encuentra a Fraguón en la Cueva Eco después de la Liga, baja por la Autopista del Llano a el sur (baja de Pueblo Llanero a la Ruta 26, una criatura nueva en el parque de Ciudad Cascada, gana la Medalla Arcoíris del gimnasio extra y encuentra al Tunjo en la Cueva Guácharo; duerme en un motel, compra un lote, construye y amobla una casa, y sale con Valentina hasta que te acompaña), prueba el modo desarrollador con una clave de prueba (lista de lugares, tocar el mapa para ir, atravesar paredes, paseo tranquilo y volver a donde estaba), usa la posada, compra y vende en la tienda, compra en el mostrador especial y en la máquina, usa el viaje rápido, guarda y continúa tras recargar, prueba las opciones y los controles táctiles en un celular, crea una chica en el editor de personaje, usa dos ranuras y conecta el respaldo de GitHub contra una API simulada, y falla si aparece cualquier error de JavaScript. Las capturas quedan en `tests/screenshots/`.
 
-Para que la prueba sea rápida y no dependa del azar, después de elegir inicial sube su nivel, le recarga los PP en algunos puntos y, en la región del este, entrena al equipo antes de cada líder y da por vencidos a los entrenadores de ruta (ya probados antes). Todo lo demás es entrada real. Las pruebas unitarias (`tests/region.test.mjs`) revisan que los 117 mapas hechos a mano se alcancen caminando (y `tests/tierra.test.mjs`, que desde la entrada de Tierra Grande se llegue por carretera a todas las ciudades y aeropuertos), que los bordes empaten sin cortes, que cada puerta tenga regreso y que los líderes vayan subiendo de nivel.
+Para que la prueba sea rápida y no dependa del azar, después de elegir inicial sube su nivel, le recarga los PP en algunos puntos y, en la región del este, entrena al equipo antes de cada líder y da por vencidos a los entrenadores de ruta (ya probados antes). Todo lo demás es entrada real. Las pruebas unitarias (`tests/region.test.mjs`) revisan que los 146 mapas hechos a mano se alcancen caminando (incluido todo el sur), que los bordes empaten sin cortes, que cada puerta tenga regreso y que los líderes vayan subiendo de nivel.
 
 ## Pendiente
 
 - Música y efectos de sonido.
 - Revisión visual del protagonista GLB (prototipo técnico) antes de usarlo por defecto; los GLB de Brotelo, Brasín y Charquín todavía no existen (sólo hay conceptos), por eso en el juego siguen siendo modelos esculpidos.
-- Tierra Grande todavía no tiene gimnasios ni historia propia: es para explorar, entrenar, completar el Registro, tener casa y pareja.
 - El tráfico es de adorno (no choca) y las ciudades no tienen interiores aparte de la posada y la tienda.
 
 ## Sobre `original/pokediamond`

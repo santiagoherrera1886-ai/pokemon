@@ -1,37 +1,26 @@
 // Modo desarrollador, parte sin interfaz: la lista de lugares para ir de una y la casilla libre más cercana a un
 // punto (para tocar el mapa e ir). La usan src/ui/dev.js y las pruebas.
-import { TG, CITIES, AIRPORTS, BLOCK, blockPlan } from './tierra.js';
-import { CANDIDATES, candidateSpot } from './hogar.js';
+import { CANDIDATES } from './hogar.js';
+import { LOTS, MOTEL_DOORS, MOTEL_NAMES } from './maps7.js';
 
-// El Parador del Llano: donde Doña Rueda presta el carro (el mismo punto al que lleva la Mensajera).
-export const PARADOR = { name: 'Parador del Llano · carro de Doña Rueda', map: 'tg_40_5', x: 17, y: 10 };
+// Dónde deja la Mensajera en cada pueblo (frente a la posada). Las rutas se buscan desde su centro.
+const COURIER = { brisal: [5, 8], arenal: [18, 8], corola: [6, 16], cobre: [6, 17], marea: [22, 8], guadua: [7, 12], caracol: [7, 8], cabo: [6, 16], palmar: [7, 15], sabana: [7, 13], voltio: [6, 16], niebla: [6, 19], cafetal: [6, 12], escarcha: [6, 17], albor: [14, 13], ruta5: [7, 7], ribera: [28, 13], cascada: [8, 14], caleta: [25, 12] };
+const SUR = { ruta26: [12, 4], ribera: [28, 13], ruta27: [5, 6], cano: [12, 9], ruta29: [8, 5], cascada: [8, 14], ruta28: [10, 4], caleta: [25, 12] };
 
-// Lugares para ir de una. Los de Tierra Grande van en casillas de Tierra Grande (tg: [x, y]); los de Alborada son
-// los mapas exteriores hechos a mano (se cae en el centro, o donde la Mensajera deja si es un pueblo).
-const COURIER = { brisal: [5, 8], arenal: [18, 8], corola: [6, 16], cobre: [6, 17], marea: [22, 8], guadua: [7, 12], caracol: [7, 8], cabo: [6, 16], palmar: [7, 15], sabana: [7, 13], voltio: [6, 16], niebla: [6, 19], cafetal: [6, 12], escarcha: [6, 17], albor: [14, 13], ruta5: [7, 7] };
-const center = c => [Math.floor((c.x0 + c.x1) / 2 / BLOCK), Math.floor((c.y0 + c.y1) / 2 / BLOCK)];
+// sur: lo nuevo del sur (pueblos, gimnasio extra, cueva, moteles, lotes y las personas con las que se sale).
+// al: todos los mapas exteriores de Alborada.
 export function devPlaces(world) {
-  const tg = [PARADOR], al = [];
-  // Frente a la posada de cada ciudad (la posada está en la manzana del centro, con la puerta en (5, 7) de la manzana).
-  for (const c of CITIES) if (c.kind === 'grande' || c.kind === 'pueblo') { const [bx, by] = center(c); tg.push({ name: c.name, tg: [bx * BLOCK + 9, by * BLOCK + 12] }); }
-  for (const a of AIRPORTS) tg.push({ name: `${a.name} ✈`, tg: a.arrive });
-  for (const c of CITIES) if (c.kind === 'motel') tg.push({ name: c.name, tg: [c.x0 + 8, c.y0 + 14] });
-  // Un lote en venta por ciudad que tenga (frente a la puerta de la casa que se construya).
-  for (const c of CITIES) {
-    if (c.kind !== 'grande' && c.kind !== 'pueblo') continue;
-    let lot = null;
-    for (let by = c.y0 / BLOCK; !lot && by * BLOCK < c.y1 - 4; by++) for (let bx = c.x0 / BLOCK; !lot && bx * BLOCK < c.x1 - 4; bx++) if (blockPlan(c, bx, by).type === 'lote') lot = [bx, by];
-    if (lot) tg.push({ name: `Lote en venta · ${c.name}`, tg: [lot[0] * BLOCK + 14, lot[1] * BLOCK + 16] });
-  }
-  for (const id in CANDIDATES) {
-    const P = CANDIDATES[id], c = CITIES.find(c => c.id === P.city), [x, y] = candidateSpot(c);
-    tg.push({ name: `${P.name} (pareja) · ${c.name}`, tg: [x, y + 1] });
-  }
-  for (const m of world.base) {
-    const k = COURIER[m.id];
-    al.push(k ? { name: m.name, map: m.id, x: k[0], y: k[1] } : { name: m.name, g: [m.origin[0] + Math.floor(m.w / 2), m.origin[1] + Math.floor(m.h / 2)] });
-  }
-  return { tg, al };
+  const at = (id, x, y) => ({ map: id, x, y });
+  const name = id => world.get?.(id)?.name || id;
+  const sur = [];
+  for (const [id, [x, y]] of Object.entries(SUR)) sur.push({ name: name(id), ...at(id, x, y) });
+  sur.push({ name: 'Gimnasio extra de Ciudad Cascada (Amaranta)', ...at('cascada', 34, 12) });
+  sur.push({ name: 'Cueva Guácharo (entrada del caño)', ...at('cano', 22, 25) });
+  for (const [id, [map, x, y]] of Object.entries(MOTEL_DOORS)) sur.push({ name: MOTEL_NAMES[id], ...at(map, x, y) });
+  for (const [id, L] of Object.entries(LOTS)) sur.push({ name: `Lote en venta · ${L.name}`, ...at(L.map, L.door[0], L.door[1] + 1) });
+  for (const P of Object.values(CANDIDATES)) sur.push({ name: `${P.name} (pareja) · ${P.town}`, ...at(P.home.map, P.home.x, P.home.y + 1) });
+  const al = (world.base || []).map(m => COURIER[m.id] ? { name: m.name, ...at(m.id, ...COURIER[m.id]) } : { name: m.name, g: [m.origin[0] + Math.floor(m.w / 2), m.origin[1] + Math.floor(m.h / 2)] });
+  return { sur, al };
 }
 
 // Casilla libre más cercana a (gx, gy) en coordenadas globales, buscando en anillos cada vez más grandes:
@@ -55,6 +44,5 @@ export function findFree(world, st, gx, gy, maxR = 40) {
 // Punto exacto de un lugar de la lista: los que traen mapa y casilla se usan tal cual; los demás se buscan.
 export function spotOf(world, st, p) {
   if (p.map) return { map: p.map, x: p.x, y: p.y };
-  if (p.tg) return findFree(world, st, TG.X + p.tg[0], TG.Y + p.tg[1]);
   return findFree(world, st, p.g[0], p.g[1], 60);
 }

@@ -60,3 +60,22 @@ test('saves from before Forma Alba get the band once they have a badge, and neve
   const fresh = parseState(JSON.stringify(newState('Nadia')));
   assert.equal(fresh.bag.brazaleteAlba, undefined);
 });
+
+test('saves from the old big map come back to Pueblo Llanero and keep their houses in the new lots', async () => {
+  const { parseState, SOUTH_LOTS } = await import('../src/core/state.js');
+  const old = { version: 1, name: 'Santi', map: 'tg_40_5', x: 17, y: 10, dir: 0, money: 1000, badges: ['hoja'], bag: { llavesCarro: 1, licenciaPiloto: 1, tonico: 2 },
+    lastHeal: { map: 'tgi_posada_cruce', x: 6, y: 7 }, carColor: '#d8443a', tgSeen: 'AAAA', visited: { brisal: true, tg_40_5: true, tgi_posada_cruce: true },
+    houses: { cruce_81_60: { model: 'casona', wall: '#f6eedc', roof: '#3f7fc8', furniture: ['sofa'], city: 'cruce' } } };
+  const st = parseState(JSON.stringify(old), 1);
+  assert.deepEqual([st.map, st.x, st.y], ['sabana', 7, 13]);
+  assert.equal(st.lastHeal.map, 'posadaSabana');
+  assert.ok(!st.bag.llavesCarro && !st.bag.licenciaPiloto && st.bag.tonico === 2);
+  assert.ok(!('carColor' in st) && !('tgSeen' in st) && !st.visited.tg_40_5 && st.visited.brisal);
+  assert.deepEqual(Object.keys(st.houses), [SOUTH_LOTS[0]]);
+  assert.deepEqual(st.houses[SOUTH_LOTS[0]], { model: 'casona', wall: '#f6eedc', roof: '#3f7fc8', furniture: ['sofa'] });
+  // Con más casas que lotes, las que no caben se devuelven en plata.
+  const many = { ...old, houses: Object.fromEntries(Array.from({ length: 10 }, (_, i) => [`x_${i}_0`, { model: 'sencilla', furniture: [] }])) };
+  const st2 = parseState(JSON.stringify(many), 1);
+  assert.equal(Object.keys(st2.houses).length, SOUTH_LOTS.length);
+  assert.equal(st2.money, 1000 + 2 * 12000);
+});

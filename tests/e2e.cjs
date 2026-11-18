@@ -168,7 +168,7 @@ async function run() {
     await page.evaluate(mode=>{localStorage.clear();localStorage.setItem('alborada-graphics-v1',JSON.stringify({mode,quality:'low'}));},GRAPHICS_MODE);
     await page.reload(); await sleep(700);
     await shot('titulo');
-    assert.match(await page.textContent('#panel .title-news'), /Tierra Grande/, 'el título avisa lo nuevo de la versión');
+    assert.match(await page.textContent('#panel .title-news'), /sur de Alborada/, 'el título avisa lo nuevo de la versión');
     await page.click('#panel [data-act="new"]');
     await page.fill('#pname', 'Santi');
     await page.click('#panel [data-act="ok"]');
@@ -351,7 +351,7 @@ async function run() {
     await walkTo(22, 7, 'marea');
     await talkTo(10, 5);
     for (let i = 0; i < 20 && !(await page.$('#panel .ilist')); i++) { await tap('z', 40); await sleep(120); }
-    assert.ok((await page.$$eval('#panel .ilist button', b => b.map(e => e.textContent))).includes('Tierra Grande · Parador del Llano'), 'la Mensajera también lleva a Tierra Grande');
+    assert.ok(!(await page.$$eval('#panel .ilist button', b => b.map(e => e.textContent))).some(t => /Tierra Grande/.test(t)), 'la Mensajera ya no lleva al mapa gigante');
     await page.click('#panel .ilist [data-act="0"]');
     await settle();
     s = await st(); assert.equal(s.map, 'brisal', 'el viaje rápido debe llevar a Brisal');
@@ -477,103 +477,71 @@ async function run() {
     await sleep(600); await settle();
     log('leyenda de la Bruma (Fraguón) OK');
 
-    // ------------------------------------------------ Tierra Grande: autopista, carro, avioneta, mapa y criaturas nuevas
-    await page.evaluate(() => { __game.ow.load('autopistaLlano', 14, 26, 0, false); });
+    // ------------------------------------------------ El sur de Alborada: bajada desde Pueblo Llanero, criaturas nuevas, gimnasio extra y leyendas
+    await page.evaluate(() => { __game.ow.load('sabana', 20, 29, 0, false); });
     await sleep(600); await settle();
-    for (let i = 0; i < 5; i++) await step('ArrowDown');
-    s = await st(); assert.ok(/^tg_40_0$/.test(s.map), 'la Autopista del Llano baja caminando a Tierra Grande: ' + s.map);
-    await page.evaluate(() => { __game.ow.load('tg_40_5', 17, 10, 1, false); });   // frente a la gasolinera, al lado de Doña Rueda
-    await sleep(800); await settle();
-    const rueda = await page.evaluate(() => { const n = __game.ow.npc('tgLlaves'); return n && [n.x, n.y]; });
-    assert.ok(rueda, 'Doña Rueda está en el Parador del Llano');
-    await talkTo(rueda[0], rueda[1]); await settle(300000, { answer: 1 });
-    s = await st(); assert.ok(s.bag.llavesCarro, 'Doña Rueda presta el carro');
-    assert.equal(await page.evaluate(() => __game.state.carColor), '#3a6ad8', 'el carro sale del color escogido');
-    // Por una calle de Villa Cruce, en turbo.
-    await page.evaluate(() => { __game.ow.load('tg_40_30', 30, 3, 3, false); });
-    await sleep(800); await settle();
-    await tap('c');
-    assert.equal(await page.evaluate(() => __game.ow.vehicle), 'car', 'C sube al carro');
-    const car0 = await page.evaluate(() => __game.ow.tgPos());
-    await page.keyboard.down('x'); await page.keyboard.down('ArrowRight'); await sleep(1500); await page.keyboard.up('ArrowRight'); await page.keyboard.up('x');
-    await settle();
-    const car1 = await page.evaluate(() => __game.ow.tgPos());
-    assert.ok(car1[0] - car0[0] >= 8, `el carro avanza rápido por la calle (${car0[0]} → ${car1[0]})`);
-    await shot('tierra-grande-carro');
-    await tap('z');
-    assert.equal(await page.evaluate(() => __game.ow.vehicle), null, 'A baja del carro');
-    // Avioneta: licencia, despegue, vuelo, mapa en el aire y aterrizaje en otro aeropuerto.
-    await page.evaluate(() => { __game.ow.load('tg_43_7', 8, 25, 1, false); });
-    await sleep(800); await settle();
-    const ctl = await page.evaluate(() => { const n = __game.ow.npcs.find(n => n.talk === 'aeropuerto'); return n && [n.x, n.y]; });
-    await talkTo(ctl[0], ctl[1]); await settle();
-    assert.ok(await page.evaluate(() => !!__game.ow.flight && __game.state.bag.licenciaPiloto === 1), 'la controladora da la licencia y deja despegar');
-    await page.waitForFunction(() => __game.ow.flight?.phase === 'cruise', {}, { timeout: 60000 });
-    const fly0 = await page.evaluate(() => [__game.ow.flight.x, __game.ow.flight.y]);
-    await page.keyboard.down('ArrowDown'); await sleep(1500); await page.keyboard.up('ArrowDown');
-    const fly1 = await page.evaluate(() => [__game.ow.flight.x, __game.ow.flight.y, __game.ow.flight.heading]);
-    assert.ok(Math.hypot(fly1[0] - fly0[0], fly1[1] - fly0[1]) > 20 && fly1[2] > .3, 'la avioneta vuela y gira hacia donde apunta la cruceta');
-    await shot('tierra-grande-vuelo');
-    await tap('Escape'); await choose('map');
-    assert.ok(await page.$('#panel .rm-tabs') && await page.$('#panel .rmap.tg canvas'), 'el mapa muestra Tierra Grande');
-    await page.click('#panel [data-act="rm:alborada"]'); await sleep(200);
-    assert.ok(await page.$('#panel .rmap:not(.tg)'), 'y se puede cambiar a Alborada');
-    await page.click('#panel [data-back]'); await sleep(150);
-    await choose('save'); await settle();
-    assert.ok(await page.evaluate(() => !!__game.ow.flight), 'en pleno vuelo no se guarda (y el vuelo sigue)');
-    await page.evaluate(() => { const f = __game.ow.flight; f.x = 3300; f.y = 676; f.heading = 0; });
-    await tap('z');
-    await page.waitForFunction(() => !__game.ow.flight && __game.ow.scripts === 0 && !__game.fading, {}, { timeout: 60000 });
-    await settle();
-    assert.equal(await page.evaluate(() => __game.ow.map.name), 'Aeropuerto de Altamira', 'aterriza en la pista de abajo');
-    assert.ok(await page.evaluate(() => (__game.state.tgSeen || '').length > 100), 'lo explorado queda guardado en la partida');
-    // Una criatura nueva en el parque de una ciudad (encuentro forzado y captura con el código de prueba apagado: sólo se mira que exista).
-    await page.evaluate(() => { __game.ow.load('tg_40_30', 30, 3, 3, false); });
-    await sleep(500); await settle();
-    const fauna = await page.evaluate(async () => { const { encounterList } = await import('/src/data/creatures.js'); return encounterList('tgCiudad', 12).map(e => e[0]); });
-    assert.ok(fauna.includes('semaforin'), 'los parques de la ciudad tienen Semaforín');
-    await page.evaluate(() => { __game.maybeEncounter('tgCiudad', 'grass', { force: true }); });   // sin esperar: el combate lo resuelve settle
+    for (let i = 0; i < 4; i++) await step('ArrowDown');
+    s = await st(); assert.equal(s.map, 'ruta26', 'de Pueblo Llanero se baja caminando a la Ruta 26: ' + s.map);
+    await shot('sur-ruta26');
+    const fauna = await page.evaluate(async () => { const { encounterList } = await import('/src/data/creatures.js'); return encounterList('cascadaParque', 12).map(e => e[0]); });
+    assert.ok(fauna.includes('semaforin'), 'el parque de Ciudad Cascada tiene Semaforín');
+    await page.evaluate(() => { __game.ow.load('cascada', 10, 24, 0, false); });
+    await sleep(600); await settle();
+    await page.evaluate(() => { __game.maybeEncounter('cascadaParque', 'grass', { force: true }); });   // sin esperar: el combate lo resuelve settle
     await page.waitForFunction(() => __game.scene === 'battle', {}, { timeout: 30000 });
-    await sleep(1500); await shot('tierra-grande-criatura-nueva');
+    await sleep(1500); await shot('sur-criatura-nueva');
     await settle();
-    log('Tierra Grande: autopista, carro, avioneta, mapa y criaturas nuevas OK');
+    // Gimnasio extra (Hada): Amaranta da la Medalla Arcoíris, que no cuenta para la Liga.
+    await page.evaluate(() => { __game.state.party.forEach(c => { c.hp = c.stats.hp; }); __game.ow.load('cascada', 34, 13, 1, false); });
+    await sleep(600); await settle();
+    await shot('sur-gimnasio-hada');
+    await step('ArrowUp'); await step('ArrowUp'); await settle();
+    s = await st(); assert.equal(s.map, 'gym9', 'se entra al gimnasio de Ciudad Cascada');
+    const nBadges = (await st()).badges.length;
+    await page.evaluate(() => { for (const n of __game.ow.npcs) if (n.trainer && !n.badge) __game.state.flags['t_' + n.id] = true; __game.ow.refreshNpcs(); });
+    await page.evaluate(() => { __game.ow.load('gym9', 6, 4, 1, false); });
+    await sleep(500); await settle();
+    await talk(); await settle();
+    s = await st();
+    assert.ok(s.badges.includes('arcoiris'), 'Amaranta entrega la Medalla Arcoíris');
+    assert.equal(s.badges.length, nBadges + 1);
+    assert.ok(await page.evaluate(async () => { const { badgeCount } = await import('/src/data/gyms.js'); return badgeCount(__game.state) === 8; }), 'la medalla extra no cambia la cuenta de la Liga');
+    // Con la medalla, el Tunjo aparece en la sala dorada de la Cueva Guácharo.
+    await page.evaluate(() => { __game.ow.load('guacharo', 26, 2, 1, false); });
+    await sleep(600); await settle();
+    assert.ok(await page.evaluate(() => __game.ow.map.objects.some(o => o.legend === 'tunjo' && o.when(__game.state))), 'el Tunjo espera en la cueva');
+    await shot('sur-cueva-tunjo');
+    log('el sur: Ruta 26, criaturas nuevas, gimnasio extra y leyendas OK');
 
-    // ------------------------------------------------ Vida en Tierra Grande: motel, casa propia con muebles y pareja
-    await page.evaluate(() => { __game.state.money = 99999; __game.state.party.forEach(c => { c.hp = 1; }); __game.ow.load('tgi_motel_descanso', 6, 7, 1, false); });
+    // ------------------------------------------------ Vida en el sur: motel, casa propia con muebles y pareja
+    await page.evaluate(() => { __game.state.money = 99999; __game.state.party.forEach(c => { c.hp = 1; }); __game.ow.load('motel_viajero', 6, 7, 1, false); });
     await sleep(600); await settle();
     await walkTo(2, 4); await face('ArrowUp'); await talk(); await settle(300000, { answer: 2 });
     s = await st();
     assert.ok(s.party.every(c => c.hp === c.max), 'dormir en el motel cura al equipo');
-    assert.ok(await page.evaluate(() => __game.state.day === 1 && __game.state.lastHeal.map === 'tgi_motel_descanso' && Number.isFinite(__game.state.clockShift)), 'dormir hasta mañana pasa el día, adelanta el reloj y deja el motel como regreso');
+    assert.ok(await page.evaluate(() => __game.state.day === 1 && __game.state.lastHeal.map === 'motel_viajero' && Number.isFinite(__game.state.clockShift)), 'dormir hasta mañana pasa el día, adelanta el reloj y deja el motel como regreso');
     assert.equal(s.money, 99999 - 300, 'la pieza vale $300');
-    // Casa: comprar un lote en Villa Cruce, construir, entrar, amoblar y dormir.
-    const lot = await page.evaluate(async () => {
-      const t = await import('/src/world/tierra.js'), c = t.CITIES.find(c => c.id === 'cruce');
-      for (let by = c.y0 / 24; by * 24 < c.y1 - 4; by++) for (let bx = c.x0 / 24; bx * 24 < c.x1 - 4; bx++) if (t.blockPlan(c, bx, by).type === 'lote') {
-        const gx = bx * 24 + 4 + 13, gy = by * 24 + 4 + 14, i = Math.floor(gx / 48), j = Math.floor(gy / 48);
-        __game.ow.load(`tg_${i}_${j}`, gx - i * 48, gy - j * 48, 1, false);
-        return `cruce_${bx}_${by}`;
-      }
-    });
+    // Casa: comprar el lote de Pueblo Ribera, construir, entrar, amoblar y dormir.
+    const lot = 'ribera2';
+    await page.evaluate(() => { __game.ow.load('ribera', 19, 25, 1, false); });   // frente al letrero del lote
     await sleep(800); await settle();
     await talk(); await settle(300000, { answer: 0 });
     assert.ok(await page.evaluate(l => __game.state.houses?.[l]?.model === 'sencilla', lot), 'el lote se compra y la casa queda construida');
-    const casaDoor = await page.evaluate(l => __game.ow.map.warps.find(w => w.to === `tgi_casa_${l}`), lot);
+    const casaDoor = await page.evaluate(l => __game.ow.map.warps.find(w => w.to === `casa_${l}`), lot);
     await walkTo(casaDoor.x, casaDoor.y + 1); await step('ArrowUp'); await settle();
-    s = await st(); assert.equal(s.map, `tgi_casa_${lot}`, 'se entra a la casa propia');
+    s = await st(); assert.equal(s.map, `casa_${lot}`, 'se entra a la casa propia');
     await shot('casa-propia-vacia');
     await walkTo(2, 3); await face('ArrowUp'); await talk(); await settle(300000, { answer: 0 });
     const nFurn = await page.evaluate(async l => { const { FURNITURE } = await import('/src/world/hogar.js'); return [__game.state.houses[l].furniture.length, FURNITURE.length]; }, lot);
     assert.equal(nFurn[0], nFurn[1], 'el catálogo vende todos los muebles y quedan en la casa');
     await walkTo(1, 3); await face('ArrowLeft'); await talk(); await settle(300000, { answer: 0 });
-    assert.equal(await page.evaluate(() => __game.state.lastHeal.map), `tgi_casa_${lot}`, 'la cama de la casa deja la casa como regreso');
+    assert.equal(await page.evaluate(() => __game.state.lastHeal.map), `casa_${lot}`, 'la cama de la casa deja la casa como regreso');
     await shot('casa-propia-amoblada');
-    // Pareja: con el cariño y las citas listas, Valentina acepta y te acompaña.
+    // Pareja: con el cariño y las citas listas, Valentina (Ciudad Cascada) acepta y te acompaña.
     await page.evaluate(async () => {
-      const { CANDIDATES, candidateSpot } = await import('/src/world/hogar.js'), { CITIES } = await import('/src/world/tierra.js');
+      const { CANDIDATES } = await import('/src/world/hogar.js'), h = CANDIDATES.valentina.home;
       const st = __game.state; st.romance = { valentina: { pts: 80, dates: 3, talk: -1, gift: -1, date: -1, met: true } }; st.bag.ramoFlores = 1;
-      const [gx, gy] = candidateSpot(CITIES.find(c => c.id === CANDIDATES.valentina.city)), i = Math.floor(gx / 48), j = Math.floor(gy / 48);
-      __game.ow.load(`tg_${i}_${j}`, gx - i * 48, gy - j * 48 + 2, 1, false);
+      __game.ow.load(h.map, h.x, h.y + 2, 1, false);
     });
     await sleep(800); await settle();
     const vale = await page.evaluate(() => { const n = __game.ow.npcs.find(n => n.cand === 'valentina'); return [n.x, n.y]; });
@@ -584,14 +552,13 @@ async function run() {
     await page.waitForSelector('#panel .choice'); await page.click('#panel [data-act="3"]');   // pedirle que sea tu novia
     await settle(300000, { answer: 0 });
     assert.ok(await page.evaluate(() => __game.state.pareja?.id === 'valentina' && !!__game.ow.follower), 'Valentina acepta y te acompaña');
-    const p0 = await page.evaluate(() => [__game.ow.player.x, __game.ow.player.y]);
     for (const k of ['ArrowDown', 'ArrowDown', 'ArrowDown']) await step(k);
+    await page.waitForFunction(() => !__game.ow.follower?.moving && !__game.ow.player.moving);   // la pareja llega un paso después
     const fol = await page.evaluate(() => { const f = __game.ow.follower, p = __game.ow.player; return Math.abs(f.x - p.x) + Math.abs(f.y - p.y); });
     assert.ok(fol <= 1, 'la pareja camina detrás de ti');
     await shot('pareja-acompana');
-    assert.ok(await page.evaluate(() => !__game.ow.npcs.some(n => n.cand === 'valentina')), 'mientras te acompaña no se queda parada en su ciudad');
-    void p0;
-    // Para el resto de la prueba, la pareja se queda esperando en su ciudad (así no queda en el camino).
+    assert.ok(await page.evaluate(() => !__game.ow.npcs.some(n => n.cand === 'valentina')), 'mientras te acompaña no se queda parada en su pueblo');
+    // Para el resto de la prueba, la pareja se queda esperando en su pueblo (así no queda en el camino).
     await page.evaluate(() => { __game.state.pareja.follow = false; __game.ow.setFollower(); __game.ow.refreshNpcs(); });
     log('motel, casa propia con muebles y pareja OK');
     await page.evaluate(([m, x, y]) => { __game.ow.load(m, x, y, 0, false); }, [home.map, home.x, home.y]);
@@ -656,26 +623,24 @@ async function run() {
     await tap('Escape'); await page.waitForSelector('#panel .home-dev');
     await page.click('#panel [data-act="dev"]'); await page.waitForSelector('#panel.dev-panel');
     await page.click('#panel [data-back]'); await settle();
-    // Lista de lugares: Parador del Llano, y de una al carro.
+    // Lista de lugares: lo primero es la Ruta 26 (lo nuevo del sur).
     await devPanel(); await page.click('#panel [data-act="places"]'); await page.waitForSelector('#panel .dev-places');
-    await page.click('#panel [data-act="t0"]'); await devIdle();
-    s = await st(); assert.equal(s.map, 'tg_40_5', 'el primer lugar de la lista es el Parador del Llano');
-    await devPanel(); await page.click('#panel [data-act="car"]');
-    await page.waitForFunction(() => __game.ow.vehicle === 'car'); await devIdle();
-    assert.ok(await page.evaluate(() => !!__game.state.bag.llavesCarro), 'el carro ya trae las llaves');
-    await shot('dev-carro');
-    // Mapa completo: tocar Villa Cruce y confirmar.
+    await page.click('#panel [data-act="s0"]'); await devIdle();
+    s = await st(); assert.equal(s.map, 'ruta26', 'el primer lugar de la lista es la Ruta 26');
+    // Mapa completo: tocar Ciudad Cascada y confirmar.
     await devPanel(); await page.click('#panel [data-act="map"]'); await page.waitForSelector('#panel .rmap.dev-pick');
-    const cruce = await page.evaluate(async () => { const { CITIES, SIZE } = await import('/src/world/tierra.js'); const c = CITIES.find(c => c.id === 'cruce'); return [(c.x0 + c.x1) / 2, (c.y0 + c.y1) / 2, SIZE]; });
-    await sleep(600); await shot('dev-mapa');
+    const casc = await page.evaluate(() => {
+      const ms = __game.world.base, x0 = Math.min(...ms.map(m => m.origin[0])) - 3, y0 = Math.min(...ms.map(m => m.origin[1])) - 3;
+      const x1 = Math.max(...ms.map(m => m.origin[0] + m.w)) + 3, y1 = Math.max(...ms.map(m => m.origin[1] + m.h)) + 3, c = __game.world.get('cascada');
+      return [(c.origin[0] + 8 - x0) / (x1 - x0), (c.origin[1] + 14 - y0) / (y1 - y0)];
+    });
+    await sleep(300); await shot('dev-mapa');
     const bb = await (await page.$('#panel .rmap')).boundingBox();
-    await page.mouse.click(bb.x + bb.width * cruce[0] / cruce[2], bb.y + bb.height * cruce[1] / cruce[2]);
+    await page.mouse.click(bb.x + bb.width * casc[0], bb.y + bb.height * casc[1]);
     await page.waitForSelector('#panel .choice[data-act="0"]'); await page.click('#panel .choice[data-act="0"]');
-    await page.waitForFunction(() => __game.state.map.startsWith('tg_') && __game.state.map !== 'tg_40_5'); await devIdle();
-    const atCruce = await page.evaluate(() => __game.ow.tgPos());
-    assert.ok(Math.hypot(atCruce[0] - cruce[0], atCruce[1] - cruce[1]) < 40, `tocar el mapa lleva a Villa Cruce (quedó en ${atCruce.map(Math.round)})`);
+    await page.waitForFunction(() => __game.state.map === 'cascada'); await devIdle();
+    s = await st(); assert.equal(s.map, 'cascada', 'tocar el mapa lleva a Ciudad Cascada');
     // Atravesar paredes: desde una casilla libre con un edificio encima, camina hacia arriba y se mete.
-    await page.evaluate(() => __game.ow.toggleCar());
     await devPanel(); await page.click('#panel [data-act="ghost"]'); await page.click('#panel [data-back]'); await devIdle();
     const wall = await page.evaluate(() => {
       const ow = __game.ow, p = ow.player, m = ow.map;
@@ -693,25 +658,20 @@ async function run() {
     // Paseo tranquilo: ni con la suerte a favor sale una criatura.
     const calm = await page.evaluate(async () => {
       const ow = __game.ow, r = Math.random; Math.random = () => 0;
-      const m = ow.map, enc = m.encounters; m.encounters = m.encounters || 'tgCiudad';
+      const m = ow.map, enc = m.encounters; m.encounters = m.encounters || 'cascadaParque';
       try { await ow.afterStep(true); return __game.scene; } finally { Math.random = r; m.encounters = enc; }
     });
     assert.equal(calm, 'overworld', 'con paseo tranquilo no salen criaturas');
-    // Avioneta: despega desde ahí mismo; y «Volver a donde estaba» regresa a la historia.
-    await devPanel(); await page.click('#panel [data-act="plane"]');
-    await page.waitForFunction(() => !!__game.ow.flight); await sleep(800);
-    await shot('dev-avioneta');
-    assert.ok(await page.evaluate(() => !!__game.state.bag.licenciaPiloto), 'la avioneta ya trae la licencia');
-    await page.waitForFunction(() => !__game.ow.locked);
+    // «Volver a donde estaba» regresa a la historia.
     await devPanel(); await page.click('#panel [data-act="back"]');
-    await page.waitForFunction(m => __game.state.map === m && !__game.ow.flight, devFrom.map); await devIdle();
+    await page.waitForFunction(m => __game.state.map === m, devFrom.map); await devIdle();
     s = await st(); assert.deepEqual([s.map, s.x, s.y], [devFrom.map, devFrom.x, devFrom.y], 'vuelve a donde estaba');
     // Se apaga con la misma clave: sin botón y sin atravesar paredes.
     await page.evaluate(() => { __ui.closePanel(); __game.menus.codes(); }); await page.waitForSelector('#ccode');
     await tryCode('dev prueba');
     await page.evaluate(() => { __ui.closePanel(); __game.menus.home(false); }); await settle();
     assert.ok(await page.evaluate(async () => { const { devOn } = await import('/src/data/cheats.js'); return document.getElementById('devBtn').classList.contains('hidden') && !devOn(__game.state, 'ghost') && !devOn(__game.state, 'calm'); }), 'apagado, todo vuelve a la normalidad');
-    log('modo desarrollador: lugares, carro, mapa completo, atravesar paredes, paseo tranquilo, avioneta y volver OK');
+    log('modo desarrollador: lugares, mapa completo, atravesar paredes, paseo tranquilo y volver OK');
 
     // Opción de perspectiva y hora del día (y la versión del juego al pie de las opciones)
     await tap('Escape'); await page.click('#panel [data-act="options"]');

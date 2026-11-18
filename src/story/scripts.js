@@ -3,7 +3,7 @@ import { ui } from '../ui/ui.js';
 import { SPECIES, RIVAL_PICK, makeCreature, rivalForm } from '../data/creatures.js';
 import { ITEMS, SPECIAL } from '../data/items.js';
 import { gymOf, hasBadge, badgeCount, nextGym, leagueOpen, LEAGUE_BADGES } from '../data/gyms.js';
-import { AIRPORTS, CITIES } from '../world/tierra.js';
+import { LOTS } from '../world/maps7.js';
 import { VIDA } from './vida.js';
 
 const N = { mom: 'Mamá', nico: 'Nico', prof: 'Prof. Ceiba', aide: 'Ayudante', kid: 'Niño', nurse: 'Enfermera Malva', clerk: 'Dependiente', vendor: 'Vendedora', rivalMom: 'Mamá de Nico', guard: 'Guardia', grunt: 'Recluta Eclipse', bruma: 'Bruma', umbra: 'Umbra', aurora: 'Campeona Aurora', courier: 'Mensajera', sailor: 'Capitán' };
@@ -214,13 +214,11 @@ const S = {
     const st = game.state;
     if (!(st.badges || []).length) return say(N.courier, '¡Hola! Soy la Mensajera de Alborada.', 'Cuando tengas tu primera medalla, te llevo volando a cualquier pueblo que ya conozcas.');
     const places = [['Pueblo Brisal', 'brisal', 5, 8], ['Villa Arenal', 'arenal', 18, 8], ['Ciudad Corola', 'corola', 6, 16], ['Pueblo Cobre', 'cobre', 6, 17], ['Ciudad Marea', 'marea', 22, 8], ['Pueblo Guadua', 'guadua', 7, 12], ['Puerto Caracol', 'caracol', 7, 8], ['Cabo Faro', 'cabo', 6, 16], ['Valle de las Palmas', 'palmar', 7, 15], ['Pueblo Llanero', 'sabana', 7, 13],
-      ['Ciudad Voltio', 'voltio', 6, 16], ['Pueblo Niebla', 'niebla', 6, 19], ['Villa Cafetal', 'cafetal', 6, 12], ['Ciudad Escarcha', 'escarcha', 6, 17], ['Ciudad Albor', 'albor', 14, 13], ['Liga Alborada', 'ruta5', 7, 7]]
+      ['Ciudad Voltio', 'voltio', 6, 16], ['Pueblo Niebla', 'niebla', 6, 19], ['Villa Cafetal', 'cafetal', 6, 12], ['Ciudad Escarcha', 'escarcha', 6, 17], ['Ciudad Albor', 'albor', 14, 13], ['Liga Alborada', 'ruta5', 7, 7],
+      ['Pueblo Ribera', 'ribera', 28, 13], ['Ciudad Cascada', 'cascada', 8, 14], ['Caleta Sol', 'caleta', 25, 12]]
       .filter(p => st.visited && st.visited[p[1]]).map(([name, map, x, y]) => ({ name, map, x, y }));
-    // Tierra Grande: siempre se puede ir al Parador del Llano (donde Doña Rueda presta el carro); además,
-    // las ciudades donde ya entraste a la posada, y tus casas.
-    places.push({ name: 'Tierra Grande · Parador del Llano', map: 'tg_40_5', x: 17, y: 10 });
-    for (const c of CITIES) if (st.visited?.[`tgi_posada_${c.id}`]) places.push({ name: c.name, map: `tgi_posada_${c.id}`, x: 6, y: 7 });
-    for (const lot of Object.keys(st.houses || {})) { const c = CITIES.find(c => c.id === lot.split('_')[0]); places.push({ name: `Tu casa · ${c ? c.name : 'Tierra Grande'}`, map: `tgi_casa_${lot}`, x: 6, y: 8 }); }
+    // Y tus casas del sur (se llega a la puerta de adentro).
+    for (const lot of Object.keys(st.houses || {})) if (LOTS[lot]) places.push({ name: `Tu casa · ${LOTS[lot].name}`, map: `casa_${lot}`, x: 6, y: 8 });
     await say(N.courier, '¡Hola! ¿A dónde te llevo?');
     const i = await game.menus.travel(places);
     if (i < 0) return say(N.courier, '¡Cuando quieras!');
@@ -282,6 +280,12 @@ const S = {
     await ui.say([`¡${st.name} recibió la MEDALLA ${g.name.toUpperCase()}!`]);
     st.bag[gift] = (st.bag[gift] || 0) + qty;
     await ui.say([qty > 1 ? `¡Y además ${qty} ${ITEMS[gift].name}!` : `¡Y además: ${ITEMS[gift].name}!`]);
+    // La medalla extra del sur no cuenta para la Liga: despierta las cuatro leyendas del sur.
+    if (g.extra) {
+      await ui.say(['La Medalla Arcoíris no la pide la Liga, pero algo cambió en el sur...', 'Dicen que el Mohán, la Madremonte, el Tunjo y Esmeraldón ya se dejan ver.']);
+      game.toast(`Nuevo: ${g.next}`);
+      return;
+    }
     if (!st.bag.brazaleteAlba) {
       st.bag.brazaleteAlba = 1;
       await ui.say(['Y una cosa más: ¡un Brazalete Alba!', 'Con él, una vez por combate, tu criatura despierta la Forma Alba: crece, brilla y se vuelve más fuerte.', 'En LUCHAR toca FORMA ALBA antes de escoger el ataque.']);
@@ -390,34 +394,6 @@ const S = {
     await say(N.guard, 'Al oeste del lago hay todo un valle de palmas gigantes.', 'Pero las criaturas de allá no son para principiantes. Trae la Medalla Marea.');
   },
   // El barco de Cabo Faro a la Isla Totuma (ida y vuelta).
-  // ---------- Tierra Grande ----------
-  // Doña Rueda, en el Parador del Llano: presta el carro (y uno escoge el color).
-  async llavesCarro(ow, game) {
-    const st = game.state, who = 'Doña Rueda';
-    if (st.bag.llavesCarro) return say(who, '¿Cómo va ese carrito? Cuídemelo, que es de la familia.', 'Acuérdese: C (o el botón CARRO) para subirse y bajarse, y B sostenido para el turbo.');
-    await say(who, '¡Bienvenido a Tierra Grande, mijo! Aquí todo queda lejísimos.', 'Las ciudades están a horas de camino... pero no se preocupe.', 'Le presto este carrito. Es viejito pero no se vara nunca.');
-    const i = await ui.ask('¿De qué color lo quiere?', ['Rojo', 'Azul', 'Amarillo', 'Verde'], { name: who, cancel: false });
-    st.carColor = ['#d8443a', '#3a6ad8', '#f0c030', '#2a9a5a'][Math.max(0, i)];
-    st.bag.llavesCarro = 1;
-    await ui.say(['¡Recibiste las LLAVES DEL CARRO!', 'Pulsa C (o el botón CARRO) para subirte y bajarte. Mantén B para ir en turbo.', 'En carro no salen criaturas salvajes ni te paran los entrenadores.']);
-    await say(who, 'Y si quiere ir más lejos todavía, en los aeropuertos prestan avionetas. El más cerca es la Pista Norte, aquí al este.');
-    ow.vehicleUI();
-  },
-  // Controladora de cada aeropuerto: da la Licencia de Piloto la primera vez y deja despegar.
-  async aeropuerto(ow, game, npc) {
-    const st = game.state, who = 'Controladora', ap = AIRPORTS.find(a => a.id === npc?.arg) || AIRPORTS[0];
-    if (!st.bag.licenciaPiloto) {
-      await say(who, `Bienvenido al ${ap.name}.`, 'Aquí prestamos avionetas para volar por todo Tierra Grande.', 'Sólo necesita la Licencia de Piloto... y como es su primera vez, se la regalo.');
-      st.bag.licenciaPiloto = 1;
-      await ui.say(['¡Recibiste la LICENCIA DE PILOTO!', 'En el aire, la avioneta gira hacia donde apuntes con la cruceta. B es turbo.', 'Para aterrizar, vuela encima de cualquier pista y oprime A. Arriba verás una flecha hacia la más cercana.']);
-      const c = await ui.ask('¿De qué color quiere la avioneta?', ['Blanca', 'Naranja', 'Azul'], { name: who, cancel: false });
-      st.planeColor = ['#f6f2ea', '#e2603f', '#3a6ad8'][Math.max(0, c)];
-    }
-    const i = await ui.ask('¿Despegamos?', ['¡Sí, a volar!', 'Ahora no'], { name: who });
-    if (i !== 0) return say(who, 'Cuando quiera. La avioneta lo espera en la pista.');
-    await say(who, `Torre del ${ap.name} a avioneta: pista libre. ¡Buen vuelo!`);
-    await ow.takeoff(ap);
-  },
   async barcoIsla(ow, game) {
     const st = game.state;
     if (badgeCount(st) < LEAGUE_BADGES) return say(N.sailor, 'Mar adentro está la Isla Totuma, pero el mar de allá no es para cualquiera.', `Zarpo con quien tenga las ${LEAGUE_BADGES} medallas. Llevas ${badgeCount(st)}.`);
@@ -453,7 +429,12 @@ const S = {
       brumalia: { lv: 45, bg: 'grass', intro: ['La niebla se junta entre los árboles... y toma forma de cierva.', '¡Brumalia, la guardiana del Bosque Bruma!'], gone: 'Brumalia se deshizo en la niebla...' },
       fraguon: { lv: 45, bg: 'cave', intro: ['El suelo de la cueva está caliente. Algo golpea como un martillo...', '¡Fraguón despertó de su sueño de lava!'], gone: 'Fraguón volvió a hundirse en el calor de la roca...' },
       glaciel: { lv: 45, bg: 'mountain', intro: ['Empieza a nevar en plena ruta. Una sombra enorme tapa el sol...', '¡Glaciel, el cóndor de hielo, bajó de los nevados!'], gone: 'Glaciel se fue volando entre la nieve...' },
-      dracalba: { lv: 50, bg: 'lake', intro: ['La niebla, el fuego y la nieve que encontraste se reúnen sobre el lago.', 'El cielo se pone color de amanecer...', '¡Dracalba, el dragón del alba, despertó!'], gone: 'Dracalba subió hacia el sol y se perdió de vista...' }
+      dracalba: { lv: 50, bg: 'lake', intro: ['La niebla, el fuego y la nieve que encontraste se reúnen sobre el lago.', 'El cielo se pone color de amanecer...', '¡Dracalba, el dragón del alba, despertó!'], gone: 'Dracalba subió hacia el sol y se perdió de vista...' },
+      // Las leyendas del sur (con la Medalla Arcoíris de Ciudad Cascada).
+      mohan: { lv: 50, bg: 'lake', intro: ['El agua del caño se pone de todos los colores... y se oye una flauta.', '¡El Mohán salió del río!'], gone: 'El Mohán se hundió entre las piedras de colores...' },
+      madremonte: { lv: 50, bg: 'grass', intro: ['Las ramas se mueven sin viento y la selva se queda callada.', '¡La Madremonte salió a cuidar su bosque!'], gone: 'La Madremonte se perdió entre los árboles...' },
+      tunjo: { lv: 50, bg: 'cave', intro: ['Algo brilla como oro en el fondo de la sala...', '¡El Tunjo despertó!'], gone: 'El Tunjo volvió a quedarse quieto, como una figurita de oro...' },
+      esmeraldon: { lv: 50, bg: 'cave', intro: ['La pared de la cueva se ilumina de verde.', '¡Esmeraldón salió de la veta!'], gone: 'Esmeraldón se metió otra vez en la roca...' }
     }[sp];
     if (!L) return;
     await ui.say(L.intro);
@@ -500,5 +481,5 @@ const S = {
     game.toast('¡Eres campeón de Alborada!');
   }
 };
-// Moteles, casas propias y pareja (Tierra Grande).
+// Moteles, casas propias y pareja (el sur de Alborada).
 Object.assign(S, VIDA);

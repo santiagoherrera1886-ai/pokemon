@@ -1,6 +1,7 @@
-// Vida en Tierra Grande: moteles de carretera, casas propias (lote, construcción y muebles) y los datos de las
-// personas con las que se puede salir. Los interiores se generan como los de las posadas: siempre iguales;
+// Vida en el sur de Alborada: moteles de carretera, casas propias (lote, construcción y muebles) y los datos de
+// las personas con las que se puede salir. Los interiores se generan como los de las posadas: siempre iguales;
 // lo que cambia con la partida (si la casa está hecha, qué muebles hay) va en condiciones `when` y `dyn`.
+// Los lotes, los moteles y dónde vive cada persona están en maps7.js (Pueblo Ribera, Ciudad Cascada, Caleta Sol).
 import { MapBuilder } from './builder.js';
 
 // ---------------------------------------------------------------- Casas
@@ -29,7 +30,7 @@ export const FURNITURE = [
   { id: 'consola', name: 'Consola de videojuegos', price: 1800, pieces: [['console', 5, 4, 1, 1, { solid: false, sy: 4 }]] },
   { id: 'comedor', name: 'Comedor con dos sillas', price: 3000, pieces: [['table', 10, 4, 2, 1, { sy: -8 }], ['chair', 9, 4, 1, 1, {}], ['chair', 12, 4, 1, 1, {}]] },
   { id: 'sofa', name: 'Sofá', price: 2600, pieces: [['sofa', 3, 5, 2, 1, { sy: -6 }]] },
-  { id: 'biblioteca', name: 'Biblioteca', price: 2200, pieces: [['shelf', 7, 2, 2, 1, { sy: -16, text: ['Novelas, recetas y un atlas de Tierra Grande.'] }]] },
+  { id: 'biblioteca', name: 'Biblioteca', price: 2200, pieces: [['shelf', 7, 2, 2, 1, { sy: -16, text: ['Novelas, recetas y un atlas de Alborada.'] }]] },
   { id: 'hamaca', name: 'Hamaca', price: 1500, pieces: [['hammock', 0, 7, 2, 1, { sy: -8, text: ['Una hamaca de colores. Provoca echarse a dormir la siesta.'] }]] },
   { id: 'acuario', name: 'Acuario', price: 3200, pieces: [['aquarium', 9, 7, 2, 1, { sy: -12, text: ['Unos pececitos de colores nadan entre las plantas.'] }]] },
   { id: 'guitarra', name: 'Guitarra', price: 1200, pieces: [['guitar', 13, 7, 1, 1, { sy: -10, text: ['Una guitarra. Sabes tocar tres acordes... y con eso basta.'] }]] },
@@ -43,7 +44,7 @@ export const FURNITURE_BY_ID = Object.fromEntries(FURNITURE.map(f => [f.id, f]))
 // Interior de tu casa: cama (dormir, curar, guardar y volver aquí), computador con el catálogo de muebles,
 // y los muebles que hayas comprado.
 export function casaPropiaGen(id, lot, back) {
-  const b = new MapBuilder(id, 14, 10, 'o').meta({ name: 'Tu casa', outdoor: false, floor: 'o', wallColor: '#f6e8d6', region: 'tierra', lot });
+  const b = new MapBuilder(id, 14, 10, 'o').meta({ name: 'Tu casa', outdoor: false, floor: 'o', wallColor: '#f6e8d6', lot });
   b.rect(0, 0, 14, 2, 'W');
   b.set(6, 9, 'm').rect(0, 9, 6, 1, ' ').rect(7, 9, 7, 1, ' ');
   b.warp(6, 9, back[0], back[1], back[2], { face: 0, needDir: 0 });
@@ -61,7 +62,7 @@ export function casaPropiaGen(id, lot, back) {
 // ---------------------------------------------------------------- Moteles
 export const MOTEL_PRICE = 300;
 export function motelGen(id, name, back, mid) {
-  const b = new MapBuilder(id, 13, 9, 'k').meta({ name, outdoor: false, floor: 'k', style: 'center', wallColor: '#f4e2d6', region: 'tierra' });
+  const b = new MapBuilder(id, 13, 9, 'k').meta({ name, outdoor: false, floor: 'k', style: 'center', wallColor: '#f4e2d6', motel: mid });
   b.rect(0, 0, 13, 2, 'W');
   b.set(6, 8, 'm').rect(0, 8, 6, 1, ' ').rect(7, 8, 6, 1, ' ');
   b.warp(6, 8, back[0], back[1], back[2], { face: 0, needDir: 0 });
@@ -81,27 +82,27 @@ export function motelGen(id, name, back, mid) {
 export const WAKE = { noche: 20, manana: 7 };
 
 // ---------------------------------------------------------------- Pareja
-// Personas adultas de Tierra Grande con las que puedes salir. Cada una vive en una ciudad y tiene sus regalos
-// favoritos. Todo es de citas, regalos y paseos: apto para cualquier edad.
+// Personas adultas del sur de Alborada con las que puedes salir. Cada una vive en un pueblo (home: mapa y
+// casilla) y tiene sus regalos favoritos. Todo es de citas, regalos y paseos: apto para cualquier edad.
 export const CANDIDATES = {
-  valentina: { name: 'Valentina', look: 'valentina', city: 'bahia', a: 'a', job: 'veterinaria del puerto', loves: ['ramoFlores', 'peluche'], likes: ['chocolates', 'cafe'],
-    hi: ['¡Hola! Soy Valentina, la veterinaria de Bahía Dorada.', 'Si algún día tu Puchamon se enferma, aquí estoy. Y si no... también.'],
-    talk: [['Hoy me tocó curar a un Careyín que se comió una bolsa. ¡Pobrecito!'], ['Me encanta caminar por la playa al atardecer.'], ['¿Tú también hablas con tus Puchamon? Yo con los míos tengo conversaciones enteras.']] },
-  julian: { name: 'Julián', look: 'julian', city: 'altamira', a: 'o', job: 'guía de montaña', loves: ['cafe', 'mochila'], likes: ['chocolates', 'ramoFlores'],
-    hi: ['¿Qué más? Me llamo Julián, soy guía de montaña aquí en Altamira.', 'Conozco cada sendero de la sierra. Si quieres, un día te llevo.'],
-    talk: [['Esta mañana vi un Condoral volando tan bajito que le vi los ojos.'], ['El mejor café del mundo se toma a cuatro mil metros, con frío.'], ['Cuando hay neblina en el páramo, los Frailejones parecen gente quieta.']] },
-  mariana: { name: 'Mariana', look: 'mariana', city: 'medano', a: 'a', job: 'ceramista', loves: ['mochila', 'ramoFlores'], likes: ['cafe', 'peluche'],
-    hi: ['¡Hola, forastero! Soy Mariana. Hago vasijas de barro con la arena del desierto.', 'Este calor seca el barro en un ratico, por eso aquí trabajo feliz.'],
-    talk: [['Le pinté un Cactín a una vasija y se vendió en un minuto.'], ['En el desierto las noches son llenas de estrellas. Hay que verlas.'], ['Un día me gustaría abrir un taller en Bahía Dorada, frente al mar.']] },
-  samuel: { name: 'Samuel', look: 'samuel', city: 'cruce', a: 'o', job: 'cocinero', loves: ['chocolates', 'cafe'], likes: ['ramoFlores', 'mochila'],
-    hi: ['¡Bienvenido a Villa Cruce! Soy Samuel, el de las arepas.', 'Por aquí pasa todo el que viaja: nadie se va sin probar una.'],
-    talk: [['El secreto de la arepa es el maíz pelado y mucho cariño.'], ['Un Llamarón me ayudó a prender el fogón el otro día. ¡Qué servicio!'], ['Quiero ganar el concurso de cocina de Tierra Grande este año.']] },
-  luciana: { name: 'Luciana', look: 'luciana', city: 'palma', a: 'a', job: 'bióloga de la selva', loves: ['peluche', 'cafe'], likes: ['chocolates', 'mochila'],
-    hi: ['¡Shhh! Hay un Pintín durmiendo en esa rama... Hola, soy Luciana.', 'Estudio a los Puchamon de la selva. Llevo tres años aquí en Pueblo Palma.'],
-    talk: [['Los Temblones se juntan en el río cuando va a llover. Nadie sabe por qué.'], ['Anoche escuché una flauta en el río... ¿será el Mohán?'], ['Mi sueño es ver un Jaguarón de cerquita. Pero no TAN de cerquita.']] },
-  felipe: { name: 'Felipe', look: 'felipe', city: 'pino', a: 'o', job: 'músico', loves: ['chocolates', 'ramoFlores'], likes: ['peluche', 'cafe'],
-    hi: ['¡Ey! Soy Felipe. Toco el tiple en la plaza de Pueblo Pino.', 'Si te gusta la música, quédate un ratico. Si no... también.'],
-    talk: [['Estoy componiendo una canción sobre un Lechuzón que no podía dormir.'], ['En el bosque de pinos la música suena distinto, como con eco.'], ['Algún día quiero tocar en la Liga Alborada, antes de la final.']] }
+  valentina: { name: 'Valentina', look: 'valentina', home: { map: 'cascada', x: 11, y: 16 }, town: 'Ciudad Cascada', a: 'a', job: 'veterinaria de Ciudad Cascada', loves: ['ramoFlores', 'peluche'], likes: ['chocolates', 'cafe'],
+    hi: ['¡Hola! Soy Valentina, la veterinaria de Ciudad Cascada.', 'Si algún día tu Puchamon se enferma, aquí estoy. Y si no... también.'],
+    talk: [['Hoy me tocó curar a un Semaforín que se cayó de un poste. ¡Pobrecito!'], ['Me encanta sentarme frente a la cascada al atardecer.'], ['¿Tú también hablas con tus Puchamon? Yo con los míos tengo conversaciones enteras.']] },
+  luciana: { name: 'Luciana', look: 'luciana', home: { map: 'cascada', x: 28, y: 13 }, town: 'Ciudad Cascada', a: 'a', job: 'bióloga del Caño de los Colores', loves: ['peluche', 'cafe'], likes: ['chocolates', 'mochila'],
+    hi: ['¡Shhh! Hay un Pintín durmiendo en esa rama... Hola, soy Luciana.', 'Estudio a los Puchamon del Caño de los Colores. Vivo aquí en Ciudad Cascada.'],
+    talk: [['Los Temblones se juntan en el río cuando va a llover. Nadie sabe por qué.'], ['Anoche escuché una flauta en el caño... ¿será el Mohán?'], ['Mi sueño es ver un Jaguarón de cerquita. Pero no TAN de cerquita.']] },
+  samuel: { name: 'Samuel', look: 'samuel', home: { map: 'ribera', x: 36, y: 13 }, town: 'Pueblo Ribera', a: 'o', job: 'cocinero', loves: ['chocolates', 'cafe'], likes: ['ramoFlores', 'mochila'],
+    hi: ['¡Bienvenido a Pueblo Ribera! Soy Samuel, el de las arepas y el pescado frito.', 'Todo el que baja al río pasa por aquí: nadie se va sin probar.'],
+    talk: [['El secreto de la arepa es el maíz pelado y mucho cariño.'], ['Un Llamarón me ayudó a prender el fogón el otro día. ¡Qué servicio!'], ['Quiero ganar el concurso de cocina del sur este año.']] },
+  felipe: { name: 'Felipe', look: 'felipe', home: { map: 'ribera', x: 18, y: 7 }, town: 'Pueblo Ribera', a: 'o', job: 'músico', loves: ['chocolates', 'ramoFlores'], likes: ['peluche', 'cafe'],
+    hi: ['¡Ey! Soy Felipe. Toco el tiple en la plaza de Pueblo Ribera.', 'Si te gusta la música, quédate un ratico. Si no... también.'],
+    talk: [['Estoy componiendo una canción sobre un Lechuzón que no podía dormir.'], ['Junto al río la música suena distinto, como con eco.'], ['Algún día quiero tocar en la Liga Alborada, antes de la final.']] },
+  mariana: { name: 'Mariana', look: 'mariana', home: { map: 'caleta', x: 17, y: 25 }, town: 'Caleta Sol', a: 'a', job: 'ceramista', loves: ['mochila', 'ramoFlores'], likes: ['cafe', 'peluche'],
+    hi: ['¡Hola, forastero! Soy Mariana. Hago vasijas con el barro de la playa.', 'Aquí con la brisa el barro seca en un ratico, por eso trabajo feliz.'],
+    talk: [['Le pinté un Careyín a una vasija y se vendió en un minuto.'], ['En la caleta las noches son llenas de estrellas. Hay que verlas.'], ['Un día me gustaría abrir un taller en Ciudad Cascada, frente al agua.']] },
+  julian: { name: 'Julián', look: 'julian', home: { map: 'caleta', x: 36, y: 14 }, town: 'Caleta Sol', a: 'o', job: 'guía de lancha', loves: ['cafe', 'mochila'], likes: ['chocolates', 'ramoFlores'],
+    hi: ['¿Qué más? Me llamo Julián, soy guía de lancha aquí en Caleta Sol.', 'Conozco cada arrecife de esta costa. Si quieres, un día te llevo.'],
+    talk: [['Esta mañana vi una tortuga Careyón del tamaño de una puerta.'], ['El mejor café del mundo se toma en la playa, al amanecer.'], ['Cuando baja la marea, la playa se llena de caracoles.']] }
 };
 export const GIFTS = ['ramoFlores', 'chocolates', 'peluche', 'cafe', 'mochila'];
 export const LOVE = { talk: 4, love: 15, like: 9, gift: 4, date: 12, ask: 70, dates: 3, first: 25 };
@@ -110,9 +111,4 @@ export const dayOf = st => (st.day || 0) + Math.floor((st.playTime || 0) / (60 *
 export function romanceOf(st, id) {
   st.romance = st.romance || {};
   return st.romance[id] = st.romance[id] || { pts: 0, dates: 0, talk: -1, gift: -1, date: -1, met: false };
-}
-// Dónde está cada persona en su ciudad: frente a la posada, al lado de la tienda (en casillas de Tierra Grande).
-export function candidateSpot(c) {
-  const BLOCK = 24, cx = Math.floor((c.x0 + c.x1) / 2 / BLOCK), cy = Math.floor((c.y0 + c.y1) / 2 / BLOCK);
-  return [cx * BLOCK + 4 + 13, cy * BLOCK + 4 + 12];
 }

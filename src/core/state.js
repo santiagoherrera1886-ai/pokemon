@@ -46,8 +46,36 @@ export function parseState(raw, slot) {
     if ((st.badges || []).length && !st.bag.brazaleteAlba) st.bag.brazaleteAlba = 1;
     for (const c of [...(st.party || []), ...(st.box || [])]) { if (!c) continue; if (c.alba) delete c.alba; if (c.item && !ITEMS[c.item]?.held) delete c.item; }
     if (st.cheats) { st.cheats = cleanCheats(st.cheats); if (!Object.keys(st.cheats).length) delete st.cheats; }
+    fromTierraGrande(st);
     return st;
   } catch { return null; }
+}
+
+// El mapa gigante (Tierra Grande) ya no existe: sus casas, moteles y parejas se mudaron al sur de Alborada.
+// Una partida que quedó allá vuelve a Pueblo Llanero; sus casas pasan a los lotes nuevos (mismo modelo,
+// colores y muebles) y lo que no quepa se devuelve en plata. El carro y la licencia de piloto se van.
+export const SOUTH_LOTS = ['ribera1', 'ribera2', 'ribera3', 'cascada1', 'cascada2', 'caleta1', 'caleta2', 'caleta3'];
+const HOUSE_PRICE = { sencilla: 12000, dospisos: 28000, casona: 55000 };
+const isTG = id => typeof id === 'string' && (/^tgi?_/.test(id) || id === 'autopistaLlano');
+export function fromTierraGrande(st) {
+  const home = { map: 'sabana', x: 7, y: 13, dir: 0 };
+  if (isTG(st.map)) Object.assign(st, home);
+  if (st.lastHeal && isTG(st.lastHeal.map)) st.lastHeal = { map: 'posadaSabana', x: 6, y: 7 };
+  if (st.devBack && isTG(st.devBack.map)) delete st.devBack;
+  if (st.houses) {
+    const houses = {}, old = [];
+    for (const [lot, h] of Object.entries(st.houses)) (SOUTH_LOTS.includes(lot) ? houses[lot] = h : old.push(h));
+    for (const h of old) {
+      const free = SOUTH_LOTS.find(l => !houses[l]);
+      if (free) { const { city, ...rest } = h || {}; houses[free] = rest; }
+      else st.money = (st.money || 0) + (HOUSE_PRICE[h?.model] || 0);
+    }
+    st.houses = houses;
+  }
+  for (const k of ['llavesCarro', 'licenciaPiloto']) if (st.bag) delete st.bag[k];
+  for (const k of ['carColor', 'planeColor', 'tgSeen']) delete st[k];
+  if (st.visited) for (const k of Object.keys(st.visited)) if (isTG(k)) delete st.visited[k];
+  return st;
 }
 
 export function hasSave(slot) {

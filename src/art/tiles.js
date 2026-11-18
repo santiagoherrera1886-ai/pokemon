@@ -118,6 +118,11 @@ function water(g, dx, dy, x, y, map, frame) {
     px(g, wx, wy, C.waterL, 3, 1); px(g, wx + 1, wy - 1, C.waterL, 1, 1);
   }
   if (hash(x, y, frame + 40) > 0.82) px(g, dx + Math.floor(hash(x, y, frame) * 13) + 1, dy + Math.floor(hash(x, y, frame + 9) * 12) + 2, '#ffffff');
+  // Caño de los Colores: en el fondo se ven matas rojas, amarillas y verdes (cambian poco a poco por tramos).
+  if (map && map.waterTint === 'colores') {
+    const band = ['#e0404a', '#f0b030', '#3aa860', '#e86080'][Math.floor((x * .35 + y * .2 + Math.sin(x * .7) * 1.2 + 8) % 4)];
+    for (let i = 0; i < 5; i++) px(g, dx + 1 + Math.floor(hash(x, y, 70 + i) * 13), dy + 2 + Math.floor(hash(x, y, 80 + i) * 11), i % 2 ? band : '#c83a3a', 2 + (i % 2), 2);
+  }
   // Orillas: arena + espuma.
   const shore = (sx, sy, w, h) => px(g, sx, sy, C.sand, w, h);
   if (e.n) { shore(dx, dy, 16, 3); px(g, dx, dy + 3, C.foam, 16, 1); px(g, dx, dy + 4, C.waterD, 16, 1); }
@@ -200,36 +205,7 @@ function stairs(g, dx, dy, x, y, map, down) {
   px(g, dx, dy, '#5a3e26', 1, 16); px(g, dx + 15, dy, '#5a3e26', 1, 16);
 }
 
-// Tierra Grande: asfalto con bordillo en carreteras y calles, andén junto a la calle, nieve y arena de suelo.
-function asphalt(g, dx, dy, x, y, map) {
-  px(g, dx, dy, '#80858f', 16, 16);
-  for (let i = 0; i < 6; i++) px(g, dx + Math.floor(hash(x, y, i) * 15), dy + Math.floor(hash(x, y, i + 7) * 15), hash(x, y, i + 3) > .5 ? '#8d929c' : '#757a84');
-  const e = edges(map, x, y, t => t === 'p');
-  if (e.n) px(g, dx, dy, '#e2e5ea', 16, 2); if (e.s) px(g, dx, dy + 14, '#5f646d', 16, 2);
-  if (e.w) px(g, dx, dy, '#e2e5ea', 2, 16); if (e.e) px(g, dx + 14, dy, '#5f646d', 2, 16);
-  // Rayas de carril: en tramos rectos de ancho par, sobre la línea del centro.
-  const at = (i, j) => map.at(x + i, y + j) === 'p';
-  if (!e.w && !e.e && at(-2, 0) && at(2, 0) && !at(0, -3) && (x + y) % 2 === 0 && at(0, -1) !== at(0, 1)) px(g, dx + 2, dy + (at(0, -1) ? 0 : 14), '#f0d878', 12, 2);
-  if (!e.n && !e.s && at(0, -2) && at(0, 2) && !at(-3, 0) && (x + y) % 2 === 0 && at(-1, 0) !== at(1, 0)) px(g, dx + (at(-1, 0) ? 0 : 14), dy + 2, '#f0d878', 2, 12);
-}
-function sidewalk(g, dx, dy, x, y) {
-  px(g, dx, dy, (x + y) % 2 ? '#ecdfbf' : '#e4d5b0', 16, 16);
-  px(g, dx, dy + 15, '#cbbd98', 16, 1); px(g, dx + 15, dy, '#cbbd98', 1, 16);
-  if (hash(x, y, 61) > .7) px(g, dx + 5, dy + 5, '#d8c9a2', 6, 6);
-}
-function snowGround(g, dx, dy, x, y) {
-  px(g, dx, dy, '#eef3f7', 16, 16);
-  for (let i = 0; i < 4; i++) px(g, dx + Math.floor(hash(x, y, i) * 15), dy + Math.floor(hash(x, y, i + 7) * 15), i % 2 ? '#d8e4ee' : '#ffffff');
-}
 export function drawTile(g, code, x, y, map, frame, dx, dy) {
-  if (map && map.region === 'tierra') {
-    if (code === 'p' && map.paved) return asphalt(g, dx, dy, x, y, map);
-    if (code === '.' || code === 'T' || code === 'Y' || code === 'B') {
-      if (code === '.' && map.paved) { for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) if (map.at(x + i, y + j) === 'p') return sidewalk(g, dx, dy, x, y); }
-      if (map.snow) return snowGround(g, dx, dy, x, y);
-      if (map.zone === 'desierto' || map.zone === 'playa') return sand(g, dx, dy, x, y);
-    }
-  }
   switch (code) {
     case '.': case 'T': case 'f': case 'B': case 'Y': return grassBase(g, dx, dy, x, y);
     case 'J': return sand(g, dx, dy, x, y);

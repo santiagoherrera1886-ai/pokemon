@@ -5,9 +5,8 @@ import { iconURL } from '../art/creatures.js';
 import { itemIcon } from '../art/items.js';
 import { SPECIES, MOVES, TYPES, STARTERS, expForLevel, ENCOUNTERS } from '../data/creatures.js';
 import { GYMS, nextGym, badgeCount, LEAGUE_BADGES } from '../data/gyms.js';
-import { regionMapHTML, drawRegionMap, tgMapHTML, drawTGMap, regionPoint } from './regionmap.js';
-import { TG, SIZE } from '../world/tierra.js';
-import { devPlaces, findFree, spotOf, devGo, devReturn, devCar, devPlane, devMoney } from './dev.js';
+import { regionMapHTML, drawRegionMap, regionPoint } from './regionmap.js';
+import { devPlaces, findFree, spotOf, devGo, devReturn, devMoney } from './dev.js';
 import { BUILD } from '../core/version.js';
 import { CANDIDATES } from '../world/hogar.js';
 import { isHeld, giveHeld, takeHeld } from '../data/held.js';
@@ -31,8 +30,8 @@ const SVG = {
   options: '<svg viewBox="0 0 24 24"><path d="M12 2.5l2 2.6 3.2-.6.6 3.2 2.6 2-1.6 2.8 1.6 2.8-2.6 2-.6 3.2-3.2-.6-2 2.6-2-2.6-3.2.6-.6-3.2-2.6-2 1.6-2.8L3.6 9.7l2.6-2 .6-3.2 3.2.6z" fill="#7a7f98"/><circle cx="12" cy="12" r="3.4" fill="#eef0f6"/></svg>'
 };
 // Dónde vive cada especie (encuentros de las rutas, de día o de noche) y las leyendas.
-const PLACE = { sendero1: 'Sendero 1', lago: 'Lago Espejo', ruta2: 'Ruta 2', ruta3: 'Ruta 3', cueva: 'Cueva Eco', ruta4: 'Ruta 4', ruta5: 'Ruta 5', ruta6: 'Ruta 6', ruta7: 'Ruta 7', ruta8: 'Ruta 8', ruta9: 'Ruta 9', ruta10: 'Ruta 10', ruta11: 'Ruta 11', ruta12: 'Ruta 12', ruta13: 'Ruta 13', ruta14: 'Ruta 14', ruta15: 'Desierto Tatacoa', volcan: 'Cerro Fragua', ruta16: 'Ruta 16', ruta17: 'Glaciar', pico: 'Pico Cóndor', ruta18: 'Ruta 18', ruta19: 'Banco de arena', ruta20: 'Ruta 20', ruinas: 'Ruinas del Alba', ruta21: 'Ruta 21', ruta22: 'Ruta 22', ruta23: 'Ruta 23', ruta24: 'Ruta 24', ruta25: 'Ruta 25', manglar: 'Manglar', isla: 'Isla Totuma' };
-const LEGEND_PLACE = { espejalba: 'Lago Espejo (historia)', brumalia: 'Ruta 2 de noche, después de la Liga', fraguon: 'Cueva Eco, después de la Liga', glaciel: 'Ruta 5, después de la Liga', dracalba: 'Lago Espejo, con las tres leyendas atrapadas' };
+const PLACE = { sendero1: 'Sendero 1', lago: 'Lago Espejo', ruta2: 'Ruta 2', ruta3: 'Ruta 3', cueva: 'Cueva Eco', ruta4: 'Ruta 4', ruta5: 'Ruta 5', ruta6: 'Ruta 6', ruta7: 'Ruta 7', ruta8: 'Ruta 8', ruta9: 'Ruta 9', ruta10: 'Ruta 10', ruta11: 'Ruta 11', ruta12: 'Ruta 12', ruta13: 'Ruta 13', ruta14: 'Ruta 14', ruta15: 'Desierto Tatacoa', volcan: 'Cerro Fragua', ruta16: 'Ruta 16', ruta17: 'Glaciar', pico: 'Pico Cóndor', ruta18: 'Ruta 18', ruta19: 'Banco de arena', ruta20: 'Ruta 20', ruinas: 'Ruinas del Alba', ruta21: 'Ruta 21', ruta22: 'Ruta 22', ruta23: 'Ruta 23', ruta24: 'Ruta 24', ruta25: 'Ruta 25', manglar: 'Manglar', isla: 'Isla Totuma', ruta26: 'Ruta 26', ruta27: 'Ruta 27', ruta28: 'Bosque de Niebla', ruta29: 'Selva del Caño', cano: 'Caño de los Colores', guacharo: 'Cueva Guácharo', cascadaParque: 'Parque de Ciudad Cascada', caleta: 'Caleta Sol' };
+const LEGEND_PLACE = { espejalba: 'Lago Espejo (historia)', brumalia: 'Ruta 2 de noche, después de la Liga', fraguon: 'Cueva Eco, después de la Liga', glaciel: 'Ruta 5, después de la Liga', dracalba: 'Lago Espejo, con las tres leyendas atrapadas', mohan: 'Caño de los Colores de noche, con la Medalla Arcoíris', madremonte: 'Selva del Caño, con la Medalla Arcoíris', tunjo: 'Sala dorada de la Cueva Guácharo, con la Medalla Arcoíris', esmeraldon: 'Veta verde de la Cueva Guácharo, con la Medalla Arcoíris' };
 // Objetivo después del Lago Espejo: el siguiente de los ocho gimnasios, o la Liga cuando ya están todas.
 function goalAfterLake(st) {
   const g = nextGym(st), n = badgeCount(st);
@@ -107,32 +106,23 @@ export class Menus {
   }
 
   // ---------- Mapa de la región ----------
-  // Dos mapas: Alborada y Tierra Grande (este sale cuando ya lo has pisado). Abre el de donde estás.
-  // En modo desarrollador los dos se ven completos (sin niebla) y tocando cualquier punto vas para allá.
+  // En modo desarrollador se ve completo (sin niebla) y tocando cualquier punto vas para allá.
   regionMap(which, from = 'home') {
-    const world = this.game.world, st = this.st, me = this.tgSpot(), dev = cheatOn(st, 'dev');
-    const hasTG = !!st.tgSeen || dev;
-    which = which || (me ? 'tg' : 'alborada');
+    const world = this.game.world, st = this.st, dev = cheatOn(st, 'dev');
     const vst = dev ? { ...st, visited: { ...st.visited, ...Object.fromEntries(world.base.map(m => [m.id, true])) } } : st;
-    const tabs = hasTG ? `<div class="rm-tabs"><button data-act="rm:alborada" class="${which === 'alborada' ? 'on' : ''}">ALBORADA</button><button data-act="rm:tg" class="${which === 'tg' ? 'on' : ''}">TIERRA GRANDE</button></div>` : '';
-    const body = which === 'tg' && hasTG ? tgMapHTML(st, me, dev) : regionMapHTML(world, vst);
     const tip = dev ? '<p class="dev-tip">MODO DESARROLLADOR: toca cualquier punto del mapa para ir allá.</p>' : '';
-    ui.setPanel(`${tabs}${tip}${body}<button class="bt-back" data-back>VOLVER</button>`, { modal: true, cls: 'list-panel wide-panel map-panel', onAct: a => a.startsWith('rm:') && this.regionMap(a.slice(3), from), onBack: () => from === 'dev' ? this.dev() : this.home(true) });
+    ui.setPanel(`${tip}${regionMapHTML(world, vst)}<button class="bt-back" data-back>VOLVER</button>`, { modal: true, cls: 'list-panel wide-panel map-panel', onBack: () => from === 'dev' ? this.dev() : this.home(true) });
     const cv = document.getElementById('rmCanvas');
-    if (which === 'tg' && hasTG) {
-      // El mapa completo se pinta por partes: se redibuja hasta que termine (o hasta que se cierre el panel).
-      const paint = () => { if (cv && cv.isConnected && !drawTGMap(cv, st, me, dev)) requestAnimationFrame(paint); };
-      paint();
-    } else drawRegionMap(cv, world, vst);
+    drawRegionMap(cv, world, vst);
     const box = cv && cv.closest('.rmap');
     if (!dev || !box) return;
     box.classList.add('dev-pick');
     box.addEventListener('click', async e => {
       const r = box.getBoundingClientRect(), fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height;
       if (!(fx >= 0 && fy >= 0 && fx <= 1 && fy <= 1)) return;
-      const tg = which === 'tg' && hasTG, [gx, gy] = tg ? [TG.X + Math.floor(fx * SIZE), TG.Y + Math.floor(fy * SIZE)] : regionPoint(world, fx, fy);
-      const spot = findFree(world, st, gx, gy, tg ? 40 : 12);
-      if (!spot) { this.game.toast('Ahí no hay dónde pararse: toca más cerca de tierra firme'); return; }
+      const [gx, gy] = regionPoint(world, fx, fy);
+      const spot = findFree(world, st, gx, gy, 12);
+      if (!spot) { this.game.toast('Ahí no hay dónde pararse: toca más cerca de un camino'); return; }
       const i = await ui.ask(`¿Ir a ${world.get(spot.map)?.name || 'ese punto'}?`, ['Sí, ir', 'No, otro punto']);
       if (i === 0) await devGo(this.game, spot); else this.regionMap(which, from);
     });
@@ -141,14 +131,11 @@ export class Menus {
   // ---------- Modo desarrollador ----------
   // Se prende con su clave en Opciones › Códigos. Atajos para recorrer todo el mapa y revisar lo nuevo.
   dev() {
-    const st = this.st, game = this.game, o = st.options, ow = game.ow, yn = k => devOn(st, k) ? 'SÍ' : 'NO';
-    const inTG = !!(ow.map?.outdoor && ow.map.region === 'tierra');
+    const st = this.st, game = this.game, o = st.options, yn = k => devOn(st, k) ? 'SÍ' : 'NO';
     ui.setPanel(`<h3 class="ph">MODO DESARROLLADOR</h3><div class="opts dev-opts">
       <button data-act="map">🗺️ Ir con el mapa: toca donde quieras</button>
       <button data-act="places">📍 Ir a un lugar de la lista</button>
       ${st.devBack ? '<button data-act="back">↩️ Volver a donde estaba</button>' : ''}
-      <button data-act="car">🚗 Carro ya${inTG || ow.flight ? '' : ' (te deja en el Parador del Llano)'}</button>
-      <button data-act="plane">✈️ Avioneta: despegar ya${inTG ? ' desde aquí' : ' (desde la Pista Norte)'}</button>
       <button data-act="ghost">Atravesar paredes: <b>${yn('ghost')}</b></button>
       <button data-act="calm">Paseo tranquilo (sin criaturas, entrenadores ni eventos): <b>${yn('calm')}</b></button>
       <button data-act="fast">Caminar rápido (con B, todavía más): <b>${yn('fast')}</b></button>
@@ -157,11 +144,9 @@ export class Menus {
       <p class="hint">La partida se guarda donde quedes: con «Volver a donde estaba» regresas a tu historia. Para apagar este modo, escribe la clave otra vez en Opciones › Códigos.</p>
       <button class="bt-back" data-back>CERRAR</button>`,
     { modal: true, cls: 'list-panel graphics-options dev-panel', onBack: () => { ui.closePanel(); game.menus.home(false); }, onAct: async a => {
-      if (a === 'map') return this.regionMap(inTG || ow.flight || String(ow.map?.id).startsWith('tgi_') ? 'tg' : 'alborada', 'dev');
+      if (a === 'map') return this.regionMap('alborada', 'dev');
       if (a === 'places') return this.devPlacesList();
       if (a === 'back') return devReturn(game);
-      if (a === 'car') return devCar(game);
-      if (a === 'plane') return devPlane(game);
       if (a === 'ghost' || a === 'calm' || a === 'fast') devToggle(st, a);
       if (a === 'hour') o.forceHour = o.forceHour === undefined ? 12 : o.forceHour === 12 ? 22 : undefined;
       if (a === 'money') { devMoney(game); game.toast(`Ahora tienes ${money(st.money)}`); }
@@ -170,30 +155,17 @@ export class Menus {
     } });
   }
   devPlacesList() {
-    const game = this.game, { tg, al } = devPlaces(game.world);
+    const game = this.game, { sur, al } = devPlaces(game.world);
     const row = (p, k) => `<button data-act="${k}"><b>${esc(p.name)}</b></button>`;
     ui.setPanel(`<h3 class="ph">IR A UN LUGAR</h3><div class="ilist dev-places">
-      <div class="sec" style="--c:#e2603f"><i></i>Tierra Grande</div>${tg.map((p, i) => row(p, 't' + i)).join('')}
-      <div class="sec" style="--c:#3f7fc8"><i></i>Alborada</div>${al.map((p, i) => row(p, 'a' + i)).join('')}</div>
+      <div class="sec" style="--c:#e2603f"><i></i>Lo nuevo del sur</div>${sur.map((p, i) => row(p, 's' + i)).join('')}
+      <div class="sec" style="--c:#3f7fc8"><i></i>Toda Alborada</div>${al.map((p, i) => row(p, 'a' + i)).join('')}</div>
       <button class="bt-back" data-back>VOLVER</button>`,
     { modal: true, cls: 'list-panel', onBack: () => this.dev(), onAct: a => {
-      const p = (a[0] === 't' ? tg : al)[+a.slice(1)];
+      const p = (a[0] === 's' ? sur : al)[+a.slice(1)];
       if (p) devGo(game, spotOf(game.world, this.st, p));
     } });
   }
-  // Dónde está el jugador en Tierra Grande (casillas; con rumbo si va volando), o null si está en Alborada.
-  tgSpot() {
-    const ow = this.game.ow, m = ow?.map;
-    if (!m) return null;
-    if (ow.flight) return [ow.flight.x, ow.flight.y, ow.flight.heading];
-    if (m.outdoor && m.region === 'tierra') { const p = ow.tgPos(); return p && p[1] >= 0 ? p : [p[0], 0]; }
-    if (String(m.id).startsWith('tgi_')) {
-      const back = m.warps.find(w => String(w.to).startsWith('tg_')), mm = back && /^tg_(\d+)_(\d+)$/.exec(back.to);
-      if (mm) return [+mm[1] * TG.S + back.tx, +mm[2] * TG.S + back.ty];
-    }
-    return null;
-  }
-
   // ---------- Equipo ----------
   party() {
     const st = this.st;
@@ -294,15 +266,7 @@ export class Menus {
     const it = ITEMS[id], st = this.st, game = this.game;
     const back = () => this.bag(it.pocket);
     if (isCapsule(id)) { await ui.say(['Las Cápsulas se lanzan en combate contra criaturas salvajes.']); return back(); }
-    if (it.vehicle === 'car') {
-      const ow = game.ow;
-      if (!ow.map?.outdoor || ow.map.region !== 'tierra' || ow.flight) { await ui.say([it.desc, 'Tu carro te espera en Tierra Grande, al sur de la Sabana por la Autopista del Llano.']); return back(); }
-      ui.closePanel(); ui.hideMsg();
-      ow.toggleCar();
-      return;
-    }
     if (it.gift) { await ui.say([it.desc, 'Es un regalo: háblale a esa persona especial y escoge "Dar un regalo".']); return back(); }
-    if (id === 'licenciaPiloto') { await ui.say([it.desc, 'Hay aeropuertos en el norte, en Altamira, en el desierto, en la selva y en Bahía Dorada. Están en el mapa.']); return back(); }
     if (it.key) { await ui.say([it.desc, 'Funciona con todas las criaturas, una vez por combate. La transformación dura hasta que termina la pelea.']); return back(); }
     if (it.boost) { await ui.say(['Las Pócimas sólo sirven durante un combate.']); return back(); }
     if (it.repel) {
@@ -410,7 +374,7 @@ export class Menus {
       if (a !== 'try') return;
       const input = document.getElementById('ccode'), r = tryCode(st, input?.value);
       input?.blur();   // sin esto, la Z se escribe en la caja en vez de pasar el mensaje
-      this.game.ow?.vehicleUI?.();   // el botón DEV aparece (o se va) de una
+      this.game.ow?.devUI?.();   // el botón DEV aparece (o se va) de una
       await ui.say([r.msg]);
       if (r.id === 'dev' && r.on) return this.dev();   // recién prendido: el panel se abre solo
       this.codes(from);
@@ -520,7 +484,7 @@ export class Menus {
           ${saves.length ? '<button data-act="continue" class="primary">CONTINUAR</button>' : ''}
           <button data-act="new">NUEVA PARTIDA</button>
           <button data-act="files" class="soft">PARTIDAS Y GITHUB${cloud.linked ? ' ☁' : ''}</button>
-          <p class="title-news"><b>NUEVO · v3</b> Tierra Grande: carros, aviones, casas, moteles, pareja y 40 Puchamon más. Con una medalla, la Mensajera de cualquier posada te lleva.</p>
+          <p class="title-news"><b>NUEVO · v4</b> El sur de Alborada, hecho a mano: pueblos, rutas, una cueva y un gimnasio extra, con casas, moteles, pareja y 40 Puchamon. Baja por la Ruta 26 desde Pueblo Llanero.</p>
           <p class="hint">Juego original sin ROM · guardado en tu navegador${cloud.linked ? ` y en GitHub (${esc(cloud.login)})` : ''} · versión ${BUILD.version}${BUILD.sha !== 'dev' ? ` (${BUILD.sha})` : ''}</p></div>`,
         { modal: true, cls: 'title-panel', onAct: a => {
           if (a === 'continue') return saves.length === 1 ? resolve({ type: 'continue', slot: saves[0].slot }) : pick('continue');

@@ -1,10 +1,8 @@
 // Mapas en tiempo de ejecución: consultas de tiles, colisiones, sprites de objetos y suelo pre-renderizado.
 import { canvas } from '../core/pixel.js';
 import { drawTile, SOLID, TS } from '../art/tiles.js';
-import { tree, bush, rock, fence, sign, mailbox, briefcase, lamp, house, lab, furniture, palm, pine, boulder, crystal, statue, fountain, bench, boat, bigBuilding, caveMouth, pool } from '../art/objects.js';
+import { tree, bush, rock, fence, sign, mailbox, briefcase, lamp, house, lab, furniture, palm, pine, boulder, crystal, statue, fountain, bench, boat, bigBuilding, caveMouth, pool, bridge } from '../art/objects.js';
 import { buildMaps } from './maps.js';
-import { tgDef, tgCell, tgId, TG, tileAt } from './tierra.js';
-import { tower, parkedCar, parkedPlane, pump } from '../art/vehicles.js';
 
 export class GameMap {
   constructor(def) {
@@ -25,8 +23,7 @@ export class GameMap {
       if (o.solid === undefined) o.solid = o.kind !== 'deco';
     }
   }
-  // Fuera del mapa: en Tierra Grande se mira la casilla vecina del mundo (así no hay costuras entre pedazos).
-  at(x, y) { return (y < 0 || x < 0 || y >= this.h || x >= this.w) ? (this.tg ? tileAt(this.tg[0] * TG.S + x, this.tg[1] * TG.S + y) : undefined) : this.tiles[y][x]; }
+  at(x, y) { return (y < 0 || x < 0 || y >= this.h || x >= this.w) ? undefined : this.tiles[y][x]; }
   inside(x, y) { return x >= 0 && y >= 0 && x < this.w && y < this.h; }
   // Objetos que dependen de la partida: `when` decide si están y `dyn` les cambia forma y colores (casas propias).
   visibleObjects(st) {
@@ -46,8 +43,7 @@ export class GameMap {
   warpAt(x, y) { return this.warps.find(w => w.x === x && w.y === y); }
 
   ground(frame) {
-    // Los mapas de Tierra Grande guardan menos cuadros de animación (hay muchos cargados a la vez).
-    const f = frame % (this.animFrames || 4);
+    const f = frame % 4;
     if (this.groundCache[f]) return this.groundCache[f];
     const [c, g] = canvas(this.w * TS, this.h * TS);
     for (let y = 0; y < this.h; y++) for (let x = 0; x < this.w; x++) drawTile(g, this.tiles[y][x], x, y, this, f, x * TS, y * TS);
@@ -84,16 +80,13 @@ export class GameMap {
         case 'lamp': push(lamp(), X, Y - 16, Y + 16); sh(X + 9, Y + 15, 4, 1); out.push({ light: [X + 8, Y - 10, 34], base: 9e9 }); break;
         case 'briefcase': push(briefcase(), X, Y, Y + 15); break;
         case 'pool': push(pool(o.w, o.h), X, Y, -1000); break;
+        case 'bridge': push(bridge(o.w, o.h), X, Y, -1000); break;
         case 'house': out.push({ light: [X + o.w * 8, Y + o.h * TS - 10, 26 + o.w * 4], base: 9e9 }); push(house(o.w, o.h, o.opt), X - 1, Y - TS - (o.opt?.floors === 2 ? TS : 0), Y + o.h * TS); rs(X + 3, Y + o.h * TS - 3, o.w * TS, 5); rs(X + o.w * TS, Y + 4, 4, o.h * TS - 2); break;
         case 'lab': push(lab(o.w, o.h), X - 1, Y - TS, Y + o.h * TS); rs(X + 3, Y + o.h * TS - 3, o.w * TS, 5); rs(X + o.w * TS, Y + 4, 4, o.h * TS - 2); break;
         case 'big': push(bigBuilding(o.w, o.h, o.opt), X - 1, Y - TS, Y + o.h * TS); rs(X + 3, Y + o.h * TS - 3, o.w * TS, 5); rs(X + o.w * TS, Y + 4, 4, o.h * TS - 2); break;
         case 'gym': push(bigBuilding(o.w, o.h, o.opt), X - 1, Y - TS, Y + o.h * TS); rs(X + 3, Y + o.h * TS - 3, o.w * TS, 5); rs(X + o.w * TS, Y + 4, 4, o.h * TS - 2); break;
         case 'furniture': push(furniture(o.name, o.arg), X + (o.sx || 0), Y + (o.sy || 0), o.flat ? -1000 : Y + o.h * TS); break;
         case 'deco': out.push({ img: furniture(o.name), x: o.px, y: o.py, base: -1000 }); break;
-        case 'tower': { const img = tower(o.w, o.h, o.floors, o.opt); push(img, X - 1, Y + o.h * TS - img.height, Y + o.h * TS); rs(X + 3, Y + o.h * TS - 3, o.w * TS, 5); rs(X + o.w * TS, Y + 4, 6, o.h * TS - 2); break; }
-        case 'car': push(parkedCar(o.color, o.dir), X - 1, Y - 2, Y + o.h * TS); sh(X + 8, Y + o.h * TS - 2, 8, 3); break;
-        case 'plane': push(parkedPlane(o.color), X - 4, Y - 4, Y + o.h * TS); sh(X + 24, Y + 40, 20, 5); break;
-        case 'pump': push(pump(), X, Y - 10, Y + 16); sh(X + 8, Y + 14, 5, 2); break;
       }
     }
     this._spr = out; this._sprKey = this.spriteKey(st);
@@ -107,40 +100,12 @@ export class World {
     const defs = buildMaps();
     this.maps = {};
     for (const id in defs) this.maps[id] = new GameMap(defs[id]);
-    this.base = Object.values(this.maps).filter(m => m.outdoor);   // mapas hechos a mano
-    this.outdoor = [...this.base];                                  // + los de Tierra Grande que estén cargados
+    this.base = Object.values(this.maps).filter(m => m.outdoor);   // mapas exteriores (todos hechos a mano)
+    this.outdoor = this.base;
   }
-  // Los mapas de Tierra Grande (tg_i_j) y sus interiores (tgi_...) se generan la primera vez que se piden.
-  get(id) {
-    let m = this.maps[id];
-    if (m || typeof id !== 'string') return m;
-    const def = tgDef(id);
-    if (!def) return undefined;
-    m = this.maps[id] = new GameMap(def);
-    if (m.tg) { m.animFrames = m.tiles.some(r => r.includes('w')) ? 2 : 1; this.outdoor.push(m); }
-    return m;
-  }
+  get(id) { return this.maps[id]; }
   // Mapa exterior que contiene la coordenada global (gx, gy).
   outdoorAt(gx, gy) {
-    const cell = tgCell(gx, gy);
-    if (cell) return this.get(tgId(cell[0], cell[1]));
     return this.base.find(m => gx >= m.origin[0] && gy >= m.origin[1] && gx < m.origin[0] + m.w && gy < m.origin[1] + m.h);
-  }
-  // Asegura los mapas de Tierra Grande que tocan el cuadro de radio r alrededor de (gx, gy).
-  around(gx, gy, r) {
-    const a = tgCell(Math.max(gx - r, TG.X), Math.max(gy - r, TG.Y)), b = tgCell(Math.min(gx + r, TG.X + TG.S * TG.N - 1), Math.min(gy + r, TG.Y + TG.S * TG.N - 1));
-    if (!a || !b) return;
-    for (let j = a[1]; j <= b[1]; j++) for (let i = a[0]; i <= b[0]; i++) this.get(tgId(i, j));
-  }
-  // Olvida los mapas de Tierra Grande lejanos (se vuelven a generar idénticos si se necesitan).
-  trim(gx, gy, keep = 3) {
-    const c = tgCell(gx, gy);
-    let dropped = false;
-    for (const m of this.outdoor) {
-      if (!m.tg) continue;
-      if (c && Math.abs(m.tg[0] - c[0]) <= keep && Math.abs(m.tg[1] - c[1]) <= keep) continue;
-      delete this.maps[m.id]; dropped = true;
-    }
-    if (dropped) this.outdoor = this.outdoor.filter(m => this.maps[m.id] === m);
   }
 }
