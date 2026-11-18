@@ -155,12 +155,25 @@ async function talk() { await tap('z'); await sleep(250); }
 async function choose(i) { await page.waitForSelector(`#panel [data-act="${i}"]`); await sleep(150); await page.click(`#panel [data-act="${i}"]`); await sleep(150); }
 async function talkTo(x, y, mapId) { await walkTo(x, y, mapId, { adjacent: true }); await talk(); }
 
+// Nube de Supabase de mentira (en memoria) para que la prueba no toque la base real.
+const nubeDB = new Map();
+async function mockNube(context) {
+  await context.route('https://tuaxomjkkkmhjdpjvenp.supabase.co/**', async r => {
+    const fn = new URL(r.request().url()).pathname.split('/rpc/')[1], body = JSON.parse(r.request().postData() || '{}');
+    const json = v => r.fulfill({ status: 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify(v) });
+    if (fn === 'puchamon_guardar') { nubeDB.set(body.codigo, body.datos); return json(new Date().toISOString()); }
+    if (fn === 'puchamon_leer') return json(nubeDB.get(body.codigo) ?? null);
+    return r.fulfill({ status: 404, body: '{}' });
+  });
+}
+
 async function run() {
   await new Promise(r => server.listen(0, '127.0.0.1', r));
   const url = `http://127.0.0.1:${server.address().port}/`;
   const browser = await chromium.launch({ args: ['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader'] });
   try {
     page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+    await mockNube(page.context());
     page.on('pageerror', e => errors.push(e.message));
     page.on('console', m => { if (m.type() === 'error' && !/fonts|ERR_FAILED|net::/.test(m.text())) errors.push(m.text()); });
     await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort());
@@ -168,7 +181,7 @@ async function run() {
     await page.evaluate(mode=>{localStorage.clear();localStorage.setItem('alborada-graphics-v1',JSON.stringify({v:5,mode,quality:'low'}));},GRAPHICS_MODE);
     await page.reload(); await sleep(700);
     await shot('titulo');
-    assert.match(await page.textContent('#panel .title-news'), /sur de Alborada/, 'el título avisa lo nuevo de la versión');
+    assert.match(await page.textContent('#panel .title-news'), /Duelo de Torres/, 'el título avisa lo nuevo de la versión');
     await page.click('#panel [data-act="new"]');
     await page.fill('#pname', 'Santi');
     await page.click('#panel [data-act="ok"]');
@@ -682,9 +695,95 @@ async function run() {
     await walkTo(5, 7); await sleep(300);
     await shot('noche-sin-perspectiva');
 
+    // ------------------------------------------------ Stock de juegos: Duelo de Torres desde el menú
+    await page.evaluate(() => { __game.state.options.forceHour = 12; });
+    const here = await st(), money0 = here.money;
+    await tap('Escape'); await page.click('#panel [data-act="games"]');
+    assert.ok(await page.$('#panel [data-act="game:arena"]') && await page.$('#panel [data-act="game:aldea"]'), 'el stock muestra los juegos');
+    await page.click('#panel [data-act="game:arena"]');
+    await page.waitForSelector('#panel .ar-home', { timeout: 30000 });
+    assert.equal(await page.$$eval('#panel .ar-deck .ar-card', c => c.length), 8, 'el mazo tiene 8 cartas');
+    await page.click('#panel [data-act="deck"]'); await page.waitForSelector('#panel .ar-picks');
+    const firstPick = await page.$eval('#panel .ar-pick', b => b.dataset.act);
+    await page.click(`#panel [data-act="${firstPick}"]`); await page.click(`#panel [data-act="${firstPick}"]`);
+    await page.click('#panel [data-act="ok"]'); await page.waitForSelector('#panel .ar-home');
+    await shot('duelo-menu');
+    await page.click('#panel [data-act="play"]');
+    await page.waitForFunction(() => __game.mini?.playing, null, { timeout: 30000 });
+    for (let k = 0; k < 3; k++) {
+      await page.waitForFunction(() => { const s = __game.mini.sim; return [0, 1, 2, 3].some(i => s.card(0, i) && s.card(0, i).cost <= s.energy[0]); }, null, { timeout: 40000 });
+      const slot = await page.evaluate(() => { const s = __game.mini.sim; return [0, 1, 2, 3].find(i => s.card(0, i).cost <= s.energy[0]); });
+      await page.click(`#arenaHud .ah-card[data-slot="${slot}"]`);
+      const p = await page.evaluate(k => __game.mini.view.fieldToScreen(k % 2 ? 13.5 : 4.5, 22), k);
+      await page.mouse.click(p.x, p.y); await sleep(250);
+    }
+    assert.ok(await page.evaluate(() => __game.mini.sim.played[0] >= 3), 'mis cartas salen al campo');
+    await sleep(2500); await shot('duelo-partida');
+    // Final de la prueba: se tumba la torre mayor del rival y se cobra el premio.
+    await page.evaluate(() => { const s = __game.mini.sim; s.damage(s.king(1), 1e6); });
+    await page.waitForSelector('#panel .ar-result', { timeout: 30000 });
+    const after = await page.evaluate(() => ({ money: __game.state.money, arena: __game.state.arena }));
+    assert.ok(after.money > money0, 'ganar da plata para Puchamon'); assert.ok(after.arena.trophies > 0 && after.arena.wins === 1, 'ganar da trofeos');
+    await shot('duelo-gano');
+    await page.click('#panel [data-back]'); await page.waitForSelector('#panel .ar-home');
+    await page.click('#panel .ar-home [data-back]');
+    await page.waitForFunction(() => __game.scene === 'overworld' && !__game.mini, null, { timeout: 20000 });
+    s = await st(); assert.deepEqual([s.map, s.x, s.y], [here.map, here.x, here.y], 'al salir del juego vuelves al mismo punto');
+    await settle();
+    log('stock de juegos: Duelo de Torres (mazo, partida, premio y vuelta al mapa) OK');
+
+    // ------------------------------------------------ Stock de juegos: Aldea Puchamon
+    await tap('Escape'); await page.click('#panel [data-act="games"]'); await page.click('#panel [data-act="game:aldea"]');
+    await page.waitForSelector('#aldeaHud .al-bottom.al-home', { timeout: 30000 });
+    await page.waitForFunction(() => !!__game.mini?.view, null, { timeout: 60000 });
+    // La mina produjo 10 minutos: se recoge tocando la etiqueta y la plata llega a la partida.
+    await page.evaluate(() => { const A = __game.state.aldea, m = A.buildings.find(b => b.kind === 'mina'); m.last = Date.now() - 10 * 60000; __game.mini.lastTick = 0; });
+    await page.waitForSelector('#aldeaHud .al-tag.take', { timeout: 10000 });
+    const m1 = await page.evaluate(() => __game.state.money);
+    await page.click('#aldeaHud .al-tag.take');
+    assert.ok(await page.evaluate(m1 => __game.state.money > m1, m1), 'recoger la mina da plata de Puchamon');
+    // Subir la Casa Grande (obra con tiempo) y terminarla ya.
+    const casaPt = await page.evaluate(() => { const v = __game.mini.view; return v.fieldToScreen(12, 12, 0); });
+    await page.mouse.click(casaPt.x, casaPt.y); await page.waitForSelector('#panel.aldea-panel');
+    await page.click('#panel [data-act="up"]'); await page.waitForSelector('#panel [data-act="rush"]');
+    await page.click('#panel [data-act="rush"]');
+    assert.equal(await page.evaluate(() => __game.state.aldea.buildings.find(b => b.kind === 'casa').level), 2, 'la Casa Grande sube a nivel 2');
+    await page.click('#panel [data-back]');
+    // Construir un muro desde la tienda.
+    await page.click('#aldeaHud [data-a="build"]'); await page.click('#panel [data-act="b:muro"]');
+    await page.waitForSelector('#aldeaHud .al-bottom.al-place:not(.hidden)');
+    await page.click('#aldeaHud [data-a="ok"]'); await page.click('#aldeaHud [data-a="cancel"]');
+    assert.ok(await page.evaluate(() => __game.state.aldea.buildings.some(b => b.kind === 'muro')), 'se construyó un muro');
+    await shot('aldea');
+    // Entrenar y atacar.
+    await page.click('#aldeaHud [data-a="army"]'); await page.waitForSelector('#panel .al-troop');
+    await page.evaluate(() => { __game.state.aldea.bayas = 2000; });
+    for (let i = 0; i < 4; i++) await page.click('#panel .al-troop [data-act^="p:"]');
+    await page.click('#panel [data-back]');
+    assert.ok(await page.evaluate(() => Object.values(__game.state.aldea.army).reduce((a, n) => a + n, 0) > 0), 'hay ejército');
+    await page.click('#aldeaHud [data-a="attack"]');
+    await page.waitForFunction(() => __game.mini?.raid && __game.mini.view?.redZone, null, { timeout: 60000 });
+    const spot = await page.evaluate(() => { const s = __game.mini.raid; for (const [x, y] of [[12, 23.5], [.6, 12], [23.4, 12], [12, .6], [.6, .6], [23.4, 23.4]]) if (s.canDeploy(x, y)) return __game.mini.view.fieldToScreen(x, y, 0); return null; });
+    assert.ok(spot, 'hay borde para soltar');
+    await page.mouse.click(spot.x, spot.y); await sleep(300);
+    assert.ok(await page.evaluate(() => __game.mini.raid.deployed > 0), 'se soltó un Puchamon');
+    await sleep(2500); await shot('aldea-ataque');
+    await page.evaluate(() => { const s = __game.mini.raid; for (const b of s.buildings) if (!b.wall) s.hit(b, 1e7); });
+    await page.waitForSelector('#panel .ar-result', { timeout: 30000 });
+    const loot = await page.evaluate(() => __game.state.aldea.stars);
+    assert.equal(loot, 3, 'tres estrellas al tumbar todo');
+    await page.click('#panel [data-act="ok"]');
+    await page.waitForSelector('#aldeaHud .al-bottom.al-home:not(.hidden)');
+    await page.click('#aldeaHud [data-a="exit"]');
+    await page.waitForFunction(() => __game.scene === 'overworld' && !__game.mini, null, { timeout: 20000 });
+    s = await st(); assert.deepEqual([s.map, s.x, s.y], [here.map, here.x, here.y], 'al salir de la aldea vuelves al mismo punto');
+    await settle();
+    log('stock de juegos: Aldea Puchamon (recoger, obra, muro, ejército, ataque y vuelta al mapa) OK');
+
     // ------------------------------------------------ Celular (táctil)
     const storageState = await page.context().storageState();
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2, storageState });
+    await mockNube(ctx);
     const m = await ctx.newPage();
     m.on('pageerror', e => errors.push('móvil: ' + e.message));
     await m.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort());
@@ -709,6 +808,7 @@ async function run() {
 
     // ------------------------------------------------ Ranuras y respaldo en GitHub (API simulada)
     const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 720 }, storageState: await page.context().storageState() });
+    await mockNube(ctx2);
     const q = await ctx2.newPage();
     q.on('pageerror', e => errors.push('ranuras: ' + e.message));
     const gist = { content: null, patches: 0 };
@@ -747,7 +847,39 @@ async function run() {
     await q.click('#panel [data-act="slot:1"]'); await sleep(900);
     assert.deepEqual(await q.evaluate(() => [__game.state.slot, __game.state.name, __game.state.avatar.body]), [1, 'Santi', 'chica']);
     await q.screenshot({ path: path.join(SHOTS, `${String(++shotN).padStart(2, '0')}-ranuras.png`) });
+    // El stock de juegos en el título pide con qué partida jugar y al salir vuelve al título.
+    await q.reload(); await sleep(700);
+    await q.click('#panel [data-act="game:arena"]'); await q.waitForSelector('#panel.slot-panel');
+    await q.click('#panel [data-act="slot:1"]'); await q.waitForSelector('#panel .ar-home', { timeout: 30000 });
+    assert.equal(await q.evaluate(() => __game.state.name), 'Santi');
+    await q.click('#panel .ar-home [data-back]');
+    await q.waitForSelector('#panel.title-panel [data-act="game:arena"]', { timeout: 20000 });
+    // Nube (Supabase): la partida ya subió con un código; en otro equipo (navegador limpio) se usa ese código.
+    await q.click('#panel [data-act="files"]'); await q.waitForSelector('#nubeCode');
+    await q.click('#panel [data-act="nubePush"]');
+    await q.waitForFunction(() => __ui.dialog && /nube/.test(document.getElementById('msgText').textContent), {}, { timeout: 15000 });
+    for (let i = 0; i < 6 && await q.evaluate(() => !!__ui.dialog); i++) { await q.keyboard.press('z'); await sleep(150); }
+    await q.waitForSelector('#nubeCode');
+    const nubeCode = (await q.textContent('#nubeCode')).trim();
+    assert.match(nubeCode, /^PUCHA-[A-Z2-9]{4}(-[A-Z2-9]{4}){3}$/, 'la nube muestra el código de partida');
+    assert.ok(nubeDB.get(nubeCode)?.slots?.['1'], 'la partida quedó en la nube');
     await ctx2.close();
+    const ctx3 = await browser.newContext({ viewport: { width: 820, height: 1180 }, hasTouch: true });
+    await mockNube(ctx3);
+    const n = await ctx3.newPage(); n.on('pageerror', e => errors.push('nube: ' + e.message));
+    await n.goto(url); await sleep(700);
+    assert.equal(await n.$('#panel [data-act="continue"]'), null, 'navegador limpio: sin partidas');
+    await n.click('#panel [data-act="files"]'); await n.waitForSelector('#nubeInput');
+    await n.fill('#nubeInput', nubeCode.toLowerCase().replace(/-/g, ' '));
+    await n.click('#panel [data-act="nubeLink"]');
+    await n.waitForFunction(() => __ui.dialog && /Listo/.test(document.getElementById('msgText').textContent), {}, { timeout: 15000 });
+    for (let i = 0; i < 6 && await n.evaluate(() => !!__ui.dialog); i++) { await n.keyboard.press('z'); await sleep(150); }
+    await n.waitForSelector('#panel [data-act="continue"]', { timeout: 15000 });
+    await n.click('#panel [data-act="continue"]'); await n.waitForSelector('#panel.slot-panel');
+    await n.click('#panel [data-act="slot:1"]'); await sleep(900);
+    assert.equal(await n.evaluate(() => __game.state.name), 'Santi', 'en el otro equipo sigue la misma partida');
+    await ctx3.close();
+    log('nube (Supabase): código de partida y seguir en otro equipo OK');
     log('ranuras, avatar y respaldo en GitHub OK');
 
     assert.deepEqual(errors, [], 'no debe haber errores de JavaScript');

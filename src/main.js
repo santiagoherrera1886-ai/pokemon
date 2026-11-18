@@ -5,6 +5,7 @@ import { Graphics } from './core/graphics.js';
 import { initLayout } from './core/layout.js';
 import { newState, loadState, saveState, listSaves } from './core/state.js';
 import { cloud } from './core/cloud.js';
+import { nube } from './core/nube.js';
 import { avatarLook, defaultAvatar } from './data/avatar.js';
 import { canvas, px, ellipse } from './core/pixel.js';
 import { World } from './world/world.js';
@@ -27,6 +28,7 @@ class Game {
   constructor() {
     initLayout();
     ui.init();
+    nube.onFirst = () => this.toast('☁ Tu partida ya se guarda en la nube · el código está en PARTIDAS');
     this.renderer = new Renderer(document.getElementById('top'));
     this.renderer.onResize = () => { this.titleBg = null; };
     this.world = new World();
@@ -35,6 +37,7 @@ class Game {
     this.frame = 0;
     this.waiters = [];
     this.scene = 'title';
+    this.mini = null;   // juego del stock en curso (Duelo de Torres o Aldea), con su propia escena
     this.fading = false;
     ui.restoreHook = () => this.restoreBottom();
     input.bindTouch(document);
@@ -68,6 +71,7 @@ class Game {
     this.frame++;
     ui.update();
     if (this.scene === 'overworld') { this.ow.update(); this.state.playTime++; if (this.autosavePending) this.tryAutosave(); }
+    else if (this.mini && this.scene === this.mini.scene) this.mini.update(1 / 60);
     if (this.frame % 10 === 0 && typeof document !== 'undefined' && document.body.dataset.scene !== this.scene) { document.body.dataset.scene = this.scene; this.ow.devUI?.(); }
     if (this.state) refillMoney(this.state);   // código de plata infinita
     const w = this.waiters; this.waiters = [];
@@ -81,7 +85,8 @@ class Game {
   render() {
     const r = this.renderer;
     if (this.graphics.render()) return;
-    if (this.scene === 'overworld') this.ow.render(r);
+    if (this.mini && this.scene === this.mini.scene) this.mini.render2d(r);
+    else if (this.scene === 'overworld') this.ow.render(r);
     else if (this.scene === 'battle' && this.battleObj) this.battleObj.render(r);
     else if (this.scene === 'title') this.renderTitle(r);
     else if (this.scene === 'flash') this.renderFlash(r);
@@ -131,8 +136,14 @@ class Game {
     const last = listSaves().sort((a, b) => b.savedAt - a.savedAt)[0];
     this.previewAvatar(last ? last.avatar : defaultAvatar());
     if (cloud.linked) cloud.pull().catch(e => console.warn('Puchamon: GitHub no respondió', e.message));
+    if (nube.linked && !nube.off) nube.pull().catch(e => console.warn('Puchamon: la nube no respondió', e.message));
     const choice = await this.menus.title();
     ui.closePanel();
+    if (choice.type === 'game') {   // stock de juegos: Duelo de Torres o Aldea con la partida escogida
+      this.state = loadState(choice.slot) || newState();
+      this.applyAvatar(); this.applyOptions();
+      return this.playMini(choice.game, 'title');
+    }
     document.body.classList.remove('at-title');
     if (choice.type === 'continue') this.state = loadState(choice.slot) || newState();
     else { this.state = newState(choice.name, choice.avatar, choice.slot); saveState(this.state); cloud.pushSoon(); }
@@ -151,6 +162,35 @@ class Game {
       await ui.say([`${this.state.name}, despierta... Hoy es un día especial en Pueblo Brisal.`, 'Usa las flechas o la cruceta para caminar y A (Z o Enter) para hablar e investigar.', 'Pulsa Esc o el botón MENÚ para ver tu equipo, la mochila y guardar.']);
       this.ow.scripts--;
     }
+  }
+
+  // ---------- Stock de juegos ----------
+  // Abre un juego del stock con la partida cargada (comparten la plata y los Puchamon). Al salir se guarda y se
+  // vuelve a donde estabas: al título o al mismo punto del mapa.
+  async playMini(kind, from = 'overworld') {
+    if (this.mini) return;
+    if (from === 'overworld') { if (this.ow.scripts || this.fading) return; saveState(this.state); }
+    await this.fadeOut();
+    ui.hideMsg(); ui.closePanel(); input.clear();
+    document.getElementById('menuBtn').classList.add('hidden');
+    document.body.classList.remove('at-title');
+    const mod = kind === 'aldea' ? await import('./games/aldea/aldea.js') : await import('./games/arena/arena.js');
+    this.mini = kind === 'aldea' ? new mod.AldeaGame(this) : new mod.ArenaGame(this);
+    this.miniFrom = from; this.scene = this.mini.scene;
+    document.body.classList.add('in-mini', 'mini-' + kind);
+    if (this.graphics.status !== 'ready') this.graphics.ensure();
+    await this.fadeIn();
+    try { await this.mini.run(); }
+    catch (error) { console.warn('Puchamon: el juego se cerró', error); this.toast('El juego se cerró por un error · tu partida está a salvo'); }
+    await this.fadeOut();
+    this.mini.dispose(); this.mini = null;
+    document.body.classList.remove('in-mini', 'mini-' + kind);
+    if (saveState(this.state)) cloud.pushSoon();
+    input.clear();
+    if (from === 'title') { this.scene = 'title'; await this.fadeIn(); return this.toTitle(); }
+    this.scene = 'overworld'; this.menus.home(false);
+    document.getElementById('menuBtn').classList.remove('hidden');
+    await this.fadeIn();
   }
 
   // Avatar del protagonista: pixel art y 3D usan el look 'player', que sale de state.avatar.

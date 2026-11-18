@@ -14,6 +14,7 @@ import { CHEATS, tryCode, spend, cheatOn, devOn, devToggle } from '../data/cheat
 import { ITEMS, POCKETS, POCKET_ORDER, SPECIAL, VENDING, STAT_NAMES, SEED_MAX, generalStock, lockedStock, shortDesc, sellPrice, pocketItems, canUseOn, useOnCreature, isCapsule } from '../data/items.js';
 import { saveState, listSaves, SLOTS, loadState, storeState, parseState, playTimeText } from '../core/state.js';
 import { cloud, TOKEN_URL } from '../core/cloud.js';
+import { nube } from '../core/nube.js';
 import { AVATAR_OPTIONS, defaultAvatar, cleanAvatar, avatarLook } from '../data/avatar.js';
 import { lookFrame } from '../art/characters.js';
 
@@ -29,6 +30,12 @@ const SVG = {
   save: '<svg viewBox="0 0 24 24"><path d="M5 3h11l4 4v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="#4a6ad8"/><rect x="7" y="3" width="8" height="6" rx="1" fill="#dfe8ff"/><rect x="6" y="13" width="12" height="6" rx="1.4" fill="#dfe8ff"/></svg>',
   options: '<svg viewBox="0 0 24 24"><path d="M12 2.5l2 2.6 3.2-.6.6 3.2 2.6 2-1.6 2.8 1.6 2.8-2.6 2-.6 3.2-3.2-.6-2 2.6-2-2.6-3.2.6-.6-3.2-2.6-2 1.6-2.8L3.6 9.7l2.6-2 .6-3.2 3.2.6z" fill="#7a7f98"/><circle cx="12" cy="12" r="3.4" fill="#eef0f6"/></svg>'
 };
+// Stock de juegos: los que se juegan con tu partida de Puchamon. ready=false se muestra como "pronto".
+export const GAMES = {
+  arena: { name: 'Duelo de Torres', tag: 'Cartas y torres en tiempo real', ready: true },
+  aldea: { name: 'Aldea Puchamon', tag: 'Construye tu aldea y ataca', ready: true }
+};
+const GAME_CARDS = Object.entries(GAMES).map(([id, g]) => `<button data-act="game:${id}" class="game-card gc-${id}${g.ready ? '' : ' soon'}"><i class="gc-art"></i><b>${g.name.toUpperCase()}</b><small>${g.tag}</small><em>${g.ready ? 'NUEVO' : 'PRONTO'}</em></button>`).join('');
 // Dónde vive cada especie (encuentros de las rutas, de día o de noche) y las leyendas.
 const PLACE = { sendero1: 'Sendero 1', lago: 'Lago Espejo', ruta2: 'Ruta 2', ruta3: 'Ruta 3', cueva: 'Cueva Eco', ruta4: 'Ruta 4', ruta5: 'Ruta 5', ruta6: 'Ruta 6', ruta7: 'Ruta 7', ruta8: 'Ruta 8', ruta9: 'Ruta 9', ruta10: 'Ruta 10', ruta11: 'Ruta 11', ruta12: 'Ruta 12', ruta13: 'Ruta 13', ruta14: 'Ruta 14', ruta15: 'Desierto Tatacoa', volcan: 'Cerro Fragua', ruta16: 'Ruta 16', ruta17: 'Glaciar', pico: 'Pico Cóndor', ruta18: 'Ruta 18', ruta19: 'Banco de arena', ruta20: 'Ruta 20', ruinas: 'Ruinas del Alba', ruta21: 'Ruta 21', ruta22: 'Ruta 22', ruta23: 'Ruta 23', ruta24: 'Ruta 24', ruta25: 'Ruta 25', manglar: 'Manglar', isla: 'Isla Totuma', ruta26: 'Ruta 26', ruta27: 'Ruta 27', ruta28: 'Bosque de Niebla', ruta29: 'Selva del Caño', cano: 'Caño de los Colores', guacharo: 'Cueva Guácharo', cascadaParque: 'Parque de Ciudad Cascada', caleta: 'Caleta Sol' };
 const LEGEND_PLACE = { espejalba: 'Lago Espejo (historia)', brumalia: 'Ruta 2 de noche, después de la Liga', fraguon: 'Cueva Eco, después de la Liga', glaciel: 'Ruta 5, después de la Liga', dracalba: 'Lago Espejo, con las tres leyendas atrapadas', mohan: 'Caño de los Colores de noche, con la Medalla Arcoíris', madremonte: 'Selva del Caño, con la Medalla Arcoíris', tunjo: 'Sala dorada de la Cueva Guácharo, con la Medalla Arcoíris', esmeraldon: 'Veta verde de la Cueva Guácharo, con la Medalla Arcoíris' };
@@ -97,12 +104,22 @@ export class Menus {
         <button data-act="save" class="hb hb-save">${SVG.save}<b>GUARDAR</b><small>Ranura ${st.slot || 1}</small></button>
         <button data-act="options" class="hb hb-opt">${SVG.options}<b>OPCIONES</b><small>Gráficos y más</small></button>
       </div>
-      <div class="home-row">${cheatOn(st, 'dev') ? '<button data-act="dev" class="home-dev">🛠️ MODO DESARROLLADOR</button>' : ''}<button data-act="codes" class="home-codes">🔑 CÓDIGOS</button></div>
+      <div class="home-row"><button data-act="games" class="home-games">🎮 JUEGOS</button><button data-act="codes" class="home-codes">🔑 CÓDIGOS</button></div>
+      ${cheatOn(st, 'dev') ? '<div class="home-row"><button data-act="dev" class="home-dev">🛠️ MODO DESARROLLADOR</button></div>' : ''}
       <button class="bt-back" data-back>CERRAR</button></div>`,
     { modal: true, cls: 'home-panel', focus: 1, onAct: a => this.open(a), onBack: () => ui.closePanel() });   // el cursor arranca en EQUIPO
   }
   open(what) {
-    ({ party: () => this.party(), bag: () => this.bag(), dex: () => this.dex(), card: () => this.card(), save: () => this.save(), options: () => this.options(), map: () => this.regionMap(), dev: () => this.dev(), codes: () => this.codes('home') })[what]();
+    ({ party: () => this.party(), bag: () => this.bag(), dex: () => this.dex(), card: () => this.card(), save: () => this.save(), options: () => this.options(), map: () => this.regionMap(), dev: () => this.dev(), codes: () => this.codes('home'), games: () => this.games() })[what]();
+  }
+  // Stock de juegos desde el menú: se guarda la partida y al salir del juego vuelves al mismo punto.
+  games() {
+    ui.setPanel(`<h3 class="ph">STOCK DE JUEGOS</h3><p class="hint">Usan tus Puchamon y tu plata. Al salir vuelves aquí mismo.</p><div class="stock-row">${GAME_CARDS}</div><button class="bt-back" data-back>VOLVER</button>`,
+      { modal: true, cls: 'games-panel', onBack: () => this.home(true), onAct: a => {
+        const kind = a.slice(5);
+        if (!GAMES[kind]?.ready) { this.game.toast(`${GAMES[kind]?.name || 'Ese juego'}: muy pronto en el stock`); return; }
+        ui.closePanel(); this.game.playMini(kind, 'overworld');
+      } });
   }
 
   // ---------- Mapa de la región ----------
@@ -339,7 +356,7 @@ export class Menus {
       <button data-act="hour">Hora del día: <b>${o.forceHour === undefined ? 'REAL' : o.forceHour === 12 ? 'SIEMPRE DÍA' : 'SIEMPRE NOCHE'}</b></button>
       <button data-act="avatar">Mi avatar</button>
       <button data-act="autosave">Guardado automático: <b>${o.autosave === false ? 'NO' : 'SÍ'}</b></button>
-      <button data-act="files">Partidas y GitHub${cloud.linked ? ' ☁' : ''}</button>
+      <button data-act="files">Partidas, nube y GitHub${nube.linked && !nube.off ? ' ☁' : ''}</button>
       <button data-act="codes">Códigos${Object.keys(this.st.cheats || {}).length ? ` <b>${Object.keys(this.st.cheats).length} ACTIVO${Object.keys(this.st.cheats).length > 1 ? 'S' : ''}</b>` : ''}</button>
       <button data-act="full">Pantalla completa del navegador</button>
       <button data-act="title">Volver al título</button></div>
@@ -478,19 +495,36 @@ export class Menus {
   // Devuelve { type: 'continue', slot } o { type: 'new', slot, name, avatar }.
   title() {
     return new Promise(resolve => {
+      // Stock de juegos: Puchamon es el juego estrella (arriba y grande); abajo los otros juegos del stock, que
+      // usan la misma partida (tus Puchamon y tu plata).
       const main = () => {
         const saves = listSaves();
-        ui.setPanel(`<div class="title-menu">
-          ${saves.length ? '<button data-act="continue" class="primary">CONTINUAR</button>' : ''}
-          <button data-act="new">NUEVA PARTIDA</button>
-          <button data-act="files" class="soft">PARTIDAS Y GITHUB${cloud.linked ? ' ☁' : ''}</button>
-          <p class="title-news"><b>NUEVO · v4</b> El sur de Alborada, hecho a mano: pueblos, rutas, una cueva y un gimnasio extra, con casas, moteles, pareja y 40 Puchamon. Baja por la Ruta 26 desde Pueblo Llanero.</p>
-          <p class="hint">Juego original sin ROM · guardado en tu navegador${cloud.linked ? ` y en GitHub (${esc(cloud.login)})` : ''} · versión ${BUILD.version}${BUILD.sha !== 'dev' ? ` (${BUILD.sha})` : ''}</p></div>`,
-        { modal: true, cls: 'title-panel', onAct: a => {
+        ui.setPanel(`<div class="title-menu stock">
+          <div class="stock-main">
+            ${saves.length ? '<button data-act="continue" class="primary">CONTINUAR</button>' : ''}
+            <button data-act="new">NUEVA PARTIDA</button>
+            <button data-act="files" class="soft">PARTIDAS Y NUBE${nube.linked && !nube.off ? ' ☁' : ''}</button>
+          </div>
+          <div class="stock-more"><small>MÁS JUEGOS CON TUS PUCHAMON</small><div class="stock-row">${GAME_CARDS}</div></div>
+          <p class="title-news"><b>NUEVO · v5</b> Stock de juegos: Duelo de Torres y Aldea Puchamon, con tus Puchamon y tu misma plata. Cámara más cerca, menús nuevos y mejor 3D.</p>
+          <p class="hint">Juego original sin ROM · guardado en tu navegador${nube.linked && !nube.off ? ' y en la nube' : ''}${cloud.linked ? ` y en GitHub (${esc(cloud.login)})` : ''} · versión ${BUILD.version}${BUILD.sha !== 'dev' ? ` (${BUILD.sha})` : ''}</p></div>`,
+        { modal: true, cls: 'title-panel stock-panel', onAct: a => {
           if (a === 'continue') return saves.length === 1 ? resolve({ type: 'continue', slot: saves[0].slot }) : pick('continue');
           if (a === 'new') return saves.length ? pick('new') : nameStep(1);
           if (a === 'files') return this.saveFiles({ fromTitle: true }).then(main);
+          if (a.startsWith('game:')) return startGame(a.slice(5));
         } });
+      };
+      const startGame = async kind => {
+        const saves = listSaves(), name = GAMES[kind].name;
+        if (!GAMES[kind].ready) { this.game.toast(`${name}: muy pronto en el stock`); return; }
+        if (!saves.length) {
+          const i = await ui.ask(`${name} usa tus Puchamon y tu plata de la aventura. Primero empieza una partida de Puchamon.`, ['Empezar partida', 'Volver']);
+          ui.hideMsg(); return i === 0 ? nameStep(1) : main();
+        }
+        if (saves.length === 1) return resolve({ type: 'game', game: kind, slot: saves[0].slot });
+        const slot = await this.slotPicker('continue', `${name.toUpperCase()} · ¿CON QUÉ PARTIDA?`);
+        return slot ? resolve({ type: 'game', game: kind, slot }) : main();
       };
       const pick = mode => this.slotPicker(mode).then(slot => slot ? (mode === 'continue' ? resolve({ type: 'continue', slot }) : nameStep(slot)) : main());
       const nameStep = slot => {
@@ -585,7 +619,13 @@ export class Menus {
       const ago = t => { if (!t) return ''; const m = Math.round((Date.now() - t) / 60000); return m < 1 ? 'hace un momento' : m < 60 ? `hace ${m} min` : `hace ${Math.round(m / 60)} h`; };
       const draw = () => {
         const linked = cloud.linked;
-        ui.setPanel(`<h3 class="ph">PARTIDAS Y GITHUB</h3><div class="opts cloud">
+        // Nube (Supabase): siempre activa salvo que la apagues; el código sirve para seguir en otro equipo.
+        const nubeTxt = nube.off ? `<p class="hint">☁ Nube apagada: tus partidas sólo quedan en este navegador.</p><button data-act="nubeOn">Encender la nube</button>`
+          : `<p class="hint">☁ <b>Nube (Supabase)</b>: cada vez que guardas, tus partidas también quedan en la nube${nube.lastSync ? ` · última subida ${ago(nube.lastSync)}` : ''}. Para seguir en otro iPad, celular o compu, escribe allá este código:</p>
+            <div class="nube-code"><b id="nubeCode">${nube.code ? esc(nube.code) : 'Se crea al guardar por primera vez'}</b>${nube.code ? '<button data-act="nubeCopy">COPIAR</button>' : ''}</div>
+            <input id="nubeInput" placeholder="¿Tienes un código? Pégalo aquí (PUCHA-...)" autocomplete="off" spellcheck="false" autocapitalize="characters">
+            <button data-act="nubeLink">USAR ESE CÓDIGO</button><button data-act="nubePush">Subir ahora</button><button data-act="nubeOff" class="soft">Apagar la nube</button>`;
+        ui.setPanel(`<h3 class="ph">PARTIDAS, NUBE Y GITHUB</h3><div class="opts cloud">${nubeTxt}<div class="sep"></div>
           ${linked ? `<p class="hint">☁ Conectado a GitHub como <b>${esc(cloud.login)}</b>${cloud.lastSync ? ` · último respaldo ${ago(cloud.lastSync)}` : ''}. Cada vez que guardas, la partida también se sube a un gist privado de tu cuenta.</p>
             <button data-act="push">Subir mis partidas ahora</button>
             <button data-act="pull">Traer partidas de GitHub</button>
@@ -600,6 +640,18 @@ export class Menus {
           </div><button class="bt-back" data-back>VOLVER</button>`,
         { modal: true, cls: 'list-panel files-panel', onBack: done, onAct: async a => {
           try {
+            if (a === 'nubeCopy') { try { await navigator.clipboard.writeText(nube.code); this.game.toast('Código copiado'); } catch { ui.show('Copia este código: ' + nube.code); } return; }
+            if (a === 'nubePush') { ui.show('Subiendo a la nube...'); await nube.push(); await ui.say(['Tus partidas quedaron en la nube.', `Código: ${nube.code}`]); }
+            if (a === 'nubeLink') {
+              const text = document.getElementById('nubeInput')?.value || '';
+              if (!fromTitle && !(await ui.ask('Ese código trae las partidas de otro equipo y reemplaza las ranuras que allá estén más nuevas. ¿Seguir?', ['No', 'Sí']))) return draw();
+              ui.show('Buscando tus partidas en la nube...');
+              const got = await nube.link(text);
+              await ui.say(['¡Listo! Este equipo ya usa ese código.', got.length ? `Se trajeron ${got.length} partida${got.length > 1 ? 's' : ''} de la nube.` : 'Tus partidas de aquí ya estaban al día.']);
+              if (fromTitle) { ui.hideMsg(); return resolve(); }
+            }
+            if (a === 'nubeOff') { const i = await ui.ask('¿Apagar la nube? Tus partidas siguen en este navegador; las de la nube no se borran.', ['No', 'Sí']); if (i === 1) nube.setOff(true); }
+            if (a === 'nubeOn') { nube.setOff(false); nube.pushSoon(); }
             if (a === 'token') { window.open(TOKEN_URL, '_blank', 'noopener'); ui.show('En GitHub baja hasta el final, dale "Generate token" y copia el código que empieza por ghp_.'); return; }
             if (a === 'link') {
               const token = document.getElementById('ghToken')?.value || '';
@@ -618,7 +670,7 @@ export class Menus {
             if (a === 'unlink') { const i = await ui.ask('¿Desconectar GitHub? Tus partidas siguen en este navegador y en tu gist.', ['No', 'Sí']); if (i === 1) cloud.disconnect(); }
             if (a === 'export') await this.exportSave(fromTitle);
             if (a === 'import') { const input = document.getElementById('importFile'); input.onchange = () => this.importSave(input.files[0]).then(draw); input.click(); return; }
-          } catch (e) { await ui.say([e.message || 'No se pudo conectar con GitHub.']); }
+          } catch (e) { await ui.say([e.message || 'No se pudo conectar.']); }
           draw();
         } });
       };

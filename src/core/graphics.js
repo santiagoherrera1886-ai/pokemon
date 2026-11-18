@@ -73,13 +73,15 @@ export class Graphics {
     try { return this.engine.avatarPortrait(look); } catch (error) { console.warn('Puchamon: retrato del avatar no disponible', error.message); return null; }
   }
   render() {
-    const supportedScene = this.game.scene === 'overworld' || this.game.scene === 'battle' || this.game.scene === 'title';
-    if (this.mode !== 'premium' || !supportedScene || this.status === 'unavailable') {this.engine?.setVisible(false); return false;}
+    // Los juegos del stock se dibujan siempre en 3D (también si escogiste el modo clásico para la aventura).
+    const mini = !!this.game.mini && this.game.scene === this.game.mini.scene;
+    const supportedScene = mini || this.game.scene === 'overworld' || this.game.scene === 'battle' || this.game.scene === 'title';
+    if ((this.mode !== 'premium' && !mini) || !supportedScene || this.status === 'unavailable') {this.engine?.setVisible(false); return false;}
     if (!this.engine) {this.ensure(); return false;}
     if (this.engine.lost) {this.engine.setVisible(false); return false;}
     try {this.engine.render(); this.engine.setVisible(true); return true;}
     catch (error) {
-      this.engine.setVisible(false); this.status = 'unavailable'; this.mode = 'classic';
+      this.engine.setVisible(false); this.status = 'unavailable'; if (!mini) this.mode = 'classic';
       console.warn('Puchamon: se recuperó el modo clásico', error.message);
       this.game.toast('Modo clásico activo · tu partida continúa'); return false;
     }

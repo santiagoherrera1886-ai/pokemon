@@ -1,6 +1,7 @@
 // Respaldo de partidas en GitHub: un gist privado del jugador con el archivo alborada-partidas.json.
 // El jugador pega una vez un token con permiso "gist"; se guarda solo en este navegador.
 import { SLOTS, loadState, storeState, parseState } from './state.js';
+import { nube } from './nube.js';
 
 const KEY = 'alborada-github-v1', FILE = 'alborada-partidas.json', API = 'https://api.github.com';
 export const TOKEN_URL = 'https://github.com/settings/tokens/new?scopes=gist&description=Puchamon%20partidas';
@@ -67,6 +68,7 @@ export const cloud = {
   },
   // Subida silenciosa después de guardar (no interrumpe el juego si falla).
   pushSoon() {
+    nube.pushSoon();   // la nube de Supabase guarda siempre (con el código de partida); GitHub sólo si lo conectaste
     if (!this.linked) return;
     clearTimeout(this.timer);
     this.timer = setTimeout(() => this.push().catch(e => console.warn('Puchamon: respaldo en GitHub pendiente', e.message)), 1500);

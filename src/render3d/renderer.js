@@ -263,8 +263,10 @@ export class PremiumRenderer {
     const now=performance.now(),raw=(now-this.last)/1000,dt=Math.min(.1,raw);this.last=now;this.time.value=now/1000;
     if(document.hidden)return;
     if(this.game.scene!=='title'&&this.titleScene)this.clearTitle();
-    if(this.game.scene==='battle')this.battle(dt);else if(this.game.scene==='title')this.title(dt);else{this.canvas.style.filter='';this.world(dt);}
-    this.resize();const so={...(this.styleOpts||{}),retro:this.game.graphics?.art==='retro'?1:0};if(this.degrade>=1)so.tilt=0;if(this.degrade>=2)so.bloom=0;this.style.render(this.scene,this.camera.camera,so);
+    const mini=this.game.mini,miniOn=!!mini&&this.game.scene===mini.scene;let cam=this.camera.camera;
+    if(miniOn){this.worldRoot.visible=false;this.battleRoot.visible=false;this.particles.visible=false;this.canvas.style.filter='';cam=mini.draw3d(this,dt)||cam;}
+    else if(this.game.scene==='battle')this.battle(dt);else if(this.game.scene==='title')this.title(dt);else{this.canvas.style.filter='';this.world(dt);}
+    this.resize();const so={...(this.styleOpts||{}),retro:this.game.graphics?.art==='retro'?1:0};if(this.degrade>=1)so.tilt=0;if(this.degrade>=2)so.bloom=0;this.style.render(this.scene,cam,so);
     if(++this.frameCount%120===0){this.stats={drawCalls:this.webgl.info.render.calls,triangles:this.webgl.info.render.triangles,textures:this.webgl.info.memory.textures,geometries:this.webgl.info.memory.geometries,maps:this.maps.size,resolution:this.canvas.width,quality:this.quality};}
     // Sustained slow frames reduce only pixel resolution; no simulation changes.
     // Si hay cuadros lentos sostenidos, baja la carga por escalones: 1 sin desenfoque, 2 sin bloom ni MSAA, 3+ menos resolución.
