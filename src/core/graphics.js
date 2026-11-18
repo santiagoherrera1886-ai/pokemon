@@ -16,11 +16,14 @@ export class Graphics {
     this.engine = null; this.pending = null;
     try {
       const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
-      if (saved) {this.mode = saved.mode === 'classic' ? 'classic' : 'premium'; this.quality = ['low','medium','high'].includes(saved.quality) ? saved.quality : 'medium'; this.art = saved.art === 'retro' ? 'retro' : 'hd'; this.hero = saved.hero === 'glb' ? 'glb' : 'sculpt';}
-      else if (matchMedia('(pointer: coarse)').matches) this.quality = 'low';
+      if (saved) {this.mode = saved.mode === 'classic' ? 'classic' : 'premium'; this.quality = ['low','medium','high'].includes(saved.quality) ? saved.quality : 'medium'; this.art = saved.art === 'retro' ? 'retro' : 'hd'; this.hero = saved.hero === 'glb' ? 'glb' : 'sculpt';
+        // v5: la calidad BAJA dejó de ser la automática en iPad y celulares; quien la tenía guardada sube una vez a MEDIA
+        // (con sombras y suavizado). Si el equipo se pone lento, el motor baja la carga solo.
+        if (saved.v !== 5 && this.quality === 'low') {this.quality = 'medium'; this.save();}}
+      // Sin preferencias guardadas: calidad MEDIA en todos los equipos (antes los táctiles arrancaban en BAJA).
     } catch { /* Storage is optional; gameplay still works. */ }
   }
-  save() {try {localStorage.setItem(KEY, JSON.stringify({mode:this.mode, quality:this.quality, art:this.art, hero:this.hero}));} catch { /* private browsing */ }}
+  save() {try {localStorage.setItem(KEY, JSON.stringify({v:5, mode:this.mode, quality:this.quality, art:this.art, hero:this.hero}));} catch { /* private browsing */ }}
   setHero(value) {this.hero = value === 'glb' ? 'glb' : 'sculpt'; this.save(); this.engine?.refreshPlayer?.();}
   // Estilo de arte: activa o apaga la hoja retro, los sprites retro y el pixelado del 3D. Los retratos se rehacen.
   applyArt() {

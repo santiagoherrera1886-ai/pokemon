@@ -3,9 +3,9 @@ import {animateCreature} from './creatures3d.js';
 import {Resources} from './resources.js';
 import {Environment,biomeOf} from './environment.js';
 import {Ambient} from './ambient.js';
-import {DioramaCamera} from './camera.js';
+import {DioramaCamera,battleLayout} from './camera.js';
 import {Lighting} from './lighting.js';
-import {character,animateCharacter,creature} from './actors.js';
+import {character,animateCharacter,creature,addXray} from './actors.js';
 import {attachHero,updateHero,detachHero} from './hero-model.js';
 import {capsuleModel} from './models.js';
 import {TitleScene} from './title.js';
@@ -62,6 +62,15 @@ export class PremiumRenderer {
     const mesh=new T.InstancedMesh(this.r.geometries.leaf,this.r.mat(P.back),list.length),dummy=new T.Object3D();
     list.forEach(([x,z],i)=>{const hh=hash(x,z,3);dummy.position.set(x+.5+hh*.6,1.5+hh*.5,z+.5+hash(z,x,4)*.6);dummy.scale.set(1.45+hh*.3,1.5+hh*.5,1.4);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});mesh.computeBoundingSphere();this.backdrop.add(mesh);
     const floor=this.r.mesh(this.backdrop,'box',P.floor,[cx,-.13,cz],[70,.1,70]);floor.castShadow=false;
+  }
+  // ¿La casilla bajo este punto (coordenadas globales) es parte de un puente? Se arma un conjunto por mapa una sola vez.
+  onBridge(pos){
+    const w=this.game.world,m=this.game.ow.map;if(!m)return false;
+    const gx=Math.floor(pos.x),gz=Math.floor(pos.z),map=m.outdoor?w.outdoorAt(gx,gz):m;if(!map)return false;
+    this.bridgeSets??=new Map();
+    if(!this.bridgeSets.has(map.id)){const set=new Set();for(const o of map.objects)if(o.kind==='bridge')for(let j=0;j<o.h;j++)for(let i=0;i<o.w;i++)set.add((o.x+i)+','+(o.y+j));this.bridgeSets.set(map.id,set);}
+    const ox=map.outdoor?map.origin[0]:0,oz=map.outdoor?map.origin[1]:0;
+    return this.bridgeSets.get(map.id).has((gx-ox)+','+(gz-oz));
   }
   clearWorld(){for(const e of this.maps.values())this.r.release(e.root);this.maps.clear();for(const a of this.actors.values()){detachHero(a);this.r.release(a.root);}this.actors.clear();this.backdropCell='';this.currentMap=null;}
   // Corazones (♥) sobre la cabeza de quien los siente: un sprite por emoción, sube y se desvanece.
@@ -166,14 +175,16 @@ export class PremiumRenderer {
     const active=new Set();
     for(const actor of [...ow.npcs,ow.player,...(ow.follower?[ow.follower]:[])]){
       const id=actor.id,look=actor.look;active.add(id);
-      if(!this.actors.has(id)){const rig=character(this.r,look);this.actors.set(id,rig);this.worldRoot.add(rig.root);if(actor===ow.player&&this.heroOn())attachHero(rig);}
+      if(!this.actors.has(id)){const rig=character(this.r,look);this.actors.set(id,rig);this.worldRoot.add(rig.root);if(actor===ow.player||actor===ow.follower)addXray(rig);if(actor===ow.player&&this.heroOn())attachHero(rig);}
       const rig=this.actors.get(id),talking=!!ui.dialog&&!actor.moving;
       animateCharacter(rig,actor,m,this.time.value,dt,talking);
+      if(this.onBridge(rig.root.position))rig.root.position.y=.13;   // sobre las tablas del puente, no hundido en ellas
       if(rig.hero)updateHero(rig,{moving:!!actor.moving,running:!!actor.moving&&actor.moving.dur<=10,talking},dt);
     }
     this.syncEmotes(ow,m);
     for(const [id,rig]of this.actors)if(!active.has(id)){detachHero(rig);this.r.release(rig.root);this.actors.delete(id);}
-    this.camera.update(m,p,dt,false,null);this.lights.update(this.camera.focus,!m.outdoor,hour,m.dark);
+    this.camera.update(m,p,dt,false);this.lights.update(this.camera.focus,!m.outdoor,hour,m.dark);
+    if(m.outdoor){this.scene.fog.near+=this.camera.distance-14;this.scene.fog.far+=this.camera.distance-14;}
     this.particles.visible=!m.outdoor;this.particles.geometry.setDrawRange(0,12);
     this.ambient.update(m,night,this.camera.focus,this.time.value,this.webgl.domElement.height,1/Math.tan(this.camera.camera.fov*Math.PI/360)*.5,this.settings.particles/72);
     this.particles.position.set(p.x,0,p.z);this.particles.rotation.y=this.time.value*.015;
@@ -189,7 +200,8 @@ export class PremiumRenderer {
       const r=this.r,ground=new T.Group();this.battleRoot.add(ground);
       const colors={grass:'#9ab982',lake:'#a4c9b5',cave:'#78807d',beach:'#e4d3ad',mountain:'#a4ac91',gym:'#c8d8bf',eclipse:'#74657f',league:'#dfd2ad'};
       r.box(ground,colors[terrain]||colors.grass,0,-.19,0,22,.3,18,true);
-      for(const [x,z]of [[-2,1.5],[2,-1.8]]){r.mesh(ground,'cylinder','#e6d8af',[x,-.005,z],[1.65,.12,1.3]);r.mesh(ground,'cylinder','#c0cf94',[x,.06,z],[1.51,.025,1.16]);}
+      this.platforms=[];this.platformKey=null;
+      for(let i=0;i<2;i++){const pl=new T.Group();this.battleRoot.add(pl);this.platforms.push(pl);r.mesh(pl,'cylinder','#e6d8af',[0,-.005,0],[1.65,.12,1.3]);r.mesh(pl,'cylinder','#c0cf94',[0,.06,0],[1.51,.025,1.16]);}
       for(let i=0;i<26;i++){const row=i<13?0:1,x=(i%13)*2.2-13.2+row*1.1,z=row?-8:-6,rock=terrain==='cave'||terrain==='mountain';r.mesh(ground,rock?'leaf':'cone',rock?(row?'#6f7770':'#858d86'):(row?'#5d8a5c':'#6e9c6b'),[x,1.2+row*.3,z],[1.15,rock?1.7:2.7+row*.5,1]);}
       r.batch(ground);
       this.creatures={foe:creature(r,b.foe.sp),ally:b.ally?creature(r,b.ally.sp):null};
@@ -202,12 +214,14 @@ export class PremiumRenderer {
       this.movefx=this.movefx||new MoveFX(this.r,this.fxLayer);this.movefx.parent=this.fxLayer;b.fxEvents.length=0;
     }
     this.worldRoot.visible=false;this.battleRoot.visible=true;this.particles.visible=false;this.scene.background.set({cave:'#2a2a2e',eclipse:'#2a2236',league:'#2e2c4e',lake:'#a8daf0',beach:'#9fd8f4',mountain:'#b8dcf0'}[terrain]||'#a8d8ee');this.scene.fog.color.copy(this.scene.background);this.scene.fog.near=14;this.scene.fog.far=40;this.styleOpts={focusY:.5,tilt:.3,night:0,bloom:.3,lift:.1,grade:[1.05,1.01,.95],sat:1.12};
-    const f=b.fx,time=this.time.value;
+    const f=b.fx,time=this.time.value,L=battleLayout(this.camera.aspect);
+    if(this.platformKey!==L.tall){this.platformKey=L.tall;for(const [i,pl]of (this.platforms||[]).entries()){const spot=i?L.foe:L.ally;pl.position.set(spot[0],0,spot[1]);}}
     for(const side of ['foe','ally']){
       const rig=this.creatures[side];if(!rig)continue;
       const ally=side==='ally',blink=f[side+'Blink']&&(this.game.frame>>2)%2;
       rig.root.visible=f[side+'Alpha']>.05&&!blink;
-      rig.root.position.set((ally?-2:2)+f[side+'X']*13,Math.max(-1,-f[side+'Y']/30),ally?1.5:-1.8);
+      const spot=ally?L.ally:L.foe;
+      rig.root.position.set(spot[0]+f[side+'X']*13*L.k,Math.max(-1,-f[side+'Y']/30),spot[1]);
       rig.root.rotation.y=ally?Math.PI+.3:.3;
       // Forma Alba: corona, alas de luz y brillo; la criatura crece un poco mientras dure el combate.
       const cr=ally?b.ally:b.foe,albaOn=!!(cr&&cr.alba&&cr.sp===rig.sp);
@@ -222,9 +236,11 @@ export class PremiumRenderer {
       const closed=time>rig.blinkAt;for(const e of rig.eyes||[])e.scale.y=closed?.12:1;
       animateCreature(rig.model,time,dt);
     }
-    this.ball.visible=!!f.ball;if(f.ball){this.ball.position.set((f.ball.x-.5)*10,Math.max(.2,(.5-f.ball.y)*9),(f.ball.y-.43)*9-1.8);this.ball.userData.paint(f.ball.color||'#3a9ad8');this.ball.rotation.set(0,.45,f.ball.spin||0);}
-    if(this.trainerRig){this.trainerRig.root.visible=f.trainerA>.05;this.trainerRig.root.position.set(2+f.trainerX*13,0,-1.8);this.trainerRig.root.scale.setScalar(1.5);}
+    this.ball.visible=!!f.ball;if(f.ball){this.ball.position.set((f.ball.x-.5)*10*L.foe[0]/2,Math.max(.2,(.5-f.ball.y)*9),(f.ball.y-.43)*9+L.foe[1]);this.ball.userData.paint(f.ball.color||'#3a9ad8');this.ball.rotation.set(0,.45,f.ball.spin||0);}
+    if(this.trainerRig){this.trainerRig.root.visible=f.trainerA>.05;this.trainerRig.root.position.set(L.foe[0]+f.trainerX*13*L.k,0,L.foe[1]);this.trainerRig.root.scale.setScalar(1.5);}
     this.camera.update(null,null,dt,true);this.lights.update(this.camera.focus,false);
+    // La niebla se mide desde la cámara: en pantallas verticales la cámara queda más lejos y no debe lavar la escena.
+    this.scene.fog.near+=this.camera.distance-14;this.scene.fog.far+=this.camera.distance-14;
     this.camera.camera.updateMatrixWorld(true);
     // Animaciones de los movimientos (movefx.js): se crean con los eventos que deja el combate.
     const rigs=this.creatures,side=n=>rigs[n]||rigs.foe;

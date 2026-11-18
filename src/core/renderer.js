@@ -15,9 +15,10 @@ export class Renderer {
 
   resize() {
     const vw = innerWidth, vh = innerHeight;
-    // Escala entera: ~24 casillas de ancho en escritorio, ~12 en celular vertical.
-    let s = Math.max(2, Math.round(Math.min(vw / 400, vh / 230)));
-    if (vw < 700) s = Math.max(2, Math.round(Math.min(vw / 200, vh / 300)));
+    // Escala entera, más cerca que antes para que los personajes se vean grandes: ~18 casillas de ancho en
+    // escritorio o iPad acostado, ~13 en iPad parado y ~12 en celular vertical.
+    let s = Math.max(2, Math.round(Math.min(vw / 300, vh / 190)));
+    if (vw < vh || vw < 700) s = Math.max(2, Math.round(Math.min(vw / 180, vh / 290)));
     this.scale = s;
     this.w = Math.ceil(vw / s); this.h = Math.ceil(vh / s);
     const el = this.screen;

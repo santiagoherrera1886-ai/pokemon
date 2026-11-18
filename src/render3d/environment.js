@@ -53,6 +53,9 @@ export class Environment {
       float clouds=smoothstep(.3,.95,sin(p.x*.5+time*.035)*cos(p.y*.34+time*.02));
       vec3 color=mix(vec3(.19,.54,.58),vec3(.39,.76,.73),.45+wave*.18);
       color=mix(color,vec3(.76,.88,.83),clouds*.3);color+=glint*.23;
+      vec2 q=p*1.35;float c1=abs(sin(q.x*1.7+sin(q.y*1.3+time*.6)*1.4+time*.5)),c2=abs(sin(q.y*1.9+sin(q.x*1.1-time*.4)*1.3-time*.45));
+      float brk=smoothstep(.35,.9,sin(p.x*.8+time*.25)*sin(p.y*.95-time*.18)*.5+.5+wave*.15);
+      color=mix(color,vec3(.86,.97,.95),smoothstep(.06,.0,min(c1,c2))*.34*brk);
       gl_FragColor=vec4(color,1.); #include <tonemapping_fragment>
       #include <colorspace_fragment>}`.replace(/ #/g,'\n#')});
     // Caño de los Colores: el mismo agua, con matas rojas, amarillas y verdes en el fondo.
@@ -96,14 +99,20 @@ export class Environment {
       });
     },512);
     for(const t of [grassTex,dirtTex]){t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=8;}
+    // Sombras de nubes: manchas suaves que pasan despacio sobre el pasto y los caminos (sólo afuera).
     const worldMat=(map,scale)=>{const m=toonMaterial({map,roughness:.9});
-      m.onBeforeCompile=shader=>{shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+      m.onBeforeCompile=shader=>{shader.uniforms.puchaTime=this.time;
+        shader.vertexShader='varying vec2 puchaXZ;\n'+shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
           vec4 puchaW=vec4(transformed,1.);
           #ifdef USE_INSTANCING
           puchaW=instanceMatrix*puchaW;
           #endif
-          puchaW=modelMatrix*puchaW; vMapUv=puchaW.xz*${scale.toFixed(3)};`);};
-      m.customProgramCacheKey=()=> 'pucha-ground-'+scale;return m;};
+          puchaW=modelMatrix*puchaW; vMapUv=puchaW.xz*${scale.toFixed(3)}; puchaXZ=puchaW.xz;`);
+        shader.fragmentShader='uniform float puchaTime; varying vec2 puchaXZ;\n'+shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+          vec2 cq=puchaXZ*.11+vec2(puchaTime*.022,puchaTime*.011);
+          float cloud=sin(cq.x*2.1+sin(cq.y*1.3)*1.7)*sin(cq.y*1.7-cq.x*.6)+.55*sin(cq.x*4.3-cq.y*3.1+1.7);
+          diffuseColor.rgb*=1.-smoothstep(.45,1.15,cloud)*.16;`);};
+      m.customProgramCacheKey=()=> 'pucha-ground-v2-'+scale;return m;};
     this.grassMat=worldMat(grassTex,.2);this.dirtMat=worldMat(dirtTex,.25);
     this.blade=new T.BufferGeometry();
     this.blade.setAttribute('position',new T.Float32BufferAttribute([-.07,0,0,.07,0,0,.035,.45,.025,0,0,-.07,0,0,.07,.025,.38,.01],3));this.blade.setAttribute('color',new T.Float32BufferAttribute([.62,.62,.62,.62,.62,.62,1.28,1.28,1.1,.62,.62,.62,.62,.62,.62,1.28,1.28,1.1],3));this.blade.computeVertexNormals();
@@ -241,10 +250,14 @@ export class Environment {
     const lods=[];
     for(const C of chunks.values()){
       const chunk=new T.Group();root.add(chunk);
-      for(const [key,items] of Object.entries(C.tiles))instances(chunk,r.geometries.box,mats[key],items,false);
-      instances(chunk,this.blade,this.windMat(P.blade,true),C.grass,false);
-      instances(chunk,r.geometries.ball,r.mat('#ffffff'),C.flowers,false);
-      instances(chunk,r.geometries.leaf,r.mat('#b6b49c'),C.pebbles,false);
+      // Piso, pasto, flores y piedritas van después de los personajes (renderOrder 3): así no "tapan" los pies y la
+      // silueta del protagonista sólo aparece detrás de árboles, casas y muebles.
+      const low=[];
+      for(const [key,items] of Object.entries(C.tiles))low.push(instances(chunk,r.geometries.box,mats[key],items,false));
+      low.push(instances(chunk,this.blade,this.windMat(P.blade,true),C.grass,false));
+      low.push(instances(chunk,r.geometries.ball,r.mat('#ffffff'),C.flowers,false));
+      low.push(instances(chunk,r.geometries.leaf,r.mat('#b6b49c'),C.pebbles,false));
+      for(const m of low)if(m)m.renderOrder=3;
       if(C.trees.length){
         const near=new T.Group(),far=new T.Group();chunk.add(near,far);
         const trunks=[],leaves=[],simple=[];

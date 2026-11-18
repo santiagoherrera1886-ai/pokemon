@@ -165,7 +165,7 @@ async function run() {
     page.on('console', m => { if (m.type() === 'error' && !/fonts|ERR_FAILED|net::/.test(m.text())) errors.push(m.text()); });
     await page.route(/fonts\.(googleapis|gstatic)\.com/, r => r.abort());
     await page.goto(url);
-    await page.evaluate(mode=>{localStorage.clear();localStorage.setItem('alborada-graphics-v1',JSON.stringify({mode,quality:'low'}));},GRAPHICS_MODE);
+    await page.evaluate(mode=>{localStorage.clear();localStorage.setItem('alborada-graphics-v1',JSON.stringify({v:5,mode,quality:'low'}));},GRAPHICS_MODE);
     await page.reload(); await sleep(700);
     await shot('titulo');
     assert.match(await page.textContent('#panel .title-news'), /sur de Alborada/, 'el título avisa lo nuevo de la versión');
