@@ -796,6 +796,10 @@ async function run() {
     await sleep(300); await page.keyboard.press('x'); await sleep(500);
     const p1 = await page.evaluate(() => ({ x: __game.mini.sim.f[0].x, y: __game.mini.sim.f[0].y, swings: __game.mini.sim.f[0].kos }));
     assert.ok(Math.abs(p1.x - p0.x) > .5, 'el peleador se mueve con el teclado');
+    // Abajo + especial: el poder del tipo (se deja libre al peleador para que no dependa de un golpe de la máquina).
+    await page.evaluate(() => { const s = __game.mini.sim, f = s.f[0]; Object.assign(f, { pcd: 0, stun: 0, move: null, freeze: 0, broken: 0, dodge: 0, charging: null, ledge: 0, inv: 1.5 }); for (const q of s.f) if (q.ai) { q.ai.wait = 3; q.ai.intent = { x: 0 }; } });
+    await page.keyboard.down('ArrowDown'); await sleep(250); await page.keyboard.press('x'); await sleep(450); await page.keyboard.up('ArrowDown');
+    assert.ok(await page.evaluate(() => __game.mini.sim.f[0].pcd > 0), 'abajo + especial lanza el poder del tipo');
     await shot('pelea');
     // Final de la prueba: el rival se queda sin vidas.
     await page.evaluate(() => { const s = __game.mini.sim, cpu = s.f[1]; cpu.stocks = 1; s.ko(cpu); s.checkEnd(); });

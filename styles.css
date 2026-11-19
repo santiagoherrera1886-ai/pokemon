@@ -771,13 +771,35 @@ body.in-mini #panel.aldea-panel.wide { top: 50%; bottom: auto; transform: transl
 #peleaHud .pe-cards, #peleaHud .pe-tags, #peleaHud .pe-clock, #peleaHud .ah-banner { pointer-events: none; }
 .pe-clock { position: absolute; top: max(10px, env(safe-area-inset-top)); right: 14px; padding: .25em .9em; border-radius: 14px; background: rgba(28, 32, 64, .62); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); color: #fff; font: 800 1.05em var(--round); }
 .pe-cards { position: absolute; left: 50%; transform: translateX(-50%); bottom: max(12px, env(safe-area-inset-bottom)); display: flex; gap: .5em; }
-.pe-card { display: flex; align-items: center; gap: .35em; padding: .3em .7em .3em .35em; border-radius: 16px; background: rgba(28, 32, 64, .66); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: inset 0 -4px 0 var(--c), 0 8px 18px rgba(10, 12, 40, .35); color: #fff; }
-.pe-card img { width: 2.8em; height: 2.8em; object-fit: contain; }
-.pe-card small { display: block; font: 800 .5em var(--round); letter-spacing: .14em; color: var(--c); filter: brightness(1.4); }
-.pe-card .pe-pct { display: block; font: 800 1.45em/1 'Fredoka', var(--round); text-shadow: 0 2px 0 rgba(0, 0, 0, .35); }
-.pe-card .pe-stocks { font-size: .62em; letter-spacing: .1em; color: var(--c); filter: brightness(1.3); }
-.pe-card.out { opacity: .4; }
-.pe-tag { position: absolute; left: 0; top: 0; padding: .1em .5em; border-radius: 999px; background: var(--c); color: #fff; font: 800 .55em var(--round); letter-spacing: .08em; will-change: transform; box-shadow: 0 2px 6px rgba(0, 0, 0, .3); }
+.pe-card { position: relative; display: flex; align-items: center; gap: .4em; min-width: 7.6em; padding: .32em .8em .36em .3em; border-radius: 18px; background: linear-gradient(160deg, rgba(40, 46, 92, .78), rgba(18, 20, 48, .82)); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: inset 0 -4px 0 var(--c), inset 0 0 0 1.5px rgba(255, 255, 255, .12), 0 8px 18px rgba(10, 12, 40, .35); color: #fff; overflow: hidden; }
+.pe-card::before { content: ''; position: absolute; left: -.6em; top: -.6em; width: 4.4em; height: 4.4em; border-radius: 50%; background: radial-gradient(circle, var(--c) 0%, transparent 70%); opacity: .55; }
+.pe-card img { position: relative; width: 3em; height: 3em; object-fit: contain; filter: drop-shadow(0 3px 2px rgba(0, 0, 0, .35)); }
+.pe-card > div { position: relative; min-width: 0; }
+.pe-card small { display: block; max-width: 9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 .5em var(--round); letter-spacing: .12em; color: var(--c); filter: brightness(1.45); }
+.pe-card .pe-pct { display: block; font: 700 1.7em/1 'Fredoka', var(--round); -webkit-text-stroke: 1.5px rgba(20, 10, 40, .75); paint-order: stroke fill; text-shadow: 0 3px 0 rgba(0, 0, 0, .4); transition: color .2s; }
+.pe-card .pe-pct i { font-style: normal; font-size: .55em; margin-left: .05em; }
+.pe-card .pe-stocks { display: flex; gap: .28em; margin-top: .2em; }
+.pe-card .pe-stocks i { width: .62em; height: .62em; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 1.5px #fff, 0 0 6px var(--c); }
+.pe-card .pe-pow { position: absolute; right: .35em; top: .3em; font: normal .72em/1 var(--round); font-style: normal; filter: grayscale(1) brightness(.6); opacity: .45; transition: opacity .2s, filter .2s; }
+.pe-card .pe-pow.ready { filter: drop-shadow(0 0 4px #ffd84a); opacity: 1; animation: pePow 1.2s ease-in-out infinite; }
+@keyframes pePow { 50% { transform: scale(1.25); } }
+.pe-card.hit .pe-pct { animation: peHit .32s ease-out; }
+.pe-card.hit.big .pe-pct { animation: peHitBig .5s ease-out; }
+.pe-card.ko { animation: peKo .7s ease-out; }
+.pe-card.out { opacity: .4; filter: grayscale(.7); }
+@keyframes peHit { 0% { transform: translate(0, 0) scale(1.25); } 25% { transform: translate(-3px, 1px) scale(1.15); } 50% { transform: translate(3px, -1px) scale(1.08); } 75% { transform: translate(-2px, 0) scale(1.03); } 100% { transform: none; } }
+@keyframes peHitBig { 0% { transform: scale(1.6) rotate(-6deg); } 15% { transform: translate(-6px, 2px) scale(1.45) rotate(4deg); } 30% { transform: translate(6px, -2px) scale(1.3) rotate(-3deg); } 50% { transform: translate(-4px, 1px) scale(1.15); } 70% { transform: translate(3px, 0) scale(1.06); } 100% { transform: none; } }
+@keyframes peKo { 0% { box-shadow: inset 0 -4px 0 var(--c), 0 0 0 4px #fff, 0 0 30px var(--c); transform: scale(1.12); } 100% { transform: none; } }
+.pe-tag { position: absolute; left: 0; top: 0; padding: .12em .55em; border-radius: 999px; background: var(--c); color: #fff; font: 800 .55em var(--round); letter-spacing: .08em; will-change: transform; box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .85), 0 2px 6px rgba(0, 0, 0, .3); }
+.pe-tag::after { content: ''; position: absolute; left: 50%; bottom: -.45em; transform: translateX(-50%); border: .3em solid transparent; border-top-color: var(--c); border-bottom: 0; }
+.pe-tag img { display: none; }
+.pe-tag.edge { width: 3.6em; height: 3.6em; padding: 0; border-radius: 50%; background: rgba(255, 255, 255, .92); box-shadow: 0 0 0 3px var(--c), 0 4px 12px rgba(0, 0, 0, .35); font-size: .8em; }
+.pe-tag.edge b { display: none; }
+.pe-tag.edge img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.pe-tag.edge::after { left: 50%; top: 50%; bottom: auto; border: .5em solid transparent; border-left: .8em solid var(--c); transform: translate(-50%, -50%) rotate(var(--a, 0rad)) translateX(2.3em); }
+#peleaHud .ah-banner.ko { color: #ffe27a; font-size: clamp(24px, 5.4vw, 52px); }
+#peleaHud .ah-banner.end { color: #fff; font-size: clamp(34px, 9vw, 84px); -webkit-text-stroke: 3px rgba(150, 30, 40, .85); text-shadow: 0 6px 0 rgba(120, 20, 30, .6), 0 0 40px rgba(255, 180, 80, .6); }
+#peleaHud .ah-banner.win { color: #ffe27a; text-shadow: 0 4px 0 rgba(120, 70, 10, .6), 0 0 34px rgba(255, 220, 120, .7); }
 .pe-pad { position: absolute; left: max(14px, env(safe-area-inset-left)); bottom: calc(max(12px, env(safe-area-inset-bottom)) + 5em); display: grid; grid-template-columns: repeat(3, 3.4em); grid-template-rows: repeat(3, 3.4em); }
 .pe-pad button, .pe-btns button { border: 2px solid rgba(255, 255, 255, .8); background: rgba(24, 28, 56, .5); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: #fff; font: 800 1.1em var(--round); border-radius: 14px; touch-action: none; user-select: none; -webkit-user-select: none; cursor: pointer; }
 .pe-pad [data-k="left"] { grid-area: 2 / 1; } .pe-pad [data-k="right"] { grid-area: 2 / 3; } .pe-pad [data-k="up"] { grid-area: 1 / 2; } .pe-pad [data-k="down"] { grid-area: 3 / 2; }

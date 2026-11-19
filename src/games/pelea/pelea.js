@@ -10,6 +10,8 @@ import { FightSim, makeFighter, STAGES, peleaState, peleaReward, blankInput } fr
 
 const COLORS = ['#3f7fe8', '#e8484e', '#3fbf6a', '#f2b62c'];
 const DIFF = ['Fácil', 'Normal', 'Difícil'];
+// Nombre del poder de cada tipo (abajo + B).
+const POWER = { normal: 'Temblor', fuego: 'Erupción', agua: 'Ola', planta: 'Lluvia de polen', electrico: 'Rayo', hielo: 'Columna de hielo', lucha: 'Temblor', veneno: 'Nube tóxica', tierra: 'Terremoto', volador: 'Remolino', psiquico: 'Pulso mental', bicho: 'Polvo picante', roca: 'Derrumbe', fantasma: 'Sombra', dragon: 'Columna dragón', siniestro: 'Sombra', acero: 'Impacto', hada: 'Destello' };
 const KEYS = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', Space: 'jump', KeyZ: 'attack', KeyJ: 'attack', KeyX: 'special', KeyK: 'special', KeyC: 'shield', ShiftLeft: 'shield', ShiftRight: 'shield', KeyL: 'shield' };
 
 export class PeleaGame {
@@ -37,7 +39,7 @@ export class PeleaGame {
       const o = this.opts;
       ui.setPanel(`<div class="pe-home">
         <div class="ar-head pe-head"><div><small>PELEA PUCHAMON</small><b>${esc(STAGES[o.stage].name)}</b></div><div class="ar-tro">🏅 ${P.wins}</div></div>
-        <div class="pe-me" style="--t:${TYPES[S.types[0]]?.color || '#888'}"><img src="${this.pic(me.sp)}" alt=""><div><small>TU PELEADOR</small><b>${esc(S.name)}</b><span>Nv ${me.level}${me.loan ? ' · prestado' : ''} · especial: ${makeFighter(me.sp, me.level).special === 'shot' ? 'disparo' : 'embestida'}</span></div><button data-act="pick">CAMBIAR</button></div>
+        <div class="pe-me" style="--t:${TYPES[S.types[0]]?.color || '#888'}"><img src="${this.pic(me.sp)}" alt=""><div><small>TU PELEADOR</small><b>${esc(S.name)}</b><span>Nv ${me.level}${me.loan ? ' · prestado' : ''} · especial: ${makeFighter(me.sp, me.level).special === 'shot' ? 'disparo' : 'embestida'} · poder: ${POWER[S.types[0]] || 'Temblor'}</span></div><button data-act="pick">CAMBIAR</button></div>
         <div class="pe-opts">
           <div><small>MODO</small><button data-act="mode:1" class="${o.mode === 1 ? 'on' : ''}">1 contra 1</button><button data-act="mode:3" class="${o.mode === 3 ? 'on' : ''}">Todos contra todos</button></div>
           <div><small>RIVALES</small>${DIFF.map((d, i) => `<button data-act="diff:${i}" class="${o.diff === i ? 'on' : ''}">${d}</button>`).join('')}</div>
@@ -61,6 +63,9 @@ export class PeleaGame {
     await ui.say(['Pelea Puchamon: saca a tus rivales del escenario. Cada golpe sube su daño (%); entre más daño tienen, más lejos salen volando.',
       'Cada uno tiene 3 vidas. Pierdes una si sales por los lados, por abajo o muy arriba. Gana el último que quede.',
       'Botones: A ataca (con dirección cambia el golpe), B es el especial de tu tipo, ⤒ salta (dos veces) y 🛡 es el escudo. Arriba + B te impulsa para volver si te caes.',
+      'Golpe fuerte: deja oprimida A con una dirección para cargarlo y suéltala para pegar más duro. Un toque corto al salto da un saltico bajito.',
+      'Abajo + B lanza el poder de tu tipo alrededor tuyo (fuego hace erupción, eléctrico llama un rayo, agua una ola...). Se recarga en unos segundos: el ⚡ de tu tarjeta se prende cuando está listo.',
+      'Con el escudo puesto, una dirección te hace rodar y abajo esquiva en el sitio; en el aire, el escudo esquiva. Si caes cerca del borde te agarras solo: arriba para subir.',
       'Teclado: flechas o WASD para moverte, Espacio salta, Z ataca, X especial y C escudo.']);
   }
   pick() {
@@ -87,7 +92,8 @@ export class PeleaGame {
     await new Promise(res => { this.onEnd = res; });
     this.playing = false;
     const sim = this.sim, w = sim.winner, won = w === 0, me0 = sim.f[0];
-    await this.banner(won ? '¡GANASTE!' : w === -1 ? 'EMPATE' : `GANÓ ${sim.f[w].name.toUpperCase()}`, 1700);
+    await this.banner('¡SE ACABÓ!', 1100, 'end');
+    await this.banner(won ? '¡GANASTE!' : w === -1 ? 'EMPATE' : `GANÓ ${sim.f[w].name.toUpperCase()}`, 1500, won ? 'win' : '');
     const r = peleaReward(won, o.mode, o.diff, me0.stocks, me0.kos);
     if (won) P.wins++; else P.losses++; P.kos += me0.kos;
     this.st.money += r.money; saveState(this.st);
@@ -105,14 +111,14 @@ export class PeleaGame {
     this.destroyHud();
     const sim = this.sim, el = document.createElement('div'); el.id = 'peleaHud';
     el.innerHTML = `<div class="pe-clock"><b>3:00</b></div><button class="ah-pause" aria-label="Pausa">II</button>
-      <div class="pe-cards">${sim.f.map(p => `<div class="pe-card" style="--c:${COLORS[p.id]}"><img src="${this.pic(p.sp)}" alt=""><div><small>${p.id === 0 ? 'TÚ' : 'CPU ' + p.id}</small><b class="pe-pct">0%</b><span class="pe-stocks">${'●'.repeat(p.stocks)}</span></div></div>`).join('')}</div>
-      <div class="pe-tags">${sim.f.map(p => `<span class="pe-tag" style="--c:${COLORS[p.id]}">${p.id === 0 ? 'TÚ' : 'CPU'}</span>`).join('')}</div>
+      <div class="pe-cards">${sim.f.map(p => `<div class="pe-card" style="--c:${COLORS[p.id]}"><img src="${this.pic(p.sp)}" alt=""><div><small>${p.id === 0 ? 'TÚ' : 'CPU ' + p.id} · ${esc(p.name)}</small><b class="pe-pct">0<i>%</i></b><span class="pe-stocks">${'<i></i>'.repeat(p.stocks)}</span></div><em class="pe-pow" title="Poder: ${esc(POWER[p.types[0]] || 'Temblor')}">⚡</em></div>`).join('')}</div>
+      <div class="pe-tags">${sim.f.map(p => `<span class="pe-tag" style="--c:${COLORS[p.id]}"><b>${p.id === 0 ? 'TÚ' : 'CPU'}</b><img src="${this.pic(p.sp)}" alt=""></span>`).join('')}</div>
       <div class="pe-pad"><button data-k="left">◀</button><button data-k="up">▲</button><button data-k="down">▼</button><button data-k="right">▶</button></div>
       <div class="pe-btns"><button data-k="attack" class="a">A</button><button data-k="special" class="b">B</button><button data-k="jump" class="j">⤒</button><button data-k="shield" class="s">🛡</button></div>
       <div class="ah-banner hidden"></div>`;
     document.getElementById('ui').appendChild(el);
     this.hud = el;
-    this.h = { clock: el.querySelector('.pe-clock b'), pct: [...el.querySelectorAll('.pe-pct')], stocks: [...el.querySelectorAll('.pe-stocks')], cards: [...el.querySelectorAll('.pe-card')], tags: [...el.querySelectorAll('.pe-tag')], banner: el.querySelector('.ah-banner') };
+    this.h = { clock: el.querySelector('.pe-clock b'), pow: [...el.querySelectorAll('.pe-pow')], pct: [...el.querySelectorAll('.pe-pct')], stocks: [...el.querySelectorAll('.pe-stocks')], cards: [...el.querySelectorAll('.pe-card')], tags: [...el.querySelectorAll('.pe-tag')], banner: el.querySelector('.ah-banner'), shown: sim.f.map(() => -1), lives: sim.f.map(p => p.stocks) };
     el.querySelector('.ah-pause').addEventListener('click', () => this.pause());
     for (const b of el.querySelectorAll('[data-k]')) {
       const k = b.dataset.k;
@@ -128,11 +134,13 @@ export class PeleaGame {
   down(k) { if (!this.held[k]) this.pressed[k] = true; this.held[k] = true; if (k === 'up') this.pressed.jumpUp = true; }
   up(k) { this.held[k] = false; }
   // Entrada del jugador para este cuadro (arriba también salta, como en los juegos de pelea de siempre).
+  // Sostener A carga el golpe fuerte y soltar rápido el salto lo deja cortico.
   playerInput() {
     const h = this.held, p = this.pressed, inp = blankInput();
     inp.x = (h.right ? 1 : 0) - (h.left ? 1 : 0); inp.up = !!h.up; inp.down = !!h.down; inp.shield = !!h.shield;
     inp.attack = !!p.attack; inp.special = !!p.special;
     inp.jump = !!p.jump || (!!p.jumpUp && !p.attack && !p.special && !h.attack && !h.special);
+    inp.attackHeld = !!h.attack; inp.jumpHeld = !!(h.jump || h.up);
     this.pressed = {};
     return inp;
   }
@@ -146,29 +154,54 @@ export class PeleaGame {
       if (this.sim.phase !== 'done') { const best = this.sim.f.filter(p => p.stocks > 0).sort((a, b) => b.stocks - a.stocks || a.damage - b.damage)[0]; this.sim.finish(best ? best.id : -1); }
     }
   }
-  banner(text, ms) {
+  banner(text, ms, kind = '') {
     const b = this.h?.banner; if (!b) return Promise.resolve();
-    b.textContent = text; b.classList.remove('hidden', 'pop'); void b.offsetWidth; b.classList.add('pop');
+    b.textContent = text; b.classList.remove('hidden', 'pop', 'end', 'win', 'ko'); void b.offsetWidth; b.classList.add('pop'); if (kind) b.classList.add(kind);
     clearTimeout(this.bannerT);
     return new Promise(res => { this.bannerT = setTimeout(() => { b.classList.add('hidden'); res(); }, ms); });
   }
+  // Color del daño: blanco, amarillo, naranja, rojo y rojo oscuro a medida que sube.
+  static dmgColor(d) {
+    const stops = [[0, [255, 255, 255]], [45, [255, 232, 90]], [90, [255, 150, 50]], [140, [255, 66, 48]], [200, [196, 24, 30]]];
+    let i = 0; while (i < stops.length - 2 && d > stops[i + 1][0]) i++;
+    const [d0, c0] = stops[i], [d1, c1] = stops[i + 1], k = Math.max(0, Math.min(1, (d - d0) / (d1 - d0)));
+    return `rgb(${c0.map((c, j) => Math.round(c + (c1[j] - c) * k)).join(',')})`;
+  }
   hudUpdate() {
     const sim = this.sim, h = this.h; if (!sim || !h) return;
+    const W = innerWidth, H = innerHeight, m = 30;
     sim.f.forEach((p, i) => {
-      const txt = p.stocks > 0 ? Math.floor(p.damage) + '%' : '—'; if (h.pct[i].textContent !== txt) { h.pct[i].textContent = txt; h.pct[i].style.color = p.damage > 120 ? '#ff4a4a' : p.damage > 60 ? '#ffb43a' : '#ffffff'; }
-      const sk = '●'.repeat(Math.max(0, p.stocks)); if (h.stocks[i].textContent !== sk) h.stocks[i].textContent = sk;
+      const dmg = p.stocks > 0 ? Math.floor(p.damage) : -2;
+      if (h.shown[i] !== dmg) {
+        const pct = h.pct[i];
+        pct.innerHTML = dmg >= 0 ? `${dmg}<i>%</i>` : '—'; pct.style.color = PeleaGame.dmgColor(Math.max(0, dmg));
+        // Si subió el daño, la cifra tiembla (más fuerte entre más grande el golpe).
+        if (dmg > h.shown[i] && h.shown[i] >= 0) { const card = h.cards[i]; card.classList.remove('hit', 'big'); void card.offsetWidth; card.classList.add('hit'); if (dmg - h.shown[i] >= 10) card.classList.add('big'); }
+        h.shown[i] = dmg;
+      }
+      const lives = Math.max(0, p.stocks);
+      if (h.lives[i] !== lives) { h.stocks[i].innerHTML = '<i></i>'.repeat(lives); if (lives < h.lives[i]) { const card = h.cards[i]; card.classList.remove('ko'); void card.offsetWidth; card.classList.add('ko'); } h.lives[i] = lives; }
       h.cards[i].classList.toggle('out', p.stocks <= 0);
-      const tag = h.tags[i]; if (this.view && !p.out && p.stocks > 0) { const s = this.view.toScreen(p.x, p.y + 2.1); tag.style.transform = `translate(${s.x}px, ${s.y}px) translate(-50%, -100%)`; tag.style.display = ''; } else tag.style.display = 'none';
+      h.pow[i].classList.toggle('ready', p.stocks > 0 && p.pcd <= 0);
+      // Etiqueta encima de cada uno; si se sale de la pantalla queda en el borde con su cara y una flecha.
+      const tag = h.tags[i];
+      if (this.view && !p.out && p.stocks > 0) {
+        const s = this.view.toScreen(p.x, p.y + 2.2), off = s.x < m || s.x > W - m || s.y < m || s.y > H - m;
+        if (off) { const x = Math.max(m + 4, Math.min(W - m - 4, s.x)), y = Math.max(m + 44, Math.min(H - m - 96, s.y)); tag.style.setProperty('--a', Math.atan2(s.y - y, s.x - x) + 'rad'); tag.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`; }
+        else tag.style.transform = `translate(${s.x}px, ${s.y}px) translate(-50%, -100%)`;
+        tag.classList.toggle('edge', off); tag.style.display = '';
+      } else tag.style.display = 'none';
     });
     const left = Math.max(0, Math.ceil(sim.limit - sim.time)), txt = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
     if (h.clock.textContent !== txt) h.clock.textContent = txt;
   }
   update(dt) {
-    if (!this.sim || !this.playing || this.paused) return;
+    if (!this.sim) return;
+    if (!this.playing || this.paused) { this.hudUpdate(); return; }
     this.sim.setInput(0, this.playerInput());
     for (let i = 0; i < this.speed; i++) this.sim.step(dt);
     if (this.sim.events.length) {
-      for (const ev of this.sim.events) if (ev.type === 'ko' && this.sim.phase !== 'done') this.banner(ev.id === 0 ? (ev.left ? '¡TE SACARON!' : '¡SIN VIDAS!') : `¡FUERA ${this.sim.f[ev.id].name.toUpperCase()}!`, 1000);
+      for (const ev of this.sim.events) if (ev.type === 'ko' && this.sim.phase !== 'done') this.banner(ev.id === 0 ? (ev.left ? '¡TE SACARON!' : '¡SIN VIDAS!') : `¡FUERA ${this.sim.f[ev.id].name.toUpperCase()}!`, 1000, 'ko');
       this.pending.push(...this.sim.events); this.sim.events.length = 0;
     }
     this.hudUpdate();
