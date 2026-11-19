@@ -7,9 +7,13 @@ import { rng } from '../arena/sim.js';
 export const G = 34, MAX_FALL = 15, FAST_FALL = 21, STOCKS = 3, TIME = 180;
 // Escenarios: el piso grande (sólido) y plataformas que se cruzan desde abajo. blast = zona de salida.
 export const STAGES = {
-  isla: { name: 'Isla Flotante', biome: 'meadow', main: [-8, 8], depth: 2.6, plats: [[-5.8, -1.8, 3.2], [1.8, 5.8, 3.2], [-2, 2, 6.2]], blast: { x: 17, bottom: -10, top: 14 }, spawn: [[-5, 0], [5, 0], [-2, 0], [2, 0]] },
-  volcan: { name: 'Cráter de Fragua', biome: 'volcano', main: [-9, 9], depth: 3, plats: [[-7, -3, 2.8], [3, 7, 2.8]], blast: { x: 18, bottom: -10, top: 14 }, spawn: [[-6, 0], [6, 0], [-2.5, 0], [2.5, 0]] }
+  // taper: la roca de abajo se angosta desde "from" de profundidad, "slope" de ancho por cada unidad (isla flotante).
+  isla: { name: 'Isla Flotante', biome: 'meadow', main: [-8, 8], depth: 6, taper: { from: 1.1, slope: 1.25 }, plats: [[-5.8, -1.8, 3.2], [1.8, 5.8, 3.2], [-2, 2, 6.2]], blast: { x: 17, bottom: -11, top: 14 }, spawn: [[-5, 0], [5, 0], [-2, 0], [2, 0]] },
+  volcan: { name: 'Cráter de Fragua', biome: 'volcano', main: [-9, 9], depth: 6.4, taper: { from: 1.2, slope: 1.15 }, plats: [[-7, -3, 2.8], [3, 7, 2.8]], blast: { x: 18, bottom: -11, top: 14 }, spawn: [[-6, 0], [6, 0], [-2.5, 0], [2.5, 0]] },
+  templo: { name: 'Templo del Alba', biome: 'templo', main: [-9.5, 9.5], depth: 5.6, taper: { from: 1.6, slope: 1.35 }, plats: [], blast: { x: 18.5, bottom: -11, top: 15 }, spawn: [[-6, 0], [6, 0], [-2.5, 0], [2.5, 0]] }
 };
+// Ancho que le quita la roca angostada a cada lado a la altura y (0 arriba del piso).
+export function taperCut(S, y) { const t = S.taper; return t && -y > t.from ? (-y - t.from) * t.slope : 0; }
 const RANGED = new Set(['fuego', 'agua', 'electrico', 'hielo', 'psiquico', 'fantasma', 'hada', 'dragon']);
 // Ataques: tiempos en segundos (arranque, activo, recuperación), golpe relativo al peleador mirando a la derecha.
 export const MOVES = {
@@ -30,8 +34,9 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 export function makeFighter(sp, level = 20, opts = {}) {
   const S = SPECIES[sp], b = S.base, t0 = S.types[0];
   return {
-    sp, name: S.name, level, types: S.types, cpu: !!opts.cpu, team: opts.team ?? 0, color: opts.color || '#3f7fe8',
-    weight: Math.round(30 + (b.hp + b.def) / 4), power: +(.82 + b.atk / 160 + level / 400).toFixed(3),
+    sp, name: S.name, level, types: S.types, cpu: !!opts.cpu, team: opts.team ?? null, color: opts.color || '#3f7fe8', boss: !!opts.boss,
+    // Jefe de la historia: más pesado (cuesta sacarlo) y pega más duro.
+    weight: Math.round((30 + (b.hp + b.def) / 4) * (opts.boss ? 1.45 : 1)), power: +((.82 + b.atk / 160 + level / 400) * (opts.boss ? 1.12 : 1)).toFixed(3),
     speed: +(5.4 + b.spe / 45).toFixed(2), jump: +(12.6 + b.spe / 90).toFixed(2), special: RANGED.has(t0) ? 'shot' : 'dash',
     x: 0, y: 0, vx: 0, vy: 0, kx: 0, ky: 0, face: 1, ground: false, jumps: 1, upB: true, damage: 0, stocks: STOCKS,
     state: 'idle', move: null, t: 0, stun: 0, inv: 0, shield: 1, shielding: false, broken: 0, cd: 0, hit: new Set(), out: false, respawn: 0, kos: 0, falls: 0, drop: 0,
@@ -45,7 +50,8 @@ export class FightSim {
   constructor({ fighters, stage = 'isla', seed = 1, skill = .5, time = TIME }) {
     this.rnd = rng(seed); this.stage = STAGES[stage] || STAGES.isla; this.stageId = STAGES[stage] ? stage : 'isla';
     this.f = fighters; this.time = 0; this.limit = time; this.phase = 'play'; this.events = []; this.shots = []; this.nextId = 1; this.winner = null; this.skill = skill;
-    this.f.forEach((p, i) => { p.id = i; const [x, y] = this.stage.spawn[i % this.stage.spawn.length]; p.x = x; p.y = y; p.face = x < 0 ? 1 : -1; p.ground = true; p.ai = p.cpu ? { wait: .5 + i * .2, intent: null } : null; });
+    // Sin equipo dado, cada uno pelea solo (todos contra todos).
+    this.f.forEach((p, i) => { p.id = i; if (p.team == null) p.team = i; const [x, y] = this.stage.spawn[i % this.stage.spawn.length]; p.x = x; p.y = y; p.face = x < 0 ? 1 : -1; p.ground = true; p.ai = p.cpu ? { wait: .5 + i * .2, intent: null } : null; });
     this.input = this.f.map(() => blankInput());
   }
   alive() { return this.f.filter(p => p.stocks > 0); }
@@ -177,12 +183,14 @@ export class FightSim {
       p.y = under; p.vy = 0; p.ky = Math.max(0, p.ky); p.ground = true; p.jumps = 1; p.upB = true; p.airDodge = false;
       if (p.stun > 0 && p.ky === 0 && Math.abs(p.kx) > 6) p.kx *= .5;
     } else if (p.ground && !this.onSomething(p)) p.ground = false;
-    // El piso grande es un bloque: por los lados y por debajo no se atraviesa.
-    if (p.y < -.01 && p.y > -S.depth && p.x > S.main[0] - .45 && p.x < S.main[1] + .45) {
-      const dl = p.x - (S.main[0] - .45), dr = (S.main[1] + .45) - p.x, db = p.y + S.depth;
+    // El piso grande es un bloque de roca: por los lados y por debajo no se atraviesa. Abajo se angosta como una
+    // isla flotante, así que las paredes de abajo van en diagonal (empujan hacia afuera).
+    const cut = taperCut(S, p.y), wl = S.main[0] - .45 + cut, wr = S.main[1] + .45 - cut;
+    if (p.y < -.01 && p.y > -S.depth && p.x > wl && p.x < wr) {
+      const dl = p.x - wl, dr = wr - p.x, db = p.y + S.depth;
       if (db < Math.min(dl, dr)) { p.y = -S.depth; p.vy = Math.min(0, p.vy); p.ky = Math.min(0, p.ky); }
-      else if (dl < dr) { p.x = S.main[0] - .45; p.vx = Math.min(0, p.vx); p.kx = Math.min(0, p.kx); }
-      else { p.x = S.main[1] + .45; p.vx = Math.max(0, p.vx); p.kx = Math.max(0, p.kx); }
+      else if (dl < dr) { p.x = wl; p.vx = Math.min(0, p.vx); p.kx = Math.min(0, p.kx); }
+      else { p.x = wr; p.vx = Math.max(0, p.vx); p.kx = Math.max(0, p.kx); }
     }
     // Agarrarse del borde del piso grande al caer cerca de la esquina (sólo de cara al escenario).
     if (!p.ground && !p.ledge && p.noLedge <= 0 && p.stun <= 0 && (p.vy + p.ky) <= 0 && p.y < -.15 && p.y > -1.6) {
@@ -222,7 +230,7 @@ export class FightSim {
       const M = MOVES[p.move]; if (p.t < M.start || p.t > M.start + M.active) continue;
       const hx = p.x + M.dx * p.face, hy = p.y + M.dy;
       for (const q of this.f) {
-        if (q === p || q.out || q.stocks <= 0 || q.inv > 0 || p.hit.has(q.id)) continue;
+        if (q === p || q.team === p.team || q.out || q.stocks <= 0 || q.inv > 0 || p.hit.has(q.id)) continue;
         if (Math.hypot(q.x - hx, q.y + .6 - hy) > M.r + .55) continue;
         p.hit.add(q.id);
         const dir = p.move === 'power' ? Math.sign(q.x - p.x) || p.face : p.face;
@@ -235,7 +243,7 @@ export class FightSim {
     for (const s of this.shots) {
       s.x += s.vx * dt; s.life -= dt;
       for (const q of this.f) {
-        if (q.id === s.owner || q.out || q.stocks <= 0 || q.inv > 0) continue;
+        if (q.id === s.owner || q.team === this.f[s.owner].team || q.out || q.stocks <= 0 || q.inv > 0) continue;
         if (Math.hypot(q.x - s.x, q.y + .6 - s.y) > .75) continue;
         const owner = this.f[s.owner];
         this.hitFighter(q, owner, s.dmg * typeBonus(owner, q), s.kb, s.grow, 25, Math.sign(s.vx), 'shot'); s.life = 0; this.events.push({ type: 'pop', x: s.x, y: s.y, kind: s.type }); break;
@@ -276,7 +284,8 @@ export class FightSim {
   checkEnd() {
     if (this.phase === 'done') return;
     const alive = this.alive();
-    if (alive.length <= 1) return this.finish(alive[0]?.id ?? -1);
+    // Se acaba cuando sólo queda un equipo (en todos contra todos cada uno es su propio equipo).
+    if (new Set(alive.map(p => p.team)).size <= 1) return this.finish(alive[0]?.id ?? -1);
     if (this.time >= this.limit) {
       const best = [...alive].sort((a, b) => b.stocks - a.stocks || a.damage - b.damage);
       this.finish(best.length > 1 && best[0].stocks === best[1].stocks && Math.abs(best[0].damage - best[1].damage) < 1 ? -1 : best[0].id);
@@ -286,7 +295,7 @@ export class FightSim {
   // ---------- Máquina ----------
   think(p, dt) {
     const A = p.ai, S = this.stage, inp = blankInput();
-    const foes = this.f.filter(q => q !== p && q.stocks > 0 && !q.out);
+    const foes = this.f.filter(q => q !== p && q.team !== p.team && q.stocks > 0 && !q.out);
     if (!foes.length) return inp;
     // Colgado del borde: sube después de un momento.
     if (p.ledge) { if (p.ledgeT > .2 + this.rnd() * .5) inp.up = true; return inp; }
@@ -330,7 +339,7 @@ export class FightSim {
 export function blankInput() { return { x: 0, up: false, down: false, jump: false, attack: false, special: false, shield: false, attackHeld: false, jumpHeld: false }; }
 function typeBonus(p, q) { return clamp(effectiveness(p.types[0], q.types), .75, 1.35); }
 export function peleaState(st) {
-  st.pelea = Object.assign({ wins: 0, losses: 0, kos: 0, best: 0, fighter: null }, st.pelea || {});
+  st.pelea = Object.assign({ wins: 0, losses: 0, kos: 0, best: 0, fighter: null, story: 0 }, st.pelea || {});
   return st.pelea;
 }
 // Premio: plata (la misma de Puchamon) según rivales, dificultad y vidas que te quedaron.

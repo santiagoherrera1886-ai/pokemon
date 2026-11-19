@@ -27,6 +27,7 @@ const FRAG = `
   uniform sampler2D tColor; uniform sampler2D tDepth; uniform sampler2D tBloom; uniform vec2 texel;
   uniform float focusY; uniform float tilt; uniform float ink; uniform vec3 grade; uniform float night; uniform float sat;
   uniform float bloom; uniform float lift; uniform float near; uniform float far; uniform float retro;
+  uniform float dof; uniform float dofFocus; uniform float dofStart; uniform float dofEnd; uniform float res;
   varying vec2 vUv;
   float lin(float d){ float z = d * 2. - 1.; return 2. * near * far / (far + near - z * (far - near)); }
   float lum(vec3 c){ return dot(c, vec3(.299,.587,.114)); }
@@ -36,12 +37,17 @@ const FRAG = `
     vec3 col = texture2D(tColor, sampledUV).rgb;
     float d = abs(vUv.y - focusY);
     float blur = smoothstep(.26, .7, d) * tilt;
+    // Desenfoque por distancia (pelea): lo lejano se ablanda y no se mezcla con lo que está más cerca.
+    bool deep = dof > .001;
+    if (deep) blur = max(blur, smoothstep(dofFocus + dofStart, dofFocus + dofEnd, lin(texture2D(tDepth, vUv).x)) * dof);
     if (blur > .01) {
-      vec3 acc = col; float w = 1.;
+      vec3 acc = col; float w = 1.; float edge = dofFocus + dofStart * .5;
       for (int i = 0; i < 8; i++) {
-        float a = float(i) * 0.785398;
-        vec2 o = vec2(cos(a), sin(a)) * texel * (1.5 + 2.5 * blur);
-        acc += texture2D(tColor, vUv + o).rgb + texture2D(tColor, vUv + o * 2.).rgb * .6; w += 1.6;
+        float a = float(i) * 0.785398 + (deep ? .39 : 0.);
+        vec2 o = vec2(cos(a), sin(a)) * texel * (deep ? (1.5 + 3.5 * blur) * res : 1.5 + 2.5 * blur);
+        float w1 = 1., w2 = .6;
+        if (deep) { w1 *= step(edge, lin(texture2D(tDepth, vUv + o).x)); w2 *= step(edge, lin(texture2D(tDepth, vUv + o * 2.).x)); }
+        acc += texture2D(tColor, vUv + o).rgb * w1 + texture2D(tColor, vUv + o * 2.).rgb * w2; w += w1 + w2;
       }
       col = mix(col, acc / w, blur);
     }
@@ -81,7 +87,8 @@ export class Stylizer {
     this.mat = pass(FRAG, {
       tColor: { value: null }, tDepth: { value: null }, tBloom: { value: null }, texel: { value: new T.Vector2() },
       near: { value: .5 }, far: { value: 160 }, focusY: { value: .5 }, tilt: { value: .4 }, ink: { value: 0 },
-      grade: { value: new T.Vector3(1.04, 1.0, .95) }, night: { value: 0 }, sat: { value: 1.1 }, bloom: { value: .55 }, lift: { value: .25 }, retro: {value: 1}
+      grade: { value: new T.Vector3(1.04, 1.0, .95) }, night: { value: 0 }, sat: { value: 1.1 }, bloom: { value: .55 }, lift: { value: .25 }, retro: {value: 1},
+      dof: { value: 0 }, dofFocus: { value: 20 }, dofStart: { value: 8 }, dofEnd: { value: 40 }, res: { value: 1 }
     }, true);
     this.bright = pass(BRIGHT, { tColor: { value: null }, threshold: { value: 1.05 } });
     this.blur = pass(BLUR, { tColor: { value: null }, dir: { value: new T.Vector2() } });
@@ -111,6 +118,7 @@ export class Stylizer {
     u.focusY.value = opts.focusY ?? .5; u.tilt.value = (opts.tilt ?? .4) * .48; u.ink.value = opts.ink ?? .26;
     u.night.value = opts.night ?? 0; u.sat.value = opts.sat ?? 1.1; u.bloom.value = opts.bloom ?? .55; u.lift.value = opts.lift ?? .25;
     u.retro.value = opts.retro ?? 0;
+    u.dof.value = opts.dof ?? 0; u.dofFocus.value = opts.dofFocus ?? 20; u.dofStart.value = opts.dofStart ?? 8; u.dofEnd.value = opts.dofEnd ?? 40; u.res.value = Math.max(1, (this.h || 900) / 900);
     if (opts.grade) u.grade.value.set(...opts.grade);
     this.webgl.setRenderTarget(this.target);
     this.webgl.render(scene, camera);

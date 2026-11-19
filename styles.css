@@ -761,6 +761,23 @@ body.in-mini #panel.aldea-panel.wide { top: 50%; bottom: auto; transform: transl
 .pe-opts small { width: 100%; font: 800 .55em var(--round); letter-spacing: .16em; color: #6a6f96; }
 #panel .pe-opts button { flex: 1; padding: .45em .5em !important; font-size: .75em !important; border-radius: 999px !important; }
 #panel .pe-opts button.on { background: linear-gradient(135deg, #2a9ad8, #4a4ae0) !important; color: #fff !important; }
+/* Historia de la Pelea (Copa del Alba): botón en el menú y lista de capítulos. */
+#panel .pe-story-btn { padding: .55em .8em !important; border-radius: 16px !important; background: linear-gradient(135deg, #ffcf6a, #ff8a5c) !important; color: #3a1d10 !important; font: 800 .82em var(--round) !important; letter-spacing: .06em; box-shadow: 0 5px 0 #c8603a, 0 8px 16px rgba(200, 96, 58, .28) !important; }
+#panel .pe-story-btn small { margin-left: .4em; padding: .1em .5em; border-radius: 999px; background: rgba(255, 255, 255, .55); font-size: .85em; }
+.pe-chaps { display: flex; flex-direction: column; gap: .4em; overflow-y: auto; min-height: 0; }
+#panel .pe-chap { display: grid !important; grid-template-columns: 3em 1fr auto; align-items: center; gap: .6em; padding: .4em .7em .4em .45em !important; border-radius: 16px !important; background: #fff !important; color: #2b2f57 !important; text-align: left; box-shadow: inset 5px 0 0 #b9bdd8, 0 0 0 1.5px rgba(43, 47, 87, .1) !important; }
+#panel .pe-chap img { width: 3em; height: 3em; object-fit: contain; }
+.pe-chap-n { display: grid; place-items: center; width: 2.3em; height: 2.3em; margin: auto; border-radius: 50%; background: #eef0fb; font: 800 1em var(--round); color: #6a6f96; }
+.pe-chap small { display: block; font: 800 .52em var(--round); letter-spacing: .14em; color: #8a8fb6; }
+.pe-chap b { display: block; font: 600 .98em 'Fredoka', var(--round); }
+.pe-chap span { font: 700 .62em var(--round); color: #6a6f96; }
+.pe-chap em { font: 800 .7em var(--round); font-style: normal; color: #3fae5a; }
+#panel .pe-chap.done { box-shadow: inset 5px 0 0 #3fae5a, 0 0 0 1.5px rgba(43, 47, 87, .1) !important; }
+#panel .pe-chap.next { box-shadow: inset 5px 0 0 #ff8a5c, 0 0 0 3px #ffcf6a !important; }
+#panel .pe-chap.next em { color: #e8603a; }
+#panel .pe-chap.boss .pe-chap-n, #panel .pe-chap.boss img { filter: drop-shadow(0 0 6px rgba(255, 120, 60, .7)); }
+#panel .pe-chap:disabled { opacity: .5; }
+.pe-card.boss { box-shadow: inset 0 -4px 0 #ff5a3c, inset 0 0 0 2px rgba(255, 170, 90, .6), 0 8px 22px rgba(255, 90, 40, .45); }
 .pe-final { display: flex; gap: .5em; flex-wrap: wrap; justify-content: center; }
 .pe-final > div { display: flex; flex-direction: column; align-items: center; padding: .4em .6em; border-radius: 14px; background: #fff; box-shadow: inset 0 -4px 0 var(--c), 0 0 0 1.5px rgba(43, 47, 87, .1); min-width: 6em; }
 .pe-final > div.win { box-shadow: inset 0 -4px 0 var(--c), 0 0 0 3px #ffd25c; }

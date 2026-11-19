@@ -7,6 +7,7 @@ import { iconURL } from '../../art/creatures.js';
 import { SPECIES, TYPES } from '../../data/creatures.js';
 import { ownedBest, LOANERS, rng } from '../arena/sim.js';
 import { FightSim, makeFighter, STAGES, peleaState, peleaReward, blankInput } from './sim.js';
+import { CHAPTERS, SKILL, chapterFighters, chapterPrize } from './story.js';
 
 const COLORS = ['#3f7fe8', '#e8484e', '#3fbf6a', '#f2b62c'];
 const DIFF = ['Fácil', 'Normal', 'Difícil'];
@@ -31,12 +32,13 @@ export class PeleaGame {
       if (a === 'exit') return;
       if (a === 'pick') await this.pick();
       if (a === 'play') await this.match();
+      if (a === 'story') await this.storyMenu();
     }
   }
   home() {
     return new Promise(resolve => {
       const P = peleaState(this.st), me = this.roster().find(c => c.sp === P.fighter) || this.roster()[0], S = SPECIES[me.sp];
-      const o = this.opts;
+      const o = this.opts; this.preloadStage(o.stage);
       ui.setPanel(`<div class="pe-home">
         <div class="ar-head pe-head"><div><small>PELEA PUCHAMON</small><b>${esc(STAGES[o.stage].name)}</b></div><div class="ar-tro">🏅 ${P.wins}</div></div>
         <div class="pe-me" style="--t:${TYPES[S.types[0]]?.color || '#888'}"><img src="${this.pic(me.sp)}" alt=""><div><small>TU PELEADOR</small><b>${esc(S.name)}</b><span>Nv ${me.level}${me.loan ? ' · prestado' : ''} · especial: ${makeFighter(me.sp, me.level).special === 'shot' ? 'disparo' : 'embestida'} · poder: ${POWER[S.types[0]] || 'Temblor'}</span></div><button data-act="pick">CAMBIAR</button></div>
@@ -46,6 +48,7 @@ export class PeleaGame {
           <div><small>ESCENARIO</small>${Object.entries(STAGES).map(([id, s]) => `<button data-act="stage:${id}" class="${o.stage === id ? 'on' : ''}">${esc(s.name)}</button>`).join('')}</div>
         </div>
         <button data-act="play" class="primary ar-play">¡A PELEAR!</button>
+        <button data-act="story" class="pe-story-btn">📜 HISTORIA: COPA DEL ALBA <small>${Math.min(P.story || 0, CHAPTERS.length)}/${CHAPTERS.length}</small></button>
         <div class="row2"><button data-act="help">CÓMO SE JUEGA</button><button class="bt-back" data-back>SALIR</button></div>
         <p class="hint">Ganar da plata para Puchamon · ${P.wins} ganadas · ${P.losses} perdidas · tu plata: ${money(this.st.money)}</p></div>`,
       { modal: true, cls: 'arena-panel pelea-panel', focus: 0, onAct: a => {
@@ -75,17 +78,52 @@ export class PeleaGame {
         { modal: true, cls: 'arena-panel wide', onAct: a => { P.fighter = a.slice(3); saveState(this.st); resolve(); }, onBack: () => resolve() });
     });
   }
+  // ---------- Historia ----------
+  storyMenu() {
+    return new Promise(resolve => {
+      const P = peleaState(this.st), next = Math.min(P.story || 0, CHAPTERS.length);
+      const row = (ch, i) => {
+        const done = i < next, open = i <= next, R = ch.rivals.map(r => r.sp || null);
+        const face = R[0] && open ? `<img src="${this.pic(R[0])}" alt="">` : `<span class="pe-chap-n">${open ? i + 1 : '?'}</span>`;  // el jefe de un capítulo cerrado es sorpresa
+        return `<button data-act="ch:${i}" class="pe-chap${done ? ' done' : ''}${i === next ? ' next' : ''}${ch.boss ? ' boss' : ''}" ${open ? '' : 'disabled'}>
+          ${face}<div><small>CAPÍTULO ${i + 1} · ${esc(STAGES[ch.stage].name)}</small><b>${esc(ch.title)}</b><span>${open ? esc(ch.who) + (ch.rivals.length > 1 ? ' · dos contra ti' : '') + (ch.boss ? ' · JEFE' : '') : '🔒 Gana el capítulo anterior'}</span></div>
+          <em>${done ? '✓' : i === next ? '¡SIGUE!' : ''}</em></button>`;
+      };
+      ui.setPanel(`<div class="pe-home"><div class="ar-head pe-head"><div><small>HISTORIA</small><b>Copa del Alba</b></div><div class="ar-tro">📜 ${next}/${CHAPTERS.length}</div></div>
+        <div class="pe-chaps">${CHAPTERS.map(row).join('')}</div>
+        <p class="hint">${next >= CHAPTERS.length ? '¡Ganaste la copa! Puedes repetir cualquier capítulo.' : 'Tres escenarios, peleas de dos contra ti y un jefe al final de cada parte. La primera victoria paga premio completo.'}</p>
+        <button class="bt-back" data-back>VOLVER</button></div>`,
+      { modal: true, cls: 'arena-panel pelea-panel', focus: Math.min(next, CHAPTERS.length - 1), onAct: async a => {
+        let i = +a.split(':')[1];
+        while (i >= 0) {
+          const r = await this.playOne(CHAPTERS[i]);
+          i = r === 'again' ? i : r === 'next' ? i + 1 : -1;
+          if (i >= CHAPTERS.length) i = -1;
+        }
+        this.storyMenu().then(resolve);
+      }, onBack: () => resolve() });
+    });
+  }
+  async talk(lines) { ui.closePanel(); for (const [who, text] of lines) await ui.say([text], { name: who }); ui.hideMsg?.(); }
   // ---------- Partida ----------
   async match() { while (await this.playOne()) { /* OTRA VEZ */ } }
-  async playOne() {
+  get stageNow() { return this.sim?.stageId || this.opts.stage; }
+  async playOne(ch = null) {
     const P = peleaState(this.st), o = this.opts, rnd = rng((Date.now() ^ (P.wins * 131 + P.losses * 17)) >>> 0);
     const me = this.roster().find(c => c.sp === P.fighter) || this.roster()[0];
-    const skill = [.28, .55, .82][o.diff], lvK = [.85, 1, 1.15][o.diff];
-    const pool = Object.keys(SPECIES).filter(sp => !SPECIES[sp].legendary && sp !== me.sp);
-    const fighters = [makeFighter(me.sp, me.level, { team: 0 })];
-    for (let i = 0; i < o.mode; i++) fighters.push(makeFighter(pool[Math.floor(rnd() * pool.length)], Math.max(5, Math.round(me.level * lvK)), { cpu: true, team: i + 1 }));
-    this.sim = new FightSim({ fighters, stage: o.stage, seed: Math.floor(rnd() * 1e9), skill });
+    let fighters, skill, stage = o.stage;
+    if (ch) {
+      fighters = chapterFighters(ch, me); skill = SKILL[ch.diff]; stage = ch.stage;
+    } else {
+      skill = [.28, .55, .82][o.diff]; const lvK = [.85, 1, 1.15][o.diff];
+      const pool = Object.keys(SPECIES).filter(sp => !SPECIES[sp].legendary && sp !== me.sp);
+      fighters = [makeFighter(me.sp, me.level, { team: 0 })];
+      for (let i = 0; i < o.mode; i++) fighters.push(makeFighter(pool[Math.floor(rnd() * pool.length)], Math.max(5, Math.round(me.level * lvK)), { cpu: true, team: i + 1 }));
+    }
+    this.sim = new FightSim({ fighters, stage, seed: Math.floor(rnd() * 1e9), skill });
     ui.closePanel(); this.view?.dispose(); this.view = null; this.pending = []; this.held = {}; this.pressed = {};
+    await this.preloadStage(stage, 5000);
+    if (ch) await this.talk(ch.before);  // la charla pasa con el escenario y los peleadores ya en su sitio
     this.buildHud();
     await this.banner('¡3!', 600); await this.banner('¡2!', 600); await this.banner('¡1!', 600); this.banner('¡PELEA!', 800);
     this.playing = true;
@@ -94,10 +132,21 @@ export class PeleaGame {
     const sim = this.sim, w = sim.winner, won = w === 0, me0 = sim.f[0];
     await this.banner('¡SE ACABÓ!', 1100, 'end');
     await this.banner(won ? '¡GANASTE!' : w === -1 ? 'EMPATE' : `GANÓ ${sim.f[w].name.toUpperCase()}`, 1500, won ? 'win' : '');
-    const r = peleaReward(won, o.mode, o.diff, me0.stocks, me0.kos);
+    const idx = ch ? CHAPTERS.indexOf(ch) : -1, first = ch && won && idx >= (P.story || 0);
+    const r = ch ? { money: won ? chapterPrize(ch, first, me0.stocks) : 0 } : peleaReward(won, o.mode, o.diff, me0.stocks, me0.kos);
     if (won) P.wins++; else P.losses++; P.kos += me0.kos;
+    if (first) P.story = idx + 1;
     this.st.money += r.money; saveState(this.st);
     this.destroyHud();
+    if (ch && won) await this.talk(ch.after);
+    if (ch) {
+      const more = won && idx + 1 < CHAPTERS.length;
+      return new Promise(resolve => ui.setPanel(`<div class="ar-result ${won ? 'win' : 'lose'}"><b class="ar-title">${won ? (idx + 1 === CHAPTERS.length ? '¡CAMPEÓN DE LA COPA!' : '¡CAPÍTULO GANADO!') : w === -1 ? 'EMPATE' : 'PERDISTE'}</b>
+        <div class="pe-final">${sim.f.map(p => `<div class="${(won ? p.team === 0 : p.team !== 0 && p.stocks > 0) ? 'win' : ''}" style="--c:${COLORS[p.id]}"><img src="${this.pic(p.sp)}" alt=""><b>${esc(p.name)}</b><small>${p.id === 0 ? 'TÚ' : esc(p.trainer || (p.boss ? 'JEFE' : 'CPU'))} · ${p.kos} fuera · ${p.stocks} vidas</small></div>`).join('')}</div>
+        ${won ? `<div class="ar-prize"><span>💰 +${money(r.money)}</span>${first ? '<small>¡primera vez!</small>' : ''}</div>` : '<p class="hint">Inténtalo otra vez: el capítulo sigue abierto.</p>'}
+        ${more ? '<button data-act="next" class="primary">SIGUIENTE CAPÍTULO</button>' : ''}<button data-act="again" class="${more ? '' : 'primary'}">${won ? 'REPETIR' : 'OTRA VEZ'}</button><button class="bt-back" data-back>VOLVER</button></div>`,
+        { modal: true, cls: 'arena-panel', onAct: a => { this.sim = null; resolve(a); }, onBack: () => { this.sim = null; resolve('back'); } }));
+    }
     const again = await new Promise(resolve => ui.setPanel(`<div class="ar-result ${won ? 'win' : 'lose'}"><b class="ar-title">${won ? '¡GANASTE!' : w === -1 ? 'EMPATE' : 'PERDISTE'}</b>
       <div class="pe-final">${sim.f.map(p => `<div class="${p.id === w ? 'win' : ''}" style="--c:${COLORS[p.id]}"><img src="${this.pic(p.sp)}" alt=""><b>${esc(p.name)}</b><small>${p.id === 0 ? 'TÚ' : 'CPU'} · ${p.kos} fuera · ${p.stocks} vidas</small></div>`).join('')}</div>
       <div class="ar-prize"><span>💰 +${money(r.money)}</span></div><p class="hint">La plata ya está en tu partida de Puchamon.</p>
@@ -111,8 +160,8 @@ export class PeleaGame {
     this.destroyHud();
     const sim = this.sim, el = document.createElement('div'); el.id = 'peleaHud';
     el.innerHTML = `<div class="pe-clock"><b>3:00</b></div><button class="ah-pause" aria-label="Pausa">II</button>
-      <div class="pe-cards">${sim.f.map(p => `<div class="pe-card" style="--c:${COLORS[p.id]}"><img src="${this.pic(p.sp)}" alt=""><div><small>${p.id === 0 ? 'TÚ' : 'CPU ' + p.id} · ${esc(p.name)}</small><b class="pe-pct">0<i>%</i></b><span class="pe-stocks">${'<i></i>'.repeat(p.stocks)}</span></div><em class="pe-pow" title="Poder: ${esc(POWER[p.types[0]] || 'Temblor')}">⚡</em></div>`).join('')}</div>
-      <div class="pe-tags">${sim.f.map(p => `<span class="pe-tag" style="--c:${COLORS[p.id]}"><b>${p.id === 0 ? 'TÚ' : 'CPU'}</b><img src="${this.pic(p.sp)}" alt=""></span>`).join('')}</div>
+      <div class="pe-cards">${sim.f.map(p => `<div class="pe-card${p.boss ? ' boss' : ''}" style="--c:${COLORS[p.id]}"><img src="${this.pic(p.sp)}" alt=""><div><small>${p.id === 0 ? 'TÚ' : esc(p.trainer || (p.boss ? 'JEFE' : 'CPU ' + p.id))} · ${esc(p.name)}</small><b class="pe-pct">0<i>%</i></b><span class="pe-stocks">${'<i></i>'.repeat(p.stocks)}</span></div><em class="pe-pow" title="Poder: ${esc(POWER[p.types[0]] || 'Temblor')}">⚡</em></div>`).join('')}</div>
+      <div class="pe-tags">${sim.f.map(p => `<span class="pe-tag" style="--c:${COLORS[p.id]}"><b>${p.id === 0 ? 'TÚ' : p.boss ? 'JEFE' : p.team === 0 ? 'AMIGO' : 'CPU'}</b><img src="${this.pic(p.sp)}" alt=""></span>`).join('')}</div>
       <div class="pe-pad"><button data-k="left">◀</button><button data-k="up">▲</button><button data-k="down">▼</button><button data-k="right">▶</button></div>
       <div class="pe-btns"><button data-k="attack" class="a">A</button><button data-k="special" class="b">B</button><button data-k="jump" class="j">⤒</button><button data-k="shield" class="s">🛡</button></div>
       <div class="ah-banner hidden"></div>`;
@@ -208,9 +257,18 @@ export class PeleaGame {
     if (this.sim.phase === 'done' && this.onEnd) { const f = this.onEnd; this.onEnd = null; f(); }
   }
   async viewClass() { const { PeleaView } = await import('../../render3d/pelea3d.js'); return PeleaView; }
+  // Carga antes el modelo del escenario hecho en Blender (sólo con gráficos 3D); espera como mucho "wait" ms.
+  async preloadStage(stage, wait = 0) {
+    if (this.game.graphics?.mode !== 'premium') return;
+    try {
+      const { loadStageModel } = await import('../../render3d/stage-assets.js'), p = loadStageModel(stage);
+      if (wait) await Promise.race([p, new Promise(r => setTimeout(r, wait))]);
+    } catch { /* sin modelo: queda el escenario hecho en código */ }
+  }
   draw3d(engine, dt) {
     if (!this.View) { if (!this.loading) this.loading = this.viewClass().then(V => { this.View = V; }); return null; }
-    if (!this.view || this.view.stageId !== this.opts.stage) { this.view?.dispose(); this.view = new this.View(engine, { stage: this.opts.stage }); }
+    const stage = this.stageNow;
+    if (!this.view || this.view.stageId !== stage) { this.view?.dispose(); this.view = new this.View(engine, { stage }); }
     this.view.sync(this.sim, this.pending.splice(0), dt, engine.time.value);
     return this.view.frame(dt, engine.camera.aspect, this.sim);
   }

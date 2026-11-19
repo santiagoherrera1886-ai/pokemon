@@ -15,7 +15,7 @@ fs.writeFileSync(path.join(root,'src','art','retro-reference.png'),retroPng);
 const vendor = path.join(root, 'vendor');
 fs.mkdirSync(vendor, {recursive:true});
 for (const name of ['three.module.js', 'three.core.js']) fs.copyFileSync(path.join(root, 'node_modules/three/build', name), path.join(vendor, name));
-for (const name of ['utils/BufferGeometryUtils.js', 'geometries/RoundedBoxGeometry.js', 'loaders/GLTFLoader.js', 'utils/SkeletonUtils.js']) {
+for (const name of ['utils/BufferGeometryUtils.js', 'geometries/RoundedBoxGeometry.js', 'loaders/GLTFLoader.js', 'utils/SkeletonUtils.js', 'libs/meshopt_decoder.module.js']) {
   const dest = path.join(vendor, 'addons', name);
   fs.mkdirSync(path.dirname(dest), {recursive:true});
   fs.copyFileSync(path.join(root, 'node_modules/three/examples/jsm', name), dest);

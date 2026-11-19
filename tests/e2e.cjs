@@ -806,11 +806,25 @@ async function run() {
     await page.waitForSelector('#panel .ar-result', { timeout: 30000 });
     assert.ok(await page.evaluate(m2 => __game.state.money > m2 && __game.state.pelea.wins === 1, m2), 'ganar la pelea da plata');
     await page.click('#panel [data-back]'); await page.waitForSelector('#panel .pe-home');
+    // Historia (Copa del Alba): el capítulo 1 tiene charla antes y después, y ganarlo abre el siguiente.
+    await page.click('#panel [data-act="story"]'); await page.waitForSelector('#panel .pe-chaps');
+    assert.ok(await page.evaluate(() => document.querySelectorAll('#panel .pe-chap:disabled').length >= 5), 'los capítulos siguientes empiezan cerrados');
+    await page.click('#panel [data-act="ch:0"]');
+    for (let i = 0; i < 60 && !(await page.evaluate(() => !!__game.mini?.playing)); i++) { if (await page.evaluate(() => !!__ui.dialog)) await page.keyboard.press('z'); await sleep(200); }
+    await page.waitForFunction(() => __game.mini?.playing, null, { timeout: 30000 });
+    assert.ok(await page.evaluate(() => __game.mini.sim.f.length === 2 && __game.mini.sim.f[1].trainer === 'Nico'), 'el capítulo 1 es contra Nico');
+    await page.evaluate(() => { const s = __game.mini.sim, cpu = s.f[1]; cpu.stocks = 1; s.ko(cpu); s.checkEnd(); });
+    for (let i = 0; i < 80 && !(await page.evaluate(() => !!document.querySelector('#panel .ar-result'))); i++) { if (await page.evaluate(() => !!__ui.dialog)) await page.keyboard.press('z'); await sleep(200); }
+    await page.waitForSelector('#panel .ar-result', { timeout: 30000 });
+    assert.ok(await page.evaluate(() => __game.state.pelea.story === 1), 'ganar el capítulo 1 abre el 2');
+    await page.click('#panel [data-back]'); await page.waitForSelector('#panel .pe-chaps');
+    assert.ok(await page.evaluate(() => !document.querySelector('#panel [data-act="ch:1"]').disabled), 'el capítulo 2 queda abierto');
+    await page.click('#panel .pe-home [data-back]'); await page.waitForSelector('#panel .pe-home .pe-story-btn');
     await page.click('#panel .pe-home [data-back]');
     await page.waitForFunction(() => __game.scene === 'overworld' && !__game.mini, null, { timeout: 20000 });
     s = await st(); assert.deepEqual([s.map, s.x, s.y], [here.map, here.x, here.y], 'al salir de la pelea vuelves al mismo punto');
     await settle();
-    log('stock de juegos: Pelea Puchamon (peleador, teclas reales, victoria, premio y vuelta al mapa) OK');
+    log('stock de juegos: Pelea Puchamon (peleador, teclas reales, victoria, premio, capítulo 1 de la historia y vuelta al mapa) OK');
 
     // ------------------------------------------------ Celular (táctil)
     const storageState = await page.context().storageState();

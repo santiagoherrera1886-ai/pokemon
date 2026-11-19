@@ -150,3 +150,30 @@ test('el premio suma plata, más si ganas', () => {
   assert.ok(peleaReward(true, 3, 2, 3, 4).money > peleaReward(true, 1, 0, 1, 1).money);
   assert.ok(peleaReward(false, 1, 1, 0, 0).money > 0);
 });
+
+test('los del mismo equipo no se pegan y la pelea acaba cuando queda un solo equipo', () => {
+  const a = makeFighter('brasin', 30, { team: 0 }), b = makeFighter('charquin', 30, { cpu: true, team: 1 }), c = makeFighter('brotelo', 30, { cpu: true, team: 1 });
+  const sim = new FightSim({ fighters: [a, b, c] });
+  b.x = 0; c.x = 1; b.face = 1; b.ground = c.ground = true; b.ai = c.ai = null; b.cpu = c.cpu = false;
+  sim.setInput(1, { ...blankInput(), attack: true }); run(sim, .6);
+  assert.equal(c.damage, 0, 'el aliado no recibe daño');
+  a.stocks = 0; sim.checkEnd();
+  assert.equal(sim.phase, 'done'); assert.notEqual(sim.winner, 0, 'gana el equipo de la máquina');
+  const d = makeFighter('brasin', 30), e = makeFighter('charquin', 30), sim2 = new FightSim({ fighters: [d, e] });
+  assert.notEqual(d.team, e.team, 'sin equipos cada uno pelea solo');
+});
+
+test('la historia arma peleadores válidos, con jefes más pesados, en escenarios que existen', async () => {
+  const { CHAPTERS, chapterFighters, chapterPrize } = await import('../src/games/pelea/story.js');
+  assert.ok(CHAPTERS.length >= 5);
+  for (const ch of CHAPTERS) {
+    assert.ok(STAGES[ch.stage], ch.id + ' escenario');
+    assert.ok(ch.before.length && ch.after.length, ch.id + ' diálogos');
+    const f = chapterFighters(ch, { sp: 'brotelo', level: 24 });
+    assert.equal(f.length, ch.rivals.length + 1);
+    for (const p of f) assert.ok(SPECIES[p.sp] && Number.isFinite(p.weight) && p.weight > 0, ch.id + ' ' + p.sp);
+    if (ch.boss) { const boss = f.find(p => p.boss); assert.ok(boss && boss.weight > makeFighter(boss.sp, boss.level).weight, ch.id + ' jefe pesado'); }
+    assert.ok(chapterPrize(ch, true, 2) > chapterPrize(ch, false, 2));
+  }
+  assert.ok(CHAPTERS.some(ch => ch.rivals.filter(r => r.team === 1).length === 2), 'hay peleas de dos contra ti');
+});

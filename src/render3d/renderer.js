@@ -40,7 +40,8 @@ export class PremiumRenderer {
   resize(){
     // Pantalla completa: el lienzo ocupa toda la ventana; la resolución interna depende de la calidad.
     const vw=innerWidth,vh=innerHeight,dpr=Math.min(2,devicePixelRatio||1);
-    const width=Math.round(Math.min(this.settings.maxPixels*1.6,vw*dpr*this.settings.scale*.62)*this.adaptive);
+    // En la pelea (hiRes) se dibuja casi a la resolución real de la pantalla para que se vea nítido.
+    const width=Math.round((this.hiRes>0?Math.min(2048,vw*dpr*this.hiRes)*Math.max(.8,this.adaptive):Math.min(this.settings.maxPixels*1.6,vw*dpr*this.settings.scale*.62)*this.adaptive));
     const height=Math.max(1,Math.round(width*vh/vw)),key=width+'x'+height;
     if(this.sizeKey!==key){this.webgl.setPixelRatio(1);this.webgl.setSize(width,height,false);this.canvas.style.width=vw+'px';this.canvas.style.height=vh+'px';this.style.setSize(width,height);this.camera.aspect=vw/vh;this.sizeKey=key;}
   }
@@ -271,7 +272,9 @@ export class PremiumRenderer {
     // Sustained slow frames reduce only pixel resolution; no simulation changes.
     // Si hay cuadros lentos sostenidos, baja la carga por escalones: 1 sin desenfoque, 2 sin bloom ni MSAA, 3+ menos resolución.
     this.slowTime=raw>.04?this.slowTime+Math.min(raw,1):Math.max(0,this.slowTime-raw*.5);
-    if(this.slowTime>1.5&&this.degrade<5){this.degrade++;this.slowTime=0;if(this.degrade===2){this.style.samples=0;this.style.target?.dispose();this.style.target=null;}if(this.degrade>=3)this.adaptive=Math.max(.55,this.adaptive-.15);this.sizeKey='';}
+    // En la pelea no se quita el suavizado de bordes: sólo baja un poco la resolución.
+    if(this.slowTime>1.5&&this.hiRes>0&&this.adaptive>.8){this.adaptive=Math.max(.8,this.adaptive-.1);this.slowTime=0;this.sizeKey='';}
+    else if(this.slowTime>1.5&&!(this.hiRes>0)&&this.degrade<5){this.degrade++;this.slowTime=0;if(this.degrade===2){this.style.samples=0;this.style.target?.dispose();this.style.target=null;}if(this.degrade>=3)this.adaptive=Math.max(.55,this.adaptive-.15);this.sizeKey='';}
   }
   dispose(){removeEventListener('resize',this.onResize);this.style.dispose();if(this.titleScene)detachHero(this.titleScene.player);this.clearWorld();this.clearBattle();this.r.release(this.backdrop);this.particles.geometry.dispose();this.particles.material.dispose();this.ambient.dispose();this.environment.dispose();this.lights.dispose();this.r.dispose();this.webgl.dispose();this.canvas.remove();}
 }
