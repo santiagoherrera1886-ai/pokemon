@@ -696,7 +696,8 @@ async function run() {
     await shot('noche-sin-perspectiva');
 
     // ------------------------------------------------ Stock de juegos: Duelo de Torres desde el menú
-    await page.evaluate(() => { __game.state.options.forceHour = 12; });
+    // (Se apaga la plata infinita de la sección de códigos para poder ver que los premios suman plata.)
+    await page.evaluate(() => { const s = __game.state; s.options.forceHour = 12; if (s.cheats) { delete s.cheats.money; if (!Object.keys(s.cheats).length) delete s.cheats; } s.money = 20000; });
     const here = await st(), money0 = here.money;
     await tap('Escape'); await page.click('#panel [data-act="games"]');
     assert.ok(await page.$('#panel [data-act="game:arena"]') && await page.$('#panel [data-act="game:aldea"]'), 'el stock muestra los juegos');
@@ -779,6 +780,33 @@ async function run() {
     s = await st(); assert.deepEqual([s.map, s.x, s.y], [here.map, here.x, here.y], 'al salir de la aldea vuelves al mismo punto');
     await settle();
     log('stock de juegos: Aldea Puchamon (recoger, obra, muro, ejército, ataque y vuelta al mapa) OK');
+
+    // ------------------------------------------------ Stock de juegos: Pelea Puchamon
+    await tap('Escape'); await page.click('#panel [data-act="games"]'); await page.click('#panel [data-act="game:pelea"]');
+    await page.waitForSelector('#panel .pe-home', { timeout: 30000 });
+    await page.click('#panel [data-act="pick"]'); await page.waitForSelector('#panel .ar-pick');
+    await page.click('#panel .ar-pick'); await page.waitForSelector('#panel .pe-home');
+    await page.click('#panel [data-act="mode:1"]'); await page.waitForSelector('#panel .pe-home');
+    const m2 = await page.evaluate(() => __game.state.money);
+    await page.click('#panel [data-act="play"]');
+    await page.waitForFunction(() => __game.mini?.playing, null, { timeout: 30000 });
+    // Teclas reales: correr, saltar en el aire, atacar y especial.
+    const p0 = await page.evaluate(() => ({ x: __game.mini.sim.f[0].x, y: __game.mini.sim.f[0].y }));
+    await page.keyboard.down('ArrowRight'); await sleep(450); await page.keyboard.press('Space'); await sleep(200); await page.keyboard.press('z'); await page.keyboard.up('ArrowRight');
+    await sleep(300); await page.keyboard.press('x'); await sleep(500);
+    const p1 = await page.evaluate(() => ({ x: __game.mini.sim.f[0].x, y: __game.mini.sim.f[0].y, swings: __game.mini.sim.f[0].kos }));
+    assert.ok(Math.abs(p1.x - p0.x) > .5, 'el peleador se mueve con el teclado');
+    await shot('pelea');
+    // Final de la prueba: el rival se queda sin vidas.
+    await page.evaluate(() => { const s = __game.mini.sim, cpu = s.f[1]; cpu.stocks = 1; s.ko(cpu); s.checkEnd(); });
+    await page.waitForSelector('#panel .ar-result', { timeout: 30000 });
+    assert.ok(await page.evaluate(m2 => __game.state.money > m2 && __game.state.pelea.wins === 1, m2), 'ganar la pelea da plata');
+    await page.click('#panel [data-back]'); await page.waitForSelector('#panel .pe-home');
+    await page.click('#panel .pe-home [data-back]');
+    await page.waitForFunction(() => __game.scene === 'overworld' && !__game.mini, null, { timeout: 20000 });
+    s = await st(); assert.deepEqual([s.map, s.x, s.y], [here.map, here.x, here.y], 'al salir de la pelea vuelves al mismo punto');
+    await settle();
+    log('stock de juegos: Pelea Puchamon (peleador, teclas reales, victoria, premio y vuelta al mapa) OK');
 
     // ------------------------------------------------ Celular (táctil)
     const storageState = await page.context().storageState();

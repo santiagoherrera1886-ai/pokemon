@@ -33,7 +33,8 @@ const SVG = {
 // Stock de juegos: los que se juegan con tu partida de Puchamon. ready=false se muestra como "pronto".
 export const GAMES = {
   arena: { name: 'Duelo de Torres', tag: 'Cartas y torres en tiempo real', ready: true },
-  aldea: { name: 'Aldea Puchamon', tag: 'Construye tu aldea y ataca', ready: true }
+  aldea: { name: 'Aldea Puchamon', tag: 'Construye tu aldea y ataca', ready: true },
+  pelea: { name: 'Pelea Puchamon', tag: 'Pelea en plataformas: sácalos del escenario', ready: true }
 };
 const GAME_CARDS = Object.entries(GAMES).map(([id, g]) => `<button data-act="game:${id}" class="game-card gc-${id}${g.ready ? '' : ' soon'}"><i class="gc-art"></i><b>${g.name.toUpperCase()}</b><small>${g.tag}</small><em>${g.ready ? 'NUEVO' : 'PRONTO'}</em></button>`).join('');
 // Dónde vive cada especie (encuentros de las rutas, de día o de noche) y las leyendas.
@@ -506,7 +507,7 @@ export class Menus {
             <button data-act="files" class="soft">PARTIDAS Y NUBE${nube.linked && !nube.off ? ' ☁' : ''}</button>
           </div>
           <div class="stock-more"><small>MÁS JUEGOS CON TUS PUCHAMON</small><div class="stock-row">${GAME_CARDS}</div></div>
-          <p class="title-news"><b>NUEVO · v5</b> Stock de juegos: Duelo de Torres y Aldea Puchamon, con tus Puchamon y tu misma plata. Cámara más cerca, menús nuevos y mejor 3D.</p>
+          <p class="title-news"><b>NUEVO · v5</b> Stock de juegos: Duelo de Torres, Aldea Puchamon y Pelea Puchamon, con tus Puchamon y tu misma plata. Partidas en la nube, cámara más cerca y menús nuevos.</p>
           <p class="hint">Juego original sin ROM · guardado en tu navegador${nube.linked && !nube.off ? ' y en la nube' : ''}${cloud.linked ? ` y en GitHub (${esc(cloud.login)})` : ''} · versión ${BUILD.version}${BUILD.sha !== 'dev' ? ` (${BUILD.sha})` : ''}</p></div>`,
         { modal: true, cls: 'title-panel stock-panel', onAct: a => {
           if (a === 'continue') return saves.length === 1 ? resolve({ type: 'continue', slot: saves[0].slot }) : pick('continue');

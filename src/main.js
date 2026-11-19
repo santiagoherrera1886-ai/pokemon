@@ -174,8 +174,8 @@ class Game {
     ui.hideMsg(); ui.closePanel(); input.clear();
     document.getElementById('menuBtn').classList.add('hidden');
     document.body.classList.remove('at-title');
-    const mod = kind === 'aldea' ? await import('./games/aldea/aldea.js') : await import('./games/arena/arena.js');
-    this.mini = kind === 'aldea' ? new mod.AldeaGame(this) : new mod.ArenaGame(this);
+    const GAMES = { arena: () => import('./games/arena/arena.js').then(m => new m.ArenaGame(this)), aldea: () => import('./games/aldea/aldea.js').then(m => new m.AldeaGame(this)), pelea: () => import('./games/pelea/pelea.js').then(m => new m.PeleaGame(this)) };
+    this.mini = await (GAMES[kind] || GAMES.arena)();
     this.miniFrom = from; this.scene = this.mini.scene;
     document.body.classList.add('in-mini', 'mini-' + kind);
     if (this.graphics.status !== 'ready') this.graphics.ensure();

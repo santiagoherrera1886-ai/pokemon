@@ -38,7 +38,8 @@ export class AldeaGame {
     document.getElementById('ui').appendChild(el);
     this.hud = el; const $ = s => el.querySelector(s);
     this.h = { plata: $('.al-plata b'), bayas: $('.al-bayas b'), bayasBar: $('.al-bayas i'), casa: $('.al-casa'), build: $('.al-build'), tags: $('.al-tags'), home: $('.al-bottom.al-home'), place: $('.al-bottom.al-place'), raid: $('.al-raid'), troops: $('.al-troops'), pct: $('.al-pct b'), stars: [...el.querySelectorAll('.al-stars i')], clock: $('.al-clock b') };
-    el.addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (b) this.act(b.dataset.a); const t = e.target.closest('[data-tag]'); if (t) this.tagTap(+t.dataset.tag); });
+    el.addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (b) this.act(b.dataset.a); });
+    el.addEventListener('pointerdown', e => { const t = e.target.closest('[data-tag]'); if (t) { e.preventDefault(); this.tagTap(+t.dataset.tag); } });
     const layer = $('.al-layer');
     layer.addEventListener('pointerdown', e => { e.preventDefault(); this.down = { x: e.clientX, y: e.clientY, id: e.pointerId }; this.tapGround(e.clientX, e.clientY, false); });
     this.onMove = e => { if (this.down && e.pointerId === this.down.id && this.mode === 'place') this.tapGround(e.clientX, e.clientY, true); if (this.mode === 'raid' && this.raidSel >= 0 && e.pointerType === 'mouse') this.aim(e.clientX, e.clientY); };
@@ -46,7 +47,7 @@ export class AldeaGame {
     addEventListener('pointermove', this.onMove); addEventListener('pointerup', this.onUp);
     this.hudUpdate(true);
   }
-  destroyHud() { if (!this.hud) return; removeEventListener('pointermove', this.onMove); removeEventListener('pointerup', this.onUp); this.hud.remove(); this.hud = null; }
+  destroyHud() { if (!this.hud) return; removeEventListener('pointermove', this.onMove); removeEventListener('pointerup', this.onUp); this.hud.remove(); this.hud = null; this.tagEls?.clear(); }
   setMode(m) {
     this.mode = m;
     this.h.home.classList.toggle('hidden', m !== 'home'); this.h.place.classList.toggle('hidden', m !== 'place'); this.h.raid.classList.toggle('hidden', m !== 'raid');
@@ -65,16 +66,22 @@ export class AldeaGame {
     const cap = bayasCap(A); h.bayas.textContent = `${Math.floor(A.bayas)} / ${cap}`; h.bayasBar.style.width = Math.min(100, A.bayas / cap * 100) + '%';
     h.casa.textContent = `🏠 Casa Grande nv ${casaLevel(A)}`; h.build.textContent = `🔨 ${A.builders - busyBuilders(A, now)}/${A.builders} libres`;
     if (this.mode === 'raid' || !this.view) return;
-    // Etiquetas encima de los edificios: lo que hay para recoger y lo que falta de las obras.
-    const tags = [];
+    // Etiquetas encima de los edificios: lo que hay para recoger y lo que falta de las obras. Se actualizan en su
+    // sitio (sin rehacerlas) para que un toque nunca caiga en una etiqueta que se acaba de reemplazar.
+    this.tagEls ??= new Map(); const seen = new Set();
     for (const b of A.buildings) {
+      const kind = b.upg ? 'work' : B[b.kind].prod && (b.store || 0) >= 1 ? 'take' : null; if (!kind) continue;
+      const key = b.id + kind; seen.add(key);
+      let el = this.tagEls.get(key);
+      if (!el) { el = document.createElement(kind === 'take' ? 'button' : 'span'); el.className = 'al-tag ' + kind; if (kind === 'take') el.dataset.tag = b.id; h.tags.appendChild(el); this.tagEls.set(key, el); }
       const s = B[b.kind].size, p = this.view.fieldToScreen(b.x + s / 2, b.y + s / 2, b.kind === 'muro' ? 1.2 : 3.2);
-      if (b.upg) tags.push(`<span class="al-tag work" style="transform:translate(${p.x}px,${p.y}px) translate(-50%,-100%)">🔨 ${fmtTime((b.upg.done - now) / 1000)}</span>`);
-      else if (B[b.kind].prod && (b.store || 0) >= 1) { const full = b.store >= B[b.kind].cap[b.level - 1]; tags.push(`<button class="al-tag take${full ? ' full' : ''}" data-tag="${b.id}" style="transform:translate(${p.x}px,${p.y}px) translate(-50%,-100%)">${b.kind === 'mina' ? '💰' : '🍓'} ${Math.floor(b.store)}</button>`); }
+      const tf = `translate(${Math.round(p.x)}px,${Math.round(p.y)}px) translate(-50%,-100%)`; if (el.style.transform !== tf) el.style.transform = tf;
+      const txt = kind === 'work' ? `🔨 ${fmtTime((b.upg.done - now) / 1000)}` : `${b.kind === 'mina' ? '💰' : '🍓'} ${Math.floor(b.store)}`; if (el.textContent !== txt) el.textContent = txt;
+      if (kind === 'take') el.classList.toggle('full', b.store >= B[b.kind].cap[b.level - 1]);
     }
-    const html = tags.join(''); if (html !== this.tagHtml) { this.tagHtml = html; h.tags.innerHTML = html; }
+    for (const [key, el] of this.tagEls) if (!seen.has(key)) { el.remove(); this.tagEls.delete(key); }
   }
-  tagTap(id) { const b = this.A.buildings.find(x => x.id === id); if (!b) return; const got = collect(this.A, b, this.st); this.game.toast(got ? `+${b.kind === 'mina' ? money(got) : got + ' bayas'}` : 'El granero está lleno: construye o sube un granero'); this.save(); this.tagHtml = null; this.hudUpdate(); if (this.sel === id) this.info(b); }
+  tagTap(id) { const b = this.A.buildings.find(x => x.id === id); if (!b) return; const got = collect(this.A, b, this.st); this.game.toast(got ? `+${b.kind === 'mina' ? money(got) : got + ' bayas'}` : 'El granero está lleno: construye o sube un granero'); this.save(); this.hudUpdate(); if (this.sel === id) this.info(b); }
   cellAt(px, py) { const p = this.view?.screenToField(px, py); return p ? { x: p.x, y: p.y } : null; }
   tapGround(px, py, dragging) {
     const p = this.cellAt(px, py); if (!p) return;
