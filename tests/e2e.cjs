@@ -117,7 +117,7 @@ async function step(key) {
   const a = await st();
   await page.keyboard.down(key);
   const t = Date.now();
-  while (Date.now() - t < 2500) {   // margen amplio: con render por software el juego puede ir a pocos cuadros por segundo
+  while (Date.now() - t < 5000) {   // margen amplio: con render por software el juego puede ir a pocos cuadros por segundo
     const b = await st();
     if (b.moving || b.x !== a.x || b.y !== a.y || b.map !== a.map || b.dialog || b.locked) break;
     await sleep(10);
@@ -128,7 +128,7 @@ async function step(key) {
 const expect = (s, key) => ({ ArrowUp: [s.x, s.y - 1], ArrowDown: [s.x, s.y + 1], ArrowLeft: [s.x - 1, s.y], ArrowRight: [s.x + 1, s.y] })[key];
 async function walkTo(x, y, mapId, opts = {}) {
   mapId = mapId || (await st()).map;
-  for (let leg = 0; leg < 40; leg++) {
+  for (let leg = 0; leg < 80; leg++) {   // con render por software un paso a veces no alcanza a arrancar: se recalcula
     const r = await pathTo(x, y, mapId, opts);
     assert.ok(r, `no hay ruta hacia ${mapId} (${x},${y}) desde ${JSON.stringify(await st())}`);
     let replan = false;
