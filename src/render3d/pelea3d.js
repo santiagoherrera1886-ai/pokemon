@@ -193,7 +193,7 @@ export class PeleaView {
   buildVolcan() {
     const r = this.r, S = this.S, g = new T.Group();
     const [a, b] = S.main, w = b - a, c = (a + b) / 2;
-    const rock = ['#3a302e', '#2f2727', '#241e1e'], lava = this.glowMat('#ff4a0a', .55), lavaHot = this.glowMat('#ff8a1a', .65);
+    const rock = ['#3a302e', '#2f2727', '#241e1e'], lava = this.glowMat('#ff7a12', .38), lavaHot = this.glowMat('#ffa22a', .42);
     r.box(g, '#2a2220', c, -.2, 0, w, .4, 4.6, true);
     // Piso de baldosas de basalto (hexágonos) con rendijas oscuras.
     const hexTop = this.own(new T.CylinderGeometry(.44, .46, .04, 6)), basalt = ['#4e4440', '#463c39', '#544844', '#4a403c'].map(x => r.mat(x));
@@ -523,7 +523,7 @@ export class PeleaView {
         this.burst(p.x, p.y + v.want * .5, v.C[0], 3, .3, this.tex.ring);
         // Al soltar el poder: explosión, onda en el piso y el efecto de su tipo.
         this.timers.push({ t: MOVES.power.start * .9, fn: () => {
-          const q = this.sim?.f[id]; if (!q || q.out) return;
+          const q = this.sim?.f[id]; if (!q || q.out || q.move !== 'power') return;
           const front = new T.Vector3(q.x + q.face * 3, q.y + v.want * .5, .45), base = this.ctx(this.sim);
           this.movefx.spawn({ anim, type: kind, from: id, to: anim === 'wave' ? 'front' : id, power: 100, eff: 1 }, { center: k => k === 'front' ? front : base.center(k), feet: k => k === 'front' ? new T.Vector3(front.x, q.y, .45) : base.feet(k), height: k => base.height(k === 'front' ? id : k) });
           this.shockwave(q.x, q.y, v.C);
